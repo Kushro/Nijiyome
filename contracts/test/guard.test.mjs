@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 // Two guards over every file git knows about or would add (tracked + untracked, minus ignored):
 //  1. No crash-reporting or telemetry SDKs, and no host of the origin project's old backend.
 //  2. Identity: the previous name of the project appears only where it is deliberate (provenance, the legacy
-//     names the extension host keeps for existing .kai bundles, and the migration tooling).
+//     names the extension host keeps for existing .kai bundles, the list file format of the previous app that
+//     the desktop imports, and the migration tooling).
 // Patterns are assembled from parts so this file does not match itself.
 const OLD = 'tata' + 'kai';
 const FORBIDDEN = new RegExp([OLD + '\\.me', OLD + 'api', 'sen' + 'try', 'data' + 'dog', 'analy' + 'tics'].join('|'), 'i');
@@ -33,6 +34,18 @@ const OLD_NAME_FILES = [
   /^THIRD_PARTY_NOTICES\.md$/,
   /^contracts\/extension-host\/globals\.v1\.md$/,
 ];
+
+// Whole files that read and write the previous app's own list file (`"format": "<old>-lists"`): the format name
+// is data other apps wrote, so it cannot change. Listed one by one; the path check still applies.
+const LIST_FORMAT_FILES = new Set([
+  'core/data/src/commonMain/kotlin/app/nijiyome/data/ListFiles.kt',
+  'core/data/src/desktopTest/kotlin/app/nijiyome/data/ListFilesTest.kt',
+  'core/data/src/desktopTest/resources/list-files/previous-app-lists.json',
+]);
+
+// Provenance on any line: the origin project by its full product name, capitalised as a name ("port of
+// <Old> Next's ...", "as in <Old> Next"). Identifiers, paths, lowercase or the bare short name still fail.
+const PROVENANCE = new RegExp(`${OLD[0].toUpperCase()}${OLD.slice(1)} Next`, 'g');
 
 // Code files where only the legacy extension names are allowed, line by line.
 const LEGACY_LINE = new RegExp(`__${OLD}_[a-z_*]+__|${OLD}Id|${OLD}_\\$\\{name\\}`);
@@ -88,10 +101,11 @@ test('the previous project name appears only where it is allowed', () => {
   const hits = [];
   for (const { rel, lines } of FILES) {
     if (OLD_NAME.test(rel)) hits.push(`${rel}: path`);
-    if (OLD_NAME_FILES.some((re) => re.test(rel))) continue;
+    if (OLD_NAME_FILES.some((re) => re.test(rel)) || LIST_FORMAT_FILES.has(rel)) continue;
     const legacyOnly = LEGACY_LINE_FILES.has(rel);
     (lines ?? []).forEach((line, i) => {
       if (!OLD_NAME.test(line)) return;
+      if (!OLD_NAME.test(line.replace(PROVENANCE, ''))) return;
       if (legacyOnly && OLD_NAME.test(line.replace(new RegExp(LEGACY_LINE.source, 'g'), '')) === false) return;
       hits.push(`${rel}:${i + 1}: ${line.trim().slice(0, 120)}`);
     });
@@ -109,4 +123,10 @@ test('the patterns really match (self-test)', () => {
   // a legacy-line file may not carry the old name anywhere else on the line
   const stray = `navigator.userAgent = '${OLD}'; g.__${OLD}_fetch__ = 1;`;
   assert.ok(OLD_NAME.test(stray.replace(new RegExp(LEGACY_LINE.source, 'g'), '')));
+  // provenance is the full product name only: the bare name, an identifier or a path still count as hits
+  const Old = OLD[0].toUpperCase() + OLD.slice(1);
+  assert.ok(!OLD_NAME.test(`// port of ${Old} Next's engine.rs (as in ${Old} Next)`.replace(PROVENANCE, '')));
+  for (const hit of [`// as in ${Old}'s player`, `fun parse${Old}Next()`, `File("/${OLD}/bin")`, `${OLD} next`]) {
+    assert.ok(OLD_NAME.test(hit.replace(PROVENANCE, '')), hit);
+  }
 });

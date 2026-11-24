@@ -21,7 +21,7 @@ class DesktopKeymapExtrasTest {
     }
 
     @Test
-    fun desktopResolvesTatakaiNextKeys() {
+    fun desktopResolvesTheOriginAppKeys() {
         val map = PlayerKeymap.resolve(emptyMap(), extras = true)
         assertEquals(20, map.size)
         assertEquals(PlayerKeymap.SPEED_UP, PlayerKeymap.actionFor("PERIOD", emptyMap(), extras = true))

@@ -95,7 +95,7 @@ internal fun ExternalMpvBranch(
         next = state.next,
         episodes = state.episodes.items,
     )?.takeIf { it.next != null }
-    // mpv is gone and there is no next episode waiting: nothing left to show here (Tatakai: back to where we came from).
+    // mpv is gone and there is no next episode waiting: nothing left to show here (Tatakai Next: back to where we came from).
     LaunchedEffect(closed, endUi != null) { if (closed && endUi == null) back() }
     if (endUi != null) {
         EpisodeEndScreen(

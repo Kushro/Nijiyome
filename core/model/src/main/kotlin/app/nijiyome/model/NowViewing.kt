@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Hito 6 (D1): the title of the Details page on screen, for desktop's Discord presence ("Viendo la ficha de <título>", Tatakai
- * Next's `PresenceVm::Viewing`). Only the desktop Details screen writes it; Android never does. Each page holds an [owner] token
+ * Hito 6 (D1): the title of the Details page on screen, for desktop's Discord presence ("Viendo la ficha de <título>",
+ * Tatakai Next's `PresenceVm::Viewing`). Only the desktop Details screen writes it; Android never does. Each page holds an [owner] token
  * so a page that goes away never clears the one that replaced it.
  */
 object NowViewing {

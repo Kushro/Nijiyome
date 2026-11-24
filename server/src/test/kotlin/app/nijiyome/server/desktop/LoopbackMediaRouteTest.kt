@@ -69,7 +69,7 @@ class LoopbackMediaRouteTest {
     }
 
     @Test
-    fun theRuleFollowsTatakaiNext() {
+    fun theRuleFollowsTheOriginApp() {
         assertTrue(LoopbackMediaRoute.needsLocalProxy(mapOf("Cookie" to "a=b"), false))
         assertTrue(LoopbackMediaRoute.needsLocalProxy(mapOf("authorization" to "Bearer x"), false))
         assertTrue(LoopbackMediaRoute.needsLocalProxy(mapOf("Origin" to "https://site"), false))

@@ -129,7 +129,7 @@ internal fun externalMpvEnv(l: ExternalMpvLaunch, inherited: Map<String, String>
 }
 
 /**
- * Variables an AppImage points at bundled GTK / GIO files (Tatakai's `APPIMAGE_VARS`); the machine's mpv must not inherit them.
+ * Variables an AppImage points at bundled GTK / GIO files (Tatakai Next's `APPIMAGE_VARS`); the machine's mpv must not inherit them.
  * Returns the changes (null = remove). Empty outside an AppImage.
  */
 internal fun appImageScrub(env: Map<String, String>): Map<String, String?> {

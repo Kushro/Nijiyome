@@ -19,7 +19,7 @@ import kotlin.math.floor
 //   (`VK_ADD_IMPLICIT_LAYER_PATH`, `$XDG_CONFIG_HOME` / `$XDG_CONFIG_DIRS` / `/etc` / `$XDG_DATA_HOME` / `$XDG_DATA_DIRS`, each with
 //   `vulkan/implicit_layer.d`);
 // - the shaders: lsfg-vk 2.x reads `lsfg-vk.dll` (the shader pack it ships for Lossless Scaling), 1.x the game's `Lossless.dll`.
-//   Order (Tatakai's): an `lsfg-vk.dll` next to a configured DLL, Steam's Lossless Scaling folder, the configured DLL itself (the
+//   Order (Tatakai Next's): an `lsfg-vk.dll` next to a configured DLL, Steam's Lossless Scaling folder, the configured DLL itself (the
 //   app's setting, then `dll` of `[global]` in the user's `lsfg-vk/conf.toml`), then Steam's `Lossless.dll`.
 
 object LsfgVk {
@@ -34,7 +34,7 @@ object LsfgVk {
     /** Frame rate frame generation assumes for the source before playback (anime: 23.976 fps). */
     const val SOURCE_FPS = 23.976
 
-    /** Optical-flow resolution scale of Tatakai's balanced profile. */
+    /** Optical-flow resolution scale of Tatakai Next's balanced profile. */
     const val DEFAULT_FLOW_SCALE = 0.85f
 
     /** Why frame generation cannot run here. */
@@ -132,7 +132,7 @@ object LsfgVk {
     }
 
     /**
-     * The multiplier the display can show (Tatakai BUG-036): [requested] (0 = automatic, the highest that fits) times the source frame
+     * The multiplier the display can show (Tatakai Next BUG-036): [requested] (0 = automatic, the highest that fits) times the source frame
      * rate must fit the refresh rate, never below x2 (frame generation is on) nor above x4 or the request. Unknown refresh = request
      * (x4 for automatic).
      */

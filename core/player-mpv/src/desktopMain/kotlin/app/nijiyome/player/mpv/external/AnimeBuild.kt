@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
 
 // Hito 4, paso D: mpv-anime-build (https://github.com/Chinna95P/mpv-anime-build, MIT), the "modo mejorado" of the external mpv.
-// Ported from Tatakai Next (tk-app/src/anime_build.rs, tk-player/src/enhanced_conf.rs). Tatakai shipped the 53.6 MB release zip in its
+// Ported from Tatakai Next (tk-app/src/anime_build.rs, tk-player/src/enhanced_conf.rs). Tatakai Next shipped the 53.6 MB release zip in its
 // repository; Nijiyome downloads that same release once, on request, into the app's cache, and accepts it only with the pinned
 // SHA-256 below. It is then extracted into `<data>/mpv-anime-build/<VERSION>/` (marker file written last, holding the digest and the
 // sanitizer revision). Nothing in the release is executed by the app: mpv loads its Lua scripts itself.
@@ -201,7 +201,7 @@ object AnimeBuild {
 
     /**
      * Options (without `--` / `no-`) that the app owns: the build's `mpv.conf` is written for a standalone mpv, and its
-     * `profile-cond` profiles apply asynchronously after start-up, so overriding them on the command line is not enough. Tatakai's
+     * `profile-cond` profiles apply asynchronously after start-up, so overriding them on the command line is not enough. Tatakai Next's
      * list: video output and GPU API / context (frame generation forces Vulkan), window geometry and fullscreen, IPC servers,
      * watch-later resume (it would beat the app's `--start`).
      */
@@ -265,7 +265,7 @@ object AnimeBuild {
         ExternalMpvConfig.AnimeBuild(configDir, uosc, selectScripts(configDir, uosc))
 
     /**
-     * Tatakai's starting point for the build's `anime_profile_controller.lua` while the build has not saved its own choices: anime
+     * Tatakai Next's starting point for the build's `anime_profile_controller.lua` while the build has not saved its own choices: anime
      * detection on, Anime4K A+A at HQ up to 4K (8K keeps the build's choice). Existing files are the user's and are never touched.
      */
     internal const val ANIME_MODE_DEFAULTS = "anime_mode=on\nfidelity_SD=false\nfidelity_HD=false\nfidelity_FHD=false\nfidelity_2K=false\nfidelity_4K=false\n"

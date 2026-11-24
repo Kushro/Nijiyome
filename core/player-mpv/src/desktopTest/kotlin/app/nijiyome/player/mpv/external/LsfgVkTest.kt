@@ -109,7 +109,7 @@ class LsfgVkTest {
 
     @Test
     fun theMultiplierFitsTheRefreshRate() {
-        // Tatakai BUG-036: 24 fps x4 = 96 fps cannot show on 60 Hz.
+        // Tatakai Next BUG-036: 24 fps x4 = 96 fps cannot show on 60 Hz.
         assertEquals(2, LsfgVk.multiplierFor(4, 60.0))
         assertEquals(2, LsfgVk.multiplierFor(3, 59.94))
         assertEquals(3, LsfgVk.multiplierFor(4, 75.0))

@@ -541,7 +541,7 @@ class MediaTest {
 
     private class FakeEnv(
         val vars: MutableMap<String, String> = mutableMapOf(),
-        var dirs: List<File> = listOf(File("/tatakai")),
+        var dirs: List<File> = listOf(File("/opt/app")),
         val files: MutableSet<File> = mutableSetOf(),
         val texts: MutableMap<File, String> = mutableMapOf(),
         var steam: List<File> = listOf(File("/steam")),
@@ -556,7 +556,7 @@ class MediaTest {
     }
 
     private fun steamDll(root: String) = File("/$root/steamapps/common/Lossless Scaling/${Lsfg.DLL_FILE_NAME}")
-    private val helperPath get() = File("/tatakai/${Lsfg.HELPER_FILE_NAME}")
+    private val helperPath get() = File("/opt/app/${Lsfg.HELPER_FILE_NAME}")
     private val okProbe: (File, File) -> ProbeResult = { _, _ -> ProbeResult.Ok(ProbeInfo("Fake GPU", true)) }
 
     @Test
@@ -632,10 +632,10 @@ class MediaTest {
         assertEquals(dev, Lsfg.findHelper(FakeEnv(vars = mutableMapOf(Lsfg.HELPER_ENV to dev.path)).file(helperPath).file(dev)))
         assertNull(Lsfg.findHelper(FakeEnv(vars = mutableMapOf(Lsfg.HELPER_ENV to "/nowhere/temple-lsfg")).file(helperPath)))
         assertNull(Lsfg.findHelper(FakeEnv(vars = mutableMapOf(Lsfg.HELPER_ENV to "temple-lsfg")).file(File("temple-lsfg"))))
-        val below = FakeEnv(dirs = listOf(File("/tatakai/bin"), File("/tatakai"))).file(helperPath)
+        val below = FakeEnv(dirs = listOf(File("/opt/app/bin"), File("/opt/app"))).file(helperPath)
         assertEquals(helperPath, Lsfg.findHelper(below))
-        val both = FakeEnv(dirs = listOf(File("/tatakai/bin"), File("/tatakai"))).file(helperPath).file(File("/tatakai/bin/${Lsfg.HELPER_FILE_NAME}"))
-        assertEquals(File("/tatakai/bin/${Lsfg.HELPER_FILE_NAME}"), Lsfg.findHelper(both))
+        val both = FakeEnv(dirs = listOf(File("/opt/app/bin"), File("/opt/app"))).file(helperPath).file(File("/opt/app/bin/${Lsfg.HELPER_FILE_NAME}"))
+        assertEquals(File("/opt/app/bin/${Lsfg.HELPER_FILE_NAME}"), Lsfg.findHelper(both))
         assertEquals(helperPath, Lsfg.findHelper(FakeEnv(vars = mutableMapOf(Lsfg.HELPER_ENV to "")).file(helperPath)))
         assertNull(Lsfg.findHelper(FakeEnv(dirs = emptyList())))
     }

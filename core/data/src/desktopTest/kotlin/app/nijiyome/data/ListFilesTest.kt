@@ -89,7 +89,7 @@ class ListFilesTest {
 
     @Test
     fun tatakaiNextListFile() {
-        val file = parseListFile(fixture("tatakai-lists.json"), now)
+        val file = parseListFile(fixture("previous-app-lists.json"), now)
         assertEquals(ListFileFormat.TATAKAI, file.format)
         assertEquals(2, file.skipped) // no id; unknown status
         val (op, fma) = file.entries
@@ -205,7 +205,7 @@ class ListFilesTest {
             assertTrue(refused is AppException, "importJson refused the XML: $refused")
             assertEquals(4, repo.importFile(fixture("mal-export.xml")).getOrThrow())
             // FMA has no time in either file (both "now"): the local copy from the MAL export is not replaced.
-            assertEquals(1, repo.importFile(fixture("tatakai-lists.json")).getOrThrow())
+            assertEquals(1, repo.importFile(fixture("previous-app-lists.json")).getOrThrow())
             val csv = repo.exportCsv().split("\r\n")
             assertEquals(LIST_CSV_HEADER, csv[0])
             // One Piece is "21" from Tatakai Next and "mal:21" from MAL: two local keys, as with the JSON import.

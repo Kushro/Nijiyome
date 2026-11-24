@@ -325,7 +325,7 @@ class DebridRepositoryImpl(
         val file = chooseDebridFile(prepared.files, fileIndex, episode, titles, alignmentOf(hash))
             ?: throw AppException(AppError.Unknown("debrid:no_file"))
         val url = prepared.unlock(file)
-        // 1.1 (F7): HTTPS only (Tatakai's tk-core `is_https`)
+        // 1.1 (F7): HTTPS only (Tatakai Next's tk-core `is_https`)
         if (!isSafeHttpsLink(url)) throw AppException(AppError.Unknown("debrid:bad_link"))
         val tags = runCatching { parseRelease(file.name.substringAfterLast('/')) }.getOrNull()
         failedAt.remove(hash)
