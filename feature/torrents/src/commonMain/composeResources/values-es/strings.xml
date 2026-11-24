@@ -110,6 +110,7 @@
     <string name="torrent_library_error">No se pudo cargar la biblioteca de torrents</string>
     <string name="torrent_library_empty_title">Todavía no hay torrents</string>
     <string name="torrent_library_empty_body">Elige una fuente torrent en un episodio para empezar. Los torrents que reproduzcas o descargues aparecen aquí.</string>
+    <string name="torrent_library_configure_debrid">Configurar debrid</string>
     <string name="torrent_library_actions">Acciones del torrent</string>
     <plurals name="torrent_library_count">
         <item quantity="one">%1$d torrent</item>

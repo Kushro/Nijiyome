@@ -190,6 +190,8 @@ fun NijiyomeApp(
     // Hito 6 (desktop): the window's app-wide keys (Ctrl+K, Ctrl+B, 1..9, Esc). Android passes none. Before [platformEffects], which
     // Android passes as a trailing lambda.
     shortcuts: ShellShortcuts? = null,
+    /** Desktop custom title bar rendered inside the active theme (null on Android). */
+    windowTopBar: (@Composable () -> Unit)? = null,
     platformEffects: @Composable (settings: AppSettings, dark: Boolean) -> Unit = { _, _ -> },
 ) {
     val settingsRepo = koinInject<SettingsRepository>()
@@ -217,9 +219,20 @@ fun NijiyomeApp(
             LocalTitleLanguage provides settings.titleLanguage,
             LocalLook provides settings.look,
         ) {
-            // parity wave A, 2026-11-09 amendment (plan 14 §0.1 #11, worker q): first-run wizard until `AppSettings.onboardingDone`;
-            // the wizard's ViewModel persists the flag (and "Restablecer la app" clears it), so this just reacts to the settings.
-            if (!settings.onboardingDone) {
+            if (windowTopBar != null) {
+                Column(Modifier.fillMaxSize()) {
+                    windowTopBar()
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        if (!settings.onboardingDone) {
+                            OnboardingScreen(onDone = {})
+                        } else {
+                            AppShell(snackbar, torrentLinks, serverLinks, accountLinks, imageLinks, routeLinks, shortcuts)
+                        }
+                    }
+                }
+            } else if (!settings.onboardingDone) {
+                // parity wave A, 2026-11-09 amendment (plan 14 §0.1 #11, worker q): first-run wizard until `AppSettings.onboardingDone`;
+                // the wizard's ViewModel persists the flag (and "Restablecer la app" clears it), so this just reacts to the settings.
                 OnboardingScreen(onDone = {})
             } else {
                 AppShell(snackbar, torrentLinks, serverLinks, accountLinks, imageLinks, routeLinks, shortcuts)
@@ -638,6 +651,7 @@ private fun AppNavDisplay(
                     onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
                     onOpenMangaDetails = ::openMangaDetails,
                     onOpenNovelDetails = ::openNovelDetails,
+                    onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
                 )
             }
             entry<Route.LibraryTab>(metadata = ListDetailSceneStrategy.listPane()) { key ->
@@ -650,6 +664,7 @@ private fun AppNavDisplay(
                     onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
                     onOpenMangaDetails = ::openMangaDetails,
                     onOpenNovelDetails = ::openNovelDetails,
+                    onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
                 )
             }
             entry<Route.Details>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
@@ -732,6 +747,7 @@ private fun AppNavDisplay(
                     onOpenLinked = { push(Route.Linked) },
                     // Rail destination on wide windows (no back arrow); reached from "Tú" on phones.
                     onBack = if (wide) null else ::back,
+                    onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
                 )
             }
             entry<Route.SettingsSection> { key ->
@@ -741,6 +757,7 @@ private fun AppNavDisplay(
                     initialSection = key.section,
                     onOpenLinked = { push(Route.Linked) },
                     onBack = ::back,
+                    onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
                 )
             }
             entry<Route.Extensions> {

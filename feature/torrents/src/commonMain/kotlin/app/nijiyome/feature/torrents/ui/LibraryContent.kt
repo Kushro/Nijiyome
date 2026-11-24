@@ -100,6 +100,8 @@ internal fun LibraryContent(
     modifier: Modifier = Modifier,
     selectedId: String? = null,
     header: (@Composable () -> Unit)? = null,
+    emptyActionLabel: String? = null,
+    onEmptyAction: (() -> Unit)? = null,
 ) {
     var pendingDelete by remember { mutableStateOf<Collection<String>?>(null) }
     // Desktop (Tatakai Next's library table): sortable, cards or a compact list. Android keeps the engine order and the cards.
@@ -115,6 +117,8 @@ internal fun LibraryContent(
                     icon = Icons.Outlined.DownloadForOffline,
                     title = stringResource(Res.string.torrent_library_empty_title),
                     message = stringResource(Res.string.torrent_library_empty_body),
+                    actionLabel = emptyActionLabel,
+                    onAction = onEmptyAction,
                 )
             }
         } else {

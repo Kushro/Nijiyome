@@ -27,6 +27,8 @@ import app.nijiyome.data.PendingOAuthRedirect
 import app.nijiyome.desktop.system.AppLanguageProvider
 import app.nijiyome.desktop.system.AppRestarter
 import app.nijiyome.desktop.system.DesktopLocale
+import app.nijiyome.desktop.system.DesktopResizableFrame
+import app.nijiyome.desktop.system.DesktopTitleBar
 import app.nijiyome.desktop.system.BuildInfo
 import app.nijiyome.desktop.system.DesktopSystem
 import app.nijiyome.desktop.system.DiscordPresence
@@ -191,13 +193,17 @@ fun main(args: Array<String>) {
             if (trayOn && trayIcons != null) NijiyomeTray(trayIcons, trayTexts, onShow = show, onQuit = ::exitApplication)
             // No tray any more (turned off, or it went away) while the window is hidden: show it, or the app could not be reached.
             LaunchedEffect(trayOn) { if (!trayOn) visible = true }
+            val closeWindow: () -> Unit = { if (trayOn && prefs.closeToTray) visible = false else exitApplication() }
+            val spanish = DesktopLocale.localeFor(appSettings.language).language == "es"
             Window(
-                onCloseRequest = { if (trayOn && prefs.closeToTray) visible = false else exitApplication() },
-                // The language is applied above, before the tray and the title, so the "Sin conexión" chip follows it too.
-                title = windowTitle(online, linkPort),
+                onCloseRequest = closeWindow,
+                // Keep the window title for the taskbar / Alt-Tab; the frameless bar draws the live status chips inside the window.
+                title = windowTitle(online, linkPort, spanish = spanish),
                 icon = icon,
                 state = windowState,
                 visible = visible,
+                undecorated = true,
+                resizable = true,
                 // The player's picture in picture: the window itself, small and above the others.
                 alwaysOnTop = appWindow.pictureInPicture,
                 // Only the key presses no screen used: a text field keeps its digits, the player and the readers their keys.
@@ -251,13 +257,27 @@ fun main(args: Array<String>) {
                                 }
                             },
                         ) {
-                            NijiyomeApp(
-                                torrentLinks = router.torrentLinks,
-                                serverLinks = router.serverLinks,
-                                accountLinks = router.accountLinks,
-                                routeLinks = router.routeLinks,
-                                shortcuts = shortcuts,
-                            )
+                            DesktopResizableFrame(window, windowState, appWindow) {
+                                NijiyomeApp(
+                                    torrentLinks = router.torrentLinks,
+                                    serverLinks = router.serverLinks,
+                                    accountLinks = router.accountLinks,
+                                    routeLinks = router.routeLinks,
+                                    shortcuts = shortcuts,
+                                    windowTopBar = {
+                                        DesktopTitleBar(
+                                            window = window,
+                                            windowState = windowState,
+                                            appWindow = appWindow,
+                                            online = online,
+                                            linkPort = linkPort,
+                                            spanish = spanish,
+                                            windows = windows,
+                                            onClose = closeWindow,
+                                        )
+                                    },
+                                )
+                            }
                         }
                     }
                 }

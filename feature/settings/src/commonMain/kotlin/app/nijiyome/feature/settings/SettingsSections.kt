@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.ClosedCaption
+import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
@@ -567,13 +568,19 @@ internal fun LinkSection(state: SettingsUiState, vm: SettingsViewModel, onOpenLi
 }
 
 @Composable
-internal fun TorrentsSection(onOpenTorrents: () -> Unit) {
+internal fun TorrentsSection(onOpenTorrents: () -> Unit, onOpenDebrid: () -> Unit) {
     SectionHint(stringResource(Res.string.settings_torrents_hint))
     NavRow(
         Icons.Outlined.Download,
         stringResource(Res.string.settings_torrents_open),
         onOpenTorrents,
         supporting = stringResource(Res.string.settings_torrents_open_sub),
+    )
+    NavRow(
+        Icons.Outlined.CloudDone,
+        stringResource(Res.string.settings_torrents_debrid),
+        onOpenDebrid,
+        supporting = stringResource(Res.string.settings_torrents_debrid_sub),
     )
 }
 

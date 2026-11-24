@@ -97,6 +97,8 @@ fun LibraryScreen(
     onOpenMangaDetails: (anilistId: Int) -> Unit = {},
     /** Novel readlist row -> Route.NovelDetails(anilistId). */
     onOpenNovelDetails: (anilistId: Int) -> Unit = {},
+    /** Empty Torrents tab "Configurar debrid" -> Route.Torrents(TorrentSection.DEBRID). */
+    onOpenDebrid: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = LocalAppSnackbar.current
@@ -121,6 +123,7 @@ fun LibraryScreen(
             onOpenAccounts = onOpenAccounts,
             onOpenMangaDetails = onOpenMangaDetails,
             onOpenNovelDetails = onOpenNovelDetails,
+            onOpenDebrid = onOpenDebrid,
         ),
         modifier = modifier,
     )
@@ -138,6 +141,7 @@ internal data class LibraryActions(
     /** parity wave B (worker s) */
     val onOpenMangaDetails: (Int) -> Unit = {},
     val onOpenNovelDetails: (Int) -> Unit = {},
+    val onOpenDebrid: () -> Unit = {},
 )
 
 @Composable
@@ -182,6 +186,7 @@ internal fun LibraryContent(
                     onOpenTorrent = actions.onOpenTorrent,
                     onPlay = actions.onPlay,
                     modifier = Modifier.fillMaxSize(),
+                    onOpenDebrid = actions.onOpenDebrid,
                 )
                 // parity wave B (16 §3.5 / §3.6, worker s): readlists; the same `onOpenDetails` opens Route.Details(MANGA, id) / NovelDetails
                 // through `actions.onOpenMangaDetails` / `onOpenNovelDetails` (wired by :app).

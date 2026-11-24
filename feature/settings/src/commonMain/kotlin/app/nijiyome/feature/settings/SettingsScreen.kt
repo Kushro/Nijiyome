@@ -99,6 +99,8 @@ fun SettingsScreen(
     /** "Dispositivo enlazado" entry of the Enlace section -> Route.Linked. */
     onOpenLinked: () -> Unit = {},
     onBack: (() -> Unit)? = null,
+    /** "Debrid (TorBox y otros)" entry of the Torrents section -> Route.Torrents(TorrentSection.DEBRID). */
+    onOpenDebrid: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var torrentsOpen by rememberSaveable { mutableStateOf(initialSection == SettingsSection.TORRENTS) }
@@ -141,6 +143,7 @@ fun SettingsScreen(
         onOpenExtensions = onOpenExtensions,
         onOpenLinked = onOpenLinked,
         onOpenTorrents = { torrentsOpen = true },
+        onOpenDebrid = onOpenDebrid,
         onBack = onBack,
         modifier = modifier,
     )
@@ -203,6 +206,7 @@ private fun SettingsContent(
     onOpenExtensions: () -> Unit,
     onOpenLinked: () -> Unit,
     onOpenTorrents: () -> Unit,
+    onOpenDebrid: () -> Unit,
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
@@ -259,6 +263,7 @@ private fun SettingsContent(
                         onOpenExtensions = onOpenExtensions,
                         onOpenLinked = onOpenLinked,
                         onOpenTorrents = onOpenTorrents,
+                        onOpenDebrid = onOpenDebrid,
                     )
                 }
             }
@@ -300,6 +305,7 @@ private fun SettingsList(
     onOpenExtensions: () -> Unit,
     onOpenLinked: () -> Unit,
     onOpenTorrents: () -> Unit,
+    onOpenDebrid: () -> Unit,
 ) {
     LazyColumn(
         state = listState,
@@ -341,7 +347,7 @@ private fun SettingsList(
                     SettingsSection.METADATA -> MetadataSection(state, viewModel)
                     SettingsSection.ACCOUNTS -> AccountsSection(state, viewModel)
                     SettingsSection.LINK -> LinkSectionForPlatform(state, viewModel, onOpenLinked)
-                    SettingsSection.TORRENTS -> TorrentsSection(onOpenTorrents)
+                    SettingsSection.TORRENTS -> TorrentsSection(onOpenTorrents, onOpenDebrid)
                     // parity wave B (16 §3.9): r / s own the rows; the contract only mounts them (same shape as PlayerSettingsExtras).
                     SettingsSection.DOWNLOADS -> DownloadsSettingsSection(settings = state.settings, onUpdate = viewModel::updateSettings)
                     SettingsSection.READER -> {

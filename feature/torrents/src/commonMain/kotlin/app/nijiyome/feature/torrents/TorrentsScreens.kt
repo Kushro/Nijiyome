@@ -322,6 +322,7 @@ fun TorrentsLibraryTab(
     onOpenTorrent: (torrentId: String) -> Unit,
     onPlay: (PlayerArgs) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenDebrid: (() -> Unit)? = null,
 ) {
     val viewModel: TorrentLibraryViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -341,6 +342,8 @@ fun TorrentsLibraryTab(
         onPersist = viewModel::setPersist,
         onRemove = viewModel::remove,
         modifier = modifier,
+        emptyActionLabel = onOpenDebrid?.let { stringResource(Res.string.torrent_library_configure_debrid) },
+        onEmptyAction = onOpenDebrid,
     )
 }
 

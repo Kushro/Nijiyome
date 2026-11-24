@@ -108,6 +108,7 @@
     <string name="torrent_library_error">Could not load the torrent library</string>
     <string name="torrent_library_empty_title">No torrents yet</string>
     <string name="torrent_library_empty_body">Pick a torrent source in an episode to start. Torrents you play or download show up here.</string>
+    <string name="torrent_library_configure_debrid">Configure debrid</string>
     <string name="torrent_library_actions">Torrent actions</string>
     <plurals name="torrent_library_count">
         <item quantity="one">%1$d torrent</item>
