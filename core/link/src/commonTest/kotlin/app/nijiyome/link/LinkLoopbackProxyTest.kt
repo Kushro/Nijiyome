@@ -20,7 +20,7 @@ import kotlin.test.assertTrue
 /** 0.4.0: the PC's Link HLS reaches libmpv through a loopback proxy that terminates the mTLS (and only serves session files). */
 class LinkLoopbackProxyTest {
     private val sid = "6f1d3c1e-8d0f-4b6a-9a76-0c2a8d9d2f11"
-    private val token = "0123456789abcdef0123456789abcdef"
+    private val token = "0123456789abcdef0123456789abcdef" // gitleaks:allow (made-up value for a local fake server)
     private var server: MockWebServer? = null
     private var proxy: LinkLoopbackProxy? = null
 

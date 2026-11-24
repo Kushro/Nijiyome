@@ -41,7 +41,7 @@ import kotlin.test.assertTrue
  */
 class TorboxFakeServerTest {
     private val server = MockWebServer()
-    private val key = "tb-secret-key-1234567890"
+    private val key = "tb-secret-key-1234567890" // gitleaks:allow (made-up value for a local fake server)
     private var now = 1_000_000L
     private val slept = Collections.synchronizedList(mutableListOf<Long>())
     private val logs = Collections.synchronizedList(mutableListOf<String>())

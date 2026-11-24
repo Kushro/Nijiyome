@@ -14,7 +14,7 @@ import kotlin.test.assertNull
 /** 0.4.0: the source's subtitles of a Link session (status `subtitles`, `subtitles/{n}.ass|.vtt`, the loopback allow-list). */
 class LinkSubtitlesTest {
     private val sid = "6f1d3c1e-8d0f-4b6a-9a76-0c2a8d9d2f11"
-    private val token = "0123456789abcdef0123456789abcdef"
+    private val token = "0123456789abcdef0123456789abcdef" // gitleaks:allow (made-up value for a local fake server)
 
     private fun decode(json: String) = LinkRepositoryImpl.statusOf(LinkHttp.json.decodeFromString(SessionStateDto.serializer(), json))
 

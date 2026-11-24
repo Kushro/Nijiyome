@@ -1,0 +1,6 @@
+# Exact findings that are not secrets (gitleaks fingerprints: commit:file:rule:line). Made-up values of three
+# unit tests that talk to fake servers on 127.0.0.1, as published in the first commit; the lines now also carry
+# `gitleaks:allow`. Only these positions are ignored: any other finding, in these files too, is still reported.
+6142875d6bfc38a78661b5de570055d7f5cfb019:core/link/src/commonTest/kotlin/app/nijiyome/link/LinkSubtitlesTest.kt:generic-api-key:17
+6142875d6bfc38a78661b5de570055d7f5cfb019:core/link/src/commonTest/kotlin/app/nijiyome/link/LinkLoopbackProxyTest.kt:generic-api-key:23
+6142875d6bfc38a78661b5de570055d7f5cfb019:core/torrent/src/commonTest/kotlin/app/nijiyome/torrent/debrid/TorboxFakeServerTest.kt:generic-api-key:44
