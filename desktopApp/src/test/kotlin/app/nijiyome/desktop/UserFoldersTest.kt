@@ -49,13 +49,19 @@ class UserFoldersTest {
             assertEquals(File(data, "Downloads"), f.export)
             // Hallazgo 20 de la revisión: never inside the download engine's own folder (<data>/downloads, wiped by the reset) or
             // the torrent engine's state (<data>/torrents).
-            val ownStores = listOf(File(data, "downloads"), File(data, "torrents"))
+            // Compared as the simulated system compares names: Linux by case, Windows ignoring it (whatever the host is).
+            val ownStores = listOf("downloads", "torrents")
+            fun top(folder: File) = data.toPath().relativize(folder.toPath()).first().toString()
             for (folder in listOf(f.webDownloads, f.torrentDownloads, f.export)) {
-                assertTrue(ownStores.none { folder.toPath().startsWith(it.toPath()) }, "$folder")
+                assertTrue(top(folder) !in ownStores, "$folder")
             }
             assertEquals(setOf("Downloads"), f.inDataDir(AppPaths(data)))
             val w = UserFolders.resolve(AppPaths(data), env = mapOf("USERPROFILE" to home.path)::get, osName = "Windows 11", home = home.path)
             assertNull(w.downloads)
+            for (folder in listOf(w.webDownloads, w.torrentDownloads, w.export)) {
+                assertTrue(ownStores.none { it.equals(top(folder), ignoreCase = true) }, "$folder")
+            }
+            assertEquals(setOf("Downloads (Nijiyome)"), w.inDataDir(AppPaths(data)))
             File(home, "Downloads").mkdirs()
             assertEquals(File(home, "Downloads/Nijiyome/Episodes"), UserFolders.resolve(AppPaths(data), mapOf("USERPROFILE" to home.path)::get, "Windows 11", home.path).webDownloads)
         } finally {

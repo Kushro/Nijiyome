@@ -6,8 +6,9 @@ import java.io.File
 /**
  * Where downloads go by default (as Tatakai Next did, with the new name): web downloads in `<Downloads>/Nijiyome/Episodes`, torrents
  * in `<Downloads>/Nijiyome`. `<Downloads>` is `XDG_DOWNLOAD_DIR` (environment, then `user-dirs.dirs`) or `~/Downloads` on Linux and
- * `%USERPROFILE%\Downloads` on Windows; without one, the same layout goes under `<data>/Downloads`. With `NIJIYOME_DATA_DIR` set (development,
- * tests) `<Downloads>` is `<data>/Downloads`, never a real user folder. Settings can point either one somewhere else.
+ * `%USERPROFILE%\Downloads` on Windows; without one, the same layout goes under `<data>/Downloads` (`<data>\Downloads (Nijiyome)` on Windows,
+ * see [dataDownloadsName]). With `NIJIYOME_DATA_DIR` set (development, tests) `<Downloads>` is that folder of the data directory, never a
+ * real user folder. Settings can point either one somewhere else.
  */
 class UserFolders(
     /** The user's Downloads folder, or null when there is none. */
@@ -36,7 +37,7 @@ class UserFolders(
             home: String = System.getProperty("user.home"),
         ): UserFolders {
             val downloads = if (!env("NIJIYOME_DATA_DIR").isNullOrBlank()) {
-                File(paths.dataDir, "Downloads")
+                File(paths.dataDir, dataDownloadsName(osName))
             } else {
                 systemDownloads(env, osName, home)
             }
@@ -46,10 +47,17 @@ class UserFolders(
             } else {
                 // Same layout under <data>/Downloads: never the download engine's own folder (<data>/downloads, which its reset
                 // wipe deletes whole) nor the torrent engine's state (<data>/torrents).
-                val root = File(paths.dataDir, "Downloads")
+                val root = File(paths.dataDir, dataDownloadsName(osName))
                 UserFolders(null, File(root, "Nijiyome/Episodes"), File(root, "Nijiyome"), root)
             }
         }
+
+        /**
+         * The downloads folder inside the data directory. Windows file names ignore case, so `Downloads` there would be the download
+         * engine's own `downloads` (its reset wipe deletes it whole, with the user's episodes in it); Linux keeps `Downloads`.
+         */
+        internal fun dataDownloadsName(osName: String): String =
+            if (osName.startsWith("Windows", ignoreCase = true)) "Downloads (Nijiyome)" else "Downloads"
 
         /** The Downloads folder of the system, when it exists. */
         internal fun systemDownloads(env: (String) -> String?, osName: String, home: String): File? {
