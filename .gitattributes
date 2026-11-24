@@ -1,0 +1,13 @@
+# The same bytes on every checkout: a Windows clone (core.autocrlf=true on the CI runners) would otherwise get CRLF in the
+# sources, the test fixtures and the resources packed into the Windows build (host-prelude.js, mpv and lsfg-vk templates).
+* text=auto eol=lf
+
+# Windows scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Stored with CRLF as they came (vendored code and licence texts): left byte for byte.
+core/designsystem/src/androidMain/assets/licenses/OFL-SpaceGrotesk.txt -text
+core/framegen/src/main/cpp/third_party/lsfg-vk/CMakeLists.txt -text
+core/framegen/src/main/cpp/third_party/pe-parse/** -text
+core/framegen/src/main/cpp/third_party/volk/** -text

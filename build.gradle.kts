@@ -12,6 +12,13 @@ plugins {
     alias(libs.plugins.ksp) apply false
 }
 
+// Failed tests print the assertion message and stack in the console (CI logs have no test reports).
+subprojects {
+    tasks.withType<Test>().configureEach {
+        testLogging { exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL }
+    }
+}
+
 // One task that checks everything a change can break: every unit test (Android modules, JVM modules and both targets of the
 // multiplatform ones), the debug APK and the desktop distribution.
 //   ./gradlew verificar
