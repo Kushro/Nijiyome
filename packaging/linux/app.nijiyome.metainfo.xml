@@ -51,6 +51,11 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.1.0" date="2026-11-24">
+      <description>
+        <p>Nijiyome 1.1.0 for Linux and Windows, from the same code as the Android app.</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-11-23">
       <description>
         <p>First desktop build of Nijiyome (Kotlin Multiplatform): the Android app's screens on Linux and Windows.</p>

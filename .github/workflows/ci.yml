@@ -130,7 +130,10 @@ jobs:
           for f in packaging/linux/*.sh packaging/linux/AppRun packaging/linux/PKGBUILD; do bash -n "$f"; done
           shellcheck -S warning packaging/linux/*.sh packaging/linux/AppRun
           desktop-file-validate packaging/linux/app.nijiyome.desktop
-          appstreamcli validate --no-net --pedantic packaging/linux/app.nijiyome.metainfo.xml || appstreamcli validate --no-net packaging/linux/app.nijiyome.metainfo.xml
+          # The component ID is the Android applicationId (app.nijiyome), two parts; appstream warns
+          # cid-desktopapp-is-not-rdns. Renaming it would rename the installed .desktop, the autostart entry and the
+          # MPRIS DesktopEntry of existing installs, so only that tag is lowered to info.
+          appstreamcli validate --no-net --pedantic --override=cid-desktopapp-is-not-rdns=info packaging/linux/app.nijiyome.metainfo.xml || appstreamcli validate --no-net --override=cid-desktopapp-is-not-rdns=info packaging/linux/app.nijiyome.metainfo.xml
       # :server (Link and the extension server) is a JVM module: its tests are `test`, not `desktopTest`.
       - name: Desktop tests (shared modules, servers, app)
         run: xvfb-run -a bash gradlew desktopTest :server:test :desktopApp:test --no-daemon --stacktrace
