@@ -51,6 +51,13 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.1.4" date="2026-11-24">
+      <description>
+        <p>Desktop: frameless window with a custom title bar, status chips (Link port and offline indicator), drag-to-move, double-click maximize and border resizing on Linux and Windows.</p>
+        <p>Nijiyome Link: fixed Send to device and PC torrent sessions when TorBox is linked on the PC, deterministic Anime4K shader extraction, Vulkan/libplacebo startup probe, automatic LSFG library reload, and sanitized Link and extension server error logging to app.log.</p>
+        <p>TorBox and Debrid: added Settings › Torrents › Debrid and Library › Torrents empty-state entry points, fixed the startup account loading race, parallelized cache checks with progressive marking, and surfaced the cached TorBox badge in compact Details.</p>
+      </description>
+    </release>
     <release version="1.1.3" date="2026-11-24">
       <description>
         <p>Nijiyome Link now tells paired phones the real app version instead of a fixed one.</p>
