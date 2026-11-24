@@ -202,8 +202,18 @@ class TorrentSourceTest {
         val host = DesktopLinkHost(null, null, { null }, { emptyList() }, torrentEngine = { unavailable })
         assertEquals(ErrorCode.SOURCE_UNAVAILABLE, assertFailsWith<app.nijiyome.server.link.ApiException> { host.openTorrent(req) }.error)
         assertEquals(false, host.reuseTorrent("0123456789abcdef0123456789abcdef01234567"))
-        // through the route: 503 source_unavailable
-        val s = server(host)
+        // through the route: 503 source_unavailable. The machine's FFmpeg is left out (a runner may have none, and then the
+        // profile check answers 422 first): a canned FFmpeg with a software encoder, so the source is what decides.
+        val noFfmpegNeeded = object : app.nijiyome.server.link.LinkHost by host {
+            override fun ffmpegPath(): File = File(dir, "canned-ffmpeg")
+        }
+        val s = LinkServer.start(
+            LinkConfig(
+                dataDir = File(dir, "pc/link"), serverName = "Torrent PC", port = 0, bindIps = listOf("127.0.0.1"), platform = Platform.LINUX,
+                runner = app.nijiyome.server.link.CannedRunner, discoverRenderNode = false,
+            ),
+            noFfmpegNeeded,
+        ).also { cleanup += { it.stop() } }
         val (phone, _) = pair(s)
         phone.call("POST", "https://127.0.0.1:${s.port}/v1/sessions", """{"source":{"kind":"torrent","uri":"${req.uri}","media_id":"1","episode":1}}""").use { r ->
             assertEquals(503, r.code)
