@@ -185,7 +185,13 @@ class TorrentWebSeedPreviewTest {
             )
         }
         val downloaded = File(settings.downloadDir, "Big Buck Bunny/Big Buck Bunny.mp4")
-        assertContentEquals(video, downloaded.readBytes())
+        // On Windows, libtorrent's async disk flush can lag briefly behind progress == 1.0.
+        runCatching {
+            withTimeout(15_000) {
+                while (!downloaded.isFile || !downloaded.readBytes().contentEquals(video)) delay(150)
+            }
+        }
+        assertTrue(downloaded.isFile && downloaded.readBytes().contentEquals(video), "downloaded file bytes match the seeded video")
         assertTrue(webSeedRequests.any { it.startsWith("Big Buck Bunny/Big Buck Bunny.mp4") }, "fetched from the web seed: $webSeedRequests")
         assertTrue(announces.any { "info_hash=" in it }, "announced to the magnet's tracker after the add")
         assertTrue(repo.trackers(id).any { it.url == "$base/announce" }, "the magnet's tracker is on the torrent: ${repo.trackers(id)}")

@@ -31,6 +31,7 @@ const OLD_NAME_FILES = [
   /^docs\//,
   /^scripts\/migracion\//,
   /^README\.md$/,
+  /^README\.es\.md$/,
   /^THIRD_PARTY_NOTICES\.md$/,
   /^contracts\/extension-host\/globals\.v1\.md$/,
 ];
