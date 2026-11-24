@@ -154,7 +154,7 @@ class ExternalMpvLaunchTest {
     fun mpvIsFoundOnPathOrAtTheCustomPathOnly() {
         val bin = File(tmp, "bin").apply { mkdirs() }
         val mpv = File(bin, "mpv").apply { writeText("#!/bin/sh\n"); setExecutable(true) }
-        assertEquals(mpv, findMpv(null, mapOf("PATH" to "/nonexistent:${bin.path}"), windows = false))
+        assertEquals(mpv, findMpv(null, mapOf("PATH" to "/nonexistent${File.pathSeparator}${bin.path}"), windows = false))
         // A wrong custom path is "not found", never another mpv.
         assertNull(findMpv(File(tmp, "nope/mpv").path, mapOf("PATH" to bin.path), windows = false))
         assertEquals(mpv, findMpv(" ${mpv.path} ", emptyMap(), windows = false))

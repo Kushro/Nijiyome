@@ -161,8 +161,9 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@da187c8e6ffbd3802e00f2477aa5a822b25f2dda # v4.4.4
+      # --continue: every module's tests run and report, so one failing module does not hide the others on Windows.
       - name: Desktop tests (shared modules + app)
-        run: ./gradlew.bat desktopTest :desktopApp:test --no-daemon --stacktrace
+        run: ./gradlew.bat desktopTest :desktopApp:test --continue --no-daemon --stacktrace
       - name: App image (jlink + jpackage)
         run: |
           ./gradlew.bat :desktopApp:createReleaseDistributable --no-daemon --stacktrace

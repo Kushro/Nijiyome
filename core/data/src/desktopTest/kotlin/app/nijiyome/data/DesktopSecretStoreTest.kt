@@ -2,6 +2,7 @@
 package app.nijiyome.data
 
 import kotlinx.coroutines.runBlocking
+import org.junit.Assume.assumeTrue
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermission
@@ -20,6 +21,13 @@ class DesktopSecretStoreTest {
     fun tearDown() {
         dir.deleteRecursively()
     }
+
+    /**
+     * The `secret-tool` stand-ins are bash one-liners, and [SecretServiceVault] is the Linux vault only (Windows uses
+     * [DpapiVault]): those tests run on Linux, where `bash` is the real one.
+     */
+    private fun assumeLinux() =
+        assumeTrue("SecretServiceVault is Linux only", System.getProperty("os.name").orEmpty().startsWith("Linux"))
 
     /** A keyring in memory: [available] false plays a locked keyring / no Secret Service. */
     private class FakeVault(override val id: String = SecretServiceVault.ID) : MasterKeyVault {
@@ -107,6 +115,7 @@ class DesktopSecretStoreTest {
     /** Hallazgo 3 de la revisión: a `secret-tool` that never answers (locked keyring, stuck bus) must not hang the caller. */
     @Test
     fun aSecretToolThatNeverAnswersTimesOut() {
+        assumeLinux()
         val stuck = SecretServiceVault(command = listOf("bash", "-c", "sleep 30", "stand-in"), timeoutSeconds = 1)
         val started = System.currentTimeMillis()
         assertFailsWith<KeyringUnavailable> { stuck.load() }
@@ -121,6 +130,7 @@ class DesktopSecretStoreTest {
 
     @Test
     fun aSecretToolThatAnswersIsRead() {
+        assumeLinux()
         val key = ByteArray(32) { (it * 7).toByte() }
         val b64 = java.util.Base64.getEncoder().encodeToString(key)
         val ok = SecretServiceVault(command = listOf("bash", "-c", "printf '%s\\n' '$b64'", "stand-in"), timeoutSeconds = 5)

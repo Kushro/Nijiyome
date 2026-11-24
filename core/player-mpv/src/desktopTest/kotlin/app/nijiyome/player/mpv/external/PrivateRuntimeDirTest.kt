@@ -4,7 +4,9 @@ package app.nijiyome.player.mpv.external
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
+import org.junit.Assume.assumeTrue
 import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -18,6 +20,10 @@ class PrivateRuntimeDirTest {
     fun cleanUp() {
         tmp.deleteRecursively()
     }
+
+    /** The modes checked here exist only on POSIX file systems; on NTFS the folder is private by the user profile's ACLs. */
+    @BeforeTest
+    fun posixOnly() = assumeTrue("POSIX permissions", tmp.toPath().fileSystem.supportedFileAttributeViews().contains("posix"))
 
     private fun mode(f: File) = PosixFilePermissions.toString(Files.getPosixFilePermissions(f.toPath()))
 
