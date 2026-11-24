@@ -103,6 +103,7 @@ class LsfgVkTest {
     @Test
     fun detectSaysWhatIsMissing() {
         assertEquals(LsfgVk.Missing.NOT_LINUX, LsfgVk.detect(null, env(), home, linux = false, sysconfDir = etc).missing)
+        assumeLinux()
         assertEquals(LsfgVk.Missing.LAYER, LsfgVk.detect(null, env(), home, linux = true, sysconfDir = etc).missing)
         layer(File(tmp, "share/vulkan/implicit_layer.d"))
         assertEquals(LsfgVk.Missing.DLL, LsfgVk.detect(null, env(), home, linux = true, sysconfDir = etc).missing)
