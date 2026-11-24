@@ -21,43 +21,42 @@ streams de extensiones `.kai` que tú eliges e instalas. **La app no trae conten
 
 ## 📸 Capturas
 
+### Escritorio
+
 <table>
   <tr>
-    <td><img src="docs/readme/home.png" alt="Inicio: banner destacado, accesos rápidos y últimos episodios"></td>
-    <td><img src="docs/readme/details.png" alt="Ficha: información, episodios y el panel de fuentes del episodio"></td>
+    <td align="center" valign="top"><img src="docs/readme/home.png" alt="Inicio: banner destacado, accesos rápidos y búsqueda" width="100%"><br><sub>Inicio</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/player.png" alt="El reproductor libmpv reproduciendo un episodio con Anime4K A+A activo" width="100%"><br><sub>Reproductor integrado con Anime4K</sub></td>
   </tr>
   <tr>
-    <td align="center"><sub>Inicio</sub></td>
-    <td align="center"><sub>Ficha y fuentes del episodio</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/source-picker.png" alt="Selector de fuentes del episodio en modo manual, con fuentes en caché de TorBox" width="100%"><br><sub>Fuentes del episodio (en caché de TorBox)</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/torrents-debrid.png" alt="Torrents › Debrid: TorBox recomendado, Real-Debrid y AllDebrid experimentales, ninguno vinculado" width="100%"><br><sub>Torrents › Debrid</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/readme/settings-player.png" alt="Ajustes › Reproductor: lista de shaders de escalado (Anime4K, FSR, FSRCNNX, CAS, NVScaler)"></td>
-    <td><img src="docs/readme/player.png" alt="El reproductor integrado con un clip de prueba y Anime4K activo"></td>
+    <td align="center" valign="top"><img src="docs/readme/extensions.png" alt="Extensiones con una extensión instalada" width="100%"><br><sub>Extensiones</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/settings-appearance.png" alt="Ajustes › Apariencia con las paletas de color" width="100%"><br><sub>Ajustes › Apariencia</sub></td>
   </tr>
   <tr>
-    <td align="center"><sub>Ajustes › Reproductor: shaders de escalado</sub></td>
-    <td align="center"><sub>Reproductor libmpv integrado (clip de prueba)</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/readme/torrents-debrid.png" alt="Torrents › Debrid: TorBox recomendado, los demás servicios experimentales, nada vinculado"></td>
-    <td><img src="docs/readme/extensions.png" alt="Extensiones: una extensión .kai instalada"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Torrents › Debrid</sub></td>
-    <td align="center"><sub>Extensiones (descripción y dominios tapados)</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/readme/manga.png" alt="Manga: carrusel destacado y títulos en tendencia"></td>
-    <td><img src="docs/readme/settings-appearance.png" alt="Ajustes › Apariencia con la paleta Sakura"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Manga</sub></td>
-    <td align="center"><sub>Ajustes › Apariencia (paleta Sakura)</sub></td>
+    <td align="center" valign="top" colspan="2"><img src="docs/readme/manga.png" alt="Manga: banners destacados" width="100%"><br><sub>Manga</sub></td>
   </tr>
 </table>
 
-<sub>App de escritorio 1.1.1 en Linux, perfil nuevo, sin cuentas vinculadas y con la interfaz en inglés. Las portadas vienen de
-AniList. La captura del reproductor es de una versión de desarrollo anterior.</sub>
+### Nijiyome Link
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="68%"><img src="docs/readme/link-desktop.png" alt="Ajustes › Nijiyome Link en la app de escritorio" width="100%"><br><sub>Escritorio: Ajustes › Nijiyome Link</sub></td>
+    <td align="center" valign="top" width="32%"><img src="docs/readme/link-phone.png" alt="Android: dispositivo vinculado con la PC conectada" width="270"><br><sub>Android: dispositivo vinculado</sub></td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/readme/phone-player-link.png" alt="Reproductor de Android con un episodio procesado por la PC mediante Nijiyome Link" width="100%"><br><sub>Reproductor de Android, episodio procesado por la PC con Nijiyome Link</sub></p>
+
+### Android
+
+<p align="center"><img src="docs/readme/phone-home.png" alt="Inicio en Android" width="270"><br><sub>Android: Inicio</sub></p>
+
+<sub>Versión 1.1.2, capturas reales en escritorio (Linux) y Android. Algunos nombres están tapados con barras negras a propósito: nombres de fuentes y sitios, y datos de red.</sub>
 
 ## ✨ Funciones
 

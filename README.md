@@ -21,43 +21,42 @@ extensions that you choose and install yourself. **The app ships no content.**
 
 ## 📸 Screenshots
 
+### Desktop
+
 <table>
   <tr>
-    <td><img src="docs/readme/home.png" alt="Home: featured banner, quick links and the latest episodes"></td>
-    <td><img src="docs/readme/details.png" alt="Details page: info, episodes and the episode sources panel"></td>
+    <td align="center" valign="top"><img src="docs/readme/home.png" alt="Home: spotlight banner, shortcuts and search" width="100%"><br><sub>Home</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/player.png" alt="The libmpv player playing an episode with Anime4K A+A active" width="100%"><br><sub>Built-in player with Anime4K</sub></td>
   </tr>
   <tr>
-    <td align="center"><sub>Home</sub></td>
-    <td align="center"><sub>Details page and episode sources</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/source-picker.png" alt="Episode sources picker in manual mode, with sources cached on TorBox" width="100%"><br><sub>Episode sources (cached on TorBox)</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/torrents-debrid.png" alt="Torrents › Debrid: TorBox recommended, Real-Debrid and AllDebrid experimental, none linked" width="100%"><br><sub>Torrents › Debrid</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/readme/settings-player.png" alt="Settings › Player: the upscaling shader list (Anime4K, FSR, FSRCNNX, CAS, NVScaler)"></td>
-    <td><img src="docs/readme/player.png" alt="The built-in player over a test clip, with Anime4K enabled"></td>
+    <td align="center" valign="top"><img src="docs/readme/extensions.png" alt="Extensions with one extension installed" width="100%"><br><sub>Extensions</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/settings-appearance.png" alt="Settings › Appearance with the color palettes" width="100%"><br><sub>Settings › Appearance</sub></td>
   </tr>
   <tr>
-    <td align="center"><sub>Settings › Player: upscaling shaders</sub></td>
-    <td align="center"><sub>Built-in libmpv player (test clip, Spanish UI)</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/readme/torrents-debrid.png" alt="Torrents › Debrid: TorBox recommended, other services experimental, nothing linked"></td>
-    <td><img src="docs/readme/extensions.png" alt="Extensions: one .kai extension installed"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Torrents › Debrid</sub></td>
-    <td align="center"><sub>Extensions (description and domains covered)</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/readme/manga.png" alt="Manga: featured carousel and trending titles"></td>
-    <td><img src="docs/readme/settings-appearance.png" alt="Settings › Appearance with the Sakura palette"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Manga</sub></td>
-    <td align="center"><sub>Settings › Appearance (Sakura palette)</sub></td>
+    <td align="center" valign="top" colspan="2"><img src="docs/readme/manga.png" alt="Manga: featured banners" width="100%"><br><sub>Manga</sub></td>
   </tr>
 </table>
 
-<sub>Desktop app 1.1.1 on Linux, fresh profile, no account linked. Cover art comes from AniList. The player screenshot is from
-an earlier development build.</sub>
+### Nijiyome Link
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="68%"><img src="docs/readme/link-desktop.png" alt="Settings › Nijiyome Link on the desktop app" width="100%"><br><sub>Desktop: Settings › Nijiyome Link</sub></td>
+    <td align="center" valign="top" width="32%"><img src="docs/readme/link-phone.png" alt="Android: linked device with the PC connected" width="270"><br><sub>Android: linked device</sub></td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/readme/phone-player-link.png" alt="Android player playing an episode processed by the PC over Nijiyome Link" width="100%"><br><sub>Android player, episode processed by the PC over Nijiyome Link</sub></p>
+
+### Android
+
+<p align="center"><img src="docs/readme/phone-home.png" alt="Android Home" width="270"><br><sub>Android: Home</sub></p>
+
+<sub>Version 1.1.2, real screenshots on desktop (Linux) and Android. Some names are covered with black bars on purpose: source and site names, and network details.</sub>
 
 ## ✨ Features
 
