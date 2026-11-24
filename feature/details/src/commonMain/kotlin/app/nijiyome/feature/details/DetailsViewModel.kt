@@ -1,6 +1,7 @@
 package app.nijiyome.feature.details
 
 import app.nijiyome.model.RelationsView
+import app.nijiyome.feature.player.sources.debridOrder
 import app.nijiyome.feature.player.sources.rankForThisDevice
 import app.nijiyome.feature.player.sources.withDebridOrder
 import app.nijiyome.link.LinkApiError
@@ -47,12 +48,14 @@ import app.nijiyome.model.DownloadRepository
 import app.nijiyome.model.StaffEdge
 import app.nijiyome.model.StreamSource
 import app.nijiyome.model.TitleLanguage
+import app.nijiyome.model.torrent.DebridStatus
 import app.nijiyome.model.torrent.TorrentRepository
 import app.nijiyome.model.torrentUri
 import app.nijiyome.ui.state.runCatchingApp
 import app.nijiyome.ui.state.toAppError
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -551,15 +554,46 @@ class DetailsViewModel(
                     s.copy(panel = p.copy(rememberedPick = remembered))
                 }
             }
+            val debridMarks = HashMap<String, DebridStatus>()
+            val checkedHashes = HashSet<String>()
+            var lastRaw: List<RankedSource>? = null
+            fun applyDebrid(raw: List<RankedSource>): List<RankedSource> {
+                val app = settings?.settings?.value ?: return raw
+                val marked = if (debridMarks.isEmpty()) raw else raw.map { s -> debridMarks[s.key]?.let { d -> s.copy(candidate = s.candidate.copy(debrid = d)) } ?: s }
+                return debridOrder(marked, app.sourcePrefs, app.torrent.debrid)
+            }
             val result = runCatchingApp {
-                extensions.candidatesFlow(media, episode).collect { partial ->
-                    val ranked = rankForThisDevice(partial)
-                    last = ranked
-                    if (ranked.isNotEmpty()) publish(LoadState.Ok(ranked), more = true)
+                coroutineScope {
+                    var debridJob: Job? = null
+                    extensions.candidatesFlow(media, episode).collect { partial ->
+                        val ranked = rankForThisDevice(partial)
+                        lastRaw = ranked
+                        val shown = applyDebrid(ranked)
+                        last = shown
+                        if (shown.isNotEmpty()) publish(LoadState.Ok(shown), more = true)
+                        // Check debrid cache progressively as torrent sources arrive instead of waiting for the slowest extension.
+                        if (debrid != null) {
+                            val newHashes = ranked.mapNotNull { it.candidate.torrent?.infoHash?.lowercase() }.filter { it !in checkedHashes }
+                            if (newHashes.isNotEmpty()) {
+                                checkedHashes += newHashes
+                                debridJob?.cancel()
+                                val snapshot = ranked
+                                debridJob = launch {
+                                    val marked = debridOrdered(snapshot)
+                                    marked.forEach { s -> s.candidate.debrid?.let { debridMarks[s.key] = it } }
+                                    val cur = lastRaw
+                                    val updated = applyDebrid(cur)
+                                    last = updated
+                                    if (updated.isNotEmpty()) publish(LoadState.Ok(updated), more = true)
+                                }
+                            }
+                        }
+                    }
+                    debridJob?.join()
                 }
             }
             // 1.1 (F7): the cached badges and, with "Preferir TorBox", the same order as the player once everything answered
-            val final = last?.let { list -> debridOrdered(list) }
+            val final = lastRaw?.let { list -> debridOrdered(list) } ?: last
             publish(
                 result.fold(onSuccess = { LoadState.Ok(final.orEmpty()) }, onFailure = { e -> final?.let { LoadState.Ok(it) } ?: LoadState.Err(e.toAppError()) }),
                 more = false,

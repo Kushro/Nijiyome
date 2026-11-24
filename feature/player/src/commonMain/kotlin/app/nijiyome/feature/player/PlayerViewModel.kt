@@ -742,6 +742,8 @@ class PlayerViewModel(
         val manual = settings.sourcePrefs.mode == SourceMode.MANUAL
         val failure = try {
             coroutineScope {
+                var debridJob: Job? = null
+                val checkedHashes = HashSet<String>()
                 val timer = if (manual) null else launch {
                     delay(AUTO_START_MS)
                     if (flow == null && latestRaw.isNotEmpty()) startFlow(withDebrid(latestRaw))
@@ -758,8 +760,29 @@ class PlayerViewModel(
                         manual && latest.isNotEmpty() -> startFlow(latest)
                         else -> _state.update { it.copy(sources = latest, canPickSource = latest.isNotEmpty()) }
                     }
+                    // Check debrid cache progressively as torrent batches arrive so badges appear without waiting for slow extensions.
+                    if (debrid != null) {
+                        val newHashes = latestRaw.mapNotNull { it.candidate.torrent?.infoHash?.lowercase() }.filter { it !in checkedHashes }
+                        if (newHashes.isNotEmpty()) {
+                            checkedHashes += newHashes
+                            debridJob?.cancel()
+                            val snapshot = latestRaw
+                            debridJob = launch {
+                                withDebrid(snapshot)
+                                latest = orderDebrid(reapplyDebrid(latestRaw, debridMarks))
+                                val curFlow = flow
+                                if (curFlow != null) {
+                                    curFlow.updateSources(latest)
+                                    publishFlow()
+                                } else {
+                                    _state.update { it.copy(sources = latest, canPickSource = latest.isNotEmpty()) }
+                                }
+                            }
+                        }
+                    }
                 }
                 timer?.cancel()
+                debridJob?.join()
             }
             null
         } catch (e: CancellationException) {

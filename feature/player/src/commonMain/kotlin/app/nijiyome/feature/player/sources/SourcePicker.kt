@@ -519,7 +519,10 @@ fun sourceSummaryLine(source: RankedSource): String {
     val c = source.candidate
     val koin = getKoin()
     val prefs = remember { koin.getOrNull<SettingsRepository>()?.settings?.value?.sourcePrefs } ?: SourcePrefs()
-    val parts = mutableListOf(c.extName, c.label)
+    val parts = mutableListOf<String>()
+    c.debrid?.takeIf { it.cached }?.let { parts += stringResource(Res.string.src_tag_debrid_cached, it.service.label) }
+    parts += c.extName
+    parts += c.label
     c.quality.takeIf { it != Quality.UNKNOWN }?.label()?.let { parts += it }
     val subs = langsShort(c.subs, prefs.subLang) ?: if (c.tags.multiSub) stringResource(Res.string.src_picker_several) else null
     subs?.let { parts += stringResource(Res.string.src_picker_subs_inline, it) }

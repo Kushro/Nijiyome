@@ -27,7 +27,11 @@ import app.nijiyome.torrent.policy.alignedIndex
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -103,12 +107,31 @@ class DebridRepositoryImpl(
     private val _accounts = MutableStateFlow<List<DebridAccount>>(emptyList())
     override val accounts: StateFlow<List<DebridAccount>> = _accounts.asStateFlow()
     private val mutex = Mutex()
+    @Volatile private var loaded = false
+    private val loadJob: Job?
 
     @Serializable
     private data class StoredAccount(val service: DebridService, val username: String? = null, val premiumUntilMs: Long? = null, val linkedAtMs: Long)
 
     init {
-        scope?.launch { runCatching { load() } }
+        loadJob = scope?.launch { loadSafe() }
+    }
+
+    private suspend fun loadSafe() {
+        try {
+            load()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.w(TAG, "debrid account load failed: ${errorCode(e)}")
+        }
+    }
+
+    /** Ensures the sealed account list has been loaded before reading [_accounts] (prevents lazy startup race on Android). */
+    private suspend fun ensureLoaded() {
+        if (loaded) return
+        loadJob?.join()
+        if (!loaded) loadSafe()
     }
 
     /** Reads the sealed account list (only services whose key is still stored). Public for tests / a reset. */
@@ -116,11 +139,13 @@ class DebridRepositoryImpl(
         val raw = secrets.get(KEY_ACCOUNTS)
         val stored = raw?.let { runCatching { debridJson.decodeFromString(ListSerializer(StoredAccount.serializer()), it) }.getOrNull() }.orEmpty()
         _accounts.value = stored.filter { secrets.get(SecretKeys.debridApiKey(it.service.id)) != null }.map { it.toModel() }
+        loaded = true
     }
 
     // ------------------------------------------------------------------------------------------------ accounts
 
     override suspend fun link(service: DebridService, apiKey: String): Result<DebridAccount> = try {
+        ensureLoaded()
         val key = apiKey.trim()
         if (key.isEmpty() || key.any { it.isWhitespace() }) throw AppException(AppError.Unknown("debrid:invalid_key"))
         val user = userOf(service, key)
@@ -143,6 +168,7 @@ class DebridRepositoryImpl(
     }
 
     override suspend fun recheck(service: DebridService): Result<DebridAccount> = try {
+        ensureLoaded()
         val key = keyOf(service) ?: throw AppException(AppError.Unknown("debrid:not_linked:${service.id}"))
         val user = userOf(service, key)
         val previous = _accounts.value.firstOrNull { it.service == service }
@@ -174,6 +200,7 @@ class DebridRepositoryImpl(
         }
 
     override suspend fun unlink(service: DebridService) {
+        ensureLoaded()
         if (service == DebridService.TORBOX) {
             torboxIds.clear()
             torboxCache.clear()
@@ -188,6 +215,7 @@ class DebridRepositoryImpl(
 
     /** Moves [service] to the front: the first linked service that has a torrent is the one that plays it (preference order). */
     suspend fun prefer(service: DebridService) {
+        ensureLoaded()
         mutex.withLock {
             val list = _accounts.value
             val hit = list.firstOrNull { it.service == service } ?: return
@@ -200,6 +228,7 @@ class DebridRepositoryImpl(
 
     override suspend fun cached(infoHashes: List<String>): Map<String, Set<DebridService>> {
         if (!settings.enabled) return emptyMap()
+        ensureLoaded()
         val hashes = infoHashes.map { it.lowercase(Locale.ROOT) }.filter { HEX40.matches(it) }.distinct()
         if (hashes.isEmpty()) return emptyMap()
         val out = HashMap<String, MutableSet<DebridService>>()
@@ -235,10 +264,22 @@ class DebridRepositoryImpl(
         val now = clock()
         val fresh = hashes.filter { h -> torboxCache[h]?.let { now - it.second < cacheTtlMs } == true }
         val ask = (hashes - fresh.toSet()).take(MAX_NEW_HASHES)
-        for (batch in ask.chunked(CACHE_BATCH)) {
+        val batches = ask.chunked(CACHE_BATCH)
+        if (batches.size == 1) {
+            val batch = batches[0]
             val hits = torbox.checkCached(key, batch)
             val at = clock()
             batch.forEach { torboxCache[it] = (it in hits) to at }
+        } else if (batches.size > 1) {
+            coroutineScope {
+                batches.map { batch ->
+                    async {
+                        val hits = torbox.checkCached(key, batch)
+                        val at = clock()
+                        batch.forEach { torboxCache[it] = (it in hits) to at }
+                    }
+                }.awaitAll()
+            }
         }
         // 1.1 review #8: an answer past its TTL that was not asked again this time is not trusted
         val at = clock()
@@ -248,12 +289,17 @@ class DebridRepositoryImpl(
 
     override suspend fun markCached(candidates: List<SourceCandidate>): List<SourceCandidate> {
         if (!settings.enabled) return candidates
+        ensureLoaded()
         val linked = _accounts.value.map { it.service }
         if (linked.isEmpty()) return candidates
         val hashes = candidates.filter { it.kind == SourceKind.TORRENT }.mapNotNull { it.torrent?.infoHash }
         if (hashes.isEmpty()) return candidates
         // a slow service never holds the list back: past the budget the list goes on unmarked
-        val map = withTimeoutOrNull(markBudgetMs) { runCatching { cached(hashes) }.getOrNull() } ?: return candidates
+        val map = withTimeoutOrNull(markBudgetMs) { runCatching { cached(hashes) }.getOrNull() }
+        if (map == null) {
+            AppLog.w(TAG, "markCached timed out after ${markBudgetMs}ms for ${hashes.size} hashes")
+            return candidates
+        }
         return candidates.map { c -> c.copy(debrid = debridStatusFor(c, linked, map) ?: c.debrid) }
     }
 
@@ -292,6 +338,7 @@ class DebridRepositoryImpl(
      */
     suspend fun instantStream(infoHash: String, magnet: String?, episode: Int?, titles: List<String> = emptyList()): DebridResolved? {
         if (!settings.enabled) return null
+        ensureLoaded()
         val linked = _accounts.value.map { it.service }
         if (linked.isEmpty()) return null
         val hash = infoHash.lowercase(Locale.ROOT)
@@ -595,7 +642,7 @@ class DebridRepositoryImpl(
         private const val POLL_MS = 1_000L
         private const val FULL_POLLS = 30
         private const val CACHE_TTL_MS = 10 * 60_000L
-        private const val MARK_BUDGET_MS = 6_000L
+        private const val MARK_BUDGET_MS = 12_000L
         private const val MAX_NEW_HASHES = 100
         private const val MAX_CACHE_ENTRIES = 2_000
         private const val FAILED_SKIP_MS = 2 * 60_000L
