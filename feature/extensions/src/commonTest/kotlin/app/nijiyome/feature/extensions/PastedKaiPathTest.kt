@@ -11,7 +11,8 @@ class PastedKaiPathTest {
     fun pastedPaths() {
         assertEquals("C:\\Users\\me\\Downloads\\toko.kai", pastedKaiPath("\"C:\\Users\\me\\Downloads\\toko.kai\""))
         assertEquals("/home/me/toko 2.kai", pastedKaiPath("  /home/me/toko 2.kai "))
-        assertEquals("/home/me/a.KAI", pastedKaiPath("file:///home/me/a.KAI"))
+        // A file URI becomes the host's own path (`\home\me\a.KAI` on Windows).
+        assertEquals(java.io.File("/home/me/a.KAI").path, pastedKaiPath("file:///home/me/a.KAI"))
     }
 
     @Test

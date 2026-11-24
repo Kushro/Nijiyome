@@ -29,7 +29,7 @@ class ExternalDropTest {
         assertEquals(emptyList(), link.files)
         assertEquals("https://example.org/x.png", link.text)
         val uris = externalDrop(StringSelection("file:///tmp/a%20b.kai\r\nfile:///tmp/c.kai"))!!
-        assertEquals(listOf("/tmp/a b.kai", "/tmp/c.kai"), uris.files)
+        assertEquals(listOf(File("/tmp/a b.kai").path, File("/tmp/c.kai").path), uris.files, "the host's own paths")
         assertNull(externalDrop(StringSelection("   ")))
     }
 
@@ -37,7 +37,7 @@ class ExternalDropTest {
     fun pastedPathsAreCleaned() {
         assertEquals("C:\\Users\\x\\a.kai", cleanPastedPath("\"C:\\Users\\x\\a.kai\""))
         assertEquals("/home/x/a b.kai", cleanPastedPath("  '/home/x/a b.kai'  "))
-        assertEquals("/tmp/a b.kai", cleanPastedPath("file:///tmp/a%20b.kai"))
+        assertEquals(File("/tmp/a b.kai").path, cleanPastedPath("file:///tmp/a%20b.kai"))
         assertNull(cleanPastedPath(" \"\" "))
     }
 }

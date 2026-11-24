@@ -3,6 +3,7 @@ package app.nijiyome.player.mpv.external
 
 import java.io.File
 import java.nio.file.Files
+import org.junit.Assume.assumeTrue
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -121,7 +122,7 @@ class ExternalMpvLaunchTest {
     fun theEnvironmentPointsLsfgAtItsOwnConfigOrKeepsItOut() {
         val fg = LsfgLaunch(File("/run/user/1000/nijiyome/lsfg-vk.toml"), 2)
         val withFg = externalMpvEnv(launch(frameGen = fg), emptyMap())
-        assertEquals("/run/user/1000/nijiyome/lsfg-vk.toml", withFg[LsfgVk.ENV_CONFIG])
+        assertEquals(fg.configFile.absolutePath, withFg[LsfgVk.ENV_CONFIG], "the config file's absolute path (a drive letter on Windows)")
         assertTrue(withFg.containsKey(LsfgVk.ENV_DISABLE) && withFg[LsfgVk.ENV_DISABLE] == null)
         assertEquals("1", externalMpvEnv(launch(config = ExternalMpvConfig.App), emptyMap())[LsfgVk.ENV_DISABLE])
         // The user's own mpv keeps the user's own lsfg-vk profiles.
@@ -130,6 +131,7 @@ class ExternalMpvLaunchTest {
 
     @Test
     fun anAppImageDoesNotLeakItsLibrariesIntoMpv() {
+        assumeTrue("an AppImage runs on Linux only", System.getProperty("os.name").orEmpty().startsWith("Linux"))
         val env = mapOf(
             "APPIMAGE" to "/home/u/Nijiyome.AppImage", "APPDIR" to "/tmp/.mount_x", "GTK_PATH" to "/tmp/.mount_x/usr/lib/gtk",
             "LD_LIBRARY_PATH" to "/tmp/.mount_x/usr/lib:/opt/lib", "XDG_DATA_DIRS" to "/tmp/.mount_x/usr/share:/usr/share",

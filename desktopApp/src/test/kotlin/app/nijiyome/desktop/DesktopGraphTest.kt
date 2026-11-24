@@ -176,7 +176,9 @@ class DesktopGraphTest {
         assertEquals(File("/h/.config/Nijiyome"), AppPaths.resolve({ null }, osName = "Linux", home = "/h").dataDir)
         assertEquals(File("C:/Roaming/Nijiyome"), AppPaths.resolve(mapOf("APPDATA" to "C:/Roaming")::get, osName = "Windows 11", home = "C:/u").dataDir)
         assertEquals(File("/tmp/override"), AppPaths.resolve(mapOf("NIJIYOME_DATA_DIR" to "/tmp/override")::get, osName = "Linux", home = "/h").dataDir)
-        assertNotNull(AppPaths(File("/dev/null/not-a-dir")).prepare(), "an unusable directory must be reported")
+        // A folder under a regular file cannot exist on any system (`/dev/null/...` can be created on Windows).
+        val file = Files.createTempFile("nijiyome-not-a-dir", ".txt").toFile().apply { deleteOnExit() }
+        assertNotNull(AppPaths(File(file, "not-a-dir")).prepare(), "an unusable directory must be reported")
     }
 }
 

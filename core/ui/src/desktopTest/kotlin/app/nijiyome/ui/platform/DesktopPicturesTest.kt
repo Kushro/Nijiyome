@@ -32,7 +32,9 @@ class DesktopPicturesTest {
 
     @Test
     fun theShownPathAbbreviatesHome() {
-        assertEquals("~/Imágenes/Nijiyome/a.png", DesktopPictures.shown(File(home, "Imágenes/Nijiyome/a.png"), home.path))
-        assertEquals("/srv/a.png", DesktopPictures.shown(File("/srv/a.png"), home.path))
+        // The host's separator (`~\Imágenes\...` on Windows).
+        val sep = File.separator
+        assertEquals("~${sep}Imágenes${sep}Nijiyome${sep}a.png", DesktopPictures.shown(File(home, "Imágenes/Nijiyome/a.png"), home.path))
+        assertEquals(File("/srv/a.png").path, DesktopPictures.shown(File("/srv/a.png"), home.path))
     }
 }

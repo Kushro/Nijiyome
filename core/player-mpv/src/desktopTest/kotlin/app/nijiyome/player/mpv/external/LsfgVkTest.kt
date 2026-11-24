@@ -2,6 +2,7 @@
 package app.nijiyome.player.mpv.external
 
 import java.io.File
+import org.junit.Assume.assumeTrue
 import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -39,6 +40,9 @@ class LsfgVkTest {
 
     private fun steamDir() = File(home, ".local/share/Steam/steamapps/common/Lossless Scaling").apply { mkdirs() }
 
+    /** lsfg-vk is a Linux Vulkan layer: [LsfgVk.detect] answers NOT_LINUX elsewhere, so its paths are Linux paths. */
+    private fun assumeLinux() = assumeTrue("lsfg-vk runs on Linux only", System.getProperty("os.name").orEmpty().startsWith("Linux"))
+
     @Test
     fun manifestsOfBothMajorVersionsAreRecognised() {
         assertTrue(LsfgVk.isLsfgManifest(v2))
@@ -49,6 +53,7 @@ class LsfgVkTest {
 
     @Test
     fun theLayerIsFoundWhereTheVulkanLoaderLooks() {
+        assumeLinux()
         assertNull(LsfgVk.findLayer(env(), home, etc))
         val other = layer(File(tmp, "share/vulkan/implicit_layer.d"), "mangohud.json", """{"layer":{"name":"VK_LAYER_MANGOHUD_overlay"}}""")
         assertNull(LsfgVk.findLayer(env(), home, etc), "${other.name} is another layer")
@@ -127,6 +132,7 @@ class LsfgVkTest {
 
     @Test
     fun theDedicatedConfigHasOneProfileForMpv() {
+        assumeLinux()
         val dll = File("/games/Lossless Scaling/lsfg-vk.dll")
         val t = LsfgVk.configToml(9, 0.85f, performance = true, dll = dll)
         assertTrue(t.startsWith("version = 2"))

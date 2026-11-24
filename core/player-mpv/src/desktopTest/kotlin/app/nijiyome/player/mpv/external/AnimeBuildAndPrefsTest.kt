@@ -126,7 +126,10 @@ class AnimeBuildAndPrefsTest {
         AnimeBuild.prepare(z, dir, digest)
         assertTrue(File(dir, "scripts/uosc/main.lua").isFile)
         assertTrue(File(dir, "scripts/uosc/bin/ziggy-linux").canExecute())
-        assertFalse(File(dir, "scripts/uosc/main.lua").canExecute())
+        // Executable bits exist only on POSIX file systems (on Windows every file reports canExecute()).
+        if (dir.toPath().fileSystem.supportedFileAttributeViews().contains("posix")) {
+            assertFalse(File(dir, "scripts/uosc/main.lua").canExecute())
+        }
         assertEquals(AnimeBuild.markerBody(digest), File(dir, AnimeBuild.MARKER).readText())
         val mpvConf = File(dir, "mpv.conf").readText()
         assertTrue("${AnimeBuild.DISABLED_PREFIX}vo=gpu-next" in mpvConf && "sub-font=\"Hey Comic\"" in mpvConf)

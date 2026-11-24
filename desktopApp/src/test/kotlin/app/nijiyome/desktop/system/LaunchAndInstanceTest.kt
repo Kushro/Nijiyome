@@ -15,6 +15,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
+import org.junit.Assume.assumeTrue
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,13 +34,14 @@ class LaunchAndInstanceTest {
 
     @Test
     fun linksAndFilesOfACommandLine() {
-        val files = setOf("/v/ep 1.mkv", "/t/show.torrent")
+        // A file URI turns into the host's own path (`\t\show.torrent` on Windows): both spellings are files here.
+        val files = listOf("/v/ep 1.mkv", "/t/show.torrent").flatMap { listOf(it, File(it).path) }.toSet()
         val isFile = { p: String -> p in files }
         assertEquals(LaunchTarget.Torrent("magnet:?xt=urn:btih:abc"), LaunchArgs.targetOf("magnet:?xt=urn:btih:abc", isFile))
         assertEquals(LaunchTarget.Torrent("MAGNET:?xt=urn:btih:abc"), LaunchArgs.targetOf("MAGNET:?xt=urn:btih:abc", isFile))
         assertEquals(LaunchTarget.Torrent("/t/show.torrent"), LaunchArgs.targetOf("/t/show.torrent", isFile))
-        assertEquals(LaunchTarget.Torrent("/t/show.torrent"), LaunchArgs.targetOf("file:///t/show.torrent", isFile))
-        assertEquals(LaunchTarget.VideoFile("/v/ep 1.mkv"), LaunchArgs.targetOf("file:///v/ep%201.mkv", isFile))
+        assertEquals(LaunchTarget.Torrent(File("/t/show.torrent").path), LaunchArgs.targetOf("file:///t/show.torrent", isFile))
+        assertEquals(LaunchTarget.VideoFile(File("/v/ep 1.mkv").path), LaunchArgs.targetOf("file:///v/ep%201.mkv", isFile))
         assertEquals(
             LaunchTarget.OAuth("nijiyome://oauth/anilist#access_token=T"),
             LaunchArgs.targetOf("nijiyome://oauth/anilist#access_token=T", isFile),
@@ -141,7 +143,13 @@ class LaunchAndInstanceTest {
     @Test
     fun aLongDataDirectoryUsesAPrivateUnguessableFolder() {
         val deep = File(dir, "x".repeat(120)).apply { mkdirs() }
-        val tmp = File(dir, "tmp").apply { mkdirs() }
+        // Its own folder straight in the temporary directory, as the app uses it: nested in [dir] the socket path
+        // (`<tmp>/nijiyome-<random>/instance.sock`) can pass the ~100 bytes a socket allows on a runner with a long TEMP.
+        val tmp = Files.createTempDirectory("t").toFile().apply { deleteOnExit() }
+        assumeTrue(
+            "the temporary folder is short enough for a socket path: $tmp",
+            File(tmp, "nijiyome-12345678901234567890/instance.sock").absolutePath.toByteArray().size <= 100,
+        )
         val received = LinkedBlockingQueue<List<String>>()
         val first = InstanceChannel.listen(deep, tmpDir = tmp) { received.put(it) }!!
         val path = InstanceChannel.clientPath(deep)!!
@@ -162,6 +170,7 @@ class LaunchAndInstanceTest {
         assertFalse(File(deep, InstanceChannel.POINTER_FILE).exists())
         assertTrue(tmp.listFiles().isNullOrEmpty(), "the private folder goes away with the app")
         assertFalse(InstanceChannel.send(deep, listOf("x")))
+        tmp.deleteRecursively()
     }
 
     /** Hallazgo 16: a client that never ends its message, or sends a giant line, holds nothing and blocks nobody. */

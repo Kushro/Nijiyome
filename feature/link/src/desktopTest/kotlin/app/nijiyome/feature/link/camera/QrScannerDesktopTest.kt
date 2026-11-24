@@ -9,6 +9,7 @@ import kotlinx.coroutines.withTimeout
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
+import org.junit.Assume.assumeTrue
 import java.nio.file.Files
 import javax.imageio.ImageIO
 import kotlin.test.Test
@@ -126,6 +127,7 @@ class QrScannerDesktopTest {
 
     @Test
     fun captureNodesComeFromSysfsWithoutOpeningAnything() {
+        assumeTrue("V4L2 is the Linux capture API (Windows uses DirectShow)", System.getProperty("os.name").orEmpty().startsWith("Linux"))
         val root = Files.createTempDirectory("v4l").toFile()
         fun node(name: String, label: String?, index: String?) = File(root, name).apply {
             mkdirs()

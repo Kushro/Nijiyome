@@ -13,6 +13,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import java.io.File
+import org.junit.Assume.assumeTrue
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,8 +40,12 @@ class HiddenBrowserLogicTest {
 
     private val elf = "\u007fELF"
 
+    /** The fake Linux file system is keyed by `/` paths; on a Windows host `File.path` turns them into `\` ones. */
+    private fun assumeLinuxHost() = assumeTrue("a simulated Linux file system", File.separatorChar == '/')
+
     @Test
     fun findsTheFirstUsualBrowserAndPrefersAValidManualPath() {
+        assumeLinuxHost()
         val fs = Fs(
             mapOf(
                 "/usr/bin/microsoft-edge-stable" to Triple(true, elf, "/opt/microsoft/msedge/msedge"),
@@ -62,6 +67,7 @@ class HiddenBrowserLogicTest {
 
     @Test
     fun aManualPathMustBeAnExecutableAndNotASandboxedWrapper() {
+        assumeLinuxHost()
         val fs = Fs(
             mapOf(
                 "/home/u/notes.txt" to Triple(false, "hello", null),
@@ -83,6 +89,7 @@ class HiddenBrowserLogicTest {
 
     @Test
     fun flatpakAndSnapInstallsAreReportedNotUsed() {
+        assumeLinuxHost()
         assertEquals("Flatpak (com.google.Chrome)", Fs(mapOf("/var/lib/flatpak/exports/bin/com.google.Chrome" to Triple(true, "#!/bin/sh", null))).locator().sandboxedInstall())
         assertEquals("Flatpak (org.chromium.Chromium)", Fs(mapOf("/home/u/.local/share/flatpak/exports/bin/org.chromium.Chromium" to Triple(true, "#!/bin/sh", null))).locator().sandboxedInstall())
         assertEquals("Snap (chromium)", Fs(mapOf("/snap/bin/chromium" to Triple(true, elf, "/usr/bin/snap"))).locator().sandboxedInstall())

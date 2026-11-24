@@ -115,13 +115,15 @@ class DesktopMpvPiecesTest {
     @Test
     fun qualityControllerWritesDesktopValues() {
         val props = HashMap<String, String>()
-        val port = DesktopQualityPort(write = { k, v -> props[k] = v }, readProperty = { props[it] }, windows = false)
+        // The host's own rules: on Windows the shader paths start with a drive letter and mpv's list separator is `;`.
+        val windows = isWindows()
+        val port = DesktopQualityPort(write = { k, v -> props[k] = v }, readProperty = { props[it] }, windows = windows)
         val c = MpvQualityController(port, DesktopShaderInstaller(File(tmp, "shaders")), QualityRequest(preset = "anime4k-a"))
-        assertEquals(LINUX_AUTO_HWDEC, props["hwdec"])
+        assertEquals(if (windows) "auto-safe" else LINUX_AUTO_HWDEC, props["hwdec"])
         assertEquals("", props["glsl-shaders"], "the chain waits for the video size")
         c.onVideoSize(1280, 720)
         c.onViewport(1920, 1080)
-        val chain = props["glsl-shaders"]!!.split(":")
+        val chain = props["glsl-shaders"]!!.split(if (windows) ";" else ":")
         assertEquals(c.state.value.activeShaders.size, chain.size)
         assertTrue(chain.all { File(it).isFile && it.startsWith(File(tmp, "shaders").absolutePath) }, "$chain")
         c.setDecoder(DecoderMode.SW)
