@@ -134,14 +134,37 @@ jobs:
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         with:
           arch: x64
-      # NSIS ships on GitHub's Windows images; other images get it from Chocolatey.
+      # NSIS ships on GitHub's Windows images. Elsewhere (Avrea) the official NSIS 3.10 zip is downloaded and checked against
+      # its SHA-256 (the same file from three SourceForge mirrors; its SHA-1 matches the one SourceForge publishes), so the
+      # build does not depend on the runner's Chocolatey mirror. Chocolatey stays only as a last resort.
       - name: NSIS
+        env:
+          NSIS_ZIP_URL: https://downloads.sourceforge.net/project/nsis/NSIS%203/3.10/nsis-3.10.zip
+          NSIS_ZIP_SHA256: fcdce3229717a2a148e7cda0ab5bdb667f39d8fb33ede1da8dabc336bd5ad110
         run: |
-          if (-not (Get-Command makensis -ErrorAction SilentlyContinue) -and -not (Test-Path 'C:\Program Files (x86)\NSIS\makensis.exe')) {
-            # A fixed version; Chocolatey checks the installer against the checksum its package pins.
-            choco install nsis --version=3.10 -y --no-progress
-            if ($LASTEXITCODE -ne 0) { throw "choco install nsis failed ($LASTEXITCODE)" }
+          if ((Get-Command makensis -ErrorAction SilentlyContinue) -or (Test-Path 'C:\Program Files (x86)\NSIS\makensis.exe')) { exit 0 }
+          $zip = Join-Path $env:RUNNER_TEMP 'nsis-3.10.zip'
+          $ok = $false
+          foreach ($i in 1..4) {
+            try {
+              Invoke-WebRequest -Uri $env:NSIS_ZIP_URL -OutFile $zip -UserAgent 'Wget/1.21' -MaximumRedirection 10 -TimeoutSec 120
+              $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($hash -eq $env:NSIS_ZIP_SHA256) { $ok = $true; break }
+              Write-Warning "NSIS zip hash mismatch ($hash), attempt $i"
+            } catch { Write-Warning "NSIS download failed, attempt ${i}: $_" }
+            Start-Sleep -Seconds (10 * $i)
           }
+          if ($ok) {
+            Expand-Archive -Path $zip -DestinationPath $env:RUNNER_TEMP -Force
+            $dir = Join-Path $env:RUNNER_TEMP 'nsis-3.10'
+            if (-not (Test-Path (Join-Path $dir 'makensis.exe'))) { throw 'makensis.exe missing from the NSIS zip' }
+            Add-Content -Path $env:GITHUB_PATH -Value $dir
+            exit 0
+          }
+          Write-Warning 'Official NSIS zip unavailable; trying Chocolatey'
+          choco install nsis --version=3.10 -y --no-progress
+          if ($LASTEXITCODE -ne 0) { choco install nsis --version=3.10 -y --no-progress --source https://community.chocolatey.org/api/v2/ }
+          if ($LASTEXITCODE -ne 0) { throw "NSIS could not be installed ($LASTEXITCODE)" }
       - name: Installer and portable zip
         env:
           NIJIYOME_ANILIST_CLIENT_ID_DESKTOP: ${{ env.ANILIST_DESKTOP }}
