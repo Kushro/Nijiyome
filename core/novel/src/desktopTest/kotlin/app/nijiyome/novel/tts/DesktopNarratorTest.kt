@@ -184,15 +184,19 @@ class DesktopNarratorTest {
         val highlighted = CopyOnWriteArrayList<Int?>()
         val watch = watch(n.currentParagraph, highlighted)
         n.speak(chapter("One.", "", "  ", "Two.", "Three."), fromParagraph = 0)
-        for (expected in listOf("One.", "Two.", "Three.")) {
+        for ((expected, index) in listOf("One." to 0, "Two." to 3, "Three." to 4)) {
             assertEquals(expected, withTimeout(5_000) { player.started.receive() })
             assertEquals(TtsState.SPEAKING, n.state.value)
+            // The highlight is set before the clip starts, so it is checked here, not from what a collector saw:
+            // a StateFlow collector may skip a value on a slow machine (conflation).
+            assertEquals(index, n.currentParagraph.value)
             player.finish()
         }
         n.state.until(TtsState.IDLE)
         watch.cancel()
         assertEquals(listOf("One.", "Two.", "Three."), player.played)
-        assertEquals(listOf(0, 3, 4), highlighted.filterNotNull().distinct())
+        val seen = highlighted.filterNotNull().distinct()
+        assertTrue(seen.all { it in setOf(0, 3, 4) } && seen == seen.sorted(), "blank paragraphs are never highlighted: $seen")
         assertNull(n.currentParagraph.value)
         assertNull(n.lastError.value)
         // The next paragraph was synthesised while the current one played (prefetch), each once.
