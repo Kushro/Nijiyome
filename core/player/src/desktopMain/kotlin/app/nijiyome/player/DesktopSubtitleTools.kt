@@ -142,6 +142,9 @@ class DesktopSubtitleTools(
             val file = when {
                 scheme == "file" -> runCatching { File(URI(url)) }.getOrNull()
                 url.startsWith("/") -> File(url)
+                // 1.1.2: a Windows path (`C:\...`, `C:/...`) is not a URL whose scheme is the drive letter; nor is a UNC path
+                // (`\\server\share\...`). Either is accepted only where it is absolute on this OS, and still only inside [picked].
+                WINDOWS_PATH.matches(url) || url.startsWith("\\\\") -> File(url).takeIf { it.isAbsolute }
                 else -> null
             } ?: throw IOException("unsupported subtitle URL scheme")
             val dir = picked.canonicalFile

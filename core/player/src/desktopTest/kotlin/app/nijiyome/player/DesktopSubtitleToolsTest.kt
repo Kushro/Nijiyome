@@ -73,6 +73,27 @@ class DesktopSubtitleToolsTest {
         assertEquals(listOf("Hola"), DesktopSubtitleTools(File(root, "cache"), File(root, "fonts"), OkHttpClient()).fetch(copy.absolutePath, emptyMap()).map { it.text })
     }
 
+    /**
+     * 1.1.2 (Windows CI): `C:\...\picked.srt` was read as a URL with the scheme "c" and refused, so a picked file given as a plain
+     * Windows path could not be loaded. A drive or UNC path is now a file, still only inside the picked folder; on other systems
+     * such a string is not an absolute path and stays refused.
+     */
+    @Test
+    fun windowsPathsAreFilesNotSchemes() {
+        val picked = File(root, "cache/subs").apply { mkdirs() }
+        val windows = System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
+        for (url in listOf("C:\\Users\\x\\secret.srt", "C:/Users/x/secret.srt", "\\\\server\\share\\secret.srt")) {
+            val e = assertFailsWith<IOException>(url) { DesktopSubtitleTools.fetchTarget(url, picked) }
+            if (windows) assertEquals("subtitle file was not picked by the user", e.message, url)
+        }
+        val copy = File(picked, "a.srt").apply { writeText(srtText) }
+        if (windows) {
+            assertEquals(copy.canonicalFile, (DesktopSubtitleTools.fetchTarget(copy.absolutePath, picked) as DesktopSubtitleTools.FetchTarget.Local).file)
+            val lower = copy.absolutePath.replaceFirstChar { it.lowercase() }
+            assertEquals(copy.canonicalFile, (DesktopSubtitleTools.fetchTarget(lower, picked) as DesktopSubtitleTools.FetchTarget.Local).file)
+        }
+    }
+
     @Test
     fun remoteTracksAreCappedWhileReadingAndNeedASubtitleType() = runBlocking<Unit> {
         MockWebServer().use { server ->
