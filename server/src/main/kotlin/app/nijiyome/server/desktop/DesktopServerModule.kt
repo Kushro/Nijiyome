@@ -61,6 +61,7 @@ fun desktopServerModule(
             // the CA and server keys are sealed with a key kept in the app's secret store (system keychain)
             keySealer = getOrNull<SecretStore>()?.let(::SecretStoreSealer) ?: KeySealer.Plain,
             lsfgDll = { lsfgDll(koin) },
+            appVersion = { koin.getProperty<String>(APP_VERSION_PROPERTY) },
         ).also { it.start() }
     } onClose { it?.close() }
     single<LinkServerController> { get<DesktopServers>() }
@@ -74,3 +75,6 @@ fun desktopServerModule(
     single<LocalMediaRoute> { get<LoopbackMediaRoute>() }
     single<SendToPhone> { get<DesktopServers>() }
 }
+
+/** The Koin property the desktop app sets to its packaged version (`DesktopAppProperties.VERSION`). */
+internal const val APP_VERSION_PROPERTY = "NIJIYOME_VERSION"

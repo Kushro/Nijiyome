@@ -123,6 +123,8 @@ class DesktopServers(
      * time the Link server starts; null or blank = search Steam.
      */
     private val lsfgDll: () -> String? = { null },
+    /** The app version phones see in the capabilities (`server_version`); the packaged version, not a fixed string. */
+    private val appVersion: () -> String? = { null },
     /** Whether "Permitir en red privada" exists here (Windows). */
     private val firewallButton: Boolean = isWindows(),
     /** Adds the Windows Firewall rule of these ports (UAC prompt); tests replace it. */
@@ -235,6 +237,7 @@ class DesktopServers(
         anime4kDir = runCatching { anime4kDir() }.getOrNull(),
         allowHttpSources = settings.allowHttpSources,
         lsfg = LsfgSetup.Detect(runCatching { lsfgDll() }.getOrNull()?.trim()?.ifBlank { null }),
+        serverVersion = runCatching { appVersion() }.getOrNull()?.trim()?.removePrefix("v")?.ifBlank { null } ?: LinkConfig.UNKNOWN_VERSION,
     )
 
     override fun regenerateIdentity() = launchLocked {

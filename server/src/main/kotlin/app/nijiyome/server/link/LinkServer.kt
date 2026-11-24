@@ -78,7 +78,7 @@ class LinkConfig(
     val gpu: GpuInfo? = null,
     val lsfg: LsfgSetup = LsfgSetup.Off,
     val tuning: SessionTuning = SessionTuning(),
-    val serverVersion: String = "1.0.0",
+    val serverVersion: String = UNKNOWN_VERSION,
     // test hooks (production leaves them null)
     val engine: Engine? = null,
     val runner: CommandRunner? = null,
@@ -90,6 +90,9 @@ class LinkConfig(
 ) {
     companion object {
         const val DEFAULT_PORT = 47321
+
+        /** What `server_version` says when the app did not pass its version (tests, a bare server). */
+        const val UNKNOWN_VERSION = "0.0.0"
     }
 }
 

@@ -162,6 +162,17 @@ class DesktopServersTest {
     }
 
     @Test
+    fun phonesSeeTheAppVersionNotAFixedOne() {
+        val dir = Files.createTempDirectory("nijiyome-ds-version").toFile().also { d -> cleanup += { d.deleteRecursively() } }
+        val withVersion = DesktopServers(dir, { TestHost() }, FakeCatalog(), bindIps = listOf("127.0.0.1"), appVersion = { "v1.1.3" })
+        cleanup += { withVersion.close() }
+        assertEquals("1.1.3", withVersion.linkConfig().serverVersion)
+        val without = DesktopServers(dir, { TestHost() }, FakeCatalog(), bindIps = listOf("127.0.0.1"))
+        cleanup += { without.close() }
+        assertEquals(app.nijiyome.server.link.LinkConfig.UNKNOWN_VERSION, without.linkConfig().serverVersion)
+    }
+
+    @Test
     fun displayFingerprintGroupsTheFirstSixteenDigits() {
         assertEquals("7A3F 91C2 0E5D B8A4", DesktopServers.displayFingerprint("7a3f91c20e5db8a4ffff"))
     }
