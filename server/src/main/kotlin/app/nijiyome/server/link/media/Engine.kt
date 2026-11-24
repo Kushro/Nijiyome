@@ -3,6 +3,7 @@
 // Enigmata-Temple media.rs `run_chain`.
 package app.nijiyome.server.link.media
 
+import app.nijiyome.model.AppLog
 import app.nijiyome.server.link.SubtitleOutput
 import app.nijiyome.server.link.SubtitleTrack
 import app.nijiyome.server.link.Subtitles
@@ -85,32 +86,34 @@ object MediaProcesses {
 }
 
 class FfmpegEngine(val program: File, val ffprobe: File? = siblingFfprobe(program)) : Engine {
-    private fun builder(program: File, args: List<String>, workdir: File): ProcessBuilder {
+    private fun builder(program: File, args: List<String>, workdir: File, captureStderr: Boolean = false): ProcessBuilder {
         val pb = ProcessBuilder(listOf(program.path) + args).directory(workdir)
         pb.environment().putAll(Lsfg.VULKAN_EXTRA_ENV)
         // Diagnostics: with NIJIYOME_LINK_MEDIA_LOG=<dir> each media process appends its stderr to <dir>/<program>.log
         val logDir = System.getenv(MEDIA_LOG_ENV)?.let(::File)
         if (logDir != null && (logDir.isDirectory || logDir.mkdirs())) {
             pb.redirectError(ProcessBuilder.Redirect.appendTo(File(logDir, "${program.nameWithoutExtension}.log")))
-        } else {
+        } else if (!captureStderr) {
             pb.redirectError(ProcessBuilder.Redirect.DISCARD)
         }
         return pb
     }
 
     override suspend fun spawn(job: EngineJob): EngineProcess = withContext(Dispatchers.IO) {
+        val logDir = System.getenv(MEDIA_LOG_ENV)?.let(::File)
+        val capture = logDir == null
         val lsfg = job.lsfg
         if (lsfg == null) {
-            val pb = builder(program, job.args, job.workdir)
+            val pb = builder(program, job.args, job.workdir, captureStderr = capture)
                 .redirectInput(ProcessBuilder.Redirect.from(nullFile()))
                 .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-            Chain(listOf(MediaProcesses.track(pb.start())))
+            Chain(listOf(MediaProcesses.track(pb.start())), capture)
         } else {
             // FFmpeg A | temple-lsfg | FFmpeg B: the JDK connects the pipes; a failed start leaves nothing running
-            val a = builder(program, lsfg.decode, job.workdir).redirectInput(ProcessBuilder.Redirect.from(nullFile()))
-            val h = builder(lsfg.helper, lsfg.helperArgs, job.workdir)
-            val e = builder(program, job.args, job.workdir).redirectOutput(ProcessBuilder.Redirect.DISCARD)
-            Chain(ProcessBuilder.startPipeline(listOf(a, h, e)).map(MediaProcesses::track))
+            val a = builder(program, lsfg.decode, job.workdir, captureStderr = capture).redirectInput(ProcessBuilder.Redirect.from(nullFile()))
+            val h = builder(lsfg.helper, lsfg.helperArgs, job.workdir, captureStderr = capture)
+            val e = builder(program, job.args, job.workdir, captureStderr = capture).redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            Chain(ProcessBuilder.startPipeline(listOf(a, h, e)).map(MediaProcesses::track), capture)
         }
     }
 
@@ -172,27 +175,63 @@ class FfmpegEngine(val program: File, val ffprobe: File? = siblingFfprobe(progra
 
     /**
      * A running process chain (one process, or the three LSFG stages): success only when every stage exits with 0; the first
-     * failure kills the rest and all are awaited.
+     * failure kills the rest and all are awaited. Keeps a small sanitized tail of stderr to log on unexpected failures.
      */
-    private class Chain(private val stages: List<Process>) : EngineProcess {
+    private class Chain(private val stages: List<Process>, captureStderr: Boolean) : EngineProcess {
+        @Volatile private var killedExternally = false
+        private val stderrTail = ArrayDeque<String>()
+        private val drainThreads: List<Thread> = if (captureStderr) {
+            stages.mapIndexed { idx, p ->
+                Thread({
+                    runCatching {
+                        p.errorStream.bufferedReader().useLines { lines ->
+                            for (line in lines) {
+                                val cleaned = sanitizeMediaStderr(line)
+                                if (cleaned.isEmpty()) continue
+                                synchronized(stderrTail) {
+                                    if (stderrTail.size >= MAX_STDERR_LINES) stderrTail.removeFirst()
+                                    stderrTail.addLast(if (stages.size > 1) "s$idx: $cleaned" else cleaned)
+                                }
+                            }
+                        }
+                    }
+                }, "link-media-stderr-$idx").apply { isDaemon = true; start() }
+            }
+        } else {
+            emptyList()
+        }
+
         init {
             // whichever stage fails first takes the others down (they usually die of the broken pipe anyway)
-            stages.forEach { p -> p.onExit().thenAccept { if (it.exitValue() != 0) kill() } }
+            stages.forEach { p -> p.onExit().thenAccept { if (it.exitValue() != 0) killInternal() } }
         }
 
         override suspend fun await(): EngineExit {
             var ok = true
-            for (p in stages) {
+            val codes = IntArray(stages.size)
+            for ((i, p) in stages.withIndex()) {
                 val code = p.onExit().await().exitValue()
+                codes[i] = code
                 if (code != 0) {
                     ok = false
-                    kill()
+                    killInternal()
                 }
+            }
+            if (!ok && !killedExternally) {
+                drainThreads.forEach { runCatching { it.join(150) } }
+                val tail = synchronized(stderrTail) { stderrTail.joinToString(" | ").take(MAX_STDERR_CHARS) }
+                val suffix = if (tail.isNotEmpty()) ": $tail" else ""
+                AppLog.w("link", "media process failed (exit=${codes.joinToString(",")})$suffix")
             }
             return if (ok) EngineExit.SUCCESS else EngineExit.FAILED
         }
 
         override fun kill() {
+            killedExternally = true
+            killInternal()
+        }
+
+        private fun killInternal() {
             stages.forEach(MediaProcesses::kill)
         }
     }
@@ -201,6 +240,22 @@ class FfmpegEngine(val program: File, val ffprobe: File? = siblingFfprobe(progra
         const val MEDIA_LOG_ENV = "NIJIYOME_LINK_MEDIA_LOG"
         private const val PROBE_TIMEOUT_MS = 20_000L
         private const val MAX_PROBE_OUTPUT = 256 * 1024
+        private const val MAX_STDERR_LINES = 8
+        private const val MAX_STDERR_CHARS = 900
+        private val URL_RE = Regex("""https?://\S+""", RegexOption.IGNORE_CASE)
+        private val UNIX_PATH_RE = Regex("""(?<![\w])/(?:[^\s:'",;)]+/)+[^\s:'",;)]*""")
+        private val WIN_PATH_RE = Regex("""[A-Za-z]:\\[^\s:'",;)]+""")
+
+        /** Strips URLs, file paths and control characters from a media stderr line before writing it to AppLog. */
+        internal fun sanitizeMediaStderr(line: String): String {
+            val trimmed = line.trim().filterNot { it.isISOControl() }
+            if (trimmed.isEmpty()) return ""
+            return trimmed
+                .replace(URL_RE, "<url>")
+                .replace(WIN_PATH_RE, "<path>")
+                .replace(UNIX_PATH_RE, "<path>")
+                .take(180)
+        }
 
         /** `ffprobe[.exe]` in FFmpeg's folder. */
         fun siblingFfprobe(ffmpeg: File): File? =

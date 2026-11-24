@@ -4,6 +4,7 @@ package app.nijiyome.server.link
 
 import app.nijiyome.link.PlayerStateDto
 import app.nijiyome.link.SessionCreatedDto
+import app.nijiyome.model.AppLog
 import app.nijiyome.server.http.KtorServer
 import app.nijiyome.server.link.media.Anime4k
 import app.nijiyome.server.link.media.Anime4kMode
@@ -248,12 +249,28 @@ class LinkServer private constructor(
             }
             var gpu = cfg.gpu ?: GpuInfo.guessWith(detected, renderNode)
             if (cfg.gpu == null) {
-                gpu = gpu.copy(vulkan = detected.libplacebo)
+                val vulkanOk = if (detected.libplacebo && cfg.runner == null && ffmpeg != null) {
+                    probeLibplaceboVulkan(ffmpeg).also { ok ->
+                        if (!ok) AppLog.w("link", "libplacebo/Vulkan probe failed; Anime4K profiles disabled")
+                    }
+                } else {
+                    detected.libplacebo
+                }
+                gpu = gpu.copy(vulkan = vulkanOk)
                 if (gpu.name.isEmpty()) lsfg.device?.let { gpu = gpu.copy(name = it) }
             }
             val largeOk = shadersOk && cfg.anime4kDir?.let { Anime4k.chainPresent(it, Anime4kMode.A, Anime4kVariant.L) } == true
             val nvenc = cfg.nvencDevice ?: (cfg.platform != Platform.LINUX || File("/dev/nvidiactl").exists() || renderNode?.vendor == Vendor.NVIDIA)
             val env = Environment(detected, gpu, shadersOk, cfg.platform, renderNode, lsfg, largeOk, nvenc)
+            if (cfg.runner == null) {
+                val availProfiles = app.nijiyome.server.link.media.Profiles.CATALOG.count(env::profileAvailable)
+                AppLog.i(
+                    "link",
+                    "capabilities: encoders=${env.usableEncoders().joinToString(",") { it.wire }.ifEmpty { "none" }} " +
+                        "libplacebo=${detected.libplacebo} vulkan=${gpu.vulkan} shaders=$shadersOk large=$largeOk " +
+                        "lsfg=${lsfg.isAvailable}${lsfg.reason?.let { "($it)" } ?: ""} profiles=$availProfiles",
+                )
+            }
             val engine = cfg.engine ?: ffmpeg?.let { FfmpegEngine(it) } ?: NoEngine
 
             val fetcher = Fetcher.start(cfg.fetchHttp ?: SafeHttp(NetPolicy.linkSource(cfg.allowHttpSources)))
@@ -298,6 +315,26 @@ class LinkServer private constructor(
             s.ticker = manager.startTicker()
             return s
         }
+
+        /** Lightweight 1-frame check that FFmpeg's `libplacebo` can actually initialize Vulkan on this machine. */
+        private fun probeLibplaceboVulkan(ffmpeg: File): Boolean = runCatching {
+            val pb = ProcessBuilder(
+                ffmpeg.path, "-hide_banner", "-nostdin", "-loglevel", "error",
+                "-f", "lavfi", "-i", "color=c=black:s=64x64:d=0.1",
+                "-frames:v", "1", "-vf", "libplacebo=w=64:h=64:format=nv12",
+                "-f", "null", "-",
+            ).redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD)
+            pb.environment().putAll(Lsfg.VULKAN_EXTRA_ENV)
+            val p = pb.start()
+            runCatching { p.outputStream.close() }
+            if (!p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                p.descendants().forEach { it.destroyForcibly() }
+                p.destroyForcibly()
+                false
+            } else {
+                p.exitValue() == 0
+            }
+        }.getOrDefault(false)
     }
 }
 

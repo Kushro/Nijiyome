@@ -10,6 +10,7 @@ import app.nijiyome.link.LinkResyncDoneDto
 import app.nijiyome.link.PlayerStateDto
 import app.nijiyome.link.SessionCreatedDto
 import app.nijiyome.link.LinkHistoryPageDto
+import app.nijiyome.model.AppLog
 import app.nijiyome.server.http.BodyTooLarge
 import app.nijiyome.server.http.nettyChannel
 import app.nijiyome.server.http.readBody
@@ -58,6 +59,11 @@ internal class LinkRouter(private val s: LinkServer) {
             respondError(call, e.error)
         } catch (e: TimeoutCancellationException) {
             respondError(call, ErrorCode.BODY_TIMEOUT)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.w("link", "${call.request.httpMethod.value} ${sanitizeRoute(call.request.path())} -> 500 internal (${e::class.simpleName})")
+            respondError(call, ErrorCode.INTERNAL, alreadyLogged = true)
         }
     }
 
@@ -328,9 +334,29 @@ internal class LinkRouter(private val s: LinkServer) {
 
     // ---- answers ------------------------------------------------------------------------------------------------------
 
-    private suspend fun respondError(call: ApplicationCall, e: ErrorCode) {
+    private suspend fun respondError(call: ApplicationCall, e: ErrorCode, alreadyLogged: Boolean = false) {
         if (e == ErrorCode.SEGMENT_WAIT_TIMEOUT) call.response.header("Retry-After", "1")
+        if (!alreadyLogged && e != ErrorCode.SESSION_NOT_READY) {
+            AppLog.w("link", "${call.request.httpMethod.value} ${sanitizeRoute(call.request.path())} -> ${e.status} ${e.code}")
+        }
         respondJson(call, HttpStatusCode.fromValue(e.status), e.body())
+    }
+
+    /** Reduces a Link request path to its static route shape (never logs session IDs, tokens or filenames). */
+    private fun sanitizeRoute(path: String): String {
+        val seg = path.removePrefix("/").split('/')
+        if (seg.firstOrNull() != "v1") return "/unknown"
+        val rest = seg.drop(1)
+        return when {
+            rest.isEmpty() -> "/v1"
+            rest[0] == "sessions" && rest.size == 1 -> "/v1/sessions"
+            rest[0] == "sessions" && rest.size == 2 -> "/v1/sessions/:id"
+            rest[0] == "sessions" && rest.size == 3 && rest[2] == "position" -> "/v1/sessions/:id/position"
+            rest[0] == "sessions" && rest.size == 3 -> "/v1/sessions/:id/media"
+            rest[0] == "sessions" && rest.size == 4 && rest[2] == "subtitles" -> "/v1/sessions/:id/subtitles"
+            rest.size <= 2 -> "/v1/${rest.joinToString("/")}"
+            else -> "/v1/${rest[0]}/..."
+        }
     }
 
     private suspend fun <T> respondDto(call: ApplicationCall, serializer: KSerializer<T>, value: T, status: HttpStatusCode = HttpStatusCode.OK) =

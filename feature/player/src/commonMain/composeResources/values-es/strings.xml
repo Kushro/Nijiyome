@@ -582,6 +582,11 @@
     <string name="player_send_phone_sending">Enviando al teléfono…</string>
     <string name="player_send_phone_done">Enviado a %1$s: ahí aparece “Reproducir aquí”</string>
     <string name="player_send_phone_failed">No se pudo enviar (%1$s)</string>
+    <string name="player_send_phone_err_internal">error interno</string>
+    <string name="player_send_phone_err_source">fuente no disponible</string>
+    <string name="player_send_phone_err_denied">fuente no permitida</string>
+    <string name="player_send_phone_err_offline">servidor Link apagado</string>
+    <string name="player_send_phone_err_device">dispositivo no autorizado</string>
     <!-- Hito 6: desktop player parity (Tatakai Next) -->
     <string name="player_seek_back_5">Retroceder 5 segundos</string>
     <string name="player_seek_forward_5">Adelantar 5 segundos</string>

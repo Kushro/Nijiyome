@@ -582,6 +582,11 @@
     <string name="player_send_phone_sending">Sending to the phone…</string>
     <string name="player_send_phone_done">Sent to %1$s: it shows “Play here”</string>
     <string name="player_send_phone_failed">Could not send it (%1$s)</string>
+    <string name="player_send_phone_err_internal">internal error</string>
+    <string name="player_send_phone_err_source">source unavailable</string>
+    <string name="player_send_phone_err_denied">source not allowed</string>
+    <string name="player_send_phone_err_offline">Link server is off</string>
+    <string name="player_send_phone_err_device">device not authorized</string>
     <!-- Hito 6: desktop player parity (Tatakai Next) -->
     <string name="player_seek_back_5">Rewind 5 seconds</string>
     <string name="player_seek_forward_5">Forward 5 seconds</string>

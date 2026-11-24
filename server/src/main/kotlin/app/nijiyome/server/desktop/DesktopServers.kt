@@ -146,6 +146,7 @@ class DesktopServers(
     @Volatile private var pairing: LinkServerPairing? = null
     @Volatile private var extPairing: ExtensionServerPairing? = null
     @Volatile private var ffmpegFound = false
+    @Volatile private var startedLsfgDll: String? = null
     @Volatile private var extPasswordResult: ExtPasswordResult? = null
     @Volatile private var firewallResult: FirewallResult? = null
     private var ticker: Job? = null
@@ -173,6 +174,16 @@ class DesktopServers(
         ticker = scope.launch {
             while (true) {
                 delay(2_000)
+                val currentDll = runCatching { lsfgDll() }.getOrNull()?.trim()?.ifBlank { null }
+                val running = link
+                if (running != null && settings.linkEnabled && currentDll != startedLsfgDll && running.activeSessions() == 0) {
+                    lock.withLock {
+                        if (link != null && settings.linkEnabled && link?.activeSessions() == 0) {
+                            stopLinkLocked()
+                            startLinkLocked()
+                        }
+                    }
+                }
                 publish()
             }
         }
@@ -205,9 +216,11 @@ class DesktopServers(
         val host = linkHost(this)
         ffmpegFound = host.ffmpegPath() != null
         val cfg = linkConfig()
+        val dllAtStart = runCatching { lsfgDll() }.getOrNull()?.trim()?.ifBlank { null }
         try {
             val s = LinkServer.start(cfg, host)
             link = s
+            startedLsfgDll = dllAtStart
             if (settings.announce) announce(s)
             _state.update { it.copy(error = null) }
         } catch (e: LinkStartException) {
@@ -372,15 +385,13 @@ class DesktopServers(
             )
             _state.update { it.copy(extError = null) }
         } catch (e: Exception) {
-            _state.update {
-                it.copy(
-                    extError = when {
-                        e is app.nijiyome.server.ext.ExtStartException && e.publicBind -> "no_address"
-                        e is app.nijiyome.server.ext.ExtStartException -> "port_in_use"
-                        else -> "other"
-                    },
-                )
+            val code = when {
+                e is app.nijiyome.server.ext.ExtStartException && e.publicBind -> "no_address"
+                e is app.nijiyome.server.ext.ExtStartException -> "port_in_use"
+                else -> "other"
             }
+            AppLog.w("ext-server", "extension server did not start ($code): ${e::class.simpleName}")
+            _state.update { it.copy(extError = code) }
         }
     }
 
@@ -461,10 +472,19 @@ class DesktopServers(
                 positionSecs = request.positionSecs,
                 title = request.title.takeIf { it.isNotBlank() },
             )
-            if (!s.pushEvent(deviceId, event)) return@withContext Result.failure(IllegalStateException(ErrorCode.DEVICE_NOT_AUTHORIZED.code))
+            if (!s.pushEvent(deviceId, event)) {
+                AppLog.w(TAG, "send to device failed: ${ErrorCode.DEVICE_NOT_AUTHORIZED.code}")
+                return@withContext Result.failure(IllegalStateException(ErrorCode.DEVICE_NOT_AUTHORIZED.code))
+            }
             Result.success(Unit)
         } catch (e: ApiException) {
+            AppLog.w(TAG, "send to device failed: ${e.error.code}")
             Result.failure(IllegalStateException(e.error.code))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.w(TAG, "send to device failed: ${e::class.simpleName}")
+            Result.failure(IllegalStateException(ErrorCode.INTERNAL.code))
         }
     }
 

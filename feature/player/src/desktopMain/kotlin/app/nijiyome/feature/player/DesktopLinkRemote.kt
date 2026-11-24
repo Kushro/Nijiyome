@@ -36,6 +36,11 @@ import androidx.compose.ui.unit.dp
 import app.nijiyome.feature.player.resources.Res
 import app.nijiyome.feature.player.resources.player_send_phone
 import app.nijiyome.feature.player.resources.player_send_phone_done
+import app.nijiyome.feature.player.resources.player_send_phone_err_denied
+import app.nijiyome.feature.player.resources.player_send_phone_err_device
+import app.nijiyome.feature.player.resources.player_send_phone_err_internal
+import app.nijiyome.feature.player.resources.player_send_phone_err_offline
+import app.nijiyome.feature.player.resources.player_send_phone_err_source
 import app.nijiyome.feature.player.resources.player_send_phone_failed
 import app.nijiyome.feature.player.resources.player_send_phone_sending
 import app.nijiyome.model.HistoryEntry
@@ -157,7 +162,7 @@ internal fun DesktopLinkRemote(vm: PlayerViewModel, args: PlayerArgs, content: @
                             when (st) {
                                 SendStatus.Sending -> stringResource(Res.string.player_send_phone_sending)
                                 is SendStatus.Done -> stringResource(Res.string.player_send_phone_done, st.name)
-                                is SendStatus.Failed -> stringResource(Res.string.player_send_phone_failed, st.code)
+                                is SendStatus.Failed -> stringResource(Res.string.player_send_phone_failed, localizedSendError(st.code))
                             },
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -175,6 +180,16 @@ private sealed interface SendStatus {
     data object Sending : SendStatus
     data class Done(val name: String) : SendStatus
     data class Failed(val code: String) : SendStatus
+}
+
+@Composable
+private fun localizedSendError(code: String): String = when (code) {
+    "internal" -> stringResource(Res.string.player_send_phone_err_internal)
+    "source_unavailable", "library_item_not_found" -> stringResource(Res.string.player_send_phone_err_source)
+    "url_source_denied" -> stringResource(Res.string.player_send_phone_err_denied)
+    "link_off" -> stringResource(Res.string.player_send_phone_err_offline)
+    "device_not_authorized" -> stringResource(Res.string.player_send_phone_err_device)
+    else -> code.ifBlank { stringResource(Res.string.player_send_phone_err_internal) }
 }
 
 /** A phone's command on the open player (main thread). Next / previous only when there is one, like the controls. */

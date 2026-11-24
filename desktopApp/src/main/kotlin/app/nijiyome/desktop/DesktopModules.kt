@@ -43,6 +43,7 @@ import app.nijiyome.torrent.desktopTorrentModule
 import java.io.File
 import app.nijiyome.player.mpv.DesktopMpvAssets
 import app.nijiyome.server.desktop.desktopServerModule
+import app.nijiyome.server.link.media.Anime4k
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -126,15 +127,34 @@ fun desktopModules(paths: AppPaths, folders: UserFolders = UserFolders.resolve(p
 /** The player's subtitle fonts: the bundled ones for libass and the user's imported TTF / OTF. */
 private fun subtitleFontsDir(paths: AppPaths): File = File(paths.dataDir, "subtitle-fonts")
 
-/** The bundled Anime4K passes (the player's own `shaders/Anime4K_*.glsl`) copied to [dir] for the Link server's libplacebo graphs. */
+/**
+ * The bundled Anime4K passes (the player's own `shaders/Anime4K_*.glsl`) copied to [dir] for the Link server's libplacebo graphs.
+ * Explicitly enumerates the known pass names in addition to [DesktopMpvAssets.list] so packaged JARs without directory entries
+ * still extract every required pass.
+ */
 private fun linkAnime4kShaders(dir: File): File? {
-    val names = DesktopMpvAssets.list("shaders").filter { it.startsWith("Anime4K_") && it.endsWith(".glsl") }
-    if (names.isEmpty()) return null
+    val listed = DesktopMpvAssets.list("shaders").filter { it.startsWith("Anime4K_") && it.endsWith(".glsl") }
+    val known = Anime4k.requiredFiles().map { "$it.glsl" } + listOf(
+        "Anime4K_Restore_CNN_VL.glsl",
+        "Anime4K_Restore_CNN_Soft_VL.glsl",
+        "Anime4K_Upscale_CNN_x2_VL.glsl",
+        "Anime4K_Upscale_Denoise_CNN_x2_VL.glsl",
+    )
+    val names = (known + listed).distinct()
     dir.mkdirs()
+    var written = 0
     for (name in names) {
         val bytes = DesktopMpvAssets.read("shaders/$name") ?: continue
         val out = File(dir, name)
-        if (!out.isFile || out.length() != bytes.size.toLong()) out.writeBytes(bytes)
+        if (!out.isFile || out.length() != bytes.size.toLong()) {
+            val tmp = File(dir, "$name.tmp")
+            tmp.writeBytes(bytes)
+            if (!tmp.renameTo(out)) {
+                out.writeBytes(bytes)
+                tmp.delete()
+            }
+        }
+        written++
     }
-    return dir
+    return if (written > 0 || Anime4k.shadersPresent(dir)) dir else null
 }

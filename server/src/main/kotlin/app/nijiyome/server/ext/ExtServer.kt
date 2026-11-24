@@ -2,6 +2,7 @@
 // Ported from Tatakai Next tk-server/src/lib.rs and routes.rs (AGPL-3.0, same author).
 package app.nijiyome.server.ext
 
+import app.nijiyome.model.AppLog
 import app.nijiyome.server.http.BodyTooLarge
 import app.nijiyome.server.http.KtorServer
 import app.nijiyome.server.http.nettyChannel
@@ -150,6 +151,15 @@ class ExtServer private constructor(
 
     private fun log(event: String, route: String? = null, name: String? = null, count: Int? = null, durationMs: Long? = null, error: String? = null) {
         logs.push(LogEntry(0, ExtAuth.nowUnix(), event, route, name, count, durationMs, error))
+        if (error != null) {
+            val clean = error.trim().filterNot { it.isISOControl() }
+                .replace(Regex("""https?://\S+""", RegexOption.IGNORE_CASE), "<url>")
+                .replace(Regex("""[A-Za-z]:\\[^\s:'",;)]+"""), "<path>")
+                .replace(Regex("""(?<![\w])/(?:[^\s:'",;)]+/)+[^\s:'",;)]*"""), "<path>")
+                .take(160)
+            val parts = listOfNotNull(event, route, name, "error=$clean")
+            AppLog.w("ext-server", parts.joinToString(" "))
+        }
     }
 
     // ---- edge (CORS, OPTIONS, security headers, request log) -----------------------------------------------------------

@@ -3,6 +3,7 @@
 package app.nijiyome.server.link
 
 import app.nijiyome.link.SessionCreatedDto
+import app.nijiyome.model.AppLog
 import app.nijiyome.server.link.media.Args
 import app.nijiyome.server.link.media.ArgsException
 import app.nijiyome.server.link.media.BenchStore
@@ -207,12 +208,14 @@ class Manager(
         val id = UUID.randomUUID().toString()
         val workdir = File(workRoot, id)
         if (!workdir.mkdirs() && !workdir.isDirectory) {
+            AppLog.w(LINK_LOG_TAG, "session workdir creation failed")
             prepared.opened.release()
             api(ErrorCode.INTERNAL)
         }
         val shader = try {
             Args.prepareShader(prepared.profile, shadersDir, workdir)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            AppLog.w(LINK_LOG_TAG, "prepareShader failed profile=${prepared.profile.id}: ${e::class.simpleName}")
             workdir.deleteRecursively()
             prepared.opened.release()
             api(ErrorCode.PROFILE_UNAVAILABLE)
@@ -299,8 +302,14 @@ class Manager(
         val held = OpenedSource("", null, null, t)
         try {
             val target = t.url.toHttpUrlOrNull() ?: api(ErrorCode.INTERNAL)
-            val trusted = torrentStreamOrigin(target) ?: api(ErrorCode.INTERNAL)
-            val token = fetcher.registerUnmetered(SourceSpec(target, emptyList(), null, listOf(trusted)))
+            val trusted = torrentStreamOrigin(target)
+            val spec = when {
+                trusted != null -> SourceSpec(target, emptyList(), null, listOf(trusted))
+                // Debrid (e.g. TorBox) resolves cached torrents to a public HTTPS stream: validate through SafeHttp with no local origins.
+                target.scheme == "https" -> SourceSpec(target, emptyList(), null, emptyList())
+                else -> api(ErrorCode.INTERNAL)
+            }
+            val token = fetcher.registerUnmetered(spec)
             held.token = token
             try {
                 fetcher.validate(token, target)
@@ -470,15 +479,20 @@ class Manager(
                     val a = Args.buildLsfg(params, rate, paths.dll)
                     a.encode to LsfgStages(a.decode, paths.helper, a.helper)
                 }
-                rate != null -> return fail(s, gen, FailReason.ENGINE_UNAVAILABLE)
+                rate != null -> {
+                    AppLog.w(LINK_LOG_TAG, "session start failed profile=${s.profile.id}: lsfg_paths_missing")
+                    return fail(s, gen, FailReason.ENGINE_UNAVAILABLE)
+                }
                 else -> Args.build(params) to null
             }
-        } catch (_: ArgsException) {
+        } catch (e: ArgsException) {
+            AppLog.w(LINK_LOG_TAG, "session args failed profile=${s.profile.id} encoder=${s.encoder.wire}: ${e.reason}")
             return fail(s, gen, FailReason.ENGINE_UNAVAILABLE)
         }
         val proc: EngineProcess = try {
             engine.spawn(EngineJob(built.first, s.workdir, startSegment, sinkBase, built.second))
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            AppLog.w(LINK_LOG_TAG, "session spawn failed profile=${s.profile.id} encoder=${s.encoder.wire}: ${e::class.simpleName}")
             return fail(s, gen, FailReason.ENGINE_UNAVAILABLE)
         }
         scope.launch {
@@ -543,7 +557,14 @@ class Manager(
     }
 
     private fun fail(s: Session, gen: Int, reason: FailReason) {
-        synchronized(s) { if (s.runGen == gen && s.phase != Phase.Closed) s.phase = Phase.Failed(reason) }
+        var changed = false
+        synchronized(s) {
+            if (s.runGen == gen && s.phase != Phase.Closed) {
+                s.phase = Phase.Failed(reason)
+                changed = true
+            }
+        }
+        if (changed) AppLog.w(LINK_LOG_TAG, "session failed profile=${s.profile.id} encoder=${s.encoder.wire} reason=${reason.wire}")
         s.notifyWaiters()
     }
 
@@ -689,6 +710,7 @@ class Manager(
                 is Supervise.Resume -> decision.at
                 is Supervise.Restart -> decision.at
                 Supervise.Fail -> {
+                    AppLog.w(LINK_LOG_TAG, "session stalled profile=${s.profile.id} encoder=${s.encoder.wire}")
                     s.notifyWaiters()
                     continue
                 }
@@ -974,6 +996,9 @@ class Manager(
                 runCatching { supervise() }
             }
         }
+    }
+    private companion object {
+        const val LINK_LOG_TAG = "link"
     }
 }
 
