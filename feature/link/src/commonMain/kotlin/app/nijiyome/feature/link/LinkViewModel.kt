@@ -1,0 +1,443 @@
+package app.nijiyome.feature.link
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import app.nijiyome.link.LinkApiError
+import app.nijiyome.link.LinkDiscoveryAccess
+import app.nijiyome.link.LinkError
+import app.nijiyome.link.LinkHistoryMode
+import app.nijiyome.link.LinkHistoryStatus
+import app.nijiyome.link.linkErrorOrNull
+import app.nijiyome.model.AppError
+import app.nijiyome.model.DiscoveredPc
+import app.nijiyome.model.HistoryEntry
+import app.nijiyome.model.HistoryRepository
+import app.nijiyome.model.LinkHandoff
+import app.nijiyome.model.RemoteAction
+import app.nijiyome.model.RemotePlayerState
+import app.nijiyome.model.LinkCapabilities
+import app.nijiyome.model.LinkRepository
+import app.nijiyome.model.LinkSource
+import app.nijiyome.model.LinkState
+import app.nijiyome.model.LinkedDevice
+import app.nijiyome.model.LoadState
+import app.nijiyome.model.MediaRef
+import app.nijiyome.model.PlayerArgs
+import app.nijiyome.model.LinkProfileFallback
+import app.nijiyome.model.ProfileSupport
+import app.nijiyome.model.VideoDecodeLimits
+import app.nijiyome.model.playableLinkProfile
+import app.nijiyome.model.linkProfilesMayDropFrames
+import app.nijiyome.model.unsupportedLinkProfiles
+import app.nijiyome.ui.state.runCatchingApp
+import app.nijiyome.ui.state.toAppError
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+
+data class LinkUiState(
+    val link: LinkState = LinkState.Unpaired,
+    /** Null until a PC is paired. */
+    val capabilities: LoadState<LinkCapabilities>? = null,
+    /** Profile id chosen by the user; null = the PC's default profile. */
+    val selectedProfile: String? = null,
+    /** BUG-132: the PC's profiles this phone's video decoder cannot play (shown disabled, with the reason). */
+    val unsupportedProfiles: Map<String, ProfileSupport> = emptyMap(),
+    /** BUG-135: the PC's profiles above the frame rate this phone's decoder declares (selectable, with a "may drop frames" note). */
+    val mayDropFramesProfiles: Set<String> = emptySet(),
+    /** BUG-132: the saved preferred profile ([LinkProfileFallback.from]) is not playable here and was replaced by [LinkProfileFallback.to]. */
+    val profileFallback: LinkProfileFallback? = null,
+    val pairing: Boolean = false,
+    val pairError: AppError? = null,
+    val startingSession: Boolean = false,
+    val sessionError: AppError? = null,
+    /** BUG-024: why "Enhance a stream" did not start, in words (null: none, or [sessionError] explains it). */
+    val enhanceProblem: EnhanceProblem? = null,
+    // --- android wave (12 §3.13): "Dispositivo enlazado" ---
+    /** The paired PC as persisted by the Link client (fingerprint, last seen, preferred profile); null = unpaired. */
+    val device: LinkedDevice? = null,
+    // --- parity wave B (16 §3.11, worker r) ---
+    /** `GET /v1/player` (polled every 2 s while the screen is visible); null = nothing playing / no remote control on the PC. */
+    val remote: RemotePlayerState? = null,
+    val remoteBusy: Boolean = false,
+    /**
+     * "Continuar en la PC": the newest history row of this phone (null = nothing to hand over). BUG-136: the history is synced
+     * with the PC when the screen opens, and a PC hand-off of the same episode received after that row gives its position, so this
+     * and the "La PC te envió" card say the same point.
+     */
+    val continueEntry: HistoryEntry? = null,
+    val handingOff: Boolean = false,
+    /** PCs announced over mDNS (link.discovery). */
+    val discovered: List<DiscoveredPc> = emptyList(),
+    /** PC -> phone "Enviar a dispositivo" waiting for "Reproducir aquí". */
+    val pendingHandoff: LinkHandoff? = null,
+    // --- 2026-11 history per device ---
+    /** How the paired PC treats this phone's history; null = unknown (older PC, not asked yet). */
+    val historyMode: LinkHistoryMode? = null,
+    /** The PC asked for a history resync ("Use this device as the source") and it is running here. */
+    val historyResyncing: Boolean = false,
+)
+
+/** 2026-11 history per device: the notices the Linked screen shows under the PC card. */
+enum class HistoryNotice { RECEIVE_ONLY, PAUSED, RESYNCING }
+
+/** BUG-024: "Enhance a stream" problems the screen explains itself. */
+enum class EnhanceProblem {
+    /** Not a complete http(s) link. */
+    INVALID_URL,
+    /** The PC could not open that link (not a stream, blocked, unreachable). */
+    REJECTED,
+    /** The PC did not answer in time. */
+    TIMEOUT,
+}
+
+sealed interface LinkEvent {
+    data class NavigateToPlayer(val args: PlayerArgs) : LinkEvent
+
+    /** parity wave B: one-shot results for the snackbar. */
+    data object HandedOff : LinkEvent
+    data class Failed(val error: AppError) : LinkEvent
+}
+
+class LinkViewModel(
+    private val link: LinkRepository,
+    private val deviceName: String,
+    /** parity wave B: "Continuar en la PC" pushes this history first (`syncNow`) and hands over its newest row. */
+    private val history: HistoryRepository? = null,
+    /** parity wave B: pairing with a PC found over mDNS (fingerprint + one-time code). */
+    private val discovery: LinkDiscoveryAccess? = null,
+    /** BUG-132: what the phone's H.264 decoder plays (null = unknown: every profile is offered). */
+    private val decodeLimits: () -> VideoDecodeLimits? = { null },
+    /** BUG-136: epoch ms, to date a PC hand-off against the history rows (tests pass a fixed clock). */
+    private val nowMs: () -> Long = System::currentTimeMillis,
+    /** 2026-11 history per device: this phone's mode on the PC and the "resync running" flag (:core:link). */
+    private val historyStatus: LinkHistoryStatus? = null,
+) : ViewModel() {
+
+    /** BUG-136: this phone's newest history row, and the pending PC hand-off with when it arrived. */
+    private var localContinue: HistoryEntry? = null
+    private var handoffAt: Pair<LinkHandoff, Long>? = null
+    private var historySynced = false
+
+    private val _state = MutableStateFlow(
+        LinkUiState(link = link.state.value, device = link.linkedDevice.value, selectedProfile = link.linkedDevice.value?.preferredProfile),
+    )
+    val state: StateFlow<LinkUiState> = _state.asStateFlow()
+
+    private val _events = Channel<LinkEvent>(Channel.BUFFERED)
+    val events: Flow<LinkEvent> = _events.receiveAsFlow()
+
+    init {
+        viewModelScope.launch {
+            link.state.collectLatest { s ->
+                _state.update {
+                    it.copy(
+                        link = s,
+                        capabilities = if (s is LinkState.Paired) it.capabilities else null,
+                        selectedProfile = if (s is LinkState.Unpaired) null else it.selectedProfile,
+                    )
+                }
+                if (s is LinkState.Paired) {
+                    syncHistoryOnce()
+                    historyStatus?.let { hs -> viewModelScope.launch { runCatching { hs.refreshMode() } } }
+                    loadCapabilities()
+                }
+            }
+        }
+        viewModelScope.launch {
+            link.linkedDevice.collect { device ->
+                _state.update { it.copy(device = device, selectedProfile = it.selectedProfile ?: device?.preferredProfile) }
+            }
+        }
+        viewModelScope.launch {
+            link.pendingHandoff.collect { h ->
+                handoffAt = h?.let { new -> handoffAt?.takeIf { it.first == new } ?: (new to nowMs()) }
+                _state.update { it.copy(pendingHandoff = h, continueEntry = LinkLogic.continuePoint(localContinue, handoffAt)) }
+                // BUG-136: the PC just moved: bring its history rows too
+                if (h != null) viewModelScope.launch { runCatchingApp { history?.syncNow()?.getOrThrow() } }
+            }
+        }
+        history?.let { h ->
+            viewModelScope.launch {
+                h.continueWatching(1).catch { emit(emptyList()) }.collect { rows ->
+                    localContinue = rows.firstOrNull()
+                    _state.update { it.copy(continueEntry = LinkLogic.continuePoint(localContinue, handoffAt)) }
+                }
+            }
+        }
+        historyStatus?.let { hs ->
+            viewModelScope.launch { hs.mode.collect { m -> _state.update { it.copy(historyMode = m) } } }
+            viewModelScope.launch { hs.resyncing.collect { r -> _state.update { it.copy(historyResyncing = r) } } }
+        }
+        viewModelScope.launch {
+            link.discover().catch { emit(emptyList()) }.collect { pcs -> _state.update { it.copy(discovered = pcs) } }
+        }
+    }
+
+    /** BUG-136: once per screen, pull the PC's history (newest `watchedAt` wins) so "Continuar en la PC" is not behind the PC. */
+    private fun syncHistoryOnce() {
+        val h = history ?: return
+        if (historySynced) return
+        historySynced = true
+        viewModelScope.launch { runCatchingApp { h.syncNow().getOrThrow() } }
+    }
+
+    // ------------------------------------------------------------------ parity wave B (16 §3.11)
+
+    /** Polls `GET /v1/player` every [REMOTE_POLL_MS] while the screen is composed (the screen runs this in a LaunchedEffect). */
+    suspend fun pollRemote() {
+        while (true) {
+            if (_state.value.link is LinkState.Paired) {
+                val r = runCatchingApp { link.remoteState().getOrThrow() }
+                _state.update { it.copy(remote = r.getOrNull()) }
+            }
+            delay(REMOTE_POLL_MS)
+        }
+    }
+
+    fun remote(action: RemoteAction) {
+        if (_state.value.remoteBusy) return
+        _state.update { it.copy(remoteBusy = true) }
+        viewModelScope.launch {
+            val r = runCatchingApp { link.remote(action).getOrThrow() }
+            r.onFailure { _events.trySend(LinkEvent.Failed(it.toAppError())) }
+            val st = runCatchingApp { link.remoteState().getOrThrow() }.getOrNull()
+            _state.update { it.copy(remoteBusy = false, remote = st ?: it.remote) }
+        }
+    }
+
+    /** "Continuar en la PC": push the history (so the PC has the row), then `open` at the phone's position. */
+    fun continueOnPc() {
+        val entry = _state.value.continueEntry ?: return
+        if (_state.value.handingOff) return
+        _state.update { it.copy(handingOff = true) }
+        viewModelScope.launch {
+            runCatchingApp { history?.syncNow() }
+            val r = runCatchingApp { link.handoff(entry.animeId, entry.episode, entry.progressSec).getOrThrow() }
+            _state.update { it.copy(handingOff = false) }
+            r.fold(onSuccess = { _events.trySend(LinkEvent.HandedOff) }, onFailure = { _events.trySend(LinkEvent.Failed(it.toAppError())) })
+        }
+    }
+
+    /** "Reproducir aquí" of a PC -> phone hand-off: the PC already started the Link session. */
+    fun playHandoff() {
+        val h = _state.value.pendingHandoff ?: return
+        link.dismissHandoff()
+        _events.trySend(LinkEvent.NavigateToPlayer(LinkLogic.handoffArgs(h)))
+    }
+
+    fun dismissHandoff() = link.dismissHandoff()
+
+    fun fingerprintOf(pc: DiscoveredPc): String? = discovery?.fingerprintOf(pc)
+
+    val canPairDiscovered: Boolean get() = discovery != null
+
+    /** Pairs with a PC found on the network after the user confirmed its fingerprint and typed the code shown on it. */
+    fun pairDiscovered(pc: DiscoveredPc, code: String) {
+        val d = discovery ?: return
+        if (_state.value.pairing) return
+        _state.update { it.copy(pairing = true, pairError = null) }
+        viewModelScope.launch {
+            val result = runCatchingApp { d.pairDiscovered(pc, code, deviceName).getOrThrow() }
+            _state.update { it.copy(pairing = false, pairError = result.exceptionOrNull()?.toAppError()) }
+        }
+    }
+
+    /** Validates a pasted pairing text before sending it (prototype: `nijiyome-link:v1?…` or a 10-character code). */
+    fun isValidPairingText(text: String): Boolean = PAIRING_TEXT.matches(text.trim())
+
+    /** [payload] is the `nijiyome-link:v1` URI read from the QR code or pasted by the user. */
+    fun pair(payload: String) {
+        val text = payload.trim()
+        if (text.isEmpty() || _state.value.pairing) return
+        _state.update { it.copy(pairing = true, pairError = null) }
+        viewModelScope.launch {
+            val result = runCatchingApp { link.pair(text, deviceName).getOrThrow() }
+            _state.update { s ->
+                s.copy(pairing = false, pairError = result.exceptionOrNull()?.toAppError())
+            }
+        }
+    }
+
+    fun retryCapabilities() {
+        viewModelScope.launch { loadCapabilities() }
+    }
+
+    private suspend fun loadCapabilities() {
+        _state.update { it.copy(capabilities = LoadState.Loading) }
+        val result = runCatchingApp { link.capabilities().getOrThrow() }
+        val limits = result.getOrNull()?.let { runCatching { decodeLimits() }.getOrNull() }
+        var replaced: LinkProfileFallback? = null
+        _state.update { s ->
+            val caps = result.fold(
+                onSuccess = { LoadState.Ok(it) },
+                onFailure = { LoadState.Err(it.toAppError()) },
+            )
+            val profiles = (caps as? LoadState.Ok)?.value?.profiles.orEmpty()
+            val unsupported = unsupportedLinkProfiles(profiles, limits)
+            val wanted = s.selectedProfile ?: s.device?.preferredProfile
+            var keep = wanted?.takeIf { id -> profiles.any { it.id == id } }
+            // BUG-132: a saved preferred profile this phone cannot play is replaced by the closest playable one, once (it is saved)
+            if (keep != null && keep in unsupported) {
+                val to = playableLinkProfile(keep, profiles, limits, defaultProfile = (caps as? LoadState.Ok)?.value?.defaultProfile)
+                if (to != null && to != keep) replaced = LinkProfileFallback(keep, to)
+                keep = to
+            }
+            s.copy(
+                capabilities = caps,
+                selectedProfile = keep,
+                unsupportedProfiles = unsupported,
+                mayDropFramesProfiles = linkProfilesMayDropFrames(profiles, limits),
+                profileFallback = replaced ?: s.profileFallback,
+            )
+        }
+        replaced?.let { r -> runCatchingApp { link.setPreferredProfile(r.to) } }
+    }
+
+    /** Enhance profile segmented: kept in the UI state and persisted as the PC's preferred profile for this phone. */
+    fun selectProfile(id: String?) {
+        if (id != null && id in _state.value.unsupportedProfiles) return // BUG-132: the row is disabled; never save it
+        _state.update { it.copy(selectedProfile = id, profileFallback = null) }
+        viewModelScope.launch { runCatchingApp { link.setPreferredProfile(id) } }
+    }
+
+    /** Starts a remote (PC-transcoded) session for [url] and opens the player on it. */
+    fun startSession(url: String) {
+        val trimmed = url.trim()
+        if (trimmed.isEmpty() || _state.value.startingSession) return
+        if (!LinkLogic.enhanceUrlValid(trimmed)) {
+            _state.update { it.copy(sessionError = null, enhanceProblem = EnhanceProblem.INVALID_URL) }
+            return
+        }
+        _state.update { it.copy(startingSession = true, sessionError = null, enhanceProblem = null) }
+        viewModelScope.launch {
+            val profile = _state.value.selectedProfile
+            val result = withTimeoutOrNull(ENHANCE_TIMEOUT_MS) {
+                runCatching { link.startSession(LinkSource.Url(trimmed), profile).getOrThrow() }
+            }
+            if (result == null) {
+                _state.update { it.copy(startingSession = false, enhanceProblem = EnhanceProblem.TIMEOUT) }
+                return@launch
+            }
+            result.onSuccess { session ->
+                _state.update { it.copy(startingSession = false) }
+                _events.trySend(
+                    LinkEvent.NavigateToPlayer(
+                        PlayerArgs(media = MediaRef(), title = trimmed, episode = 1, remoteSessionId = session.sessionId),
+                    ),
+                )
+            }.onFailure { e ->
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                val rejected = LinkLogic.enhanceRejected((e.linkErrorOrNull() as? LinkError.Api)?.error)
+                _state.update {
+                    if (rejected) it.copy(startingSession = false, enhanceProblem = EnhanceProblem.REJECTED)
+                    else it.copy(startingSession = false, sessionError = e.toAppError())
+                }
+            }
+        }
+    }
+
+    fun forget() {
+        viewModelScope.launch { link.forget() }
+    }
+
+    private companion object {
+        const val REMOTE_POLL_MS = 2_000L
+        /** The PC checks the link (and probes HLS) before it answers; past this the screen says it did not answer. */
+        const val ENHANCE_TIMEOUT_MS = 60_000L
+        val PAIRING_TEXT = Regex("^(nijiyome-link:v1\\?.+|[0-9A-Z]{10})$", RegexOption.IGNORE_CASE)
+    }
+}
+
+/** Pure helpers of the Linked screen (JVM-tested). */
+internal object LinkLogic {
+    /** 2026-11 history per device: what to say under the PC card (a resync first, then the mode when it is not `full`). Pure. */
+    fun historyNotices(mode: LinkHistoryMode?, resyncing: Boolean): List<HistoryNotice> = buildList {
+        if (resyncing) add(HistoryNotice.RESYNCING)
+        when (mode) {
+            LinkHistoryMode.RECEIVE_ONLY -> add(HistoryNotice.RECEIVE_ONLY)
+            LinkHistoryMode.PAUSED -> add(HistoryNotice.PAUSED)
+            LinkHistoryMode.FULL, null -> Unit
+        }
+    }
+
+    /** BUG-024: a complete http(s) link with a host and no spaces ("Master.m3u8" alone, or a typo'd scheme, is not). */
+    fun enhanceUrlValid(url: String): Boolean {
+        val u = url.trim()
+        if (u.any { it.isWhitespace() }) return false
+        val uri = runCatching { java.net.URI(u) }.getOrNull() ?: return false
+        return uri.scheme?.lowercase() in setOf("http", "https") && !uri.host.isNullOrBlank()
+    }
+
+    /** BUG-024: Link answers that mean "the PC could not use that link" (as opposed to the PC being unreachable). */
+    fun enhanceRejected(error: LinkApiError?): Boolean =
+        error == LinkApiError.RequestInvalid || error == LinkApiError.SourceUnavailable || error == LinkApiError.UrlSourceDenied
+
+    /**
+     * BUG-136: the point "Continuar en la PC" names: the phone's newest row [local], unless the PC handed off the same episode
+     * ([handoff], with when it arrived) after that row was written; then the PC's position is the newest one.
+     */
+    fun continuePoint(local: HistoryEntry?, handoff: Pair<LinkHandoff, Long>?): HistoryEntry? {
+        if (local == null || handoff == null) return local
+        val (h, at) = handoff
+        if (h.animeId != local.animeId || h.episode != local.episode) return local
+        if (at <= local.watchedAt.toEpochMilli()) return local
+        return local.copy(progressSec = h.positionSec)
+    }
+
+    /** Player args of a PC -> phone hand-off: the Link session, from the PC's position. */
+    fun handoffArgs(h: LinkHandoff): PlayerArgs = PlayerArgs(
+        media = h.animeId?.let(::refOf) ?: MediaRef(),
+        title = h.title ?: "",
+        episode = h.episode ?: 1,
+        startMs = h.positionSec * 1000L,
+        remoteSessionId = h.sessionId,
+    )
+
+    /** BUG-138: the hand-off card says how old the send is once it is a minute old ("desde 8:29 · hace 3 min"). */
+    fun handoffAgeShown(receivedAtMs: Long, nowMs: Long): Boolean = nowMs - receivedAtMs >= 60_000L
+
+    /** `HistoryEntry.animeId` (`"21"` / `"mal:5"`) -> ref. */
+    fun refOf(animeId: String): MediaRef? = when {
+        animeId.startsWith("mal:") -> animeId.removePrefix("mal:").toIntOrNull()?.let { MediaRef(malId = it) }
+        else -> animeId.toIntOrNull()?.let { MediaRef(anilistId = it) }
+    }
+
+    /** "12:05 / 24:00" of the remote card (durations unknown -> position only). */
+    fun clock(positionSec: Int, durationSec: Int?): String {
+        fun fmt(s: Int): String = if (s >= 3600) "%d:%02d:%02d".format(s / 3600, s / 60 % 60, s % 60) else "%d:%02d".format(s / 60, s % 60)
+        return if (durationSec != null) "${fmt(positionSec)} / ${fmt(durationSec)}" else fmt(positionSec)
+    }
+
+    /** BUG-090: the CA fingerprint in one line ("B452 3914 … 0A7C DF6D"); the full one is a tap away. */
+    fun shortFingerprint(fp: String): String {
+        val groups = fp.trim().split(Regex("[\\s:]+")).filter { it.isNotEmpty() }
+        return if (groups.size <= 4) groups.joinToString(" ") else (groups.take(2) + "…" + groups.takeLast(2)).joinToString(" ")
+    }
+
+    /**
+     * BUG-105: the whole fingerprint for "Ver detalles", broken on purpose in rows of [perRow] groups ("B452 3914 77AA 0C1D", 19
+     * monospace characters: fits the card column at 393 dp) instead of wherever the text happened to wrap.
+     */
+    fun fingerprintRows(fp: String, perRow: Int = 4): List<String> =
+        fp.trim().split(Regex("[\\s:]+")).filter { it.isNotEmpty() }.chunked(perRow).map { it.joinToString(" ") }
+
+    /**
+     * BUG-104: the problem that belongs under the URL field (its supporting text, in red) — only "not a complete link". The PC's answers
+     * (could not open it, did not answer) are the single red line below the field, so the text is not shown twice.
+     */
+    fun fieldProblem(problem: EnhanceProblem?): EnhanceProblem? = problem?.takeIf { it == EnhanceProblem.INVALID_URL }
+
+    /** PCs to list: the paired one (same host and port) is not offered again. */
+    fun others(found: List<DiscoveredPc>, pairedHost: String?, pairedPort: Int?): List<DiscoveredPc> =
+        found.filterNot { it.host == pairedHost && it.port == pairedPort }.distinctBy { it.instanceId ?: "${it.host}:${it.port}" }
+}

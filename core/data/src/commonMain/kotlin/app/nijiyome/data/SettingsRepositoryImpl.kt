@@ -1,0 +1,293 @@
+package app.nijiyome.data
+
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.nijiyome.model.AppSettings
+import app.nijiyome.model.DownloadSettings
+import app.nijiyome.model.FrameGenSettings
+import app.nijiyome.model.EpisodeView
+import app.nijiyome.model.LookPrefs
+import app.nijiyome.model.NovelReaderSettings
+import app.nijiyome.model.PlayerEngine
+import app.nijiyome.model.PlayerQualityPrefs
+import app.nijiyome.model.QualityPresets
+import app.nijiyome.model.ReaderSettings
+import app.nijiyome.model.SettingsRepository
+import app.nijiyome.model.SourcePrefs
+import app.nijiyome.model.SubtitleStyle
+import app.nijiyome.model.SubtitleTranslation
+import app.nijiyome.model.TtsSettings
+import app.nijiyome.model.torrent.TorrentSettings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
+
+/**
+ * DataStore-backed settings. The first value is read synchronously at construction (a few ms on a cold start) so the
+ * theme never flashes the defaults before the stored palette arrives.
+ *
+ * android wave (12 §3.3, §4 a): every new [AppSettings] field has its own key; objects ([SourcePrefs], [SubtitleStyle],
+ * [TorrentSettings] incl. its sealed `StorageLocation`) are stored as kotlinx.serialization JSON. A missing or unreadable value reads
+ * as its default, so the existing keys of older installs keep working and nothing is lost.
+ */
+class SettingsRepositoryImpl(
+    private val store: DataStore<Preferences>,
+    scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    /** What a missing key reads as. Android: `AppSettings()`; desktop: its own first-run values (see `desktopDataModule`). */
+    private val defaults: AppSettings = AppSettings(),
+) : SettingsRepository {
+
+    override val settings: StateFlow<AppSettings> = run {
+        val initial = runBlocking(Dispatchers.IO) { SettingsCodec.read(store.data.first(), defaults) }
+        store.data.map { SettingsCodec.read(it, defaults) }.stateIn(scope, SharingStarted.Eagerly, initial)
+    }
+
+    override suspend fun update(transform: (AppSettings) -> AppSettings) {
+        store.edit { prefs -> SettingsCodec.write(prefs, transform(SettingsCodec.read(prefs, defaults))) }
+    }
+}
+
+/** Mapping between [AppSettings] and DataStore keys (pure: unit-tested on the JVM with an in-memory store). */
+internal object SettingsCodec {
+    const val TTL_MIN_HOURS = 1
+    const val TTL_MAX_HOURS = 168
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        coerceInputValues = true
+        explicitNulls = false
+    }
+
+    private val PALETTE = stringPreferencesKey("palette_id")
+    private val AMOLED = booleanPreferencesKey("amoled")
+    private val CONTRAST = stringPreferencesKey("contrast")
+    private val DYNAMIC = booleanPreferencesKey("dynamic_color")
+    private val PRIORITY = stringPreferencesKey("provider_priority")
+    private val HEADERS_DEBUG = booleanPreferencesKey("player_headers_debug")
+    private val MPV_TLS_VERIFY = booleanPreferencesKey("player_mpv_tls_verify")
+
+    // --- android wave ---
+    private val THEME_MODE = stringPreferencesKey("theme_mode")
+    private val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
+    private val LANGUAGE = stringPreferencesKey("language")
+    private val PLAYER_ENGINE = stringPreferencesKey("player_engine")
+    private val PLAYER_PRESET = stringPreferencesKey("player_preset")
+    private val SOURCE_PREFS = stringPreferencesKey("source_prefs_json")
+    private val AUTO_NEXT = booleanPreferencesKey("auto_next")
+    private val SKIP_INTRO = booleanPreferencesKey("skip_intro")
+    private val SUBTITLE_STYLE = stringPreferencesKey("subtitle_style_json")
+    private val TORRENT = stringPreferencesKey("torrent_settings_json")
+    private val METADATA_TTL = intPreferencesKey("metadata_cache_ttl_hours")
+    private val EXTERNAL_PLAYER = stringPreferencesKey("external_player_package")
+
+    // --- parity wave A (15 §3.5): one key per new AppSettings field; objects as JSON (contract, so p / o / q never edit this file) ---
+    private val SUBTITLE_TRANSLATION = stringPreferencesKey("subtitle_translation_json")
+    private val SECONDARY_SUB_LANG = stringPreferencesKey("secondary_sub_lang")
+    private val AUTO_NEXT_COUNTDOWN = intPreferencesKey("auto_next_countdown_secs")
+    private val STABLE_VOLUME = booleanPreferencesKey("stable_volume")
+    private val BACKGROUND_PLAYBACK = booleanPreferencesKey("background_playback")
+    private val PLAYER_KEYMAP = stringPreferencesKey("player_keymap_json")
+    private val AUTO_LIST_PROGRESS = booleanPreferencesKey("auto_list_progress")
+    private val UPDATE_CHECK = booleanPreferencesKey("update_check")
+    private val SHOW_ADULT = booleanPreferencesKey("show_adult")
+    private val AUTO_LIST_ADD = booleanPreferencesKey("auto_list_add")
+    private val LISTS_WRITE_BACK = booleanPreferencesKey("lists_write_back")
+    private val TITLE_LANGUAGE = stringPreferencesKey("title_language")
+    // parity wave A, 2026-11-09 amendment (worker q): history over Link, first-run wizard
+    private val HISTORY_SYNC_LINK = booleanPreferencesKey("history_sync_link")
+    private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+    // --- parity wave B (16 §3.9): one key per new AppSettings field; objects as JSON (contract, so r / s / t never edit this file) ---
+    private val DOWNLOADS = stringPreferencesKey("downloads_json")
+    private val AIRING_REMINDERS = booleanPreferencesKey("airing_reminders")
+    private val EXTENSION_UPDATE_CHECK = booleanPreferencesKey("extension_update_check")
+    private val READER = stringPreferencesKey("reader_json")
+    private val NOVEL_READER = stringPreferencesKey("novel_reader_json")
+    private val TTS = stringPreferencesKey("tts_json")
+    private val MANGA_TITLE_LANGUAGE = stringPreferencesKey("manga_title_language")
+    private val SOCIAL_NOTIFICATIONS = booleanPreferencesKey("social_notifications")
+    private val MATURE_CONTENT = stringPreferencesKey("mature_content")
+    // --- 2026-11 UI refresh: Diseño y estilo (LookPrefs, lenient ids) ---
+    private val LOOK = stringPreferencesKey("look_json")
+    // --- 0.4.0 player quality (worker A): defaults of the libmpv quality engine ---
+    private val PLAYER_QUALITY = stringPreferencesKey("player_quality_json")
+    // --- 0.4.0 player quality (worker B): phone frame generation ---
+    private val FRAME_GEN = stringPreferencesKey("frame_gen_json")
+    private val KEYMAP_SERIALIZER = MapSerializer(String.serializer(), String.serializer())
+    const val COUNTDOWN_MIN_SECS = 3
+    const val COUNTDOWN_MAX_SECS = 30
+
+    /**
+     * 0.4.0: the desktop preset ids ([QualityPresets.ALL]). Unknown ids read as "off".
+     *
+     * Engine default: a missing `player_engine` reads as the new default (MPV). Installs that saved any setting have `player_engine`
+     * stored (every write stores every key), and a stored MEDIA3 cannot be told apart from an explicit choice, so it is kept.
+     */
+    private val PRESETS = (QualityPresets.ALL + QualityPresets.DESKTOP_EXTRA).toSet() // v1.1 (F2): desktop's NVScaler is kept too
+
+    fun read(p: Preferences, d: AppSettings = AppSettings()): AppSettings {
+        // 0.4.0: libmpv is the default engine. Settings written by <= 0.3.x have no player_quality_json; there Media3 was the
+        // default and every write stored it, so a stored MEDIA3 cannot be told apart from a choice: those installs move to
+        // libmpv (and from preset "off", which Media3 could not use, to the new default) once. The next write stores
+        // player_quality_json, so a later explicit Media3 choice sticks.
+        val storedEngine = enumOr(p[PLAYER_ENGINE], d.playerEngine)
+        val fromMedia3 = p[PLAYER_QUALITY] == null && p[PLAYER_ENGINE] != null && storedEngine == PlayerEngine.MEDIA3
+        return AppSettings(
+            paletteId = p[PALETTE] ?: d.paletteId,
+            amoled = p[AMOLED] ?: d.amoled,
+            contrast = enumOr(p[CONTRAST], d.contrast),
+            dynamicColor = p[DYNAMIC] ?: d.dynamicColor,
+            providerPriority = p[PRIORITY]?.split(',')?.filter { it.isNotBlank() } ?: d.providerPriority,
+            playerHeadersDebug = p[HEADERS_DEBUG] ?: d.playerHeadersDebug,
+            mpvTlsVerify = p[MPV_TLS_VERIFY] ?: d.mpvTlsVerify,
+            themeMode = enumOr(p[THEME_MODE], d.themeMode),
+            reduceMotion = p[REDUCE_MOTION] ?: d.reduceMotion,
+            language = enumOr(p[LANGUAGE], d.language),
+            playerEngine = if (fromMedia3) PlayerEngine.MPV else storedEngine,
+            playerPreset = (p[PLAYER_PRESET]?.takeIf { it in PRESETS } ?: d.playerPreset)
+                .let { if (fromMedia3 && it == "off") d.playerPreset else it },
+            sourcePrefs = decode(p[SOURCE_PREFS], SourcePrefs.serializer())?.sanitized() ?: d.sourcePrefs,
+            autoNext = p[AUTO_NEXT] ?: d.autoNext,
+            skipIntro = p[SKIP_INTRO] ?: d.skipIntro,
+            subtitleStyle = decodeSubtitleStyle(p[SUBTITLE_STYLE]) ?: d.subtitleStyle,
+            torrent = decode(p[TORRENT], TorrentSettings.serializer())?.sanitized() ?: d.torrent,
+            metadataCacheTtlHours = (p[METADATA_TTL] ?: d.metadataCacheTtlHours).coerceIn(TTL_MIN_HOURS, TTL_MAX_HOURS),
+            externalPlayerPackage = p[EXTERNAL_PLAYER]?.takeIf { it.isNotBlank() } ?: d.externalPlayerPackage,
+            subtitleTranslation = decode(p[SUBTITLE_TRANSLATION], SubtitleTranslation.serializer()) ?: d.subtitleTranslation,
+            secondarySubLang = p[SECONDARY_SUB_LANG]?.takeIf { it.isNotBlank() } ?: d.secondarySubLang,
+            autoNextCountdownSecs = (p[AUTO_NEXT_COUNTDOWN] ?: d.autoNextCountdownSecs).coerceIn(COUNTDOWN_MIN_SECS, COUNTDOWN_MAX_SECS),
+            stableVolume = p[STABLE_VOLUME] ?: d.stableVolume,
+            backgroundPlayback = p[BACKGROUND_PLAYBACK] ?: d.backgroundPlayback,
+            playerKeymap = decode(p[PLAYER_KEYMAP], KEYMAP_SERIALIZER) ?: d.playerKeymap,
+            autoListProgress = p[AUTO_LIST_PROGRESS] ?: d.autoListProgress,
+            updateCheck = p[UPDATE_CHECK] ?: d.updateCheck,
+            showAdult = p[SHOW_ADULT] ?: d.showAdult,
+            autoListAdd = p[AUTO_LIST_ADD] ?: d.autoListAdd,
+            listsWriteBack = p[LISTS_WRITE_BACK] ?: d.listsWriteBack,
+            titleLanguage = enumOr(p[TITLE_LANGUAGE], d.titleLanguage),
+            historySyncOverLink = p[HISTORY_SYNC_LINK] ?: d.historySyncOverLink,
+            onboardingDone = p[ONBOARDING_DONE] ?: d.onboardingDone,
+            // parity wave B
+            downloads = decode(p[DOWNLOADS], DownloadSettings.serializer())?.sanitized() ?: d.downloads,
+            airingReminders = p[AIRING_REMINDERS] ?: d.airingReminders,
+            extensionUpdateCheck = p[EXTENSION_UPDATE_CHECK] ?: d.extensionUpdateCheck,
+            reader = decode(p[READER], ReaderSettings.serializer())?.sanitized() ?: d.reader,
+            novelReader = decode(p[NOVEL_READER], NovelReaderSettings.serializer())?.sanitized() ?: d.novelReader,
+            tts = decode(p[TTS], TtsSettings.serializer())?.sanitized() ?: d.tts,
+            mangaTitleLanguage = enumOr(p[MANGA_TITLE_LANGUAGE], d.mangaTitleLanguage),
+            socialNotifications = p[SOCIAL_NOTIFICATIONS] ?: d.socialNotifications,
+            matureContent = enumOr(p[MATURE_CONTENT], d.matureContent),
+            look = decodeLook(p[LOOK]) ?: d.look,
+            playerQuality = decode(p[PLAYER_QUALITY], PlayerQualityPrefs.serializer())?.sanitized() ?: d.playerQuality,
+            frameGen = decode(p[FRAME_GEN], FrameGenSettings.serializer())?.sanitized() ?: d.frameGen,
+        )
+    }
+
+    fun write(p: MutablePreferences, s: AppSettings) {
+        p[PALETTE] = s.paletteId
+        p[AMOLED] = s.amoled
+        p[CONTRAST] = s.contrast.name
+        p[DYNAMIC] = s.dynamicColor
+        p[PRIORITY] = s.providerPriority.distinct().joinToString(",")
+        p[HEADERS_DEBUG] = s.playerHeadersDebug
+        p[MPV_TLS_VERIFY] = s.mpvTlsVerify
+        p[THEME_MODE] = s.themeMode.name
+        p[REDUCE_MOTION] = s.reduceMotion
+        p[LANGUAGE] = s.language.name
+        p[PLAYER_ENGINE] = s.playerEngine.name
+        p[PLAYER_PRESET] = s.playerPreset.takeIf { it in PRESETS } ?: "off"
+        p[SOURCE_PREFS] = json.encodeToString(SourcePrefs.serializer(), s.sourcePrefs.sanitized())
+        p[AUTO_NEXT] = s.autoNext
+        p[SKIP_INTRO] = s.skipIntro
+        p[SUBTITLE_STYLE] = json.encodeToString(SubtitleStyle.serializer(), s.subtitleStyle.sanitized())
+        p[TORRENT] = json.encodeToString(TorrentSettings.serializer(), s.torrent.sanitized())
+        p[METADATA_TTL] = s.metadataCacheTtlHours.coerceIn(TTL_MIN_HOURS, TTL_MAX_HOURS)
+        val pkg = s.externalPlayerPackage?.trim()
+        if (pkg.isNullOrEmpty()) p.remove(EXTERNAL_PLAYER) else p[EXTERNAL_PLAYER] = pkg
+        // parity wave A
+        p[SUBTITLE_TRANSLATION] = json.encodeToString(SubtitleTranslation.serializer(), s.subtitleTranslation)
+        val secondary = s.secondarySubLang?.trim()
+        if (secondary.isNullOrEmpty()) p.remove(SECONDARY_SUB_LANG) else p[SECONDARY_SUB_LANG] = secondary
+        p[AUTO_NEXT_COUNTDOWN] = s.autoNextCountdownSecs.coerceIn(COUNTDOWN_MIN_SECS, COUNTDOWN_MAX_SECS)
+        p[STABLE_VOLUME] = s.stableVolume
+        p[BACKGROUND_PLAYBACK] = s.backgroundPlayback
+        p[PLAYER_KEYMAP] = json.encodeToString(KEYMAP_SERIALIZER, s.playerKeymap)
+        p[AUTO_LIST_PROGRESS] = s.autoListProgress
+        p[UPDATE_CHECK] = s.updateCheck
+        p[SHOW_ADULT] = s.showAdult
+        p[AUTO_LIST_ADD] = s.autoListAdd
+        p[LISTS_WRITE_BACK] = s.listsWriteBack
+        p[TITLE_LANGUAGE] = s.titleLanguage.name
+        p[HISTORY_SYNC_LINK] = s.historySyncOverLink
+        p[ONBOARDING_DONE] = s.onboardingDone
+        // parity wave B
+        p[DOWNLOADS] = json.encodeToString(DownloadSettings.serializer(), s.downloads.sanitized())
+        p[AIRING_REMINDERS] = s.airingReminders
+        p[EXTENSION_UPDATE_CHECK] = s.extensionUpdateCheck
+        p[READER] = json.encodeToString(ReaderSettings.serializer(), s.reader.sanitized())
+        p[NOVEL_READER] = json.encodeToString(NovelReaderSettings.serializer(), s.novelReader.sanitized())
+        p[TTS] = json.encodeToString(TtsSettings.serializer(), s.tts.sanitized())
+        p[MANGA_TITLE_LANGUAGE] = s.mangaTitleLanguage.name
+        p[SOCIAL_NOTIFICATIONS] = s.socialNotifications
+        p[MATURE_CONTENT] = s.matureContent.name
+        p[LOOK] = json.encodeToString(LookPrefs.serializer(), s.look.sanitized())
+        p[PLAYER_QUALITY] = json.encodeToString(PlayerQualityPrefs.serializer(), s.playerQuality.sanitized())
+        p[FRAME_GEN] = json.encodeToString(FrameGenSettings.serializer(), s.frameGen.sanitized())
+    }
+
+    private inline fun <reified E : Enum<E>> enumOr(name: String?, default: E): E =
+        name?.let { n -> enumValues<E>().firstOrNull { it.name == n } } ?: default
+
+    /**
+     * 0.3.2: `cardSize` is new; a stored look without it takes its preset's size (a Cine user keeps reading as Cine
+     * instead of "Personalizado"). Ficha "Cine editorial": `pageStyle` follows the same rule. Ficha "Primero el episodio": a look
+     * stored before `rev` existed moves its episode list from Tarjetas to Lista once (the new default of every preset); later
+     * choices of Tarjetas are kept because the look is then stored with `rev`.
+     */
+    private fun decodeLook(raw: String?): LookPrefs? {
+        val look = decode(raw, LookPrefs.serializer()) ?: return null
+        val keys = raw?.let { runCatching { json.parseToJsonElement(it).jsonObject.keys }.getOrNull() }
+        fun has(key: String) = keys?.contains(key) ?: true
+        val preset = LookPrefs.of(look.preset)
+        var fixed = look
+        if (!has("cardSize")) fixed = fixed.copy(cardSize = preset.cardSize)
+        if (!has("pageStyle")) fixed = fixed.copy(pageStyle = preset.pageStyle)
+        if (!has("rev") && fixed.episodeView == EpisodeView.CARDS) fixed = fixed.copy(episodeView = EpisodeView.LIST)
+        return fixed.sanitized()
+    }
+
+    private fun <T> decode(raw: String?, serializer: KSerializer<T>): T? =
+        raw?.let { runCatching { json.decodeFromString(serializer, it) }.getOrNull() }
+
+    /**
+     * 0.4.1: [SubtitleStyle] gained a separate box switch; until 0.4.0 "no box" was stored as `backgroundOpacity = 0`. A stored style
+     * without the `background` key keeps its look: box on when it had some opacity, otherwise off with the default opacity ready for
+     * when the user turns it on. Ranges and font ids: [SubtitleStyle.sanitized].
+     */
+    private fun decodeSubtitleStyle(raw: String?): SubtitleStyle? {
+        val style = decode(raw, SubtitleStyle.serializer()) ?: return null
+        val hasSwitch = raw != null && runCatching { json.parseToJsonElement(raw).jsonObject.containsKey("background") }.getOrDefault(true)
+        val fixed = when {
+            hasSwitch -> style
+            style.backgroundOpacity > 0f -> style.copy(background = true)
+            else -> style.copy(background = false, backgroundOpacity = SubtitleStyle().backgroundOpacity)
+        }
+        return fixed.sanitized()
+    }
+}

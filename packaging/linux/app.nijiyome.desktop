@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Nijiyome
+GenericName=Anime player
+GenericName[es]=Reproductor de anime
+Comment=Anime player with libmpv, Anime4K and local extensions
+Comment[es]=Reproductor de anime con libmpv, Anime4K y extensiones locales
+Exec=nijiyome %u
+TryExec=nijiyome
+Icon=app.nijiyome
+Terminal=false
+Categories=AudioVideo;Video;Player;
+Keywords=anime;mpv;player;video;streaming;torrent;
+Keywords[es]=anime;mpv;reproductor;video;streaming;torrent;
+MimeType=x-scheme-handler/nijiyome;x-scheme-handler/magnet;application/x-bittorrent;
+StartupNotify=true
+StartupWMClass=app-nijiyome-desktop-MainKt
+SingleMainWindow=true

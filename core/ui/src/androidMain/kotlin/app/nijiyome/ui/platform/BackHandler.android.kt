@@ -1,0 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.ui.platform
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.Composable
+
+@Composable
+actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) = BackHandler(enabled = enabled, onBack = onBack)

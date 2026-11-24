@@ -1,0 +1,174 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.feature.home
+
+import app.nijiyome.feature.home.resources.Res
+import app.nijiyome.feature.home.resources.*
+import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.ui.resources.*
+import app.nijiyome.model.CardStyle
+import app.nijiyome.model.Density
+import app.nijiyome.ui.look.CardSizing
+import app.nijiyome.ui.look.LocalLook
+import app.nijiyome.ui.media.COVER_ASPECT_RATIO
+import app.nijiyome.ui.media.MediaWideCard
+import app.nijiyome.ui.media.classicFactsLine
+import app.nijiyome.ui.media.detailedFactsLine
+import app.nijiyome.ui.media.dotColor
+import app.nijiyome.ui.media.mediaStatusKind
+import app.nijiyome.ui.media.mediaSubtitle
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.NoAdultContent
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import app.nijiyome.model.MatureContentMode
+import app.nijiyome.model.Media
+import app.nijiyome.ui.media.LocalTitleLanguage
+import app.nijiyome.ui.media.MediaCard
+import app.nijiyome.ui.media.displayTitle
+import app.nijiyome.ui.media.mediaKey
+
+/**
+ * Parity wave B (worker r, checklist settings.privacy.mature-content): how Home presents adult titles once `showAdult` lets them in.
+ * SHOW = as any title; BLUR = blurred poster until tapped once; WARN = confirmation dialog before opening, once per title (remembered for
+ * the life of the screen state, like the classic gate).
+ */
+class MatureGate internal constructor(
+    val mode: MatureContentMode,
+    private val accepted: SnapshotStateList<String>,
+    private val ask: (Media, () -> Unit) -> Unit,
+) {
+    fun isHidden(media: Media): Boolean = mode != MatureContentMode.SHOW && HomeLogic.isMature(media) && mediaKey(media) !in accepted
+
+    /** Runs [open] directly, after revealing (BLUR) or after the dialog (WARN). */
+    fun open(media: Media, open: () -> Unit) {
+        if (!isHidden(media)) return open()
+        when (mode) {
+            MatureContentMode.BLUR -> accepted += mediaKey(media)
+            MatureContentMode.WARN -> ask(media, open)
+            MatureContentMode.SHOW -> open()
+        }
+    }
+
+    internal fun accept(media: Media) {
+        accepted += mediaKey(media)
+    }
+}
+
+@Composable
+fun rememberMatureGate(mode: MatureContentMode): MatureGate {
+    val accepted = remember { mutableStateListOf<String>() }
+    var pending by remember { mutableStateOf<Pair<Media, () -> Unit>?>(null) }
+    val gate = remember(mode) { MatureGate(mode, accepted) { media, open -> pending = media to open } }
+    pending?.let { (media, open) ->
+        AlertDialog(
+            onDismissRequest = { pending = null },
+            icon = { Icon(Icons.Outlined.NoAdultContent, contentDescription = null) },
+            title = { Text(stringResource(Res.string.home_mature_title)) },
+            text = { Text(stringResource(Res.string.home_mature_body, media.displayTitle(LocalTitleLanguage.current))) },
+            confirmButton = {
+                TextButton(onClick = {
+                    gate.accept(media)
+                    pending = null
+                    open()
+                }) { Text(stringResource(Res.string.home_mature_continue)) }
+            },
+            dismissButton = { TextButton(onClick = { pending = null }) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
+        )
+    }
+    return gate
+}
+
+/**
+ * [MediaCard] that honours [gate]: blurred poster + label while hidden in BLUR mode. 0.3.2: follows Tamaño de tarjetas — small /
+ * medium poster cards scale [width] (the medium width), large / XL draw the horizontal [MediaWideCard] sized for the window
+ * ([episodeLine] = "Episodio 5 · hace 3 horas" on episode rows).
+ */
+@Composable
+fun GatedMediaCard(
+    media: Media,
+    gate: MatureGate,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    width: Dp = 120.dp,
+    subtitle: String? = null,
+    episodeLine: String? = null,
+) {
+    val hidden = gate.isHidden(media) && gate.mode == MatureContentMode.BLUR
+    // 2026-11 UI refresh: card style and density of Diseño y estilo (compact cards are ~13 % narrower).
+    val look = LocalLook.current
+    val style = look.cardStyle
+    val size = look.cardSize
+    val title = media.displayTitle(LocalTitleLanguage.current)
+    val blur = if (hidden) Modifier.blur(18.dp) else Modifier
+    Box(modifier.width(homeCardWidth(width))) {
+        if (size.isWide) {
+            MediaWideCard(
+                media = media,
+                title = title,
+                onClick = { gate.open(media, onClick) },
+                size = size,
+                width = homeCardWidth(width),
+                modifier = blur,
+                episodeLine = episodeLine,
+                subtitle = subtitle,
+            )
+        } else {
+            MediaCard(
+                title = title,
+                coverUrl = media.cover,
+                onClick = { gate.open(media, onClick) },
+                modifier = Modifier.fillMaxWidth().then(blur),
+                subtitle = if (style == CardStyle.MINIMAL) {
+                    null
+                } else {
+                    subtitle ?: if (style == CardStyle.CLASSIC) classicFactsLine(media) ?: mediaSubtitle(media) else detailedFactsLine(media) ?: mediaSubtitle(media)
+                },
+                style = style,
+                statusDot = mediaStatusKind(media.status)?.dotColor(),
+            )
+        }
+        if (hidden) {
+            Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Outlined.NoAdultContent, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(Res.string.home_mature_tap), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+            }
+        }
+    }
+}
+
+/** Width of a Home row card: [mediumWidth] scaled by the poster size, or the wide card width for the window (0.3.2). */
+@Composable
+internal fun homeCardWidth(mediumWidth: Dp = 120.dp): Dp {
+    val look = LocalLook.current
+    val size = look.cardSize
+    if (size.isWide) return CardSizing.wideCardDp(size, app.nijiyome.ui.platform.windowWidthDp()).dp
+    return mediumWidth * (CardSizing.posterDp(size, look.density == Density.COMPACT) / CardSizing.MEDIUM_DP)
+}
+
+/** Height of a Home row card's image block (skeletons): the poster of a poster card, the whole wide card. */
+@Composable
+internal fun homeCardHeight(mediumWidth: Dp = 120.dp): Dp {
+    val size = LocalLook.current.cardSize
+    return if (size.isWide) CardSizing.widePosterDp(size).dp / COVER_ASPECT_RATIO else homeCardWidth(mediumWidth) / COVER_ASPECT_RATIO
+}

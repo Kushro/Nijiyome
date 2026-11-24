@@ -1,0 +1,655 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
+
+package app.nijiyome.feature.library
+
+import app.nijiyome.feature.library.resources.Res
+import app.nijiyome.feature.library.resources.*
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.Bookmarks
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.nijiyome.designsystem.components.EmptyState
+import app.nijiyome.designsystem.components.ErrorState
+import app.nijiyome.designsystem.components.LoadingState
+import app.nijiyome.designsystem.components.LocalAppSnackbar
+import app.nijiyome.designsystem.components.AdaptiveSheet
+import app.nijiyome.designsystem.components.Pill
+import app.nijiyome.designsystem.components.PillTone
+import app.nijiyome.designsystem.components.Segmented
+import app.nijiyome.designsystem.components.SegmentedOption
+import app.nijiyome.designsystem.components.rememberAfterDelay
+import app.nijiyome.model.CharacterRef
+import app.nijiyome.model.ListEntry
+import app.nijiyome.model.ListStatus
+import app.nijiyome.model.ListsRepository
+import app.nijiyome.model.LoadState
+import app.nijiyome.model.Media
+import app.nijiyome.ui.labels.labelRes
+import app.nijiyome.ui.media.LocalTitleLanguage
+import app.nijiyome.ui.media.MediaCover
+import app.nijiyome.ui.media.displayTitle
+import app.nijiyome.ui.state.rememberIsOnline
+import app.nijiyome.ui.state.userMessage
+import kotlinx.coroutines.launch
+import org.koin.compose.getKoin
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import kotlin.math.roundToInt
+import app.nijiyome.ui.resources.Res as UiR
+import app.nijiyome.ui.resources.*
+
+// Parity wave A contract (docs/redesign/15-parity-wave-a-contract-android.md §3.3). Owner: worker q. Signatures FINAL (Details mounts
+// ListButton; LibraryScreen mounts the tabs). Lists live in Room first (lists.local-only) and sync with AniList / MAL when linked.
+
+/**
+ * Library › Listas: status segmented (every [ListStatus], 15 §0.6) + sort / filter + grid of `ListEntry` cards (poster, title,
+ * "progress / total", score); tap -> Details, long press -> editor sheet (status, progress, score, favorite, remove). Without a linked
+ * account the list still works locally and the empty state offers [onOpenAccounts].
+ */
+@Composable
+fun ListsTab(
+    onOpenDetails: (anilistId: Int) -> Unit,
+    onOpenAccounts: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val vm: ListsViewModel = koinViewModel()
+    val state by vm.state.collectAsStateWithLifecycle()
+    ListsEvents(vm)
+    var editing by remember { mutableStateOf<ListEntry?>(null) }
+
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 110.dp),
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item(key = "controls", span = { GridItemSpan(maxLineSpan) }, contentType = "controls") {
+            ListsControls(state, vm, onOpenAccounts)
+        }
+        when (val entries = state.entries) {
+            LoadState.Loading -> item(key = "loading", span = { GridItemSpan(maxLineSpan) }) { DelayedListLoading() }
+            is LoadState.Err -> item(key = "error", span = { GridItemSpan(maxLineSpan) }) {
+                ErrorState(
+                    message = entries.cause.userMessage(),
+                    retryLabel = stringResource(UiR.string.ui_retry),
+                    onRetry = vm::retry,
+                    title = stringResource(Res.string.library_lists_error),
+                )
+            }
+            is LoadState.Ok -> if (entries.value.isEmpty()) {
+                item(key = "empty", span = { GridItemSpan(maxLineSpan) }) {
+                    val filtered = state.query.isNotBlank()
+                    EmptyState(
+                        icon = Icons.Outlined.Bookmarks,
+                        title = stringResource(
+                            if (filtered) Res.string.library_lists_no_match else Res.string.library_lists_empty_title,
+                            stringResource(state.status.labelRes()),
+                        ),
+                        message = stringResource(
+                            if (state.accounts.isEmpty()) Res.string.library_lists_empty_local else Res.string.library_lists_empty_linked,
+                        ),
+                        actionLabel = if (state.accounts.isEmpty()) stringResource(Res.string.library_lists_link) else null,
+                        onAction = if (state.accounts.isEmpty()) onOpenAccounts else null,
+                    )
+                }
+            } else {
+                items(entries.value, key = { "l-" + (it.ref.anilistId ?: 0) + "-" + (it.ref.malId ?: 0) }, contentType = { "entry" }) { entry ->
+                    ListEntryCard(
+                        entry = entry,
+                        onClick = { entry.ref.anilistId?.let(onOpenDetails) ?: run { editing = entry } },
+                        onLongClick = { editing = entry },
+                    )
+                }
+            }
+        }
+    }
+    editing?.let { entry ->
+        ListEntryEditor(
+            entry = entry,
+            onDismiss = { editing = null },
+            onStatus = { vm.setStatus(entry, it) },
+            onProgress = { vm.setProgress(entry.ref, it) },
+            onScore = { vm.setScore(entry.ref, it) },
+            onFavorite = { vm.setFavorite(entry, it) },
+        )
+    }
+}
+
+@Composable
+private fun ListsEvents(vm: ListsViewModel) {
+    val snackbar = LocalAppSnackbar.current
+    LaunchedEffect(vm) {
+        vm.events.collect { event ->
+            when (event) {
+                ListsEvent.Queued -> snackbar.show(org.jetbrains.compose.resources.getString(UiR.string.list_queued_offline))
+                is ListsEvent.Failed -> snackbar.show(org.jetbrains.compose.resources.getString(Res.string.library_lists_write_failed))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ListsControls(state: ListsUiState, vm: ListsViewModel, onOpenAccounts: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Segmented(
+            options = ListStatus.entries.map { s ->
+                val count = state.counts[s] ?: 0
+                val label = stringResource(s.labelRes())
+                SegmentedOption(s, if (count > 0) "$label · $count" else label)
+            },
+            selected = state.status,
+            onSelect = vm::setStatusFilter,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = state.query,
+                onValueChange = vm::setQuery,
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                trailingIcon = if (state.query.isNotEmpty()) {
+                    {
+                        IconButton(onClick = { vm.setQuery("") }) {
+                            Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.library_lists_clear_filter))
+                        }
+                    }
+                } else {
+                    null
+                },
+                placeholder = { Text(stringResource(Res.string.library_lists_filter)) },
+                modifier = Modifier.weight(1f),
+            )
+            SortMenu(state.sort, vm::setSort)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (state.accounts.isEmpty()) {
+                Pill(stringResource(Res.string.library_lists_local), tone = PillTone.NEUTRAL)
+                TextButton(onClick = onOpenAccounts) { Text(stringResource(Res.string.library_lists_link)) }
+            } else {
+                val anilist = stringResource(app.nijiyome.model.ListProvider.ANILIST.labelRes())
+                val mal = stringResource(app.nijiyome.model.ListProvider.MAL.labelRes())
+                Pill(
+                    state.accounts.joinToString(" · ") { if (it.provider == app.nijiyome.model.ListProvider.ANILIST) anilist else mal },
+                    tone = PillTone.PRIMARY,
+                )
+                if (state.pendingChanges > 0) {
+                    Pill(stringResource(Res.string.library_lists_pending, state.pendingChanges), tone = PillTone.WARN)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SortMenu(sort: ListSort, onSort: (ListSort) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        val label = stringResource(Res.string.library_lists_sort, stringResource(sort.labelRes()))
+        IconButton(onClick = { open = true }, modifier = Modifier.semantics { contentDescription = label }) {
+            Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = null)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            ListSort.entries.forEach { s ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(s.labelRes())) },
+                    onClick = {
+                        open = false
+                        onSort(s)
+                    },
+                    trailingIcon = if (s == sort) {
+                        { Icon(Icons.Filled.Check, contentDescription = null) }
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+    }
+}
+
+private fun ListSort.labelRes(): StringResource = when (this) {
+    ListSort.UPDATED -> Res.string.library_sort_updated
+    ListSort.TITLE -> Res.string.library_sort_title
+    ListSort.PROGRESS -> Res.string.library_sort_progress
+    ListSort.SCORE -> Res.string.library_sort_score
+}
+
+/** Poster card with "progress / total" and the score; long press opens the editor. */
+@Composable
+private fun ListEntryCard(entry: ListEntry, onClick: () -> Unit, onLongClick: () -> Unit, favoriteBadge: Boolean = false) {
+    val editLabel = stringResource(Res.string.library_lists_edit)
+    Column(
+        Modifier
+            .clip(MaterialTheme.shapes.medium)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = editLabel)
+            .padding(bottom = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box {
+            MediaCover(url = entry.poster, modifier = Modifier.fillMaxWidth(), contentDescription = null)
+            if (favoriteBadge || entry.favorite) {
+                Icon(
+                    Icons.Filled.Favorite,
+                    contentDescription = stringResource(UiR.string.list_favorite),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp),
+                )
+            }
+        }
+        entry.progressFraction()?.let { LinearProgressIndicator(progress = { it }, modifier = Modifier.fillMaxWidth()) }
+        Text(entry.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(
+            listOfNotNull(
+                entry.totalEpisodes?.let { stringResource(Res.string.library_lists_progress_of, entry.progress, it) }
+                    ?: stringResource(Res.string.library_lists_progress, entry.progress),
+                entry.score?.takeIf { it > 0 }?.let { stringResource(Res.string.library_lists_score, it) },
+            ).joinToString(" · "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** Library › Favoritos: favorite titles as a poster grid + favorite characters; remove from the overflow / editor. */
+@Composable
+fun FavoritesTab(
+    onOpenDetails: (anilistId: Int) -> Unit,
+    onOpenAccounts: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val vm: ListsViewModel = koinViewModel()
+    val state by vm.state.collectAsStateWithLifecycle()
+    ListsEvents(vm)
+    var editing by remember { mutableStateOf<ListEntry?>(null) }
+
+    when (val favorites = state.favorites) {
+        LoadState.Loading -> Box(modifier) { DelayedListLoading() }
+        is LoadState.Err -> ErrorState(
+            message = favorites.cause.userMessage(),
+            retryLabel = stringResource(UiR.string.ui_retry),
+            onRetry = vm::retry,
+            title = stringResource(Res.string.library_favorites_error),
+            modifier = modifier,
+        )
+        is LoadState.Ok -> if (favorites.value.isEmpty() && state.favoriteCharacters.isEmpty()) {
+            EmptyState(
+                icon = Icons.Outlined.FavoriteBorder,
+                title = stringResource(Res.string.library_favorites_empty_title),
+                message = stringResource(
+                    if (state.accounts.isEmpty()) Res.string.library_favorites_empty_local else Res.string.library_favorites_empty_linked,
+                ),
+                actionLabel = if (state.accounts.isEmpty()) stringResource(Res.string.library_lists_link) else null,
+                onAction = if (state.accounts.isEmpty()) onOpenAccounts else null,
+                modifier = modifier,
+            )
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 110.dp),
+                modifier = modifier,
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (state.favoriteCharacters.isNotEmpty()) {
+                    item(key = "chars", span = { GridItemSpan(maxLineSpan) }, contentType = "chars") {
+                        FavoriteCharactersRow(state.favoriteCharacters, onRemove = vm::removeCharacter)
+                    }
+                }
+                if (favorites.value.isNotEmpty()) {
+                    item(key = "titles-header", span = { GridItemSpan(maxLineSpan) }) {
+                        Text(stringResource(Res.string.library_favorites_titles), style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+                items(favorites.value, key = { "f-" + (it.ref.anilistId ?: 0) + "-" + (it.ref.malId ?: 0) }, contentType = { "entry" }) { entry ->
+                    ListEntryCard(
+                        entry = entry,
+                        onClick = { entry.ref.anilistId?.let(onOpenDetails) ?: run { editing = entry } },
+                        onLongClick = { editing = entry },
+                        favoriteBadge = true,
+                    )
+                }
+            }
+        }
+    }
+    editing?.let { entry ->
+        ListEntryEditor(
+            entry = entry,
+            onDismiss = { editing = null },
+            onStatus = { vm.setStatus(entry, it) },
+            onProgress = { vm.setProgress(entry.ref, it) },
+            onScore = { vm.setScore(entry.ref, it) },
+            onFavorite = { vm.setFavorite(entry, it) },
+        )
+    }
+}
+
+@Composable
+private fun FavoriteCharactersRow(characters: List<CharacterRef>, onRemove: (CharacterRef) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(Res.string.library_favorites_characters), style = MaterialTheme.typography.titleMedium)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(characters, key = { "c-" + it.id }) { c ->
+                Column(Modifier.width(84.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box {
+                        MediaCover(url = c.image, modifier = Modifier.width(72.dp), shape = CircleShape, aspectRatio = 1f)
+                        val removeLabel = stringResource(Res.string.library_favorites_remove_named, c.name)
+                        IconButton(
+                            onClick = { onRemove(c) },
+                            modifier = Modifier.align(Alignment.TopEnd).size(28.dp).semantics { contentDescription = removeLabel },
+                        ) {
+                            Icon(Icons.Filled.Favorite, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    Text(c.name, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+/**
+ * Editor of one entry (classic `WatchlistButton` dialog): status chips, progress stepper, score slider (0..100, 0 = no score),
+ * favorite and "Quitar de la lista". Each change saves at once (local first, queued for the linked providers).
+ */
+@Composable
+internal fun ListEntryEditor(
+    entry: ListEntry?,
+    onDismiss: () -> Unit,
+    onStatus: (ListStatus?) -> Unit,
+    onProgress: (Int) -> Unit,
+    onScore: (Int?) -> Unit,
+    onFavorite: (Boolean) -> Unit,
+    title: String = entry?.title.orEmpty(),
+    totalEpisodes: Int? = entry?.totalEpisodes,
+) {
+    var status by remember(entry) { mutableStateOf(entry?.status) }
+    var progress by remember(entry) { mutableIntStateOf(entry?.progress ?: 0) }
+    var score by remember(entry) { mutableFloatStateOf((entry?.score ?: 0).toFloat()) }
+    var favorite by remember(entry) { mutableStateOf(entry?.favorite == true) }
+    AdaptiveSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(Res.string.library_lists_status), style = MaterialTheme.typography.labelLarge)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(ListStatus.entries) { s ->
+                    FilterChip(
+                        selected = status == s,
+                        onClick = {
+                            status = s
+                            onStatus(s)
+                        },
+                        label = { Text(stringResource(s.labelRes())) },
+                    )
+                }
+            }
+            if (status != null) {
+                Text(stringResource(Res.string.library_lists_progress_label), style = MaterialTheme.typography.labelLarge)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilledTonalIconButton(
+                        onClick = {
+                            progress = (progress - 1).coerceAtLeast(0)
+                            onProgress(progress)
+                        },
+                        enabled = progress > 0,
+                    ) { Icon(Icons.Outlined.Remove, contentDescription = stringResource(Res.string.library_lists_progress_minus)) }
+                    Text(
+                        totalEpisodes?.let { stringResource(Res.string.library_lists_progress_of, progress, it) }
+                            ?: stringResource(Res.string.library_lists_progress, progress),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    FilledTonalIconButton(
+                        onClick = {
+                            progress = (progress + 1).let { p -> totalEpisodes?.let { p.coerceAtMost(it) } ?: p }
+                            onProgress(progress)
+                        },
+                        enabled = totalEpisodes == null || progress < totalEpisodes,
+                    ) { Icon(Icons.Outlined.Add, contentDescription = stringResource(Res.string.library_lists_progress_plus)) }
+                }
+                Text(
+                    if (score.roundToInt() > 0) {
+                        stringResource(Res.string.library_lists_score_label, score.roundToInt())
+                    } else {
+                        stringResource(Res.string.library_lists_score_none)
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Slider(
+                    value = score,
+                    onValueChange = { score = (it / 5f).roundToInt() * 5f },
+                    onValueChangeFinished = { onScore(score.roundToInt().takeIf { it > 0 }) },
+                    valueRange = 0f..100f,
+                    steps = 19,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = {
+                    favorite = !favorite
+                    onFavorite(favorite)
+                }) {
+                    Icon(if (favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(
+                        (if (favorite) stringResource(Res.string.library_favorites_remove) else stringResource(UiR.string.list_favorite)),
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+                if (status != null) {
+                    TextButton(onClick = {
+                        status = null
+                        onStatus(null)
+                        onDismiss()
+                    }) {
+                        Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(UiR.string.list_remove), modifier = Modifier.padding(start = 6.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * "Añadir a lista" button of Details (classic `WatchlistButton`), mounted by worker o in the Details header / floating toolbar.
+ * Label = current status or "Añadir a lista"; the menu lists every status, "Editar…" (progress / score sheet), "Quitar de la lista"
+ * and the favorite toggle. Writes through `ListsRepository`; offline writes are queued (snackbar "Se sincronizará").
+ * [compact] = icon-only variant for the floating toolbar.
+ */
+@Composable
+fun ListButton(
+    media: Media,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    /** Ficha "Primero el episodio": size of the compact icon button (Details matches its 52 dp action row). */
+    compactButtonModifier: Modifier = Modifier,
+    /**
+     * Details header ("Cabecera de la ficha"): draws the control that opens the menu instead of the built-in buttons; [label] is the
+     * current status or "Añadir a lista", [entry] the list row (null = not on a list).
+     */
+    anchor: (@Composable (label: String, entry: ListEntry?, open: () -> Unit) -> Unit)? = null,
+) {
+    // Without the lists service (desktop, for now) there is nothing to add the title to: the button is not drawn.
+    val koin = getKoin()
+    val lists = remember(koin) { koin.getOrNull<ListsRepository>() } ?: return
+    val entryFlow = remember(media.ref) { lists.entry(media.ref) }
+    val entry by entryFlow.collectAsState(initial = null)
+    // the favorite flag on its own: a favorite that is on no list has no entry
+    val favoriteFlow = remember(media.ref) { lists.isFavorite(media.ref) }
+    val favorite by favoriteFlow.collectAsState(initial = false)
+    val accountsFlow = remember(lists) { lists.accounts }
+    val accounts by accountsFlow.collectAsState()
+    val online = rememberIsOnline()
+    val scope = rememberCoroutineScope()
+    val snackbar = LocalAppSnackbar.current
+    var menu by remember { mutableStateOf(false) }
+    var editor by rememberSaveable { mutableStateOf(false) }
+
+    val write: (suspend () -> Result<Unit>) -> Unit = { block ->
+        scope.launch {
+            val result = try {
+                block()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+            if (result.isSuccess) {
+                if (accounts.isNotEmpty() && !online) snackbar.show(org.jetbrains.compose.resources.getString(UiR.string.list_queued_offline))
+            } else {
+                snackbar.show(org.jetbrains.compose.resources.getString(Res.string.library_lists_write_failed))
+            }
+        }
+    }
+
+    val current = entry
+    val label = current?.let { stringResource(it.status.labelRes()) } ?: stringResource(UiR.string.list_add)
+    Box(modifier) {
+        if (anchor != null) {
+            anchor(label, current) { menu = true }
+        } else if (compact) {
+            FilledTonalIconButton(onClick = { menu = true }, modifier = compactButtonModifier.semantics { contentDescription = label }) {
+                Icon(if (current != null) Icons.Outlined.Bookmarks else Icons.Outlined.BookmarkAdd, contentDescription = null)
+            }
+        } else {
+            FilledTonalButton(onClick = { menu = true }) {
+                Icon(if (current != null) Icons.Outlined.Bookmarks else Icons.Outlined.BookmarkAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(label, modifier = Modifier.padding(horizontal = 6.dp))
+                if (favorite) {
+                    Icon(Icons.Filled.Favorite, contentDescription = stringResource(UiR.string.list_favorite), modifier = Modifier.size(16.dp))
+                }
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            ListStatus.entries.forEach { s ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(s.labelRes())) },
+                    onClick = {
+                        menu = false
+                        write { lists.setStatus(media, s) }
+                    },
+                    trailingIcon = if (current?.status == s) {
+                        { Icon(Icons.Filled.Check, contentDescription = null) }
+                    } else {
+                        null
+                    },
+                )
+            }
+            HorizontalDivider()
+            if (current != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.library_lists_edit)) },
+                    onClick = {
+                        menu = false
+                        editor = true
+                    },
+                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                )
+            }
+            val fav = favorite
+            DropdownMenuItem(
+                text = { Text((if (fav) stringResource(Res.string.library_favorites_remove) else stringResource(UiR.string.list_favorite))) },
+                onClick = {
+                    menu = false
+                    write { lists.setFavorite(media, !fav) }
+                },
+                leadingIcon = { Icon(if (fav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, contentDescription = null) },
+            )
+            if (current != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(UiR.string.list_remove)) },
+                    onClick = {
+                        menu = false
+                        write { lists.setStatus(media, null) }
+                    },
+                    leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
+                )
+            }
+        }
+    }
+    if (editor && current != null) {
+        ListEntryEditor(
+            entry = current,
+            onDismiss = { editor = false },
+            onStatus = { s -> write { lists.setStatus(media, s) } },
+            onProgress = { p -> write { lists.setProgress(media.ref, p) } },
+            onScore = { sc -> write { lists.setScore(media.ref, sc) } },
+            onFavorite = { f -> write { lists.setFavorite(media, f) } },
+            title = media.displayTitle(LocalTitleLanguage.current),
+            totalEpisodes = current.totalEpisodes ?: media.episodes,
+        )
+    }
+}
+
+@Composable
+private fun DelayedListLoading() {
+    if (rememberAfterDelay()) Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { LoadingState() }
+}

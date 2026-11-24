@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.feature.library
+
+// android wave contract (docs/redesign/12 §3.14). Owner: worker c; parity wave A (15 §3.3): worker q. Name and values FIXED (:app passes it).
+
+/**
+ * Tabs of Library: Continuar · Historial · Listas · Favoritos · Torrents. LISTS = AniList / MAL list by status (segmented Viendo /
+ * Planeado / Completado / En pausa / Abandonado / Repitiendo); FAVORITES = `ListsRepository.favorites()`. The Torrents tab body is
+ * TorrentsLibraryTab of worker f; badge = active downloads. Order = display order (`ordinal` is the saved tab index).
+ */
+enum class LibraryTab {
+    CONTINUE,
+    HISTORY,
+    LISTS,
+    FAVORITES,
+
+    /** parity wave B (16 §3.5 / §3.6, worker s): manga / novel readlists (`MangaLibraryTab` / `NovelLibraryTab`). */
+    MANGA,
+    NOVELS,
+    TORRENTS,
+}
+
+/** Lists and Favorites need the lists service (AniList / MAL accounts); the other tabs are always there. */
+fun LibraryTab.isAvailable(listsAvailable: Boolean): Boolean =
+    listsAvailable || (this != LibraryTab.LISTS && this != LibraryTab.FAVORITES)

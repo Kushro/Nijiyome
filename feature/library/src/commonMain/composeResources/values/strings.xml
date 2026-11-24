@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="library_in_progress">Continue watching</string>
+    <string name="library_history">History</string>
+    <string name="library_empty_title">Nothing watched yet</string>
+    <string name="library_empty_message">Episodes you watch show up here. Your library works without an account.</string>
+    <string name="library_explore">Explore anime</string>
+    <!-- android wave (docs/redesign/12 §4 c): prototype screens.js S.library + torrents tab (11 §3.1) -->
+    <string name="library_title">Library</string>
+    <string name="library_local_short">Local</string>
+    <string name="library_local">Local on this device</string>
+    <string name="library_tab_continue">Continue</string>
+    <string name="library_tab_history">History</string>
+    <!-- parity wave A (15 §3.3, worker q): list tabs; the rest of the keys are q's (library_lists_*, library_favorites_*). -->
+    <string name="library_tab_lists">Lists</string>
+    <string name="library_tab_favorites">Favorites</string>
+    <!-- parity wave B (16 §3.5 / §3.6, worker s) -->
+    <string name="library_tab_manga">Manga</string>
+    <string name="library_tab_novels">Novels</string>
+    <string name="library_tab_torrents">Torrents</string>
+    <string name="library_torrents_badge">%1$d active downloads</string>
+    <string name="library_sync_now">Sync now</string>
+    <string name="library_syncing">Syncing…</string>
+    <string name="library_synced">History synced</string>
+    <string name="library_synced_at">Synced %1$s</string>
+    <string name="library_never_synced">Not synced yet</string>
+    <string name="library_sync_failed">Could not sync the history. Try again later.</string>
+    <string name="library_episode">Episode %1$d</string>
+    <string name="library_episode_at">Episode %1$d · %2$s</string>
+    <string name="library_watched">Watched</string>
+    <string name="library_watched_on">Episode %1$d · watched %2$s</string>
+    <string name="library_history_empty_title">No history yet</string>
+    <string name="library_history_empty_message">Every episode you play is listed here, newest first.</string>
+    <!-- parity wave A (worker q): Library › Listas / Favoritos, ListButton -->
+    <string name="library_lists_error">Could not load your list</string>
+    <string name="library_lists_no_match">Nothing in %1$s matches the filter</string>
+    <string name="library_lists_empty_title">Nothing in %1$s yet</string>
+    <string name="library_lists_empty_local">Add titles from their details page. Lists work on this phone without an account; link AniList or MAL to sync them.</string>
+    <string name="library_lists_empty_linked">Add titles from their details page; changes sync with your linked accounts.</string>
+    <string name="library_lists_link">Link AniList or MAL</string>
+    <string name="library_lists_write_failed">Could not save the change. Try again.</string>
+    <string name="library_lists_clear_filter">Clear filter</string>
+    <string name="library_lists_filter">Filter by title</string>
+    <string name="library_lists_local">Local list</string>
+    <string name="library_lists_pending">%1$d pending</string>
+    <string name="library_lists_sort">Sort: %1$s</string>
+    <string name="library_sort_updated">Last updated</string>
+    <string name="library_sort_title">Title</string>
+    <string name="library_sort_progress">Progress</string>
+    <string name="library_sort_score">Score</string>
+    <string name="library_lists_edit">Edit…</string>
+    <string name="library_lists_progress_of">Ep %1$d / %2$d</string>
+    <string name="library_lists_progress">Ep %1$d</string>
+    <string name="library_lists_score">★ %1$d</string>
+    <string name="library_lists_status">Status</string>
+    <string name="library_lists_progress_label">Progress</string>
+    <string name="library_lists_progress_minus">One episode less</string>
+    <string name="library_lists_progress_plus">One episode more</string>
+    <string name="library_lists_score_label">Score: %1$d / 100</string>
+    <string name="library_lists_score_none">No score</string>
+    <string name="library_favorites_error">Could not load your favorites</string>
+    <string name="library_favorites_empty_title">No favorites yet</string>
+    <string name="library_favorites_empty_local">Tap the heart on a title or a character to keep it here. Link AniList to sync favorites.</string>
+    <string name="library_favorites_empty_linked">Favorites from your AniList account and the ones you add here show up together.</string>
+    <string name="library_favorites_titles">Titles</string>
+    <string name="library_favorites_characters">Characters</string>
+    <string name="library_favorites_remove_named">Remove %1$s from favorites</string>
+    <string name="library_favorites_remove">Remove favorite</string>
+</resources>

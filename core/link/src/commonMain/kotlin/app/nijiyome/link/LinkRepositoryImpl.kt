@@ -1,0 +1,693 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.link
+
+import app.nijiyome.model.AppError
+import app.nijiyome.model.AppException
+import app.nijiyome.model.DiscoveredPc
+import app.nijiyome.model.LinkCapabilities
+import app.nijiyome.model.LinkProfile
+import app.nijiyome.model.LinkProfileFallback
+import app.nijiyome.model.LinkSessionStatus
+import app.nijiyome.model.LinkSubtitleTrack
+import app.nijiyome.model.ProcessingLocation
+import app.nijiyome.model.VideoDecodeLimits
+import app.nijiyome.model.playableLinkProfile
+import app.nijiyome.model.LinkRepository
+import app.nijiyome.model.LinkSource
+import app.nijiyome.model.LinkedDevice
+import app.nijiyome.model.LinkState
+import app.nijiyome.model.LinkHandoff
+import app.nijiyome.model.PairedPc
+import app.nijiyome.model.RemoteAction
+import app.nijiyome.model.RemotePlayerState
+import app.nijiyome.model.RemoteSession
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.OkHttpClient
+import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
+
+/** What the player needs from the Link without knowing about certificates: the mTLS client and the heartbeat. */
+interface RemotePlaybackAccess {
+    /** OkHttp client that presents the client certificate and trusts only the pinned CA; null when unpaired. Use it for the HLS URL. */
+    fun playbackClient(): OkHttpClient?
+
+    /** The session created through [LinkRepository.startSession], if still open. */
+    fun session(sessionId: String): RemoteSession?
+
+    /** `POST /v1/sessions/{id}/position` (call every `heartbeatIntervalSecs`, 4 s). */
+    suspend fun heartbeat(sessionId: String, positionSecs: Double, paused: Boolean): Result<Unit>
+
+    /**
+     * BUG-038: `GET /v1/sessions/{id}`: true while the PC still has the session, false once it closed it (`session_gone` /
+     * `session_not_found`, e.g. 120 s without heartbeat), null when the PC cannot be asked (offline, other error).
+     */
+    suspend fun sessionAlive(sessionId: String): Boolean? = null
+
+    /** Whether [renew] can recreate [sessionId] (a session this phone knows: started here or handed off by the PC). */
+    fun canRenew(sessionId: String): Boolean = false
+
+    /**
+     * BUG-038 / BUG-022: a NEW session with the source of [sessionId], starting at [startSecs], with [profileId] (null = the
+     * profile [sessionId] used). The old one is closed (best effort) and forgotten.
+     */
+    suspend fun renew(sessionId: String, startSecs: Double, profileId: String? = null): Result<RemoteSession> =
+        Result.failure(UnsupportedOperationException("renew"))
+
+    /** BUG-022: the profile [sessionId] was created with by this phone; null = the PC's default (or unknown). */
+    fun profileOf(sessionId: String): String? = null
+
+    /**
+     * BUG-131: `GET /v1/sessions/{id}` `state`: true once the PC serves the playlist (`ready`), false when it failed or closed
+     * the session, null while it prepares (or the PC cannot be asked).
+     */
+    suspend fun sessionReady(sessionId: String): Boolean? = null
+
+    // --- 0.4.0 (worker C): Phone | PC | Mixed from the player ---
+
+    /**
+     * A NEW session of [source] starting at [startSecs] with [profileId] (null = the preferred / default one, as
+     * [LinkRepository.startSession]) and the source's audio stream [audioTrack] (null = the first): the player's "Phone -> PC"
+     * switch keeps the position and the audio. Renewals of it ([renew]) keep the same audio track.
+     */
+    suspend fun startAt(source: LinkSource, profileId: String?, startSecs: Double, audioTrack: Int? = null): Result<RemoteSession> =
+        Result.failure(UnsupportedOperationException("startAt"))
+
+    /** `GET /v1/sessions/{id}` with what the PC does (0.4.0 fields); null when the PC cannot be asked. */
+    suspend fun sessionStatus(sessionId: String): LinkSessionStatus? = null
+
+    /**
+     * The session's HLS through the phone's loopback proxy ([LinkLoopbackProxy], plain `http://127.0.0.1`), for libmpv, which
+     * cannot present the client certificate itself; null = not available (unknown session, unpaired, proxy cannot listen).
+     */
+    fun loopbackUrl(sessionId: String): String? = null
+
+    // --- 0.4.0: the source's subtitles while the PC processes ---
+
+    /**
+     * URL of the subtitle track [index] (`subtitles/{index}.{format}`, [format] `ass` | `vtt`) of [sessionId]: through the loopback
+     * proxy when [loopback] (libmpv), else the PC's own URL for the mTLS client (Media3). null = unknown session / not paired.
+     */
+    fun subtitleUrl(sessionId: String, index: Int, format: String, loopback: Boolean): String? = null
+
+    /**
+     * Asks the PC for subtitle track [index] of [sessionId] (the first request starts its extraction): [SubtitleReadiness.READY]
+     * once it serves it, [SubtitleReadiness.PENDING] while it extracts or lists (ask again later), [SubtitleReadiness.UNAVAILABLE]
+     * when it never will (no such track, too large, failed, session gone, older PC).
+     */
+    suspend fun subtitleReadiness(sessionId: String, index: Int, format: String): SubtitleReadiness = SubtitleReadiness.UNAVAILABLE
+}
+
+/** 0.4.0: [RemotePlaybackAccess.subtitleReadiness]. */
+enum class SubtitleReadiness { READY, PENDING, UNAVAILABLE }
+
+/**
+ * Phone-side extras of the Link discovery for :feature:link (wave B, link.discovery): the TOFU fingerprint announced by a PC and the
+ * pairing with the code the PC shows. Implemented by [LinkRepositoryImpl] (Koin binding in linkModule).
+ */
+interface LinkDiscoveryAccess {
+    /** Display fingerprint (`7A3F 91C2 …`) announced in the TXT `fp` of [pc]; null when the PC is no longer listed. */
+    fun fingerprintOf(pc: DiscoveredPc): String?
+
+    /** Pairs with a discovered PC: the user typed the one-time [code] shown on it, after confirming [fingerprintOf]. */
+    suspend fun pairDiscovered(pc: DiscoveredPc, code: String, deviceName: String): Result<PairedPc>
+}
+
+/**
+ * [LinkRepository] over [LinkClient]/[PairingClient]. Pairing by payload (QR / pasted) or, wave B, by a PC found over mDNS
+ * ([discover], [LinkDiscoveryAccess]); remote control and hand-off over `POST /v1/control`; PC -> phone events by long-poll.
+ * The identity (sealed key + certificates) is loaded lazily, so constructing the repository never touches the Keystore.
+ */
+class LinkRepositoryImpl(
+    private val vault: LinkKeyVault,
+    private val pairingClient: PairingClient = PairingClient(),
+    private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val httpFactory: (LinkIdentity) -> OkHttpClient = { id ->
+        LinkCrypto.httpClient(
+            id.pairing.host, id.pairing.caSha256,
+            LinkCrypto.ClientKeyManager(id.privateKey, arrayOf(id.certificate)),
+        )
+    },
+    private val clock: () -> Long = { System.currentTimeMillis() / 1000 },
+    /** android wave: epoch ms for pairedAtMs / lastSeenMs. */
+    private val nowMs: () -> Long = System::currentTimeMillis,
+    // --- parity wave B (16 §3.11, worker r) ---
+    /** mDNS announcements of PCs (`NsdPcDiscovery` on device); null = no discovery (tests). */
+    private val pcDiscovery: PcDiscovery? = null,
+    /** App in the foreground: the `GET /v1/events` long-poll only runs while true; null = never polls (tests drive [pollEventsOnce]). */
+    foreground: Flow<Boolean>? = null,
+    private val handoffNotifier: LinkHandoffNotifier? = null,
+    /** BUG-132: what the phone's H.264 decoder plays ([AvcDecodeLimits] on device); null = unknown (profiles are not checked). */
+    private val decodeLimits: () -> VideoDecodeLimits? = { null },
+) : LinkRepository, RemotePlaybackAccess, LinkDiscoveryAccess {
+    private val _state = MutableStateFlow<LinkState>(
+        vault.pairing()?.let { LinkState.Paired(it.toPc(), reachable = true) } ?: LinkState.Unpaired,
+    )
+    override val state: StateFlow<LinkState> = _state.asStateFlow()
+
+    // --- android wave (12 §3.5 / §3.6) ---
+    private val _linkedDevice = MutableStateFlow(readLinkedDevice())
+    override val linkedDevice: StateFlow<LinkedDevice?> = _linkedDevice.asStateFlow()
+
+    /** Last time lastSeenMs reached disk: a playback heartbeat every 4 s must not rewrite the file each time. */
+    @Volatile private var lastSeenPersistedMs: Long = 0
+
+    private class Connection(val identity: LinkIdentity, val http: OkHttpClient, val client: LinkClient)
+
+    @Volatile private var connection: Connection? = null
+    private val sessions = ConcurrentHashMap<String, RemoteSession>()
+
+    /** Source, profile and (0.4.0) audio stream of the sessions this phone started ([renew]); PC hand-offs have none. */
+    private data class Origin(val source: SessionSource, val profile: String?, val audioTrack: Int? = null)
+
+    private val origins = ConcurrentHashMap<String, Origin>()
+
+    // ------------------------------------------------------------------ parity wave B: discovery, remote control, hand-off, events
+
+    private val scope = CoroutineScope(SupervisorJob() + io)
+    private val found = ConcurrentHashMap<String, FoundPc>()
+    /** 2026-11 history per device: `history_resync` events, kept until `HistorySyncTriggers` (:core:data) takes them. */
+    private val historyResyncs = kotlinx.coroutines.channels.Channel<HistoryResyncMode>(capacity = 8, onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST)
+    val historyResyncRequests: Flow<HistoryResyncMode> = historyResyncs.receiveAsFlow()
+    private val _pendingHandoff = MutableStateFlow<LinkHandoff?>(null)
+    override val pendingHandoff: StateFlow<LinkHandoff?> = _pendingHandoff.asStateFlow()
+
+    init {
+        if (foreground != null) {
+            scope.launch {
+                combine(foreground, state) { fg, s -> fg && s is LinkState.Paired }
+                    .distinctUntilChanged()
+                    .collectLatest { active -> if (active) eventsLoop() }
+            }
+        }
+    }
+
+    /** PCs announcing `_nijiyome-link._tcp` (link.discovery); already-paired PC excluded by the screen. */
+    override fun discover(): Flow<List<DiscoveredPc>> = pcDiscovery?.pcs()?.map { list ->
+        list.forEach { found[key(it.pc)] = it }
+        list.map { it.pc }
+    } ?: emptyFlow()
+
+    override fun fingerprintOf(pc: DiscoveredPc): String? = found[key(pc)]?.fingerprint?.let(DiscoveryWire::displayFingerprint)
+
+    override suspend fun pairDiscovered(pc: DiscoveredPc, code: String, deviceName: String): Result<PairedPc> {
+        val f = found[key(pc)] ?: return Result.failure(AppException(AppError.Unknown("link:discovery:gone")))
+        val payload = DiscoveryWire.payload(f, code, clock()) ?: return Result.failure(AppException(AppError.Unknown("link:payload:InvalidCode")))
+        return pair(payload, deviceName)
+    }
+
+    private fun key(pc: DiscoveredPc) = pc.instanceId ?: "${pc.host}:${pc.port}"
+
+    override suspend fun remoteState(): Result<RemotePlayerState?> = call { c ->
+        c.playerState().map { dto -> dto?.let(LinkWireMapping::playerState) }
+    }
+
+    override suspend fun remote(action: RemoteAction): Result<Unit> = call { c -> c.playerAction(action.id) }
+
+    override suspend fun handoff(animeId: String, episode: Int, positionSec: Int): Result<Unit> =
+        call { c -> c.handoff(animeId, episode, positionSec) }
+
+    override fun dismissHandoff() {
+        _pendingHandoff.value = null
+    }
+
+    /** Long-poll while active; errors back off (5 s, doubling up to 60 s). Cancelled when the app leaves the foreground. */
+    private suspend fun eventsLoop() {
+        var backoff = EVENTS_BACKOFF_MS
+        while (true) {
+            if (pollEventsOnce()) {
+                backoff = EVENTS_BACKOFF_MS
+            } else {
+                delay(backoff)
+                backoff = (backoff * 2).coerceAtMost(EVENTS_BACKOFF_MAX_MS)
+            }
+        }
+    }
+
+    /** One `GET /v1/events?wait=25`; true when the PC answered (with or without events). */
+    internal suspend fun pollEventsOnce(): Boolean {
+        val r = call { c -> c.events(ControlWire.MAX_WAIT_SECS) }
+        val events = r.getOrNull() ?: return false
+        events.mapNotNull(LinkWireMapping::historyResync).forEach { historyResyncs.trySend(it) }
+        val conn = connectionOrNull() ?: return true
+        events.mapNotNull(LinkWireMapping::handoff).lastOrNull()?.let { h ->
+            // The PC already started the session (send_to_device): register it so the player can open it by id.
+            sessions[h.sessionId] = RemoteSession(
+                sessionId = h.sessionId,
+                generation = 1,
+                playbackUrl = conn.client.playbackUrl("/v1/sessions/${h.sessionId}/master.m3u8"),
+                durationSecs = null,
+                heartbeatIntervalSecs = DEFAULT_HEARTBEAT_SECS,
+                idleTimeoutSecs = DEFAULT_IDLE_SECS,
+            )
+            val handoff = withPreferredProfile(h)
+            _pendingHandoff.value = handoff
+            runCatching { handoffNotifier?.notify(handoff) }
+        }
+        return true
+    }
+
+    /**
+     * BUG-008: the PC starts a hand-off without knowing this phone's profile (its default, no enhancement). With a preferred
+     * profile chosen on the Linked screen the session is recreated with it at the hand-off position; if the PC cannot (older PC,
+     * profile unavailable) the hand-off stays as the PC sent it.
+     */
+    private suspend fun withPreferredProfile(h: LinkHandoff): LinkHandoff {
+        val saved = _linkedDevice.value?.preferredProfile?.takeIf { it.isNotBlank() && it != DEFAULT_PROFILE } ?: return h
+        // BUG-132: a preferred profile this phone cannot decode becomes the closest playable one
+        val preferred = connectionOrNull()?.client?.let { c -> withContext(io) { playableProfile(c, saved, fromPreferred = true) } } ?: saved
+        if (preferred == DEFAULT_PROFILE) return h
+        val renewed = renew(h.sessionId, h.positionSec.toDouble(), preferred).getOrNull() ?: return h
+        return h.copy(sessionId = renewed.sessionId)
+    }
+
+    override suspend fun pair(payload: String, deviceName: String): Result<PairedPc> = withContext(io) {
+        val parsed = when (val r = PairingPayload.parse(payload, clock())) {
+            is PayloadResult.Valid -> r.payload
+            is PayloadResult.Invalid -> return@withContext Result.failure(AppException(AppError.Unknown("link:payload:${r.error::class.simpleName}")))
+        }
+        val before = _state.value
+        _state.value = LinkState.Pairing
+        val keyPair = LinkCrypto.generateKeyPair()
+        when (val result = pairingClient.pair(parsed, deviceName, keyPair)) {
+            is LinkResult.Failure -> {
+                _state.value = before
+                Result.failure(result.error.toAppException())
+            }
+            is LinkResult.Ok -> try {
+                val grant = result.value
+                val stored = StoredPairing(grant.deviceId, parsed.pcName.ifBlank { parsed.host }, parsed.host, parsed.port, parsed.caSha256)
+                vault.save(stored, LinkCrypto.privateKeyPem(keyPair.private), LinkCrypto.certificatePem(grant.certificate), LinkCrypto.certificatePem(grant.ca))
+                val now = nowMs()
+                runCatching {
+                    vault.saveMeta(StoredDeviceMeta(pairedAtMs = now, lastSeenMs = now, localDeviceName = LinkCsr.sanitizeDeviceName(deviceName)))
+                }
+                lastSeenPersistedMs = now
+                _linkedDevice.value = readLinkedDevice()
+                sessions.clear()
+                origins.clear()
+                connection = null
+                _state.value = LinkState.Paired(stored.toPc(), reachable = true)
+                Result.success(stored.toPc())
+            } catch (e: Exception) {
+                _state.value = before
+                Result.failure(AppException(AppError.Unknown("link:store"), e))
+            }
+        }
+    }
+
+    override suspend fun capabilities(): Result<LinkCapabilities> = call { c -> c.capabilities().map(::toCapabilities) }
+
+    @Volatile private var profileFallback: LinkProfileFallback? = null
+
+    override fun takeProfileFallback(): LinkProfileFallback? = profileFallback.also { profileFallback = null }
+
+    /**
+     * BUG-132: [wanted] (null = the PC's default), or the closest profile this phone's decoder plays when it cannot play [wanted]
+     * (the moto g51 refuses 2560x1440). When [fromPreferred], a replaced saved preferred profile is saved as the new one and
+     * remembered for the player's notice ([takeProfileFallback]), so it is said once. Without decoder limits or capabilities,
+     * [wanted] as is.
+     */
+    private suspend fun playableProfile(c: LinkClient, wanted: String?, fromPreferred: Boolean): String? {
+        val limits = runCatching { decodeLimits() }.getOrNull() ?: return wanted
+        val caps = c.capabilities().getOrNull()?.let(::toCapabilities) ?: return wanted
+        val to = playableLinkProfile(wanted, caps.profiles, limits, defaultProfile = caps.defaultProfile) ?: return wanted
+        if (to == (wanted ?: caps.defaultProfile)) return wanted
+        if (fromPreferred && wanted != null) {
+            profileFallback = LinkProfileFallback(wanted, to)
+            setPreferredProfile(to)
+        }
+        return to
+    }
+
+    private fun toCapabilities(dto: CapabilitiesDto): LinkCapabilities =
+            LinkCapabilities(
+                serverName = dto.serverName,
+                serverVersion = dto.serverVersion,
+                instanceId = dto.instanceId,
+                profiles = dto.profiles.map {
+                    LinkProfile(
+                        id = it.id,
+                        label = it.label,
+                        upscale = it.upscale != "none",
+                        frameGeneration = it.fg != "none",
+                        outputWidth = it.output.width,
+                        outputHeight = it.output.height,
+                        measuredSustain = (it.measuredSustain as? JsonPrimitive)?.let { p -> p.booleanOrNull?.toString() ?: p.contentOrNull } ?: "unknown",
+                        fgMultiplier = it.fgMultiplier,
+                        fgTargetFps = it.fgTargetFps,
+                        fgKind = it.fg,
+                        encoder = it.encoder?.takeIf { e -> e.isNotBlank() },
+                    )
+                },
+                defaultProfile = dto.defaultProfile,
+                clientFrameGenerationAllowed = dto.clientFg == "allowed",
+            )
+
+    override suspend fun startSession(source: LinkSource, profileId: String?): Result<RemoteSession> = call { c ->
+        // android wave: the profile chosen on the Linked screen applies when the caller has no explicit one
+        // BUG-132: never ask the PC for a profile this phone cannot decode
+        val profile = playableProfile(c, profileId ?: _linkedDevice.value?.preferredProfile, fromPreferred = profileId == null)
+        create(c, wireOf(source), profile, startSecs = null)
+    }
+
+    override suspend fun startAt(source: LinkSource, profileId: String?, startSecs: Double, audioTrack: Int?): Result<RemoteSession> = call { c ->
+        val profile = playableProfile(c, profileId ?: _linkedDevice.value?.preferredProfile, fromPreferred = profileId == null)
+        // tk-link refuses audio_track > 32 (request_invalid): the first stream instead of no session
+        create(c, wireOf(source), profile, startSecs.coerceAtLeast(0.0), audioTrack?.takeIf { it in 1..MAX_AUDIO_TRACK })
+    }
+
+    override suspend fun sessionStatus(sessionId: String): LinkSessionStatus? = withContext(io) {
+        val c = connectionOrNull()?.client ?: return@withContext null
+        (c.sessionState(sessionId) as? LinkResult.Ok)?.value?.let(::statusOf)
+    }
+
+    /** Started on first use (a Mixed / MPV Link playback), closed with [forget]. */
+    private val loopback by lazy {
+        LinkLoopbackProxy(upstream = {
+            connectionOrNull()?.let { conn ->
+                "https://${conn.identity.pairing.host}:${conn.identity.pairing.port}".toHttpUrl() to conn.http
+            }
+        })
+    }
+
+    override fun loopbackUrl(sessionId: String): String? {
+        val url = sessions[sessionId]?.playbackUrl ?: return null
+        if (connectionOrNull() == null) return null
+        return runCatching { loopback.localUrl(url) }.getOrNull()
+    }
+
+    // the `loopback` parameter of [subtitleUrl] shadows the property
+    private fun loopbackProxy(): LinkLoopbackProxy = loopback
+
+    override fun subtitleUrl(sessionId: String, index: Int, format: String, loopback: Boolean): String? {
+        val conn = connectionOrNull() ?: return null
+        if (sessions[sessionId] == null || format !in LinkClient.SUBTITLE_FORMATS) return null
+        val url = conn.client.subtitleUrl(sessionId, index, format)
+        return if (loopback) runCatching { loopbackProxy().localUrl(url) }.getOrNull() else url
+    }
+
+    override suspend fun subtitleReadiness(sessionId: String, index: Int, format: String): SubtitleReadiness = withContext(io) {
+        val c = connectionOrNull()?.client ?: return@withContext SubtitleReadiness.PENDING
+        subtitleReadinessOf(c.subtitle(sessionId, index, format))
+    }
+
+    override suspend fun setDefaultProcessing(location: ProcessingLocation) {
+        withContext(io) {
+            if (!vault.hasPairing()) return@withContext
+            val meta = vault.meta() ?: StoredDeviceMeta()
+            val stored = location.takeIf { it != ProcessingLocation.PHONE }?.name
+            runCatching { vault.saveMeta(meta.copy(defaultProcessing = stored)) }
+            _linkedDevice.value = readLinkedDevice()
+        }
+    }
+
+    private fun wireOf(source: LinkSource): SessionSource = when (source) {
+        is LinkSource.Library -> SessionSource.Library(source.itemId)
+        is LinkSource.Url -> SessionSource.Url(source.url, source.headers)
+        is LinkSource.Torrent -> SessionSource.Torrent(source.uri, source.mediaId, source.episode)
+    }
+
+    private suspend fun create(
+        c: LinkClient,
+        wire: SessionSource,
+        profile: String?,
+        startSecs: Double?,
+        audioTrack: Int? = null,
+    ): LinkResult<RemoteSession> =
+        c.createSession(wire, profile, audioTrack = audioTrack, startSecs = startSecs).map { dto ->
+            RemoteSession(
+                sessionId = dto.sessionId,
+                generation = dto.generation,
+                playbackUrl = c.playbackUrl(dto.playbackPath),
+                durationSecs = dto.durationSecs,
+                heartbeatIntervalSecs = dto.heartbeatIntervalSecs,
+                idleTimeoutSecs = dto.idleTimeoutSecs,
+            ).also {
+                sessions[it.sessionId] = it
+                origins[it.sessionId] = Origin(wire, profile, audioTrack)
+            }
+        }
+
+    override suspend fun sessionAlive(sessionId: String): Boolean? = withContext(io) {
+        val c = connectionOrNull()?.client ?: return@withContext null
+        when (val r = c.sessionState(sessionId)) {
+            is LinkResult.Ok -> true
+            is LinkResult.Failure -> {
+                val e = r.error
+                if (e is LinkError.Api && (e.error == LinkApiError.SessionGone || e.error == LinkApiError.SessionNotFound)) false else null
+            }
+        }
+    }
+
+    override fun profileOf(sessionId: String): String? = origins[sessionId]?.profile
+
+    override suspend fun sessionReady(sessionId: String): Boolean? = withContext(io) {
+        val c = connectionOrNull()?.client ?: return@withContext null
+        sessionReadiness(c.sessionState(sessionId))
+    }
+
+    override fun canRenew(sessionId: String): Boolean = origins.containsKey(sessionId) || sessions.containsKey(sessionId)
+
+    /**
+     * A session this phone started is recreated from its own source; any other (a PC hand-off) with the `session` source, which
+     * the PC resolves to the source it used (contract extension; an older PC answers request_invalid).
+     */
+    override suspend fun renew(sessionId: String, startSecs: Double, profileId: String?): Result<RemoteSession> {
+        if (!canRenew(sessionId)) return Result.failure(LinkError.Api(LinkApiError.SessionGone).toAppException())
+        val origin = origins[sessionId] ?: Origin(SessionSource.Session(sessionId), profile = null)
+        // 0.4.0: a profile change keeps the audio stream the session was started with (it went back to the first one)
+        val result = call { c -> create(c, origin.source, profileId ?: origin.profile, startSecs.coerceAtLeast(0.0), origin.audioTrack) }
+        if (result.isSuccess) {
+            sessions.remove(sessionId)
+            origins.remove(sessionId)
+            // the PC already replaced it (one session per device); the DELETE only matters if it did not
+            connectionOrNull()?.client?.let { c -> withContext(io) { c.deleteSession(sessionId) } }
+        }
+        return result
+    }
+
+    override suspend fun stop(sessionId: String) {
+        sessions.remove(sessionId)
+        origins.remove(sessionId)
+        val c = connectionOrNull()?.client ?: return
+        withContext(io) { c.deleteSession(sessionId) } // best effort: the PC closes idle sessions after 120 s anyway
+    }
+
+    override suspend fun forget() {
+        withContext(io) {
+            _pendingHandoff.value = null
+            val c = connectionOrNull()?.client
+            if (c != null) {
+                sessions.keys.toList().forEach { c.deleteSession(it) }
+                c.forgetSelf() // best effort; if the PC is offline the certificate stays valid there until revoked in its UI
+            }
+            sessions.clear()
+            origins.clear()
+            runCatching { loopback.close() }
+            connection?.http?.connectionPool?.evictAll()
+            connection = null
+            vault.clear()
+            _linkedDevice.value = null
+            _state.value = LinkState.Unpaired
+        }
+    }
+
+    override suspend fun setPreferredProfile(profileId: String?) {
+        withContext(io) {
+            if (!vault.hasPairing()) return@withContext
+            val meta = vault.meta() ?: StoredDeviceMeta()
+            runCatching { vault.saveMeta(meta.copy(preferredProfile = profileId?.takeIf { it.isNotBlank() })) }
+            _linkedDevice.value = readLinkedDevice()
+        }
+    }
+
+    override fun playbackClient(): OkHttpClient? = connectionOrNull()?.http
+
+    override fun session(sessionId: String): RemoteSession? = sessions[sessionId]
+
+    override suspend fun heartbeat(sessionId: String, positionSecs: Double, paused: Boolean): Result<Unit> =
+        call { c -> c.heartbeat(sessionId, positionSecs, paused) }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private suspend fun <T> call(block: suspend (LinkClient) -> LinkResult<T>): Result<T> = withContext(io) {
+        val conn = connectionOrNull() ?: return@withContext Result.failure(LinkError.NotPaired.toAppException())
+        when (val r = block(conn.client)) {
+            is LinkResult.Ok -> {
+                markReachable(conn, true)
+                Result.success(r.value)
+            }
+            is LinkResult.Failure -> {
+                noteFailure(conn, r.error)
+                Result.failure(r.error.toAppException())
+            }
+        }
+    }
+
+    private fun noteFailure(conn: Connection, error: LinkError) {
+        when (error) {
+            is LinkError.Transport.Refused, is LinkError.Transport.Timeout -> markReachable(conn, false)
+            is LinkError.Transport.Tls.Revoked -> _state.value = LinkState.Failed("revoked")
+            is LinkError.Transport.Tls.Expired -> _state.value = LinkState.Failed("expired")
+            is LinkError.Api -> if (error.error == LinkApiError.DeviceNotAuthorized) _state.value = LinkState.Failed("revoked") else markReachable(conn, true)
+            else -> Unit
+        }
+    }
+
+    private fun markReachable(conn: Connection, reachable: Boolean) {
+        if (reachable) noteSeen()
+        val cur = _state.value
+        if (cur is LinkState.Paired && cur.reachable != reachable) _state.value = cur.copy(reachable = reachable)
+        else if (cur is LinkState.Failed && reachable) _state.value = LinkState.Paired(conn.identity.pairing.toPc(), true)
+    }
+
+    private fun connectionOrNull(): Connection? {
+        connection?.let { return it }
+        synchronized(this) {
+            connection?.let { return it }
+            val identity = vault.load() ?: return null
+            val http = httpFactory(identity)
+            val client = LinkClient("https://${identity.pairing.host}:${identity.pairing.port}".toHttpUrl(), http)
+            return Connection(identity, http, client).also { connection = it }
+        }
+    }
+
+    private fun StoredPairing.toPc() = PairedPc(deviceId, serverName, host, port)
+
+    /** The PC answered: lastSeenMs now (memory always, disk at most once a minute). Runs on [io] (inside [call]). */
+    private fun noteSeen() {
+        val now = nowMs()
+        val cur = _linkedDevice.value ?: return
+        _linkedDevice.value = cur.copy(lastSeenMs = now)
+        if (now - lastSeenPersistedMs < LAST_SEEN_PERSIST_MS) return
+        lastSeenPersistedMs = now
+        runCatching { vault.saveMeta((vault.meta() ?: StoredDeviceMeta()).copy(lastSeenMs = now)) }
+    }
+
+    private fun readLinkedDevice(): LinkedDevice? {
+        val p = vault.pairing() ?: return null
+        val meta = vault.meta()
+        return LinkedDevice(
+            deviceId = p.deviceId,
+            serverName = p.serverName,
+            host = p.host,
+            port = p.port,
+            fingerprint = displayFingerprint(p.caSha256),
+            pairedAtMs = meta?.pairedAtMs,
+            lastSeenMs = meta?.lastSeenMs,
+            preferredProfile = meta?.preferredProfile,
+            localDeviceName = meta?.localDeviceName,
+            defaultProcessing = meta?.defaultProcessing
+                ?.let { name -> ProcessingLocation.entries.firstOrNull { it.name == name } }
+                ?: ProcessingLocation.PHONE,
+        )
+    }
+
+    internal companion object {
+        /** BUG-131: `ready` -> true; `failed` / `closed` / session gone -> false; `preparing` or no answer -> null. */
+        fun sessionReadiness(r: LinkResult<SessionStateDto>): Boolean? = when (r) {
+            is LinkResult.Ok -> when (r.value.state) {
+                "ready" -> true
+                "preparing" -> null
+                else -> false
+            }
+            is LinkResult.Failure -> {
+                val e = r.error
+                if (e is LinkError.Api && (e.error == LinkApiError.SessionGone || e.error == LinkApiError.SessionNotFound)) false else null
+            }
+        }
+
+        /** 0.4.0: `GET /v1/sessions/{id}` as the player's "En la PC" indicator reads it. */
+        fun statusOf(dto: SessionStateDto): LinkSessionStatus = LinkSessionStatus(
+            state = dto.state,
+            profileId = dto.profile,
+            throttled = dto.throttled,
+            leadSecs = dto.leadSecs,
+            degradedFrom = dto.degradedFrom?.takeIf { it.isNotBlank() },
+            outputWidth = dto.output?.width,
+            outputHeight = dto.output?.height,
+            upscale = dto.upscale,
+            anime4kMode = dto.anime4k?.mode,
+            anime4kVariant = dto.anime4k?.variant,
+            fg = dto.fg,
+            fgMultiplier = dto.fgEffective?.multiplier,
+            sourceFps = dto.fgEffective?.sourceFps,
+            outFps = dto.fgEffective?.outFps ?: dto.output?.fps,
+            encoder = dto.encoder?.takeIf { it.isNotBlank() },
+            videoKbps = dto.videoKbps,
+            error = dto.error,
+            subtitles = dto.subtitles?.map {
+                LinkSubtitleTrack(
+                    index = it.index,
+                    language = it.language?.takeIf { l -> l.isNotBlank() },
+                    title = it.title?.takeIf { t -> t.isNotBlank() },
+                    codec = it.codec,
+                    default = it.default,
+                    forced = it.forced,
+                    text = it.text,
+                    formats = it.formats.filter { f -> f in LinkClient.SUBTITLE_FORMATS },
+                )
+            },
+            subtitlesState = dto.subtitlesState,
+            ended = dto.ended,
+            endSecs = dto.endSecs?.takeIf { it.isFinite() && it >= 0 },
+            producedFromSecs = dto.produced?.fromSecs?.takeIf { it.isFinite() && it >= 0 },
+            producedToSecs = dto.produced?.toSecs?.takeIf { it.isFinite() && it >= 0 },
+        )
+
+        /**
+         * 0.4.0: a subtitle answer as [SubtitleReadiness]: 200 -> READY; `503 segment_wait_timeout` (extracting), `409
+         * session_not_ready` (listing) or no answer (offline, timeout) -> PENDING; anything else (404, 410, `503
+         * source_unavailable`, an older PC's 404) -> UNAVAILABLE.
+         */
+        fun subtitleReadinessOf(r: LinkResult<String>): SubtitleReadiness = when (r) {
+            is LinkResult.Ok -> SubtitleReadiness.READY
+            is LinkResult.Failure -> when (val e = r.error) {
+                is LinkError.Api -> if (e.error == LinkApiError.SegmentWaitTimeout || e.error == LinkApiError.SessionNotReady) {
+                    SubtitleReadiness.PENDING
+                } else {
+                    SubtitleReadiness.UNAVAILABLE
+                }
+                is LinkError.Transport -> SubtitleReadiness.PENDING
+                else -> SubtitleReadiness.UNAVAILABLE
+            }
+        }
+
+        /** tk-link refuses `audio_track` above this (sessions.rs `create`). */
+        const val MAX_AUDIO_TRACK = 32
+
+        const val LAST_SEEN_PERSIST_MS = 60_000L
+        const val EVENTS_BACKOFF_MS = 5_000L
+        const val EVENTS_BACKOFF_MAX_MS = 60_000L
+        const val DEFAULT_HEARTBEAT_SECS = 4
+        const val DEFAULT_IDLE_SECS = 120
+        /** tk-link `profiles::DEFAULT_PROFILE`: what a hand-off uses when the PC was not told a profile. */
+        const val DEFAULT_PROFILE = "p-none"
+
+        /** `7a3f91c2...` -> `7A3F 91C2 ...`; null for an empty pin. */
+        fun displayFingerprint(hex: String): String? {
+            val clean = hex.filter { it.isLetterOrDigit() }.uppercase(Locale.ROOT)
+            return clean.takeIf { it.isNotEmpty() }?.chunked(4)?.joinToString(" ")
+        }
+    }
+}

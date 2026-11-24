@@ -1,0 +1,59 @@
+package app.nijiyome.ui.format
+
+import java.util.Locale
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class FormattersTest {
+
+    @Test
+    fun `bytes use decimal units with three significant digits like desktop`() {
+        assertEquals("999 B", formatBytes(999, Locale.ROOT))
+        assertEquals("1.20 kB", formatBytes(1_200, Locale.ROOT))
+        assertEquals("38.4 MB", formatBytes(38_400_000, Locale.ROOT))
+        assertEquals("1.38 GB", formatBytes(1_380_000_000, Locale.ROOT))
+        assertEquals("0 B", formatBytes(-5, Locale.ROOT))
+        // BUG-074: Spanish UI -> decimal comma, like the desktop.
+        assertEquals("1,45 GB", formatBytes(1_450_000_000, Locale.forLanguageTag("es")))
+        assertEquals("4,2 MB/s", formatRate(4_200_000, Locale.forLanguageTag("es")))
+    }
+
+    @Test
+    fun `rates and durations`() {
+        assertEquals("0 B/s", formatRate(0, Locale.ROOT))
+        assertEquals("4.2 MB/s", formatRate(4_200_000, Locale.ROOT))
+        assertEquals("23:45", formatDuration(23 * 60 + 45))
+        assertEquals("1:23:45", formatDuration(3600 + 23 * 60 + 45))
+        assertEquals("0:00", formatDuration(-1))
+    }
+
+    @Test
+    fun `relative time buckets`() {
+        assertEquals(RelativeTime.Now, relativeTimeBucket(30_000))
+        assertEquals(RelativeTime.Now, relativeTimeBucket(-10_000))
+        assertEquals(RelativeTime.Minutes(14), relativeTimeBucket(14 * 60_000L))
+        assertEquals(RelativeTime.Hours(3), relativeTimeBucket(3 * 3_600_000L + 59_000))
+        assertEquals(RelativeTime.Yesterday, relativeTimeBucket(30 * 3_600_000L))
+        assertEquals(RelativeTime.Days(5), relativeTimeBucket(5 * 86_400_000L))
+    }
+
+    @Test
+    fun platformRelativeTimeReadsInsideASentence() {
+        // BUG-092: "Actualizada Hace 3 horas", "Sincronizado Hace 33 minutos".
+        kotlin.test.assertEquals("hace 3 horas", midSentence("Hace 3 horas", java.util.Locale.forLanguageTag("es")))
+        kotlin.test.assertEquals("ayer", midSentence("Ayer", java.util.Locale.forLanguageTag("es")))
+        kotlin.test.assertEquals("3 hours ago", midSentence("3 hours ago", java.util.Locale.ENGLISH))
+    }
+
+    /** BUG-126: "337460 Miembros" without separators; the language decides, not the country (the moto g51 is es-US). */
+    @Test
+    fun countsUseTheLanguagesThousandsSeparator() {
+        assertEquals("337.460", formatCount(337_460, Locale.forLanguageTag("es")))
+        assertEquals("337.460", formatCount(337_460, Locale.forLanguageTag("es-US")))
+        assertEquals("48,381", formatCount(48_381, Locale.forLanguageTag("en-US")))
+        assertEquals("1.234.567", formatCount(1_234_567, Locale.forLanguageTag("es")))
+        assertEquals("999", formatCount(999, Locale.forLanguageTag("es")))
+        assertEquals("8,1", formatDecimal1(8.1, Locale.forLanguageTag("es-US")))
+        assertEquals("8.1", formatDecimal1(8.1, Locale.ENGLISH))
+    }
+}

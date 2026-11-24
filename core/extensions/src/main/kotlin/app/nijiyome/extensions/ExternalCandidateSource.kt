@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.extensions
+
+import app.nijiyome.model.Media
+import app.nijiyome.model.SourceCandidate
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+
+/**
+ * Source candidates that do not come from an installed `.kai` extension: today the linked PC extension servers
+ * (`:core:extension-server`, docs/redesign/13 §3.10). `ExtensionRepositoryImpl.resolveCandidates` asks every source in parallel with the
+ * installed extensions and ranks everything together.
+ *
+ * Implementations bound their own time (a down server must not delay the local extensions beyond its timeout), never throw except
+ * for cancellation, and use `extId`s that cannot collide with extension ids and contain no `|` (it separates `sourceKey`).
+ */
+interface ExternalCandidateSource {
+    suspend fun candidates(media: Media, episode: Int): List<SourceCandidate>
+
+    /**
+     * BUG-011 / BUG-019: the same candidates as they arrive; every emission is this source's complete list so far, and the flow ends
+     * when the source has nothing more to add. Default: one emission of [candidates].
+     */
+    fun candidatesFlow(media: Media, episode: Int): Flow<List<SourceCandidate>> = flow { emit(candidates(media, episode)) }
+
+    /** Whether this source currently has something to ask (e.g. at least one enabled linked server). */
+    val available: Flow<Boolean> get() = flowOf(true)
+}

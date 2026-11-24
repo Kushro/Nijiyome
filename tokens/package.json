@@ -1,0 +1,12 @@
+{
+  "name": "@nijiyome/tokens",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Design tokens for the native Nijiyome apps (tokens.json -> Tokens.kt)",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "generate": "node generate.mjs",
+    "test": "node --test test"
+  }
+}

@@ -1,0 +1,3319 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nijiyome Link v1 (M0)",
+    "version": "1.0.0",
+    "description": "PC <-> phone link served by apps/desktop-native/crates/tk-link and consumed by apps/android-native/core/link. Derived from docs/redesign/03-pairing-upscale.md (which in turn rewrites the Temple v1 contract), trimmed by review E6 and E7: NO mDNS / TOFU in M0 (pairing = QR or pasted code only), NO /v1/settings, NO events/handoff/control/sync/downloads, NO phone source and source channel, library = one user-chosen folder, non-recursive, listed with ffprobe (optional in M0; the url source is the one that matters). Every response carries the header `Nijiyome-Link: v1`. Error bodies are `{\"error\":{\"code\",\"message\"}}` with FIXED messages (no paths, secrets, tokens or pairing codes).",
+    "license": {
+      "name": "AGPL-3.0-or-later",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://{host}:{port}",
+      "variables": {
+        "host": {
+          "default": "192.168.0.10",
+          "description": "PC LAN IPv4 (from the pairing payload)"
+        },
+        "port": {
+          "default": "47321"
+        }
+      }
+    }
+  ],
+  "x-transport": {
+    "scheme": "https",
+    "defaultPort": 47321,
+    "tls": "TLS 1.3 and 1.2 via rustls with the `ring` provider (no aws-lc), ECDSA P-256, ALPN http/1.1, no session resumption, max 64 connections",
+    "server": "Own CA generated on first start (%APPDATA%\\Nijiyome\\link\\ca.{der,key}; key protected with DPAPI). Server cert SAN = every active LAN IPv4 + 127.0.0.1 + DNS localhost; re-issued when the IP changes.",
+    "clientIdentity": "The phone pins the SHA-256 of the CA DER. Client cert issued by the CA, CN = device_id, 365 days. Client key = software P-256 sealed at rest with an AndroidKeyStore AES-GCM key in noBackupFilesDir (review E4, same model as Enigmata TempleCrypto/TempleKeyVault); held in memory behind an X509KeyManager; exported as temporary PKCS#8 only when the M1 mpv engine needs it.",
+    "mtls": "Required on every route except POST /v1/pairing. Active device checked PER REQUEST. Unknown route with an authorized device -> 404 session_not_found. Undefined method on an existing route -> 405 without JSON body.",
+    "revocation": "In-memory list + file; effect <= 2 s; live connections of the device are closed.",
+    "bodyLimits": "Every JSON body has a per-route cap and must be fully received within 10 s of the headers (408 body_timeout, connection closed).",
+    "bind": "Private LAN interfaces only; never 0.0.0.0 on a Public Windows profile. The Windows Firewall rule (Private profile) is created ONLY from Settings > Link > \"Allow on private network\" with a UAC prompt, never on first launch (review E6)."
+  },
+  "x-pairing-payload": {
+    "scheme": "nijiyome-link:v1",
+    "format": "nijiyome-link:v1?h=<ipv4>&p=<port>&ca=<sha256 hex of CA DER>&c=<10 Crockford base32>&x=<unix exp seconds>&n=<PC name, url-encoded>",
+    "rules": [
+      "Not an HTTP URL; contains the pairing code, so it is never logged.",
+      "Single window of 5 minutes, single use, <= 5 failed attempts. Validation order: window -> CSR -> code.",
+      "The phone REJECTS payloads whose scheme is not exactly nijiyome-link:v1 (e.g. nijiyome-link:v0, enigmata-temple:*), expired payloads (x in the past) and malformed ones.",
+      "The phone verifies that the CA returned by POST /v1/pairing matches the pinned `ca` and that the issued cert contains its public key."
+    ],
+    "qr": "The phone scans it with CameraX + zxing (no Google Play services) or the user pastes the text; the paste option is always available."
+  },
+  "x-ffmpeg": {
+    "note": "Contract for the desktop implementation, not an HTTP surface.",
+    "protocolWhitelist": "http,tcp,crypto (E6: `crypto` is required for #EXT-X-KEY AES-128 HLS). FFmpeg only ever reads the loopback fetcher, never an external URL.",
+    "ssrfFetcher": {
+      "loopback": "http://127.0.0.1:<ephemeral>/u/<session_token>/...",
+      "rules": [
+        "https only (http only if the \"allow HTTP\" setting is on); ports 80/443/8080/8443.",
+        "The fetcher resolves DNS itself, rejects loopback, RFC1918, CGNAT 100.64/10, link-local 169.254/16 and fe80::/10, ULA fc00::/7, multicast, 0.0.0.0/8 and cloud-metadata addresses, and connects to the already-validated IP (anti DNS-rebinding: a name that resolves public first and private later is rejected).",
+        "Redirects: max 5, every hop re-validated (a redirect to a private IP is rejected); Cookie and Authorization are dropped on origin change.",
+        "Request headers: allow-list Referer, Origin, User-Agent, Accept, Accept-Language, Cookie, Range; total <= 8 KiB; no CR/LF in names or values (a header containing CR/LF rejects the whole request); Cookie only towards the initial origin.",
+        "HLS playlists (master/media/#EXT-X-KEY/#EXT-X-MAP) are rewritten so every URI goes through the fetcher with the same policy (segments and keys alike). The rewriter REJECTS data: and file: URIs and any scheme other than http(s); playlists are capped at 2 MiB; depth master -> media only (no further nesting).",
+        "#EXT-X-KEY with an absolute URI to a host that the policy does not allow is rejected.",
+        "If the phone sends extension_id AND the PC has that extension installed, each host is also intersected with its network:domain:* permissions; otherwise only the generic policy applies.",
+        "Limits: 64 concurrent requests per session, 2 GiB per session, 20 s timeout per request; logs redacted (no query strings)."
+      ]
+    },
+    "jobObject": "The FFmpeg process tree lives in a Windows Job Object and dies with the app."
+  },
+  "x-profiles": {
+    "ids": [
+      "p-none",
+      "p-anime4k-1080",
+      "p-anime4k-1440",
+      "p-anime4k-2160",
+      "p-anime4k-1080-fg2x"
+    ],
+    "pipeline": "decode (FFmpeg; Windows d3d11va, Linux VAAPI -> software fallback) -> upscale (Anime4K 4.0 via libplacebo/Vulkan) -> frame generation (none by default; frc_amf on AMD/Windows only for p-anime4k-1080-fg2x; experimental LSFG via temple-lsfg between two FFmpeg for p-lsfg-* / p-anime4k-lsfg-*) -> encode (Windows: h264_amf | h264_nvenc | h264_qsv | libopenh264; Linux: h264_vaapi | h264_nvenc | libx264 | libopenh264) -> fMP4 HLS",
+    "measuredSustain": "true | false | \"unknown\": 10 s benchmark on first use, stored. `p-none` is always available."
+  },
+  "tags": [
+    {
+      "name": "pairing",
+      "description": "No client certificate (TLS without mTLS)."
+    },
+    {
+      "name": "capabilities"
+    },
+    {
+      "name": "library"
+    },
+    {
+      "name": "sessions"
+    },
+    {
+      "name": "playback",
+      "description": "VOD fMP4-HLS, 2 s segments, produced on demand, RAM window 512 MiB."
+    },
+    {
+      "name": "history",
+      "description": "Watch-history sync between the user's own devices (wave A). The PC is the server; the phone keeps a `since` cursor. Replaces the removed cloud history."
+    },
+    {
+      "name": "remote",
+      "description": "Wave B (`link.remote-control`, `link.handoff`): the phone drives the PC player. Canonical wire of `tk-link/src/control.rs`; Android `core/link/LinkControl.kt` uses it as is."
+    },
+    {
+      "name": "events",
+      "description": "Wave B (`link.send-to-device`): PC -> phone events through a per-device long-poll, kept while the app is in the foreground."
+    }
+  ],
+  "paths": {
+    "/v1/pairing": {
+      "post": {
+        "tags": [
+          "pairing"
+        ],
+        "summary": "Pair a device with the open pairing window",
+        "description": "Body <= 16 KiB. Unreadable or invalid JSON -> 400 request_invalid, larger -> 413 body_too_large, not received in 10 s -> 408 body_timeout; none of these consume attempts. The window is closed BEFORE the certificate is issued.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Paired",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/request_invalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/pairing_code_invalid"
+          },
+          "408": {
+            "$ref": "#/components/responses/body_timeout"
+          },
+          "409": {
+            "$ref": "#/components/responses/pairing_closed"
+          },
+          "413": {
+            "$ref": "#/components/responses/body_too_large"
+          },
+          "429": {
+            "$ref": "#/components/responses/pairing_attempts_exceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          }
+        }
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "capabilities"
+        ],
+        "summary": "GPU, encoders and upscale profiles of the PC",
+        "responses": {
+          "200": {
+            "description": "Capabilities",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          }
+        }
+      }
+    },
+    "/v1/library": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "library"
+        ],
+        "summary": "Files of the PC library folder (OPTIONAL in M0)",
+        "description": "One user-chosen folder, non-recursive (E7), metadata via ffprobe cached by (path, mtime, size). `id` = HMAC-SHA256(32-byte install salt, folder id || relative path) truncated to 128 bits, hex (32 chars). Paths are NEVER returned. If B5 does not ship it, M0 has only the `url` source.",
+        "x-milestone": "M0 (optional)",
+        "responses": {
+          "200": {
+            "description": "Library",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Library"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/devices/self": {
+      "delete": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "pairing"
+        ],
+        "summary": "Forget this device (revokes its own certificate)",
+        "responses": {
+          "204": {
+            "description": "Revoked. `Connection: close`."
+          }
+        }
+      }
+    },
+    "/v1/sessions": {
+      "post": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Create a transcoding session",
+        "description": "Body <= 4 KiB. One active session per device: creating another closes the previous one (its resources answer 410) and increments `generation`. `session_id` is opaque (not a credential). QA fixes 2026-11 (BUG-024): when the PC probes a url or torrent source (ffprobe) and the probe cannot read it (HTTP error, no streams), the session is not created: 503 source_unavailable.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/request_invalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/url_source_denied"
+          },
+          "404": {
+            "$ref": "#/components/responses/library_item_not_found"
+          },
+          "408": {
+            "$ref": "#/components/responses/body_timeout"
+          },
+          "413": {
+            "$ref": "#/components/responses/body_too_large"
+          },
+          "422": {
+            "$ref": "#/components/responses/profile_unavailable"
+          },
+          "503": {
+            "$ref": "#/components/responses/source_unavailable"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Session state (counts as activity)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "UUIDv4, lowercase with hyphens. Any other form -> 404 session_not_found."
+          }
+        ],
+        "description": "A closed session answers 200 with state \"closed\" for 30 min, then 404.",
+        "responses": {
+          "200": {
+            "description": "State",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionState"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/session_not_found"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Close a session (idempotent while remembered)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "UUIDv4, lowercase with hyphens. Any other form -> 404 session_not_found."
+          }
+        ],
+        "description": "Frees FFmpeg, window, fetcher and scratch BEFORE reporting closed.",
+        "responses": {
+          "204": {
+            "description": "Closed"
+          },
+          "404": {
+            "$ref": "#/components/responses/session_not_found"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/position": {
+      "post": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Heartbeat every 4 s",
+        "description": "Body <= 1 KiB. position_secs outside [0, duration] or non-finite -> 400 request_invalid. Accepted while preparing; failed -> 503 source_unavailable; closed -> 410 session_gone. 120 s without requests or heartbeats closes the session.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "UUIDv4, lowercase with hyphens. Any other form -> 404 session_not_found."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Heartbeat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Accepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/request_invalid"
+          },
+          "404": {
+            "$ref": "#/components/responses/session_not_found"
+          },
+          "410": {
+            "$ref": "#/components/responses/session_gone"
+          },
+          "503": {
+            "$ref": "#/components/responses/source_unavailable"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/master.m3u8": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "playback"
+        ],
+        "summary": "HLS master playlist",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "UUIDv4, lowercase with hyphens. Any other form -> 404 session_not_found."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/vnd.apple.mpegurl": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/session_not_found"
+          },
+          "409": {
+            "$ref": "#/components/responses/session_not_ready"
+          },
+          "410": {
+            "$ref": "#/components/responses/session_gone"
+          },
+          "503": {
+            "$ref": "#/components/responses/segment_wait_timeout"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/media.m3u8": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "playback"
+        ],
+        "summary": "HLS media playlist (full VOD list with ENDLIST, generated from metadata)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "UUIDv4, lowercase with hyphens. Any other form -> 404 session_not_found."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/vnd.apple.mpegurl": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/session_not_found"
+          },
+          "409": {
+            "$ref": "#/components/responses/session_not_ready"
+          },
+          "410": {
+            "$ref": "#/components/responses/session_gone"
+          },
+          "503": {
+            "$ref": "#/components/responses/segment_wait_timeout"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/init.mp4": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "playback"
+        ],
+        "summary": "fMP4 init segment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "UUIDv4, lowercase with hyphens. Any other form -> 404 session_not_found."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/session_not_found"
+          },
+          "409": {
+            "$ref": "#/components/responses/session_not_ready"
+          },
+          "410": {
+            "$ref": "#/components/responses/media_gone"
+          },
+          "503": {
+            "$ref": "#/components/responses/segment_wait_timeout"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/seg_{k}.m4s": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "playback"
+        ],
+        "summary": "fMP4 media segment k",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "UUIDv4, lowercase with hyphens. Any other form -> 404 session_not_found."
+          },
+          {
+            "name": "k",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "video/iso.segment": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/session_not_found"
+          },
+          "409": {
+            "$ref": "#/components/responses/session_not_ready"
+          },
+          "410": {
+            "$ref": "#/components/responses/media_gone"
+          },
+          "503": {
+            "$ref": "#/components/responses/segment_wait_timeout"
+          }
+        }
+      }
+    },
+    "/v1/history": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "history"
+        ],
+        "summary": "History rows watched after `since`, oldest first",
+        "description": "Rows with `watchedAt > since` (unix seconds, exclusive; absent or 0 = everything), OLDEST first, at most `limit`. `next_since_unix` = `watchedAt` of the last row (or the requested `since` when empty); with `truncated` the phone asks again from it.",
+        "x-milestone": "wave A",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 500
+            },
+            "description": "Clamped to 1..=500."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/request_invalid"
+          },
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "history"
+        ],
+        "summary": "Merge the phone's rows into the PC history",
+        "description": "Per episode the row with the newest `watchedAt` wins; same instant -> more progress wins (`tk_core::HistoryEntry::wins_over`). Rows without `anilistId` and `malId`, or with an unparseable `watchedAt`, are dropped without failing the request. Body <= 256 KiB.",
+        "x-milestone": "wave A",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoryPush"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Merged",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPushResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/request_invalid"
+          },
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          },
+          "408": {
+            "$ref": "#/components/responses/body_timeout"
+          },
+          "413": {
+            "$ref": "#/components/responses/body_too_large"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "history"
+        ],
+        "summary": "Drop the whole PC history",
+        "description": "Called by the phone only after the user confirmed \"also on the PC\".",
+        "x-milestone": "wave A",
+        "responses": {
+          "204": {
+            "description": "Cleared",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          }
+        }
+      }
+    },
+    "/v1/control": {
+      "post": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "remote"
+        ],
+        "x-milestone": "wave B",
+        "summary": "Send a remote-control command to the PC player",
+        "description": "`play` / `pause` / `toggle` / `next` / `prev` / `seek` (`seconds`, absolute, <= 86400) act on the open player; `open` (`mediaId` 1..128 chars, `episode` >= 1, `positionSecs`) opens the player and is always taken: it is the phone's \"Continue on the PC\" hand-off (the phone pushes its history row first with `POST /v1/history`). Android mapping: `RemoteAction.PREV / PLAY_PAUSE / NEXT` -> `prev` / `toggle` / `next`. Body <= 4 KiB.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The PC player took the command",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/request_invalid"
+          },
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/no_player_409"
+          },
+          "413": {
+            "$ref": "#/components/responses/body_too_large"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          }
+        }
+      }
+    },
+    "/v1/player": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "remote"
+        ],
+        "x-milestone": "wave B",
+        "summary": "What the PC player shows right now",
+        "description": "There is no capability flag: a PC with no player open, or without remote control, answers `404 no_player` and the phone keeps the remote buttons disabled.",
+        "responses": {
+          "200": {
+            "description": "Player state",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerState"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/no_player_404"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          }
+        }
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "events"
+        ],
+        "x-milestone": "wave B",
+        "summary": "Long-poll the events the PC queued for this device",
+        "description": "Answers `200` as soon as events are queued for the calling device (they are drained on delivery; at most 16 kept per device, for 10 minutes), or `204` when `wait` runs out with nothing. Today the only event is `handoff` (\"Send to device\"): the PC already started the Link session `sessionId` for this device, and the phone plays `/v1/sessions/{sessionId}/master.m3u8` from `positionSecs`.",
+        "parameters": [
+          {
+            "name": "wait",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 25,
+              "default": 25
+            },
+            "description": "Seconds to wait; clamped to 1..=25 (`EVENTS_MAX_WAIT_SECS`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Queued events",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsPage"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No event before `wait` ran out",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/request_invalid"
+          },
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          }
+        }
+      }
+    },
+    "/v1/history/mode": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "history"
+        ],
+        "summary": "The calling device's history mode",
+        "description": "Mode the PC set for this device and whether it waits for this device's full push.",
+        "x-milestone": "0.3.0",
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          },
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryModeAnswer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/history/resync-done": {
+      "post": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "history"
+        ],
+        "summary": "The device finished its full push",
+        "description": "Closes this device's authoritative window and asks the other non-paused devices (`history_resync` / `pull_replace`) to replace their history.",
+        "x-milestone": "0.3.0",
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/client_certificate_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/device_not_authorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal"
+          },
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResyncDoneAnswer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{id}/subtitles/{file}": {
+      "get": {
+        "security": [
+          {
+            "mutualTls": []
+          }
+        ],
+        "tags": [
+          "playback"
+        ],
+        "summary": "Additive (0.4.0): one subtitle track of the session's source",
+        "description": "`{n}.ass` (only tracks whose `formats` include ass: ASS/SSA sources, styles, positions and fonts kept; for libmpv) or `{n}.vtt` (any text track; for Media3). The files keep the SOURCE'S OWN TIMESTAMPS: the session's HLS uses the same timeline whatever its start_secs (segment k starts at k*segment_secs), so the phone adds them without any offset. All text tracks are extracted in ONE FFmpeg pass started by the first request for any of them; a Matroska source is read whole (with a torrent the PC is still downloading this can take minutes, limit 15 min). While it runs the request waits up to 8 s, then answers 503 segment_wait_timeout with Retry-After: poll again, or watch subtitles_state in the session state. Each file <= 8 MiB, <= 48 MiB per source; extracted files are kept in RAM for the source (shared with sessions that renew it) and dropped with it. HEAD is answered like GET without a body.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "UUIDv4, lowercase with hyphens. Any other form -> 404 session_not_found."
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,3}\\.(ass|vtt)$"
+            },
+            "description": "<index>.ass or <index>.vtt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The subtitle file (empty when the track has no event)",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "text/x-ssa; charset=utf-8": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/vtt; charset=utf-8": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/session_not_found"
+          },
+          "409": {
+            "$ref": "#/components/responses/session_not_ready"
+          },
+          "410": {
+            "$ref": "#/components/responses/session_gone"
+          },
+          "503": {
+            "description": "segment_wait_timeout + Retry-After: still extracting (ask again). source_unavailable (no Retry-After): the file is over the limit or the pass failed; final for this source.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Nijiyome-Link": {
+                "$ref": "#/components/headers/NijiyomeLink"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "mutualTls": {
+        "type": "mutualTLS",
+        "description": "Client certificate issued by the PC CA at pairing. The server checks the device is active on every request."
+      }
+    },
+    "headers": {
+      "NijiyomeLink": {
+        "description": "Always `v1`.",
+        "schema": {
+          "type": "string",
+          "const": "v1"
+        }
+      }
+    },
+    "responses": {
+      "client_certificate_required": {
+        "description": "401 client_certificate_required",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "client_certificate_required",
+                "message": "a client certificate is required"
+              }
+            }
+          }
+        }
+      },
+      "device_not_authorized": {
+        "description": "403 device_not_authorized",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "device_not_authorized",
+                "message": "this device is not authorized"
+              }
+            }
+          }
+        }
+      },
+      "pairing_closed": {
+        "description": "409 pairing_closed",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "pairing_closed",
+                "message": "no pairing window is open"
+              }
+            }
+          }
+        }
+      },
+      "pairing_code_invalid": {
+        "description": "403 pairing_code_invalid",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "pairing_code_invalid",
+                "message": "the pairing code is invalid"
+              }
+            }
+          }
+        }
+      },
+      "pairing_attempts_exceeded": {
+        "description": "429 pairing_attempts_exceeded",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "pairing_attempts_exceeded",
+                "message": "too many failed attempts; the pairing window is closed"
+              }
+            }
+          }
+        }
+      },
+      "csr_invalid": {
+        "description": "400 csr_invalid",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "csr_invalid",
+                "message": "the certificate signing request is invalid"
+              }
+            }
+          }
+        }
+      },
+      "request_invalid": {
+        "description": "400 request_invalid",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "request_invalid",
+                "message": "the request is invalid"
+              }
+            }
+          }
+        }
+      },
+      "body_too_large": {
+        "description": "413 body_too_large",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "body_too_large",
+                "message": "the request body is too large"
+              }
+            }
+          }
+        }
+      },
+      "body_timeout": {
+        "description": "408 body_timeout",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "body_timeout",
+                "message": "the request body was not received in time"
+              }
+            }
+          }
+        }
+      },
+      "profile_unavailable": {
+        "description": "422 profile_unavailable",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "profile_unavailable",
+                "message": "the requested profile is not available"
+              }
+            }
+          }
+        }
+      },
+      "policy_unavailable": {
+        "description": "422 policy_unavailable (not produced in M0)",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "policy_unavailable",
+                "message": "the requested policy is not available"
+              }
+            }
+          }
+        }
+      },
+      "library_item_not_found": {
+        "description": "404 library_item_not_found",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "library_item_not_found",
+                "message": "the library item was not found"
+              }
+            }
+          }
+        }
+      },
+      "source_unavailable": {
+        "description": "503 source_unavailable",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "source_unavailable",
+                "message": "the source is not available"
+              }
+            }
+          }
+        }
+      },
+      "session_not_found": {
+        "description": "404 session_not_found",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "session_not_found",
+                "message": "session or resource not found"
+              }
+            }
+          }
+        }
+      },
+      "session_gone": {
+        "description": "410 session_gone",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "session_gone",
+                "message": "the session is closed"
+              }
+            }
+          }
+        }
+      },
+      "session_not_ready": {
+        "description": "409 session_not_ready",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "session_not_ready",
+                "message": "the session is still being prepared"
+              }
+            }
+          }
+        }
+      },
+      "segment_wait_timeout": {
+        "description": "503 segment_wait_timeout",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "segment_wait_timeout",
+                "message": "the segment is not ready yet"
+              }
+            }
+          }
+        }
+      },
+      "range_not_found": {
+        "description": "404 range_not_found (not produced in M0)",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "range_not_found",
+                "message": "the range request is unknown or expired"
+              }
+            }
+          }
+        }
+      },
+      "range_invalid": {
+        "description": "400 range_invalid (not produced in M0)",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "range_invalid",
+                "message": "the range body does not match the request"
+              }
+            }
+          }
+        }
+      },
+      "settings_invalid": {
+        "description": "400 settings_invalid (not produced in M0)",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "settings_invalid",
+                "message": "the settings are invalid"
+              }
+            }
+          }
+        }
+      },
+      "settings_conflict": {
+        "description": "409 settings_conflict (not produced in M0)",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "settings_conflict",
+                "message": "the settings changed; read them again"
+              }
+            }
+          }
+        }
+      },
+      "server_busy": {
+        "description": "503 server_busy",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "server_busy",
+                "message": "the server is busy"
+              }
+            }
+          }
+        }
+      },
+      "internal": {
+        "description": "500 internal",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "internal",
+                "message": "internal server error"
+              }
+            }
+          }
+        }
+      },
+      "url_source_denied": {
+        "description": "403 url_source_denied",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "url_source_denied",
+                "message": "the url source is not allowed"
+              }
+            }
+          }
+        }
+      },
+      "extension_unavailable": {
+        "description": "422 extension_unavailable (not produced in M0)",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "extension_unavailable",
+                "message": "the extension is not available"
+              }
+            }
+          }
+        }
+      },
+      "handoff_rejected": {
+        "description": "409 handoff_rejected (not produced in M0)",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "handoff_rejected",
+                "message": "the handoff was rejected"
+              }
+            }
+          }
+        }
+      },
+      "no_player_409": {
+        "description": "409 no_player",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NoPlayerError"
+            },
+            "example": {
+              "error": {
+                "code": "no_player",
+                "message": "no player is open on this PC"
+              }
+            }
+          }
+        }
+      },
+      "no_player_404": {
+        "description": "404 no_player",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NoPlayerError"
+            },
+            "example": {
+              "error": {
+                "code": "no_player",
+                "message": "no player is open on this PC"
+              }
+            }
+          }
+        }
+      },
+      "segment_unavailable": {
+        "description": "410 segment_unavailable",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": {
+                "code": "segment_unavailable",
+                "message": "the segment cannot be produced; open the session again"
+              }
+            }
+          }
+        }
+      },
+      "media_gone": {
+        "description": "410 session_gone (the session is closed) or, 0.4.1, segment_unavailable: the session failed (its engine failed, or stalled and its automatic restarts ran out; `GET /v1/sessions/{id}` says state=failed and why) and this file will never be produced. Both are final for this session: open a new one at the playback position (`source.kind = session`). Before 0.4.1 a failed session answered 503 source_unavailable forever.",
+        "headers": {
+          "Nijiyome-Link": {
+            "$ref": "#/components/headers/NijiyomeLink"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "session_gone": {
+                "value": {
+                  "error": {
+                    "code": "session_gone",
+                    "message": "the session is closed"
+                  }
+                }
+              },
+              "segment_unavailable": {
+                "value": {
+                  "error": {
+                    "code": "segment_unavailable",
+                    "message": "the segment cannot be produced; open the session again"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "enum": [
+                  "client_certificate_required",
+                  "device_not_authorized",
+                  "pairing_closed",
+                  "pairing_code_invalid",
+                  "pairing_attempts_exceeded",
+                  "csr_invalid",
+                  "request_invalid",
+                  "body_too_large",
+                  "body_timeout",
+                  "profile_unavailable",
+                  "policy_unavailable",
+                  "library_item_not_found",
+                  "source_unavailable",
+                  "session_not_found",
+                  "session_gone",
+                  "session_not_ready",
+                  "segment_wait_timeout",
+                  "range_not_found",
+                  "range_invalid",
+                  "settings_invalid",
+                  "settings_conflict",
+                  "server_busy",
+                  "internal",
+                  "url_source_denied",
+                  "extension_unavailable",
+                  "handoff_rejected",
+                  "segment_unavailable"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "PairingRequest": {
+        "type": "object",
+        "required": [
+          "code",
+          "device_name",
+          "csr_pem",
+          "platform"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{10}$",
+            "description": "Crockford base32, 10 chars"
+          },
+          "device_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "csr_pem": {
+            "type": "string",
+            "maxLength": 8192,
+            "description": "PEM PKCS#10, ECDSA P-256, CN = anything (the server assigns the device_id)"
+          },
+          "platform": {
+            "enum": [
+              "android"
+            ]
+          }
+        }
+      },
+      "PairingResponse": {
+        "type": "object",
+        "required": [
+          "device_id",
+          "client_cert_pem",
+          "ca_cert_pem",
+          "server_name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "client_cert_pem": {
+            "type": "string"
+          },
+          "ca_cert_pem": {
+            "type": "string"
+          },
+          "server_name": {
+            "type": "string",
+            "description": "PC name for the UI"
+          }
+        }
+      },
+      "Capabilities": {
+        "type": "object",
+        "required": [
+          "contract",
+          "server_version",
+          "instance_id",
+          "server_name",
+          "gpu",
+          "encoders",
+          "profiles",
+          "default_profile",
+          "client_fg",
+          "limits"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "contract": {
+            "const": "v1"
+          },
+          "server_version": {
+            "type": "string"
+          },
+          "instance_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "New UUIDv4 on every server start; a client seeing another value treats its sessions as lost and creates a new one at its position."
+          },
+          "server_name": {
+            "type": "string"
+          },
+          "gpu": {
+            "type": "object",
+            "required": [
+              "vendor",
+              "name",
+              "vulkan"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "vendor": {
+                "enum": [
+                  "amd",
+                  "nvidia",
+                  "intel",
+                  "other",
+                  "unknown"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "vulkan": {
+                "type": "boolean"
+              }
+            }
+          },
+          "encoders": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "h264_amf",
+                "h264_nvenc",
+                "h264_qsv",
+                "libopenh264",
+                "h264_vaapi",
+                "libx264"
+              ]
+            },
+            "description": "Detected with `ffmpeg -encoders`, filtered and ordered per platform (Windows: h264_amf, h264_nvenc, h264_qsv, libopenh264; Linux: h264_vaapi when a non-NVIDIA render node exists, h264_nvenc, libx264, libopenh264)"
+          },
+          "default_profile": {
+            "type": "string"
+          },
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Profile"
+            }
+          },
+          "client_fg": {
+            "enum": [
+              "allowed",
+              "suppressed"
+            ],
+            "description": "Whether the phone may apply its own frame generation on top (M3, experimental). Clients that do not receive it treat it as suppressed."
+          },
+          "limits": {
+            "type": "object",
+            "required": [
+              "max_ram_bytes",
+              "segment_wait_secs"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "max_ram_bytes": {
+                "type": "integer",
+                "const": 536870912
+              },
+              "segment_wait_secs": {
+                "type": "integer",
+                "const": 15
+              }
+            }
+          },
+          "lsfg": {
+            "type": "object",
+            "description": "Additive: LSFG frame generation on the PC (experimental) through the temple-lsfg helper and the user's Lossless.dll, probed once at server start. Older clients ignore it.",
+            "required": [
+              "available",
+              "experimental",
+              "multipliers",
+              "auto_target_fps"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "available": {
+                "type": "boolean"
+              },
+              "experimental": {
+                "const": true
+              },
+              "multipliers": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 5
+                }
+              },
+              "auto_target_fps": {
+                "type": "integer"
+              },
+              "reason": {
+                "enum": [
+                  "disabled",
+                  "engine_unavailable",
+                  "helper_missing",
+                  "dll_missing",
+                  "probe_failed",
+                  "dll_unreadable",
+                  "missing_spirv",
+                  "no_vulkan",
+                  "device_unsupported"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "upscale",
+          "output",
+          "measured_sustain"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "enum": [
+              "p-none",
+              "p-anime4k-1080",
+              "p-anime4k-1440",
+              "p-anime4k-2160",
+              "p-anime4k-1080-fg2x",
+              "p-lsfg-1080-x2",
+              "p-lsfg-1080-x3",
+              "p-lsfg-1080-x4",
+              "p-lsfg-1080-x5",
+              "p-lsfg-1080-auto120",
+              "p-anime4k-lsfg-1080-x2",
+              "p-anime4k-lsfg-1080-x3",
+              "p-anime4k-lsfg-1080-x4",
+              "p-anime4k-lsfg-1080-x5",
+              "p-anime4k-lsfg-1080-auto120"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "upscale": {
+            "enum": [
+              "none",
+              "anime4k"
+            ]
+          },
+          "fg": {
+            "enum": [
+              "none",
+              "frc_amf",
+              "lsfg"
+            ],
+            "default": "none"
+          },
+          "output": {
+            "type": "object",
+            "required": [
+              "width",
+              "height"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              }
+            }
+          },
+          "measured_sustain": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "const": "unknown"
+              }
+            ]
+          },
+          "encoder": {
+            "type": "string"
+          },
+          "fg_multiplier": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 5,
+            "description": "Additive: LSFG profiles with a fixed multiplier (output fps = source fps x multiplier)."
+          },
+          "fg_target_fps": {
+            "type": "integer",
+            "description": "Additive: LSFG auto profiles; the multiplier (2..5) is chosen per source to approach this rate."
+          }
+        }
+      },
+      "Library": {
+        "type": "object",
+        "required": [
+          "items",
+          "truncated"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title",
+                "duration_secs",
+                "width",
+                "height",
+                "size_bytes"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "duration_secs": {
+                  "type": "number"
+                },
+                "width": {
+                  "type": "integer"
+                },
+                "height": {
+                  "type": "integer"
+                },
+                "size_bytes": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SessionCreate": {
+        "type": "object",
+        "required": [
+          "source"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LibrarySource"
+              },
+              {
+                "$ref": "#/components/schemas/UrlSource"
+              },
+              {
+                "$ref": "#/components/schemas/SessionSource"
+              },
+              {
+                "$ref": "#/components/schemas/TorrentSource"
+              }
+            ],
+            "discriminator": {
+              "propertyName": "kind"
+            }
+          },
+          "profile": {
+            "type": "string",
+            "description": "A profile id from /v1/capabilities. Default = default_profile. Unknown -> 422 profile_unavailable."
+          },
+          "audio_track": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "start_secs": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0
+          }
+        }
+      },
+      "LibrarySource": {
+        "type": "object",
+        "required": [
+          "kind",
+          "item_id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "library"
+          },
+          "item_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          }
+        }
+      },
+      "UrlSource": {
+        "type": "object",
+        "required": [
+          "kind",
+          "url"
+        ],
+        "additionalProperties": false,
+        "description": "An external stream resolved by an extension on the phone. FFmpeg never receives this URL: the SSRF fetcher does (see x-ffmpeg).",
+        "properties": {
+          "kind": {
+            "const": "url"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "https (http only if the PC allows it); denied by policy -> 403 url_source_denied"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "description": "Allow-listed names only: Referer, Origin, User-Agent, Accept, Accept-Language, Cookie, Range. Total <= 8 KiB; CR/LF -> 400 request_invalid."
+          },
+          "extension_id": {
+            "type": "string"
+          },
+          "container": {
+            "enum": [
+              "hls",
+              "mp4",
+              "dash"
+            ]
+          }
+        }
+      },
+      "SessionSource": {
+        "type": "object",
+        "required": [
+          "kind",
+          "session_id"
+        ],
+        "additionalProperties": false,
+        "description": "Additive v1 extension (QA fixes 2026-11, BUG-008 / BUG-022 / BUG-038): the source of an earlier session of the SAME device, still open or among the last 128 the PC created (closed by DELETE, by the idle timeout or replaced). Used to change the profile of a session or to reopen it at start_secs after it expired. Unknown, foreign or forgotten id -> 404 session_not_found. A PC without this extension answers 400 request_invalid.",
+        "properties": {
+          "kind": {
+            "const": "session"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "TorrentSource": {
+        "type": "object",
+        "required": [
+          "kind",
+          "uri",
+          "media_id",
+          "episode"
+        ],
+        "additionalProperties": false,
+        "description": "Additive v1 extension (QA fixes 2026-11, BUG-009): a torrent the PC adds to its own engine (librqbit), streams to FFmpeg from its loopback server and transcodes with the session profile like any other source. media_id + episode pick the episode's file of a pack (the PC's manual alignment first). Invalid -> 400 request_invalid; no file for the episode -> 404 library_item_not_found; no engine, no metadata within 75 s -> 503 source_unavailable. duration_secs is null. A PC without this extension answers 400 request_invalid. The phone should allow ~90 s for this call (magnet metadata).",
+        "properties": {
+          "kind": {
+            "const": "torrent"
+          },
+          "uri": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "magnet URI, 40-hex info-hash, or a source id of the PC (`<ext>|torrent|<label>`)"
+          },
+          "media_id": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "title id on the PC (AniList id)"
+          },
+          "episode": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "SessionCreated": {
+        "type": "object",
+        "required": [
+          "session_id",
+          "generation",
+          "playback_path",
+          "segment_secs",
+          "heartbeat_interval_secs",
+          "idle_timeout_secs"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "playback_path": {
+            "type": "string",
+            "examples": [
+              "/v1/sessions/6f1d3c1e-8d0f-4b6a-9a76-0c2a8d9d2f11/master.m3u8"
+            ]
+          },
+          "duration_secs": {
+            "type": "number",
+            "description": "Absent when unknown (live-like url sources)"
+          },
+          "segment_secs": {
+            "const": 2
+          },
+          "heartbeat_interval_secs": {
+            "const": 4
+          },
+          "idle_timeout_secs": {
+            "const": 120
+          }
+        }
+      },
+      "SessionState": {
+        "type": "object",
+        "required": [
+          "state",
+          "generation",
+          "instance_id",
+          "profile"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "enum": [
+              "preparing",
+              "ready",
+              "failed",
+              "closed"
+            ]
+          },
+          "generation": {
+            "type": "integer"
+          },
+          "instance_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "profile": {
+            "type": "string"
+          },
+          "degraded_from": {
+            "type": "string"
+          },
+          "frontier_segment": {
+            "type": "integer"
+          },
+          "window": {
+            "type": "object",
+            "properties": {
+              "first_segment": {
+                "type": "integer"
+              },
+              "bytes": {
+                "type": "integer"
+              }
+            }
+          },
+          "lead_secs": {
+            "type": "number"
+          },
+          "throttled": {
+            "type": "boolean"
+          },
+          "error": {
+            "enum": [
+              "source_unavailable",
+              "source_read_failed",
+              "shortfall",
+              "memory_limit",
+              "engine_unavailable",
+              "url_source_denied",
+              "engine_stalled"
+            ],
+            "description": "Only when state = failed"
+          },
+          "output": {
+            "type": "object",
+            "properties": {
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              },
+              "fps": {
+                "type": "number"
+              }
+            }
+          },
+          "upscale": {
+            "enum": [
+              "none",
+              "anime4k"
+            ],
+            "description": "Additive (0.4.0): the session's upscaler."
+          },
+          "anime4k": {
+            "type": "object",
+            "description": "Additive (0.4.0): only with upscale = anime4k.",
+            "properties": {
+              "mode": {
+                "enum": [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              },
+              "variant": {
+                "enum": [
+                  "s",
+                  "m",
+                  "l"
+                ]
+              }
+            }
+          },
+          "fg": {
+            "enum": [
+              "none",
+              "frc_amf",
+              "lsfg"
+            ],
+            "description": "Additive (0.4.0): the session's frame generation."
+          },
+          "encoder": {
+            "type": "string",
+            "description": "Additive (0.4.0): the H.264 encoder of the session (h264_amf, h264_nvenc, h264_qsv, h264_vaapi, libx264, libopenh264)."
+          },
+          "video_kbps": {
+            "type": "integer",
+            "description": "Additive (0.4.0): the profile's video bitrate."
+          },
+          "fg_effective": {
+            "type": "object",
+            "description": "Additive (0.4.0): only with frame generation. The multiplier really used (LSFG auto profiles choose it per source); frc_amf has no fps (its rate is not probed).",
+            "required": [
+              "multiplier"
+            ],
+            "properties": {
+              "multiplier": {
+                "type": "integer"
+              },
+              "source_fps": {
+                "type": "number"
+              },
+              "out_fps": {
+                "type": "number"
+              }
+            }
+          },
+          "subtitles": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "$ref": "#/components/schemas/SubtitleTrack"
+            },
+            "description": "Additive (0.4.0): the source's subtitle tracks. Absent while the PC lists them (a few seconds after the session starts) and on a PC that cannot (no ffprobe) or an older one; present and empty = the source has none. A new session of the same device and the same source (a profile change, by source kind session or by the source itself) keeps the list and the extracted files of the previous one."
+          },
+          "subtitles_state": {
+            "enum": [
+              "listing",
+              "unavailable",
+              "idle",
+              "extracting",
+              "ready",
+              "failed"
+            ],
+            "description": "Additive (0.4.0): listing = tracks not known yet; unavailable = no listing (ffprobe missing / failed); idle = listed, nothing extracted (the first subtitle file request starts one FFmpeg pass that extracts every text track); extracting; ready = files served; failed = the pass failed or timed out (files answer 503 source_unavailable)."
+          },
+          "parked": {
+            "type": "boolean",
+            "description": "0.4.1: production is parked: the run got far enough ahead and was stopped (an encoder that does not wait for the PC's sink cannot be held otherwise); it starts again by itself before the playhead reaches it. `throttled` is true too."
+          },
+          "ended": {
+            "type": "boolean",
+            "description": "0.4.1: the pipeline reached the real end of the source (it can be a little before duration_secs). Segments at or after end_secs answer 404; the phone ends the episode normally there. Absent until then and on older PCs."
+          },
+          "end_secs": {
+            "type": "number",
+            "description": "0.4.1: with ended: where the source really ends."
+          },
+          "produced": {
+            "type": "object",
+            "description": "0.4.1: the consecutive range the PC holds around the playhead (source timeline): the one that contains it, or the next one after it. Absent when there is none.",
+            "properties": {
+              "from_secs": {
+                "type": "number"
+              },
+              "to_secs": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "from_secs",
+              "to_secs"
+            ]
+          }
+        }
+      },
+      "Heartbeat": {
+        "type": "object",
+        "required": [
+          "position_secs",
+          "paused"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "position_secs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "paused": {
+            "type": "boolean"
+          }
+        }
+      },
+      "HistoryRow": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "camelCase JSON of `tk_core::HistoryEntry`. Optional values are omitted when unknown, never null, so a merge never overwrites a known value.",
+        "required": [
+          "animeId",
+          "title",
+          "episodeId",
+          "episode",
+          "watchedAt"
+        ],
+        "properties": {
+          "animeId": {
+            "type": "string",
+            "description": "`String(anilistId)` or `mal:<malId>`",
+            "example": "21"
+          },
+          "title": {
+            "type": "string"
+          },
+          "poster": {
+            "type": "string",
+            "format": "uri"
+          },
+          "episodeId": {
+            "type": "string",
+            "description": "`<animeId>?ep=<episode>`",
+            "example": "21?ep=3"
+          },
+          "episode": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "progressSec": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Exact resume position in seconds."
+          },
+          "durationSec": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "completed": {
+            "type": "boolean",
+            "default": false
+          },
+          "watchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 UTC; the PC emits seconds, the phone may send milliseconds.",
+            "example": "2026-10-27T21:04:11Z"
+          },
+          "anilistId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "malId": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "HistoryPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_since_unix"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/HistoryRow"
+            }
+          },
+          "next_since_unix": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "truncated": {
+            "type": "boolean",
+            "default": false
+          },
+          "mode": {
+            "$ref": "#/components/schemas/HistoryMode",
+            "description": "This phone's history mode on the PC; always sent by the PC (tk-link server.rs history_page). Phones that do not know it ignore it."
+          }
+        }
+      },
+      "HistoryPush": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/HistoryRow"
+            }
+          }
+        }
+      },
+      "HistoryPushResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "merged"
+        ],
+        "properties": {
+          "merged": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Rows the PC stored (new or newer than what it had)."
+          },
+          "ignored": {
+            "type": "boolean",
+            "default": false,
+            "description": "The device's mode does not take pushes: nothing was stored and the phone treats the rows as synced (no retry). Omitted when false."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/HistoryMode"
+          }
+        }
+      },
+      "ControlCommand": {
+        "description": "`ControlCommand` of tk-link/src/control.rs (internally tagged by `command`, camelCase fields).",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "command"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "command": {
+                "const": "play"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "command"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "command": {
+                "const": "pause"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "command"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "command": {
+                "const": "toggle"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "command"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "command": {
+                "const": "next"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "command"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "command": {
+                "const": "prev"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "command",
+              "seconds"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "command": {
+                "const": "seek"
+              },
+              "seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 86400
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "command",
+              "mediaId",
+              "episode"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "command": {
+                "const": "open"
+              },
+              "mediaId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "episode": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "positionSecs": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              }
+            }
+          }
+        ],
+        "discriminator": {
+          "propertyName": "command"
+        }
+      },
+      "PlayerState": {
+        "type": "object",
+        "required": [
+          "playing"
+        ],
+        "properties": {
+          "playing": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "episode": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "positionSecs": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "durationSecs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "mediaId": {
+            "type": "string",
+            "description": "`String(anilistId)`, `mal:<id>` or `ext:<ext>:<source>:<item>`."
+          }
+        }
+      },
+      "PhoneEvent": {
+        "description": "`PhoneEvent` of control.rs (internally tagged by `type`, camelCase fields). Unknown types are skipped by the phone.",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "sessionId"
+            ],
+            "properties": {
+              "type": {
+                "const": "handoff"
+              },
+              "sessionId": {
+                "type": "string"
+              },
+              "mediaId": {
+                "type": "string"
+              },
+              "episode": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "positionSecs": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "mode"
+            ],
+            "properties": {
+              "type": {
+                "const": "history_resync"
+              },
+              "mode": {
+                "enum": [
+                  "push_all",
+                  "pull_replace"
+                ],
+                "description": "`push_all`: mark every local row dirty, push, then `POST /v1/history/resync-done`. `pull_replace`: push dirty rows when the mode is `full`, clear the local history, reset the cursor and pull everything."
+              }
+            }
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
+        }
+      },
+      "EventsPage": {
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PhoneEvent"
+            }
+          }
+        }
+      },
+      "NoPlayerError": {
+        "description": "Wave B error body of `/v1/control` (409) and `/v1/player` (404). `no_player` is outside the 26-code M0 catalogue (`x-errors.extraCodes`).",
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "const": "no_player"
+              },
+              "message": {
+                "const": "no player is open on this PC"
+              }
+            }
+          }
+        }
+      },
+      "HistoryMode": {
+        "type": "string",
+        "enum": [
+          "full",
+          "receive_only",
+          "paused"
+        ],
+        "description": "Per-device history mode set on the PC (2026-11). `full` = pushes merge and pulls serve the PC history; `receive_only` = pushes are accepted and ignored; `paused` = pushes ignored and pulls answer an empty page."
+      },
+      "HistoryModeAnswer": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "resync"
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/HistoryMode"
+          },
+          "resync": {
+            "type": "boolean",
+            "description": "The PC asked this device to push its whole history (\"use as source\") and its authoritative window is open."
+          }
+        }
+      },
+      "ResyncDoneAnswer": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "notified"
+        ],
+        "properties": {
+          "notified": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Other non-paused devices asked to replace their history from the PC (0 when the caller had no open window)."
+          }
+        }
+      },
+      "SubtitleTrack": {
+        "type": "object",
+        "description": "Additive (0.4.0): one subtitle track of the session's source, in the order ffprobe lists them. Text fields come from the file, cleaned (no control characters, language <= 16 bytes lowercase without `und`, title <= 120 characters); empty ones are omitted.",
+        "required": [
+          "index",
+          "codec",
+          "default",
+          "forced",
+          "text",
+          "formats"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Position among the source's subtitle tracks: the n of /v1/sessions/{id}/subtitles/{n}.ass|.vtt."
+          },
+          "language": {
+            "type": "string",
+            "description": "The file's language tag, e.g. spa, eng, pt-br."
+          },
+          "title": {
+            "type": "string"
+          },
+          "codec": {
+            "type": "string",
+            "description": "FFmpeg codec name: ass, ssa, subrip, webvtt, mov_text, hdmv_pgs_subtitle, dvd_subtitle..."
+          },
+          "default": {
+            "type": "boolean",
+            "description": "Default disposition of the track in the source."
+          },
+          "forced": {
+            "type": "boolean",
+            "description": "Forced disposition (signs / foreign parts only)."
+          },
+          "text": {
+            "type": "boolean",
+            "description": "false for image tracks (PGS, VobSub, DVB): listed, never served."
+          },
+          "formats": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "ass",
+                "vtt"
+              ]
+            },
+            "description": "Files served for the track: [ass, vtt] for ASS/SSA (styles kept in .ass), [vtt] for other text tracks, [] for image tracks or past the 24 extracted ones."
+          }
+        }
+      }
+    }
+  },
+  "x-errors": {
+    "note": "Temple v1 catalog (23 codes) plus the 4 Link additions. `m0: false` codes are defined for forward compatibility but never produced by the M0 server.",
+    "codes": [
+      {
+        "code": "client_certificate_required",
+        "http": 401,
+        "message": "a client certificate is required",
+        "m0": true
+      },
+      {
+        "code": "device_not_authorized",
+        "http": 403,
+        "message": "this device is not authorized",
+        "m0": true
+      },
+      {
+        "code": "pairing_closed",
+        "http": 409,
+        "message": "no pairing window is open",
+        "m0": true
+      },
+      {
+        "code": "pairing_code_invalid",
+        "http": 403,
+        "message": "the pairing code is invalid",
+        "m0": true
+      },
+      {
+        "code": "pairing_attempts_exceeded",
+        "http": 429,
+        "message": "too many failed attempts; the pairing window is closed",
+        "m0": true
+      },
+      {
+        "code": "csr_invalid",
+        "http": 400,
+        "message": "the certificate signing request is invalid",
+        "m0": true
+      },
+      {
+        "code": "request_invalid",
+        "http": 400,
+        "message": "the request is invalid",
+        "m0": true
+      },
+      {
+        "code": "body_too_large",
+        "http": 413,
+        "message": "the request body is too large",
+        "m0": true
+      },
+      {
+        "code": "body_timeout",
+        "http": 408,
+        "message": "the request body was not received in time",
+        "m0": true
+      },
+      {
+        "code": "profile_unavailable",
+        "http": 422,
+        "message": "the requested profile is not available",
+        "m0": true
+      },
+      {
+        "code": "policy_unavailable",
+        "http": 422,
+        "message": "the requested policy is not available",
+        "m0": false
+      },
+      {
+        "code": "library_item_not_found",
+        "http": 404,
+        "message": "the library item was not found",
+        "m0": true
+      },
+      {
+        "code": "source_unavailable",
+        "http": 503,
+        "message": "the source is not available",
+        "m0": true
+      },
+      {
+        "code": "session_not_found",
+        "http": 404,
+        "message": "session or resource not found",
+        "m0": true
+      },
+      {
+        "code": "session_gone",
+        "http": 410,
+        "message": "the session is closed",
+        "m0": true
+      },
+      {
+        "code": "session_not_ready",
+        "http": 409,
+        "message": "the session is still being prepared",
+        "m0": true
+      },
+      {
+        "code": "segment_wait_timeout",
+        "http": 503,
+        "message": "the segment is not ready yet",
+        "m0": true
+      },
+      {
+        "code": "range_not_found",
+        "http": 404,
+        "message": "the range request is unknown or expired",
+        "m0": false
+      },
+      {
+        "code": "range_invalid",
+        "http": 400,
+        "message": "the range body does not match the request",
+        "m0": false
+      },
+      {
+        "code": "settings_invalid",
+        "http": 400,
+        "message": "the settings are invalid",
+        "m0": false
+      },
+      {
+        "code": "settings_conflict",
+        "http": 409,
+        "message": "the settings changed; read them again",
+        "m0": false
+      },
+      {
+        "code": "server_busy",
+        "http": 503,
+        "message": "the server is busy",
+        "m0": true
+      },
+      {
+        "code": "internal",
+        "http": 500,
+        "message": "internal server error",
+        "m0": true
+      },
+      {
+        "code": "url_source_denied",
+        "http": 403,
+        "message": "the url source is not allowed",
+        "m0": true
+      },
+      {
+        "code": "extension_unavailable",
+        "http": 422,
+        "message": "the extension is not available",
+        "m0": false
+      },
+      {
+        "code": "handoff_rejected",
+        "http": 409,
+        "message": "the handoff was rejected",
+        "m0": false
+      },
+      {
+        "code": "segment_unavailable",
+        "http": 410,
+        "message": "the segment cannot be produced; open the session again",
+        "m0": true
+      }
+    ],
+    "extraCodes": [
+      {
+        "code": "no_player",
+        "http": [
+          404,
+          409
+        ],
+        "message": "no player is open on this PC",
+        "m0": false,
+        "note": "Wave B, outside the catalogue (the Rust `ErrorCode` and Kotlin `LinkError` tables stay at 26): 409 on POST /v1/control, 404 on GET /v1/player."
+      }
+    ]
+  },
+  "x-out-of-m0": {
+    "deferredToM1": [
+      "GET/PUT /v1/settings",
+      "source kind \"extension\"",
+      "subtitle tracks (GET /v1/sessions/{id}/subtitles/{n}.vtt)",
+      "Windows Firewall rule UI beyond the manual button"
+    ],
+    "deferredToM2": [
+      "GET /v1/sync/state, POST /v1/sync/push",
+      "GET /v1/downloads, GET /v1/downloads/{id}/file",
+      "source kind \"phone\" and its source channel",
+      "HEVC"
+    ]
+  },
+  "x-wave-b": {
+    "routes": [
+      "POST /v1/control",
+      "GET /v1/player",
+      "GET /v1/events"
+    ],
+    "handoff": "No /v1/handoff route: phone -> PC is POST /v1/control `open`; PC -> phone is the `handoff` event of GET /v1/events.",
+    "mdns": {
+      "serviceType": "_nijiyome-link._tcp",
+      "txt": {
+        "v": "1",
+        "name": "server name",
+        "id": "instance_id of /v1/capabilities",
+        "fp": "sha256 (hex) of the Link CA certificate, the `ca=` pin of a nijiyome-link:v1 pairing payload"
+      },
+      "note": "Announced by tk-link `discovery::Announcer` while Settings > Link \"Announce on the network\" is on. The phone (NsdManager) lists PCs, then pairs with the one-time code the PC shows and checks sha256(CA) == fp."
+    }
+  }
+}

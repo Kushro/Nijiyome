@@ -1,0 +1,16 @@
+{"data":{"MediaListCollection":{"lists":[
+  {"name":"Watching","entries":[
+    {"id":501,"mediaId":16498,"status":"CURRENT","score":8.5,"progress":12,"repeat":0,"notes":"  ","updatedAt":1700000000,
+     "startedAt":{"year":2023,"month":4,"day":null},"completedAt":{"year":null,"month":null,"day":null},
+     "media":{"id":16498,"idMal":16498,"episodes":25,"title":{"romaji":"Shingeki no Kyojin","english":"Attack on Titan"},"coverImage":{"large":"https://img.example/aot.jpg"}}}
+  ]},
+  {"name":"Completed","entries":[
+    {"id":502,"mediaId":1,"status":"COMPLETED","score":90,"progress":26,"updatedAt":1690000000,
+     "media":{"id":1,"idMal":1,"episodes":26,"title":{"romaji":"Cowboy Bebop"}}}
+  ]},
+  {"name":"Favourite rewatches","isCustomList":true,"entries":[
+    {"id":502,"mediaId":1,"status":"COMPLETED","score":90,"progress":26,"updatedAt":1690000000,
+     "media":{"id":1,"idMal":1,"episodes":26,"title":{"romaji":"Cowboy Bebop"}}},
+    {"id":503,"mediaId":777,"status":"SOMETHING","media":{"id":777,"title":{"romaji":"Odd"}}}
+  ]}
+]}}}

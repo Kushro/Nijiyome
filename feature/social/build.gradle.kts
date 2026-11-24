@@ -1,0 +1,14 @@
+// parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.7), owner: worker t.
+// AniList profile (own + public), followers / following, activity feed + thread, notifications, the reviews / activity slot of Details.
+// Shared by Android and desktop.
+plugins { id("nijiyome.kmp.feature") }
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.coil.compose)
+            // parity wave B (worker t): SocialActivityLookup (thread screen).
+            implementation(projects.core.social)
+        }
+    }
+}

@@ -1,0 +1,208 @@
+name: CI
+
+# Tests on every push to main and every pull request, only for the parts that changed (adapted from Tatakai Next's next-ci.yml):
+# Android (host tests + debug APK), desktop on Linux and on Windows (Gradle; jpackage does not cross-compile), the temple-lsfg
+# helper (CMake, both systems) and the design tokens / contracts (node). Releases are built by release.yml from `v*` tags.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The tests never reach a system keyring (desktop secrets key in the test's temporary data folder).
+  NIJIYOME_SECRETS: file
+
+jobs:
+  runner:
+    uses: ./.github/workflows/runner.yml
+
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      android: ${{ steps.filter.outputs.android }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+      lsfg: ${{ steps.filter.outputs.lsfg }}
+      contracts: ${{ steps.filter.outputs.contracts }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        with:
+          filters: |
+            gradle: &gradle
+              - 'build-logic/**'
+              - 'gradle/**'
+              - '*.gradle.kts'
+              - 'gradle.properties'
+              - 'gradlew*'
+              - 'core/**'
+              - 'feature/**'
+              - '.github/workflows/ci.yml'
+            server: &server
+              - 'server/**'
+              - 'contracts/link/**'
+            android:
+              - *gradle
+              - 'app/**'
+            desktop:
+              - *gradle
+              - *server
+              - 'desktopApp/**'
+              - 'packaging/**'
+            lsfg:
+              - 'native/temple-lsfg/**'
+              - 'packaging/linux/build-temple-lsfg.sh'
+              - '.github/workflows/ci.yml'
+            contracts:
+              - 'contracts/**'
+              - 'tokens/**'
+              - '.github/workflows/ci.yml'
+
+  contracts:
+    name: Tokens and contracts
+    needs: [runner, changes]
+    if: needs.changes.outputs.contracts == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ needs.runner.outputs.linux }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - run: node --test tokens/test/*.test.mjs contracts/test/*.test.mjs
+
+  android:
+    name: Android (host tests + debug APK)
+    needs: [runner, changes]
+    if: needs.changes.outputs.android == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ needs.runner.outputs.linux }}
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          packages: platform-tools
+      - name: Platform + build tools
+        run: |
+          sdkmanager "build-tools;36.0.0"
+          sdkmanager "platforms;android-37.0" || sdkmanager "platforms;android-37"
+      - uses: gradle/actions/setup-gradle@da187c8e6ffbd3802e00f2477aa5a822b25f2dda # v4.4.4
+      - name: Unit and host tests, debug APK
+        run: >-
+          bash gradlew testDebugUnitTest testAndroidHostTest
+          :core:model:test :core:metadata:test :core:extensions:test :core:release:test
+          :app:assembleDebug --no-daemon --stacktrace
+
+  desktop-linux:
+    name: Desktop Linux (tests + app image + packaging files)
+    needs: [runner, changes]
+    if: needs.changes.outputs.desktop == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ needs.runner.outputs.linux }}
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb desktop-file-utils appstream shellcheck
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@da187c8e6ffbd3802e00f2477aa5a822b25f2dda # v4.4.4
+      - name: Packaging files
+        run: |
+          for f in packaging/linux/*.sh packaging/linux/AppRun packaging/linux/PKGBUILD; do bash -n "$f"; done
+          shellcheck -S warning packaging/linux/*.sh packaging/linux/AppRun
+          desktop-file-validate packaging/linux/app.nijiyome.desktop
+          appstreamcli validate --no-net --pedantic packaging/linux/app.nijiyome.metainfo.xml || appstreamcli validate --no-net packaging/linux/app.nijiyome.metainfo.xml
+      # :server (Link and the extension server) is a JVM module: its tests are `test`, not `desktopTest`.
+      - name: Desktop tests (shared modules, servers, app)
+        run: xvfb-run -a bash gradlew desktopTest :server:test :desktopApp:test --no-daemon --stacktrace
+      - name: App image (jlink + jpackage)
+        run: |
+          bash gradlew :desktopApp:createReleaseDistributable --no-daemon --stacktrace
+          image=desktopApp/build/compose/binaries/main-release/app/Nijiyome
+          test -x "$image/bin/Nijiyome"
+          test -f "$image/lib/runtime/lib/libjsig.so"
+          "$image/bin/Nijiyome" --version
+
+  desktop-windows:
+    name: Desktop Windows (tests + app image)
+    needs: [runner, changes]
+    if: needs.changes.outputs.desktop == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ needs.runner.outputs.windows }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@da187c8e6ffbd3802e00f2477aa5a822b25f2dda # v4.4.4
+      - name: Desktop tests (shared modules + app)
+        run: ./gradlew.bat desktopTest :desktopApp:test --no-daemon --stacktrace
+      - name: App image (jlink + jpackage)
+        run: |
+          ./gradlew.bat :desktopApp:createReleaseDistributable --no-daemon --stacktrace
+          if ($LASTEXITCODE -ne 0) { throw "gradle failed ($LASTEXITCODE)" }
+          $image = 'desktopApp/build/compose/binaries/main-release/app/Nijiyome'
+          foreach ($f in 'Nijiyome.exe', 'runtime/bin/server/jvm.dll') {
+            if (-not (Test-Path (Join-Path $image $f))) { throw "the app image is missing $f" }
+          }
+
+  temple-lsfg:
+    name: temple-lsfg (${{ matrix.os }})
+    needs: [runner, changes]
+    if: needs.changes.outputs.lsfg == 'true' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, windows]
+    runs-on: ${{ matrix.os == 'linux' && needs.runner.outputs.linux || needs.runner.outputs.windows }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Build (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++
+          bash packaging/linux/build-temple-lsfg.sh
+      - name: MSVC developer environment
+        if: matrix.os == 'windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+      - name: Build (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $out = 'build/temple-lsfg'
+          if (Get-Command ninja -ErrorAction SilentlyContinue) {
+            cmake -S native/temple-lsfg -B $out -G Ninja -DCMAKE_BUILD_TYPE=Release
+          } else {
+            cmake -S native/temple-lsfg -B $out -G 'Visual Studio 17 2022' -A x64
+          }
+          if ($LASTEXITCODE -ne 0) { throw "cmake configure failed ($LASTEXITCODE)" }
+          cmake --build $out --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw "cmake build failed ($LASTEXITCODE)" }
+          if (-not (Get-ChildItem $out -Recurse -Filter temple-lsfg.exe)) { throw 'temple-lsfg.exe was not built' }

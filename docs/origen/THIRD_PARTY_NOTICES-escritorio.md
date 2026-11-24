@@ -1,0 +1,129 @@
+# Third-party notices - Tatakai native desktop
+
+This app is licensed **AGPL-3.0-or-later** (see `LICENSE`). Decision 1 of `docs/redesign/06-user-decisions.md`: code may be copied from the
+author's own repositories (Enigmata-Temple, Enigmata, Miko-Kagura, limusic-forge, larper-forge, mpvExKEV). The repository root stays MPL-2.0.
+
+## 1. Code copied or adapted from other repositories
+
+Every branch that copies a file MUST add a row here (origin repo + path, license, what was changed) and keep the file's original copyright header.
+
+| Target file(s) in this app | Origin (repo / path / commit) | Origin license | Notes |
+|---|---|---|---|
+| `LICENSE` | Enigmata `LICENSE` (verbatim AGPL-3.0 text) | AGPL-3.0 | - |
+| `rust-toolchain.toml` | Miko-Kagura `rust-toolchain.toml` (channel 1.94.1) | PolyForm-Noncommercial (a one-line toolchain pin, not a copied work) | - |
+
+## 2. Native components distributed with the app (fetched by `packaging/fetch-deps.ps1`, run by the user - never by the build)
+
+| Component | License | Obligation |
+|---|---|---|
+| libmpv (mpv, LGPL build) | LGPL-2.1+ | Dynamic linking; the DLL ships next to `tatakai-next.exe`; notice in About |
+| FFmpeg (BtbN win64 **LGPL** build with libplacebo) | LGPL-2.1+ | External process (not linked); notice in About; keep the build pinned by SHA-256 in `packaging/ffmpeg.lock.json` |
+| Anime4K GLSL shaders | MIT | Ship the shaders' `LICENSE` next to them (`packaging/anime4k.lock.json`) |
+
+### 2b. Vendored in the repo: mpv-anime-build (wave 2, "Embedded enhanced" player mode)
+
+| Component | License | Obligation |
+|---|---|---|
+| [mpv-anime-build](https://github.com/Chinna95P/mpv-anime-build) release v5.6 (`vendor/mpv-anime-build/mpv-anime-build-v5.6.zip`, pinned by `SHA256SUMS`) | MIT (Chinna95P; `vendor/mpv-anime-build/LICENSE`) | Ship the zip unmodified with its `LICENSE` next to it (`<app>/mpv-anime-build/`); notice in About. The app extracts it into the data directory and comments out embedding-hostile lines of `mpv.conf` (original kept as `mpv.conf.upstream`). |
+| Components bundled inside that release (uosc and its `ziggy` helpers, thumbfast and other mpv user scripts, ravu / nnedi3 / FSRCNNX / SSim / KrigBilateral / adaptive-sharpen / hdr-toys shaders, fonts) | Their own licenses (LGPL / MPL / MIT / GPL and font licenses), as distributed by the release | Redistributed as part of the unmodified release zip; never executed by the app (mpv loads the scripts and shaders). Review the per-component licenses before a public release, in particular the bundled fonts. |
+
+### 2c. Forked in the repo: temple-lsfg (Tatakai Link LSFG helper)
+
+Source in `native/temple-lsfg/`, forked from the author's own Enigmata-Temple `native/temple-lsfg` (commit `34ff76c`) and maintained here independently (no sync). Built by `packaging/linux/build-temple-lsfg.sh` (AppImage, PKGBUILD) and by the Windows release job, and shipped as `temple-lsfg` / `temple-lsfg.exe` next to `tatakai-next`. The binary is a **GPL-3.0 combined work**; its corresponding source is `native/temple-lsfg/` of this repository. The packages ship its license files under `share/licenses/tatakai-next/temple-lsfg/` (Linux) or `licenses/temple-lsfg/` (Windows).
+
+| Component | License | Obligation |
+|---|---|---|
+| temple-lsfg own code (`src/main.cpp`, `src/unicode_*.cpp`, `CMakeLists.txt`) | MIT (`native/temple-lsfg/LICENSE`) | Keep the notice |
+| `src/shader_loader.{h,cpp}` (adapted from [LSFG-Android-Application](https://github.com/FrankBarretta/LSFG-Android-Application) b8475419 via Enigmata) | GPL-3.0-only (`native/temple-lsfg/LICENSE-GPL-3.0.txt`) | Makes the binary GPL-3.0; offer the source (this repository) with every package |
+| [lsfg-vk](https://github.com/FrankBarretta/lsfg-vk-android) framegen core (b55b1820, 4 files from LSFG-Android-A6xx f1c0e9ae; modifications listed in `third_party/README.md`) | MIT, Copyright (c) 2025 lsfg-vk (`third_party/lsfg-vk/LICENSE.md`) | Keep the notice and the modification list |
+| [volk](https://github.com/zeux/volk) be3dbd49 | MIT, Copyright (c) 2018-2025 Arseny Kapoulkine (`third_party/volk/LICENSE.md`) | Keep the notice |
+| [pe-parse](https://github.com/trailofbits/pe-parse) 31ac5966 | MIT, Copyright (c) 2013 Andrew Ruef (`third_party/pe-parse/LICENSE`) | Keep the notice |
+| Vulkan headers (Khronos, `VK_HEADER_VERSION` 275) | Apache-2.0 (`third_party/vulkan-headers/LICENSE-Apache-2.0.txt`) | Keep the license text |
+| Lossless Scaling `Lossless.dll` | Proprietary (its authors) | **Never shipped**: the helper reads the user's own copy in memory |
+
+## 3. Rust crates (versions pinned by `Cargo.lock`)
+
+Dioxus (MIT/Apache-2.0), tokio (MIT), reqwest (MIT/Apache-2.0), rustls with the `ring` provider (Apache-2.0/ISC/MIT), axum/hyper (MIT), rcgen (MIT/Apache-2.0), x509-parser (MIT/Apache-2.0),
+rquickjs with bundled QuickJS (MIT), rusqlite with bundled SQLite (MIT / public domain), scraper (ISC), libmpv2 (LGPL-2.1+ wrapper), windows-sys (MIT/Apache-2.0),
+serde, serde_json, thiserror, anyhow, tracing, uuid, time, directories, url, ipnet, hickory-resolver, m3u8-rs, qrcode, zip, sha2, hmac, hex, base32, base64 (MIT/Apache-2.0).
+Torrent engine (wave 3, `crates/tk-torrent`): [librqbit](https://github.com/ikatson/rqbit) 9.1.0 and its sub-crates (librqbit-core, -bencode, -buffers,
+-clone-to-owned, -dht, -lsd, -peer-protocol, -sha1-wrapper, -tracker-comms, -upnp, -utp, -dualstack-sockets) by Igor Katson: **Apache-2.0**. Used as an
+unmodified dependency (no source copied); ship its license text with the release notices. SHA-1 via `crypto-hash` (OpenSSL on Linux, CryptoAPI on
+Windows) and reqwest 0.13 with `native-tls` (MIT/Apache-2.0).
+`cargo about` / `cargo deny` output replaces this paragraph before a release.
+
+## 4. Fonts (bundled in `assets/fonts`, never loaded from a CDN) - added by `m3e/desktop-app`
+
+Space Grotesk, Outfit and JetBrains Mono: **SIL Open Font License 1.1**. Ship each family's `OFL.txt` next to the font files and list them in Settings > About.
+
+## 5. Design token generation
+
+`assets/tokens.css` is generated by `packages/tokens` using material-color-utilities (Apache-2.0, vendored there).
+
+## 6. Services
+
+No usage-tracking or crash-reporting code (see apps/README.md, rule 3). Network: AniList and MyAnimeList (OAuth, lists), ani.zip, Kitsu, trace.moe, GitHub Releases (update notice), the translation / debrid services the user configures, hosts allowed by installed extensions, Discord's local IPC socket, and paired phones on the LAN (Tatakai Link, incl. the watch-history sync). No own account service.
+
+## Code copied or adapted from the author's own repositories
+
+### Player, UI and packaging (m3e/desktop-app)
+
+| Origin (author's own repos) | License | Used in |
+|---|---|---|
+| limusic-forge `src-tauri/src/nativevideo_windows.rs` (child `STATIC` window at `HWND_BOTTOM`, no `WS_CLIPSIBLINGS`, hole in the page) - rewritten for windows-sys | GPL-3.0-or-later | `crates/tk-player/src/surface.rs` |
+| limusic-forge `crates/player` (libmpv2 setup, option set, event-thread structure) - rewritten | GPL-3.0-or-later | `crates/tk-player/src/mpv_player.rs` |
+| Miko-Kagura `src/ui/title_bar.rs` (frameless title bar) | see Miko-Kagura LICENSE | `crates/tk-ui/src/components/title_bar.rs` |
+| Miko-Kagura `packaging/windows.nsi` (NSIS template) | see Miko-Kagura LICENSE | `packaging/windows.nsi` |
+| Miko-Kagura `scripts/fetch-upscalers.ps1` (verified-download pattern) | see Miko-Kagura LICENSE | `packaging/fetch-deps.ps1` |
+| Enigmata-Temple `packaging/anime4k.lock.json`, `ffmpeg.lock.json` (pins, hashes) | AGPL-3.0 | `packaging/*.lock.json` |
+| Enigmata-Temple `temple-ui` (QR display approach) | AGPL-3.0 | `crates/tk-ui/src/qr.rs` |
+| limusic-forge `.github/workflows/windows-release.yml` (libmpv URL and SHA-256) | GPL-3.0-or-later | `packaging/libmpv.lock.json` |
+| larper-forge `app/crates/lf-ui/assets/fuentes/JetBrainsMono.woff2` + `OFL-JetBrainsMono.txt` | SIL OFL 1.1 | `crates/tk-ui/assets/fonts/` |
+
+Runtime pieces fetched by the USER with `packaging/fetch-deps.ps1` (not in the repo): libmpv (shinchiro build), FFmpeg (BtbN LGPL build),
+Anime4K shaders (MIT / Unlicense, bloc97), FSR.glsl (MIT, agyild), Space Grotesk and Outfit (SIL OFL 1.1).
+
+### tk-core, tk-ext, tk-link (m3e/desktop-core)
+
+| Code | Origin | License | Notes |
+|---|---|---|---|
+| `tk-link/src/identity.rs` (CA, server certificate, client certificate issuance, SAN renewal) | Enigmata-Temple `crates/temple-core/src/identity.rs` | AGPL-3.0-or-later (own repo of the user) | aws-lc-rs replaced by ring/uuid randomness; keys protected with DPAPI; CSR handled with rcgen `CertificateSigningRequestParams` |
+| `tk-link/src/pairing.rs` (Crockford code, window state machine, device-name sanitising, payload) | Enigmata-Temple `temple-core/src/pairing.rs` | AGPL-3.0-or-later | payload prefix `tatakai-link:v1`; constant-time compare hand-written |
+| `tk-link/src/media/anime4k.rs` (pass chains per mode, `.hook` composition) | Enigmata-Temple `temple-core/src/media/anime4k.rs` | AGPL-3.0-or-later; shaders are Anime4K v4.0 by bloc97 (MIT, AutoDownscalePre: Unlicense) | shaders are NOT embedded; downloaded by `packaging/fetch-deps.ps1` into `LinkConfig::anime4k_dir` and verified against `packaging/anime4k.lock.json` |
+| `tk-link/src/media/args.rs` (graph shape: d3d11va decode, libplacebo + custom_shader_path, frc_amf retention compensation) | Enigmata-Temple `temple-core/src/media/args.rs` | AGPL-3.0-or-later | simplified; argument vectors are golden-tested |
+| `tk-link/src/media/args.rs` (Linux VAAPI graph: `-init_hw_device vaapi`, `-hwaccel vaapi` without output format, `format=nv12,hwupload` + `h264_vaapi`; LSFG three-process chain `build_lsfg`, `h264_level`, `contain` fit filters) | Enigmata-Temple v0.7.0 (34ff76c) `crates/temple-core/src/media/args.rs` (`GpuBackend::Vaapi`, `LsfgArgs`, `lsfg_parts`, `fit_filter`) | AGPL-3.0-or-later (own repo of the user) | adapted to Link's loopback fetcher input and sink PUT output; render node chosen from sysfs (`media/vaapi.rs`) |
+| `tk-link/src/media/lsfg.rs` (temple-lsfg / `Lossless.dll` discovery incl. Steam `libraryfolders.vdf`, `--probe` parsing, `DISABLE_LSFGVK=1`) | Enigmata-Temple v0.7.0 `crates/temple-core/src/media/lsfg.rs` | AGPL-3.0-or-later | ported with its tests; capability field `lsfg` adds `auto_target_fps` and the `disabled` reason |
+| `tk-link/src/media/profiles.rs` (LSFG catalog x2..x5 / auto 120 fps, bitrates, `auto_lsfg_multiplier`) | Enigmata-Temple v0.7.0 `crates/temple-core/src/media/profiles.rs` (`lsfg_specs`) and `tuning.rs` (`LSFG_MULTIPLIERS`) | AGPL-3.0-or-later | Link ids `p-lsfg-1080-*`, `p-anime4k-lsfg-1080-*` |
+| `tk-link/src/media/probe.rs` (`FrameRate`), `tk-link/src/media/engine.rs` (process chain) | Enigmata-Temple v0.7.0 `crates/temple-core/src/media/probe.rs`, `media.rs` (`run_chain`) | AGPL-3.0-or-later | Linux children also get `PR_SET_PDEATHSIG` |
+| `temple-lsfg` helper (separate process; source forked into `native/temple-lsfg/`, see section 2c) | Enigmata-Temple `native/temple-lsfg` (34ff76c) | GPL-3.0 (combined work) | built and shipped next to `tatakai-next`; reads the user's own Lossless Scaling `Lossless.dll`, which is never copied |
+| `tk-link/src/devices.rs`, `tk-link/src/server.rs` structure | Enigmata-Temple `devices.rs` / `server.rs` | AGPL-3.0-or-later | rewritten for axum 0.8 + hyper-util without the `tower` crate |
+| `tk-link/src/subtitles.rs` (0.4.0: the source's subtitle tracks listed with `ffprobe`, language / title clean-up and caps, image codecs listed as `text: false`, FFmpeg extraction to WebVTT) | Enigmata-Temple `crates/temple-core/src/library.rs` (`extract_vtt_from`, `IMAGE_SUBTITLE_CODECS`), `media/probe.rs` (`SubtitleTrackInfo`), contract `GET /v1/sessions/{id}/subtitles/{n}.vtt` | AGPL-3.0-or-later (own repo of the user) | re-expressed, not copied: one FFmpeg pass extracts every text track (`.ass` with styles + `.vtt`) into RAM per source, shared by the source's later sessions |
+| `tk-ext/src/js/prelude.js` shim semantics | `src/core/extensions/mobile/{requireShim,parseHtml}.ts` of this repository (MPL-2.0) | MPL-2.0 | re-implemented in JS for QuickJS |
+| metadata router semantics | `src/lib/metadata/router.ts` of this repository | MPL-2.0 | |
+
+### Torrents and debrid (wave A, worker i)
+
+| Code | Origin | License | Notes |
+|---|---|---|---|
+| `tk-core/src/debrid/{realdebrid,torbox,alldebrid,premiumize}.rs` (endpoints, cache-check strategy, file pick) | `src/core/providers/{realdebrid-client,torbox-client,cloud-debrid-client,debrid-orchestrator}.ts` of this repository | MPL-2.0 | re-implemented in Rust over `reqwest`; keys in `tk_core::Secrets` |
+| `tk-app/src/live/torrent_manual.rs` (episode alignment suggestion), `tk-ui/src/screens/torrents/library.rs` ("Add torrent" sheet) | `src/components/modals/{TorrentDownloadModal,MagnetAlignmentModal}.tsx` of this repository | MPL-2.0 | behaviour ported; alignment from `tk_core::release::parse_release` |
+| `tk-ui/src/screens/torrents/history.rs`, session rows in `tk-app/src/live/torrent.rs` | `src/components/settings/TorrentSessionHistory.tsx` of this repository | MPL-2.0 | sessions stored in `data.db` (`torrent_sessions`) |
+| `tk-torrent/src/tracker_probe.rs` (UDP BEP 15 / HTTP BEP 3 + BEP 48 scrape) | written for this app from the BEP texts | - | librqbit 9.1.0 exposes no per-tracker announce result; the engine asks the trackers itself |
+
+### Server, network, sniffer and Link extras (wave B, worker k)
+
+| Code | Origin | License | Notes |
+|---|---|---|---|
+| `tk-server/src/{api,auth,state,routes,proxy,logs}.rs` (`/api/server/v1` routes, envelope, error codes, pairing / tokens, NDJSON resolve, media tickets and HLS rewriting, lookup cache) | `server/src/{core,node,security,storage,proxy,cache,logs,lookup-cache,api-response}.mjs` of this repository | MPL-2.0 | re-implemented in Rust over axum 0.8; viewer password hashed with argon2id (`argon2` crate) instead of scrypt |
+| `tk-server/src/upstream.rs` (FlareSolverr `request.get` / clearance reuse, outbound proxy test) | `src/components/settings/{FlareSolverrSettings,ProxySettingsPanel}.tsx`, `desktop/runtime/proxy/local-proxy-server.cjs` of this repository | MPL-2.0 | SSRF rules from `tk_core::net` on every hop |
+| `tk-app/src/live/sniffer.rs` `ADBLOCK_HOSTS` (ad / popunder host suffixes), capture rules of `live/browser.rs` | `desktop/security/ad-blocker.cjs` and the classic Android app's `security/AdHosts.java` (`android/app/src/main/java/...` of this repository); `src/components/video/EmbedPlayer.tsx` | MPL-2.0 | only the ad-network tier of the host list; capture script written for the hidden wry view |
+
+### Novels and narration (wave B, worker m)
+
+| Code / component | Origin | License | Notes |
+|---|---|---|---|
+| `crates/tk-app/src/tts/text.rs` (sentence chunking, `ensurePunctuation`, punctuation-preserving phonemizer split, phoneme tokenization and token ids) | `@biwills/kittentts` 1.0.0 JS SDK (`dist/text-preprocess-*.js`, `dist/runtime-*.js`) and the KittenTTS symbol table (KittenML/KittenTTS) | Apache-2.0 | Ported to Rust; the English number expansion is a smaller rewrite. Symbol table kept in the original order (later duplicates win, as in the Python dict) |
+| `crates/tk-app/src/tts/kitten.rs` (model inputs `input_ids` / `style` / `speed`, style row selection, `speed_priors` / `voice_aliases`, 5000-sample tail trim, `voices.npz` reading) | `@biwills/kittentts` (`dist/runtime-*.js`), Tatakai classic `desktop/services/kitten-tts.cjs` + `kitten-tts-daemon.py` (model ids, repos, eight voices) | Apache-2.0 / the classic app's license (author's own repo) | In-process over ONNX Runtime instead of the classic Python daemon |
+| ONNX Runtime 1.22.0 shared library (downloaded at the user's request into `<data>/tts/kitten/runtime/`, never shipped or linked at build time) | github.com/microsoft/onnxruntime/releases | MIT (Microsoft) | Loaded with `ort::init_from` (`ort` crate, MIT / Apache-2.0, feature `load-dynamic`) |
+| KittenTTS models `KittenML/kitten-tts-nano-0.8-int8`, `KittenML/kitten-tts-mini-0.8` (downloaded at the user's request from huggingface.co into `<data>/tts/kitten/models/`) | Hugging Face, KittenML | Apache-2.0 (per the model cards) | Not redistributed with the app |
+| `espeak-ng` (external process for text -> IPA and the Linux system voice; installed by the user) | github.com/espeak-ng/espeak-ng | GPL-3.0-or-later | Not linked; run as a separate program |

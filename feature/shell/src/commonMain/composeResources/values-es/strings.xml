@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- android wave (12 §3.15): badge of the Torrents / Library destination. -->
+    <plurals name="app_active_downloads">
+        <item quantity="one">%1$d descarga activa</item>
+        <item quantity="many">%1$d descargas activas</item>
+        <item quantity="other">%1$d descargas activas</item>
+    </plurals>
+    <!-- parity wave A (15 §3.4): new-version notice shown by the shell at startup. -->
+    <string name="app_update_available">Nijiyome %1$s está disponible</string>
+    <string name="app_update_view">Ver</string>
+    <!-- A destination whose services the platform does not have yet (desktop, during the migration). -->
+    <string name="shell_not_available">Todavía no está disponible en este dispositivo</string>
+</resources>

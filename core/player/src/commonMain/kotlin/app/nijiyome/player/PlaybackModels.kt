@@ -1,0 +1,203 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.player
+
+import app.nijiyome.model.Container
+import app.nijiyome.model.HistoryEntry
+import app.nijiyome.model.StreamSource
+import app.nijiyome.model.SubtitleTrack
+import okhttp3.OkHttpClient
+import java.time.Instant
+
+/** One thing the player can play, with the HTTP headers its requests must carry (no local proxy exists natively). */
+class PlayableSource(
+    val url: String,
+    val headers: Map<String, String>,
+    val container: Container,
+    val label: String,
+    val quality: String? = null,
+    val subtitles: List<SubtitleTrack> = emptyList(),
+    /** Overrides the shared client: used for the PC's HLS, which needs mTLS with the pinned CA. */
+    val httpClient: OkHttpClient? = null,
+    /** android wave: a torrent loopback stream (bigger buffer, long read timeouts; 11 §5.3). */
+    val torrent: Boolean = false,
+    /**
+     * 0.4.0: the [subtitles] entry the engine selects once the load lists its tracks ([SUBTITLES_OFF] = none), instead of its own
+     * pick by preferred language; null = the engine's own pick. Used when the PC takes over a playback (Link "PC" / "Mixto"), so the
+     * track the phone showed stays selected.
+     */
+    val selectSubtitle: Int? = null,
+    /**
+     * Hito 4 (review): the app itself chose this file (a download, a file the user opened). Only then may the desktop mpv engines open
+     * a local path; a source from an extension gets http / https only (MpvInputGuard). Android does not read it.
+     */
+    val localFile: Boolean = false,
+    /**
+     * 1.1 review #1: a debrid (TorBox) link: the engine never follows a redirect from `https://` down to `http://` (the request fails
+     * instead). Android Media3 and the subtitle reader honour it; false = as before.
+     */
+    val httpsOnly: Boolean = false,
+) {
+    companion object {
+        /** [selectSubtitle]: subtitles off. */
+        const val SUBTITLES_OFF = -1
+
+        /** [httpsOnly]: a debrid link (1.1 review #1). */
+        fun from(s: StreamSource, httpsOnly: Boolean = false): PlayableSource =
+            PlayableSource(
+                httpsOnly = httpsOnly,
+                url = s.url,
+                headers = s.headers,
+                container = s.container,
+                label = listOfNotNull(s.provider, s.quality).joinToString(" - "),
+                quality = s.quality,
+                subtitles = s.subtitles,
+            )
+    }
+}
+
+/**
+ * One subtitle track. [groupIndex] is the engine's id (Media3 track group index, mpv `sid`). [ass] = SSA/ASS styling
+ * (Media3 renders it simplified: the player shows the "simplified subtitles" notice).
+ */
+data class SubtitleOption(
+    val groupIndex: Int,
+    val label: String,
+    val language: String?,
+    val selected: Boolean,
+    val ass: Boolean = false,
+    /** parity wave A (worker p): index into [PlayableSource.subtitles] when this track is an external (sidecar) file, else null. */
+    val external: Int? = null,
+    // --- 0.4.0 (sub-translation worker): lets the translator read the full cue list of an embedded track ---
+    /** Codec / mime as the engine reports it (mpv `subrip` / `ass` / `hdmv_pgs_subtitle`, Media3 `text/x-ssa` / `application/pgs`). */
+    val codec: String? = null,
+    /** Position among the subtitle tracks stored in the media file itself (container order); null for added / sidecar tracks. */
+    val embeddedOrdinal: Int? = null,
+)
+
+/** One audio track ([id] = Media3 track group index, mpv `aid`). */
+data class AudioOption(val id: Int, val label: String, val language: String?, val selected: Boolean)
+
+data class PlaybackError(val code: Int, val name: String, val exhausted: Boolean)
+
+/** Everything the UI renders; produced by [PlaybackController] on the main thread. */
+data class PlaybackState(
+    val isPlaying: Boolean = false,
+    val isBuffering: Boolean = true,
+    val ended: Boolean = false,
+    val positionMs: Long = 0,
+    val durationMs: Long = 0,
+    val bufferedMs: Long = 0,
+    val speed: Float = 1f,
+    val sourceIndex: Int = 0,
+    val sourceCount: Int = 0,
+    /** Set while falling back automatically to the next source. */
+    val fallbackCount: Int = 0,
+    val videoHeights: List<Int> = emptyList(),
+    /** Null = automatic (adaptive). */
+    val selectedHeight: Int? = null,
+    val subtitles: List<SubtitleOption> = emptyList(),
+    val subtitlesEnabled: Boolean = false,
+    val error: PlaybackError? = null,
+    // --- android wave (worker d) ---
+    /** Bumped by every [PlayerSession.load]; lets callers ignore errors / starts of an older load. */
+    val loadId: Int = 0,
+    /** The current load produced its first frame / became ready at least once. */
+    val started: Boolean = false,
+    val audioTracks: List<AudioOption> = emptyList(),
+    /** The selected subtitle track is SSA/ASS. */
+    val subtitleIsAss: Boolean = false,
+    /** The engine renders ASS with full styling (mpv); false for Media3 (simplified). */
+    val fullAss: Boolean = false,
+    // --- parity wave A (worker p) ---
+    /** Text of the primary subtitle the engine shows right now (mpv `sub-text`); null when unknown (Media3 exposes cues instead). */
+    val subText: String? = null,
+    /** Current subtitle delay ([PlayerSession.setSubtitleDelay]). */
+    val subtitleDelayMs: Long = 0,
+    /** [PlayerSession.setLoop] is on. */
+    val loop: Boolean = false,
+    /** mpv `secondary-sid` (a [SubtitleOption.groupIndex]); null = off. */
+    val secondarySubtitleId: Int? = null,
+    /** BUG-043 / BUG-006: the engine changed the shader preset by itself (the player shows a notice once per [ShaderNotice.seq]). */
+    val shaderNotice: ShaderNotice? = null,
+)
+
+/** Why the libmpv engine changed the shader preset by itself. */
+enum class ShaderFallback {
+    /** The chain dropped too many frames: a lighter Anime4K chain (S networks only). */
+    LIGHTER,
+
+    /** Even the lighter chain did not keep up: shaders off. */
+    OFF_SLOW,
+
+    /** Battery below 20 % and not charging (the rule of Settings › Reproductor › Preajuste). */
+    OFF_BATTERY,
+}
+
+data class ShaderNotice(val seq: Int, val kind: ShaderFallback)
+
+/**
+ * Automatic fallback to the next source: at most [maxFallbacks] (3) automatic moves after failures; a successful start of playback
+ * resets the budget. A manual selection also resets it. Pure logic, no Android.
+ */
+class SourceFallback(private val sourceCount: Int, private val maxFallbacks: Int = 3, start: Int = 0) {
+    var index: Int = start
+        private set
+    var fallbacksUsed: Int = 0
+        private set
+
+    /** The index to try after a failure of the current source, or null when the budget or the sources are exhausted. */
+    fun onFailure(): Int? {
+        if (fallbacksUsed >= maxFallbacks || sourceCount <= 1) return null
+        fallbacksUsed++
+        index = (index + 1) % sourceCount
+        return index
+    }
+
+    fun onPlaybackStarted() {
+        fallbacksUsed = 0
+    }
+
+    fun select(i: Int) {
+        require(i in 0 until sourceCount)
+        index = i
+        fallbacksUsed = 0
+    }
+}
+
+/** Builds history rows with the E9 keys (`HistoryEntry.animeIdOf` / `episodeIdOf`, completed at >= 0.9). */
+object ProgressTracker {
+    fun entry(
+        anilistId: Int?,
+        malId: Int?,
+        title: String,
+        poster: String?,
+        episode: Int,
+        positionMs: Long,
+        durationMs: Long,
+        now: Instant,
+    ): HistoryEntry? {
+        val animeId = HistoryEntry.animeIdOf(anilistId, malId) ?: return null
+        val progress = (positionMs / 1000).toInt().coerceAtLeast(0)
+        val duration = (durationMs / 1000).toInt().takeIf { durationMs > 0 && it > 0 }
+        return HistoryEntry(
+            animeId = animeId,
+            title = title,
+            poster = poster,
+            episodeId = HistoryEntry.episodeIdOf(animeId, episode),
+            episode = episode,
+            progressSec = progress,
+            durationSec = duration,
+            completed = HistoryEntry.isCompleted(progress, duration, false),
+            watchedAt = now,
+            anilistId = anilistId?.takeIf { it > 0 },
+            malId = malId?.takeIf { it > 0 },
+        )
+    }
+}
+
+/**
+ * 1.1 review #1: [client] as it must be used for a source: with [httpsOnly] (a debrid link, or any https:// file read by the app) a
+ * redirect from https:// down to http:// is not followed (the 3xx fails the request); otherwise [client] unchanged.
+ */
+fun noDowngradeClient(client: OkHttpClient, httpsOnly: Boolean): OkHttpClient =
+    if (httpsOnly && client.followSslRedirects) client.newBuilder().followSslRedirects(false).build() else client

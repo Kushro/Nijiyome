@@ -1,0 +1,65 @@
+package app.nijiyome.metadata
+
+import app.nijiyome.model.Episode
+import app.nijiyome.model.FeedKind
+import app.nijiyome.model.FeedPage
+import app.nijiyome.model.Media
+import app.nijiyome.model.MediaKind
+import app.nijiyome.model.MediaRef
+
+enum class Capability {
+    FEED, SEARCH, MEDIA, EPISODES,
+
+    /** Parity wave A: the provider implements [DiscoverProvider] (advanced search, details extras, characters, trending windows). */
+    DISCOVER,
+}
+
+/**
+ * A metadata source. Providers throw [ProviderException] for transport / HTTP failures (the router trips the
+ * cool-down on those) and return empty values for "nothing found" (the router then tries the next provider).
+ */
+interface MetadataProvider {
+    val id: String
+    val kinds: Set<MediaKind>
+    val capabilities: Set<Capability>
+
+    suspend fun feed(kind: MediaKind, feed: FeedKind, page: Int): FeedPage = unsupported("feed")
+    suspend fun search(kind: MediaKind, query: String, page: Int): FeedPage = unsupported("search")
+    suspend fun media(kind: MediaKind, ref: MediaRef): Media? = unsupported("media")
+    suspend fun episodes(ref: MediaRef): List<Episode> = unsupported("episodes")
+
+    private fun <T> unsupported(what: String): T = throw UnsupportedOperationException("$id does not support $what")
+}
+
+/** [status] 0 = transport failure (offline, DNS, timeout); otherwise the HTTP status. */
+class ProviderException(
+    val provider: String,
+    val status: Int,
+    message: String,
+    cause: Throwable? = null,
+    /** 0.3.1: on a 429, how long the provider (or the AniList gateway's budget) asked to wait; the router cools down that long. */
+    val retryAfterMs: Long? = null,
+) : Exception("$provider: $message", cause) {
+    /** Only transport/HTTP failures take a provider out of rotation; a bad payload for one title must not. */
+    val tripsCooldown: Boolean
+        get() = status == 0 || status == 401 || status == 403 || status == 429 || status >= 500
+}
+
+class NoMetadataProviderException(
+    val capability: Capability,
+    val errors: List<Pair<String, Throwable>>,
+) : Exception(
+    if (errors.isEmpty()) "No enabled metadata source supports $capability"
+    else "All metadata sources failed for $capability: " + errors.joinToString("; ") { "${it.first}: ${it.second.message}" },
+) {
+    /** The provider that answered 429, if any (maps to AppError.RateLimited). */
+    val rateLimitedProvider: String?
+        get() = errors.firstNotNullOfOrNull { (id, e) -> id.takeIf { (e as? ProviderException)?.status == 429 } }
+
+    /** 0.3.1: the wait of the rate-limited provider's 429, when it said. */
+    val rateLimitedWaitMs: Long?
+        get() = errors.firstNotNullOfOrNull { (_, e) -> (e as? ProviderException)?.takeIf { it.status == 429 }?.retryAfterMs }
+
+    val allOffline: Boolean
+        get() = errors.isNotEmpty() && errors.all { (it.second as? ProviderException)?.status == 0 }
+}

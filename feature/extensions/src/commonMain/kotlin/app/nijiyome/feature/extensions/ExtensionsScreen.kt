@@ -1,0 +1,718 @@
+package app.nijiyome.feature.extensions
+
+import app.nijiyome.feature.extensions.resources.Res
+import app.nijiyome.feature.extensions.resources.*
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getPluralString
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.ui.platform.rememberFilePicker
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.FileOpen
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import app.nijiyome.ui.platform.externalDropTarget
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import org.jetbrains.compose.resources.pluralStringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.nijiyome.designsystem.components.EmptyState
+import app.nijiyome.designsystem.components.ErrorState
+import app.nijiyome.designsystem.components.InfoChip
+import app.nijiyome.designsystem.components.LoadingState
+import app.nijiyome.designsystem.components.LocalAppSnackbar
+import app.nijiyome.designsystem.components.Pill
+import app.nijiyome.designsystem.components.PillTone
+import app.nijiyome.designsystem.components.SkeletonBox
+import app.nijiyome.designsystem.components.rememberAfterDelay
+import app.nijiyome.model.ExtLogLevel
+import app.nijiyome.model.ExtensionCompat
+import app.nijiyome.model.ExtensionDetail
+import app.nijiyome.model.ExtensionLogEntry
+import app.nijiyome.model.ExtensionRepo
+import app.nijiyome.model.StremioAddon
+import app.nijiyome.model.InstalledExtension
+import app.nijiyome.ui.resources.Res as UiR
+import app.nijiyome.ui.resources.*
+import org.koin.compose.viewmodel.koinViewModel
+
+/**
+ * Extensions (prototype `S.extensions`, 07 §1/§4): install a `.kai` with the SAF picker, one card per extension with the compatibility pill
+ * and its explanatory banner, permission chips with icons, hash / domains / date, a collapsible log, enable / disable and remove.
+ * States: loading indicator after 150 ms while the list is read, empty state, inline install error, per-row detail error with retry.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExtensionsScreen(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ExtensionsViewModel = koinViewModel(),
+    // parity wave B (docs/redesign/16-parity-wave-b-contract-android.md §3.4, worker t): "Proveedores" section (customSources) -> Route.Provider.
+    onOpenProvider: (extensionId: String, sourceId: String) -> Unit = { _, _ -> },
+    hub: ExtensionsHubViewModel = koinViewModel(),
+    // parity wave B closure (16 §3.4, worker t; server.api.extensions): extensions installed on the linked PC servers.
+    serverExtensions: ServerExtensionsViewModel = koinViewModel(),
+    /**
+     * Opens the extension servers screen from the PC servers section; null = that screen is reached elsewhere (Android: You ›
+     * Linked device). Desktop has no Linked device screen, so its way in is here (Tatakai Next: Extensiones › Servidores).
+     */
+    onOpenServers: (() -> Unit)? = null,
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val hubState by hub.state.collectAsStateWithLifecycle()
+    val serverState by serverExtensions.state.collectAsStateWithLifecycle()
+    val snackbar = LocalAppSnackbar.current
+    val invalidText = stringResource(Res.string.extensions_install_invalid)
+    val displayName = rememberDocumentDisplayName()
+    // SAF: the user picks the .kai package; no storage permission needed. Android may not know the .kai type, so allow any and check the name.
+    val pickFile = rememberFilePicker(listOf("*/*"), multiple = false) { uris ->
+        val uri = uris.firstOrNull() ?: return@rememberFilePicker
+        val name = displayName(uri)
+        if (name != null && !name.endsWith(".kai", ignoreCase = true)) {
+            snackbar.show(invalidText)
+        } else {
+            viewModel.install(uri)
+        }
+    }
+    var pendingRemove by remember { mutableStateOf<InstalledExtension?>(null) }
+    // parity wave B (16 §3.4, worker t): sheets and dialogs of the hub sections.
+    var showUpdates by rememberSaveable { mutableStateOf(false) }
+    var showInstallUrl by rememberSaveable { mutableStateOf(false) }
+    var confirmKill by remember { mutableStateOf(false) }
+    var prefsFor by remember { mutableStateOf<InstalledExtension?>(null) }
+    var removeRepo by remember { mutableStateOf<ExtensionRepo?>(null) }
+    var removeAddon by remember { mutableStateOf<StremioAddon?>(null) }
+    HubNoticesEffect(hub)
+    LaunchedEffect(state.message) {
+        if (state.message is InstallMessage.Installed) showInstallUrl = false
+    }
+
+    val installedText = (state.message as? InstallMessage.Installed)?.let { stringResource(Res.string.extensions_installed, it.name) }
+    LaunchedEffect(state.message) {
+        if (state.message is InstallMessage.Installed && installedText != null) {
+            snackbar.show(installedText)
+            viewModel.dismissMessage()
+        }
+    }
+
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(Res.string.extensions_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
+                    }
+                },
+                actions = {
+                    if (state.items.isNotEmpty()) {
+                        Pill(
+                            pluralStringResource(Res.plurals.extensions_installed_count, state.items.size, state.items.size),
+                            modifier = Modifier.padding(end = 4.dp),
+                            tone = PillTone.NEUTRAL,
+                        )
+                    }
+                    HubTopActions(
+                        updates = hubState.updates.size,
+                        anyEnabled = state.items.any { it.enabled },
+                        hasExtensions = state.items.isNotEmpty(),
+                        onOpenUpdates = { showUpdates = true },
+                        onKillSwitch = { enable -> if (enable) hub.setAllEnabled(true) else confirmKill = true },
+                    )
+                },
+            )
+        },
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().widthIn(max = 840.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item(key = "intro", contentType = "intro") {
+                    Text(
+                        stringResource(Res.string.extensions_intro),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                item(key = "install", contentType = "install") {
+                    InstallPanel(
+                        installing = state.installing,
+                        onPick = { pickFile() },
+                        onUrl = { showInstallUrl = true },
+                        // Desktop: a dropped .kai installs like a picked one; anything else says what is expected.
+                        onDrop = { files ->
+                            val kai = files.firstOrNull { it.endsWith(".kai", ignoreCase = true) }
+                            if (kai == null) snackbar.show(invalidText) else viewModel.install(kai)
+                            kai != null
+                        },
+                    )
+                }
+                if (hubState.updates.isNotEmpty()) {
+                    item(key = "updates-banner", contentType = "banner") {
+                        UpdatesBanner(hubState.updates.size, onOpen = { showUpdates = true })
+                    }
+                }
+                if (state.items.isNotEmpty() && state.items.none { it.enabled }) {
+                    item(key = "all-off", contentType = "banner") { AllDisabledBanner(onEnable = { hub.setAllEnabled(true) }) }
+                }
+                (state.message as? InstallMessage.Failed)?.let { failed ->
+                    item(key = "install-error", contentType = "message") {
+                        ErrorState(
+                            message = stringResource(Res.string.extensions_install_failed, failed.reason),
+                            retryLabel = stringResource(Res.string.extensions_install_choose),
+                            onRetry = {
+                                viewModel.dismissMessage()
+                                pickFile()
+                            },
+                            compact = true,
+                        )
+                    }
+                }
+                when {
+                    state.loading -> item(key = "loading", contentType = "state") { DelayedLoading() }
+                    state.items.isEmpty() -> item(key = "empty", contentType = "state") {
+                        EmptyState(
+                            icon = Icons.Outlined.Extension,
+                            title = stringResource(Res.string.extensions_empty_title),
+                            message = stringResource(Res.string.extensions_empty_message),
+                        )
+                    }
+                    else -> items(state.items, key = { it.id }, contentType = { "extension" }) { ext ->
+                        val enabledText = stringResource(Res.string.extensions_now_enabled, ext.name)
+                        val disabledText = stringResource(Res.string.extensions_now_disabled, ext.name)
+                        ExtensionCard(
+                            ext = ext,
+                            detail = state.details[ext.id] ?: DetailState.Loading,
+                            logOpen = ext.id in state.expandedLogs,
+                            viewModel = viewModel,
+                            onToggle = { on ->
+                                viewModel.setEnabled(ext.id, on)
+                                snackbar.show(if (on) enabledText else disabledText)
+                            },
+                            onRemove = { pendingRemove = ext },
+                            hasPreferences = ext.id in hubState.withPreferences,
+                            onPreferences = { prefsFor = ext },
+                            update = hubState.updates.firstOrNull { it.id == ext.id }?.availableVersion,
+                            updating = ext.id in hubState.updating,
+                            onUpdate = { hub.update(ext.id) },
+                        )
+                    }
+                }
+                hubSections(
+                    state = hubState,
+                    hub = hub,
+                    onOpenProvider = onOpenProvider,
+                    onRemoveRepo = { removeRepo = it },
+                    onRemoveAddon = { removeAddon = it },
+                )
+                serverExtensionSections(
+                    serverState,
+                    serverExtensions,
+                    local = state.items,
+                    updatable = hubState.updates.map { it.id }.toSet(),
+                    onUpdate = { hub.update(it) },
+                    onOpenServers = onOpenServers,
+                )
+            }
+        }
+    }
+
+    pendingRemove?.let { ext ->
+        val removedText = stringResource(Res.string.extensions_removed, ext.name)
+        AlertDialog(
+            onDismissRequest = { pendingRemove = null },
+            icon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
+            title = { Text(stringResource(Res.string.extensions_remove_title, ext.name)) },
+            text = { Text(stringResource(Res.string.extensions_remove_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.remove(ext.id)
+                    snackbar.show(removedText)
+                    pendingRemove = null
+                }) { Text(stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { pendingRemove = null }) { Text(stringResource(UiR.string.ui_close)) } },
+        )
+    }
+    state.downgrade?.let { d ->
+        // BUG-094: an older .kai over a newer installed copy.
+        AlertDialog(
+            onDismissRequest = viewModel::cancelDowngrade,
+            title = { Text(stringResource(Res.string.extensions_downgrade_title, d.name)) },
+            text = { Text(stringResource(Res.string.extensions_downgrade_message, d.newVersion, d.installedVersion)) },
+            confirmButton = { TextButton(onClick = viewModel::confirmDowngrade) { Text(stringResource(Res.string.extensions_downgrade_confirm)) } },
+            dismissButton = { TextButton(onClick = viewModel::cancelDowngrade) { Text(stringResource(Res.string.extensions_downgrade_cancel)) } },
+        )
+    }
+    if (showUpdates) UpdatesSheet(hubState, hub, onDismiss = { showUpdates = false })
+    if (showInstallUrl) {
+        InstallUrlDialog(
+            installing = state.installing,
+            onInstall = viewModel::installFromUrl,
+            onDismiss = { showInstallUrl = false },
+            // Desktop: a pasted path installs the file (Tatakai Next's path field); the dialog closes on success as for a URL.
+            onInstallPath = if (kaiDropAndPaths) viewModel::install else null,
+        )
+    }
+    if (confirmKill) {
+        KillSwitchDialog(
+            onConfirm = {
+                confirmKill = false
+                hub.setAllEnabled(false)
+            },
+            onDismiss = { confirmKill = false },
+        )
+    }
+    prefsFor?.let { ext -> PreferencesDialog(ext.id, ext.name, hub, onDismiss = { prefsFor = null }) }
+    removeRepo?.let { r ->
+        ConfirmRemoveDialog(
+            title = stringResource(Res.string.extensions_repo_remove_title, r.name),
+            message = stringResource(Res.string.extensions_repo_remove_message),
+            onConfirm = {
+                hub.removeRepository(r.url)
+                removeRepo = null
+            },
+            onDismiss = { removeRepo = null },
+        )
+    }
+    removeAddon?.let { a ->
+        ConfirmRemoveDialog(
+            title = stringResource(Res.string.extensions_remove_title, a.name),
+            message = stringResource(Res.string.extensions_stremio_remove_message),
+            onConfirm = {
+                hub.removeAddon(a.id)
+                removeAddon = null
+            },
+            onDismiss = { removeAddon = null },
+        )
+    }
+}
+
+/** Snackbar of the hub's one-shot outcomes. */
+@Composable
+private fun HubNoticesEffect(hub: ExtensionsHubViewModel) {
+    val snackbar = LocalAppSnackbar.current
+    LaunchedEffect(hub) {
+        hub.notices.collect { n ->
+            val text = when (n) {
+                is HubNotice.Updated -> getString(Res.string.extensions_updated_to, n.name, n.version)
+                is HubNotice.UpdatesChecked -> getPluralString(Res.plurals.extensions_updates_found, n.count, n.count)
+                is HubNotice.RepoAdded -> getString(Res.string.extensions_repo_added, n.name)
+                is HubNotice.AddonInstalled -> getString(Res.string.extensions_installed, n.name)
+                is HubNotice.AddonUpdated -> getString(Res.string.extensions_updated_to, n.name, n.version)
+                HubNotice.MatchesReset -> getString(Res.string.extensions_stremio_reset_done)
+                is HubNotice.AllEnabled -> getString(if (n.enabled) Res.string.extensions_all_enabled else Res.string.extensions_all_disabled)
+                is HubNotice.Failed -> getString(Res.string.extensions_action_failed, n.reason)
+            }
+            snackbar.show(text)
+        }
+    }
+}
+
+@Composable
+private fun UpdatesBanner(count: Int, onOpen: () -> Unit) {
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(pluralStringResource(Res.plurals.extensions_updates_badge, count, count), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            TextButton(onClick = onOpen) { Text(stringResource(Res.string.extensions_updates_open)) }
+        }
+    }
+}
+
+@Composable
+private fun AllDisabledBanner(onEnable: () -> Unit) {
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(Res.string.extensions_all_off_banner), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            TextButton(onClick = onEnable) { Text(stringResource(Res.string.extensions_enable_all)) }
+        }
+    }
+}
+
+@Composable
+private fun DelayedLoading() {
+    if (rememberAfterDelay()) LoadingState(Modifier.fillMaxWidth().height(160.dp))
+}
+
+@Composable
+private fun InstallPanel(installing: Boolean, onPick: () -> Unit, onUrl: () -> Unit, onDrop: (List<String>) -> Boolean) {
+    var hover by remember { mutableStateOf(false) }
+    val drop = if (kaiDropAndPaths) {
+        Modifier.externalDropTarget(hovering = { hover = it }) { d -> !installing && onDrop(d.files) }
+    } else {
+        Modifier
+    }
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = if (hover) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        border = if (hover) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        modifier = Modifier.fillMaxWidth().then(drop),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Icon(Icons.Outlined.FileOpen, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(if (hover) Res.string.extensions_install_drop else Res.string.extensions_install), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    stringResource(if (kaiDropAndPaths) Res.string.extensions_install_hint_desktop else Res.string.extensions_install_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Button(onClick = onPick, enabled = !installing) {
+                    Text(stringResource(if (installing) Res.string.extensions_installing else Res.string.extensions_install_choose))
+                }
+                TextButton(onClick = onUrl, enabled = !installing) {
+                    Text(stringResource(if (kaiDropAndPaths) Res.string.extensions_install_url_or_path else Res.string.extensions_install_url))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ExtensionCard(
+    ext: InstalledExtension,
+    detail: DetailState,
+    logOpen: Boolean,
+    viewModel: ExtensionsViewModel,
+    onToggle: (Boolean) -> Unit,
+    onRemove: () -> Unit,
+    hasPreferences: Boolean = false,
+    onPreferences: () -> Unit = {},
+    update: String? = null,
+    updating: Boolean = false,
+    onUpdate: () -> Unit = {},
+) {
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // head: initial, name + compat pill, version · id, switch, remove
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(
+                    Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        ext.name.take(1).uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            ext.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.semantics { heading() },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Pill(stringResource(ext.compat.labelRes()), tone = ext.compat.tone())
+                    }
+                    Text(
+                        // BUG-075: no raw id and no "custom" kind in the card, as on the desktop.
+                        listOfNotNull(stringResource(Res.string.extensions_version, ext.version), kindRes(ext.type)?.let { stringResource(it) })
+                            .joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                // BUG-110: a neutral label with the name; the switch's own state says "activado" / "desactivado".
+                val enabledLabel = stringResource(Res.string.extensions_use_named, ext.name)
+                Switch(
+                    checked = ext.enabled,
+                    onCheckedChange = onToggle,
+                    enabled = ext.compat != ExtensionCompat.UNSUPPORTED,
+                    modifier = Modifier.semantics { contentDescription = enabledLabel },
+                )
+                IconButton(onClick = onRemove) {
+                    Icon(Icons.Outlined.Delete, contentDescription = stringResource(Res.string.extensions_remove))
+                }
+            }
+            if (ext.description.isNotBlank()) {
+                Text(
+                    ext.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Permissions(ext.permissions)
+            CompatBanner(ext)
+            if (hasPreferences || update != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (hasPreferences) {
+                        OutlinedButton(onClick = onPreferences) {
+                            Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text(stringResource(Res.string.extensions_prefs), modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                    if (update != null) {
+                        Button(onClick = onUpdate, enabled = !updating) {
+                            Text(if (updating) stringResource(Res.string.extensions_updating) else stringResource(Res.string.extensions_update_to, update))
+                        }
+                    }
+                }
+            }
+            Foot(ext, detail, logOpen, onRetry = { viewModel.retryDetail(ext.id) }, onToggleLog = { viewModel.toggleLog(ext.id) })
+            if (logOpen) LogPanel(ext.id, viewModel)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Permissions(permissions: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // BUG-075: over a row of sites only, "Accede a" reads better than "Permisos".
+        val onlySites = permissions.isNotEmpty() && permissions.all { it.startsWith(DOMAIN_PERMISSION) }
+        Text(
+            stringResource(if (onlySites) Res.string.extensions_perm_accesses else Res.string.extensions_permissions),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (permissions.isEmpty()) {
+                InfoChip(stringResource(Res.string.extensions_no_permissions))
+            } else {
+                permissions.take(MAX_PERMISSION_CHIPS).forEach { p -> InfoChip(permissionText(p), icon = permissionIcon(p)) }
+                if (permissions.size > MAX_PERMISSION_CHIPS) InfoChip(stringResource(Res.string.extensions_more, permissions.size - MAX_PERMISSION_CHIPS))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompatBanner(ext: InstalledExtension) {
+    val (text, warn) = when (ext.compat) {
+        ExtensionCompat.FULL -> return
+        ExtensionCompat.PARTIAL -> stringResource(Res.string.extensions_compat_partial_hint) to false
+        ExtensionCompat.UNSUPPORTED -> stringResource(Res.string.extensions_cannot_enable) to true
+    }
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = if (warn) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = if (warn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(if (warn) Icons.Outlined.WarningAmber else Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(20.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text, style = MaterialTheme.typography.bodyMedium)
+                ext.compatReason?.takeIf { it.isNotBlank() }?.let { reason ->
+                    Text(stringResource(Res.string.extensions_compat_reason, reason), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Foot(ext: InstalledExtension, detail: DetailState, logOpen: Boolean, onRetry: () -> Unit, onToggleLog: () -> Unit) {
+    when (detail) {
+        DetailState.Loading -> if (rememberAfterDelay()) SkeletonBox(Modifier.fillMaxWidth(0.6f).height(16.dp))
+        DetailState.Failed -> ErrorState(
+            message = stringResource(Res.string.extensions_detail_error),
+            retryLabel = stringResource(UiR.string.ui_retry),
+            onRetry = onRetry,
+            compact = true,
+        )
+        is DetailState.Ready -> detail.detail?.let { FootFacts(it) }
+    }
+    if (ext.browserDomains.isNotEmpty()) {
+        InfoChip(pluralStringResource(Res.plurals.extensions_browser, ext.browserDomains.size, ext.browserDomains.size), icon = Icons.Outlined.Public)
+        if (!hiddenBrowserAvailable()) {
+            Text(
+                stringResource(Res.string.extensions_browser_limited),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+    TextButton(onClick = onToggleLog) {
+        Icon(Icons.Outlined.Terminal, contentDescription = null, modifier = Modifier.size(18.dp))
+        Text(stringResource(if (logOpen) Res.string.extensions_hide_logs else Res.string.extensions_logs), modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FootFacts(d: ExtensionDetail) {
+    val style = MaterialTheme.typography.bodySmall
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        d.installedAtMs?.let { at ->
+            val rel = app.nijiyome.ui.format.midSentence(platformRelativeTimeSpan(at)) // BUG-092: "Actualizada hace 3 horas"
+            Text(stringResource(Res.string.extensions_updated, rel), style = style, color = color)
+        }
+        if (d.hash.isNotEmpty()) Text(stringResource(Res.string.extensions_hash, d.hash), style = style, color = color, fontFamily = FontFamily.Monospace)
+        Text(pluralStringResource(Res.plurals.extensions_domains, d.domains.size, d.domains.size), style = style, color = color)
+        if (d.sourceRoutes.isNotEmpty()) {
+            val routes = d.sourceRoutes.map { r ->
+                when (r) {
+                    "torrent" -> stringResource(Res.string.extensions_route_torrent)
+                    else -> stringResource(Res.string.extensions_route_stream)
+                }
+            }.distinct().joinToString(", ")
+            Text(stringResource(Res.string.extensions_routes, routes), style = style, color = color)
+        }
+    }
+}
+
+@Composable
+private fun LogPanel(extensionId: String, viewModel: ExtensionsViewModel) {
+    val flow = remember(extensionId) { viewModel.logs(extensionId) }
+    val lines by flow.collectAsStateWithLifecycle(initialValue = emptyList())
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState()).padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (lines.isEmpty()) {
+                Text(
+                    stringResource(Res.string.extensions_logs_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                lines.forEach { LogLine(it) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LogLine(entry: ExtensionLogEntry) {
+    val (levelRes, color) = when (entry.level) {
+        ExtLogLevel.OK -> Res.string.extensions_log_ok to MaterialTheme.colorScheme.primary
+        ExtLogLevel.WARN -> Res.string.extensions_log_warn to MaterialTheme.colorScheme.tertiary
+        ExtLogLevel.ERR -> Res.string.extensions_log_err to MaterialTheme.colorScheme.error
+    }
+    Text(
+        stringResource(Res.string.extensions_log_line, stringResource(levelRes), entry.op, entry.message),
+        style = MaterialTheme.typography.bodySmall,
+        fontFamily = FontFamily.Monospace,
+        color = if (entry.level == ExtLogLevel.OK) MaterialTheme.colorScheme.onSurface else color,
+    )
+}
+
+private const val MAX_PERMISSION_CHIPS = 6
+
+private const val DOMAIN_PERMISSION = "network:domain:"
+
+/** BUG-075 (UX-16): what a permission id means for the user, or null to show it as it is (same words as the desktop's `perm_label`). */
+internal enum class PermissionLabel { NETWORK, STORAGE, TORRENT }
+
+/** `network:domain:az-animex.com` -> the host; other `network*` / `storage*` / `torrent*` -> a word; anything else -> null. */
+internal fun permissionLabel(p: String): Pair<PermissionLabel?, String?> = when {
+    p.startsWith(DOMAIN_PERMISSION) -> null to p.removePrefix(DOMAIN_PERMISSION)
+    p.startsWith("network") -> PermissionLabel.NETWORK to null
+    p.startsWith("storage") -> PermissionLabel.STORAGE to null
+    p.startsWith("torrent") -> PermissionLabel.TORRENT to null
+    else -> null to null
+}
+
+@Composable
+private fun permissionText(p: String): String {
+    val (kind, host) = permissionLabel(p)
+    return host ?: when (kind) {
+        PermissionLabel.NETWORK -> stringResource(Res.string.extensions_perm_network)
+        PermissionLabel.STORAGE -> stringResource(Res.string.extensions_perm_storage)
+        PermissionLabel.TORRENT -> stringResource(Res.string.extensions_perm_torrent)
+        null -> p
+    }
+}
+
+private fun permissionIcon(p: String): ImageVector = when {
+    p.startsWith("network") -> Icons.Outlined.Language
+    p.startsWith("storage") -> Icons.Outlined.Storage
+    else -> Icons.Outlined.WarningAmber
+}
+
+private fun ExtensionCompat.labelRes(): StringResource = when (this) {
+    ExtensionCompat.FULL -> Res.string.extensions_compat_full
+    ExtensionCompat.PARTIAL -> Res.string.extensions_compat_partial
+    ExtensionCompat.UNSUPPORTED -> Res.string.extensions_compat_unsupported
+}
+
+private fun ExtensionCompat.tone(): PillTone = when (this) {
+    ExtensionCompat.FULL -> PillTone.OK
+    ExtensionCompat.PARTIAL -> PillTone.WARN
+    ExtensionCompat.UNSUPPORTED -> PillTone.ERR
+}
+
+/** BUG-075: "Torrents" / "Streams web"; a custom extension says nothing (its description does). */
+private fun kindRes(type: String): StringResource? = when (type) {
+    "torrent" -> Res.string.extensions_kind_torrent
+    "custom" -> null
+    else -> Res.string.extensions_kind_onlinestream
+}

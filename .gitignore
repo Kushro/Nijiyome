@@ -1,0 +1,21 @@
+# Per-developer config (SDK path, OAuth client ids) — never committed (E8)
+local.properties
+keystore.properties
+*.jks
+*.keystore
+.gradle/
+build/
+.idea/
+*.iml
+captures/
+# Sources jars of M3E/Nav3/Media3 used for API grep (E2); fetched with scripts/fetch-sources.mjs
+.deps-sources/
+
+# Agent worktrees and local tooling
+.claude/
+.kotlin/
+__pycache__/
+*.pyc
+# Private migration diary, kept only in the local checkout
+docs/estado.md
+docs/metricas.md

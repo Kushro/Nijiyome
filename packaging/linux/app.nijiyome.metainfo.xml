@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata of the desktop app (Linux). Validate with appstreamcli validate (offline mode). -->
+<component type="desktop-application">
+  <id>app.nijiyome</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+  <name>Nijiyome</name>
+  <summary>Anime player with libmpv and local extensions</summary>
+  <summary xml:lang="es">Reproductor de anime con libmpv y extensiones locales</summary>
+  <description>
+    <p>
+      Nijiyome on the desktop: browse your library and history, sign in with AniList or MyAnimeList, play episodes with
+      libmpv and Anime4K or FSR upscaling, stream torrents, download episodes, and run sideloaded .kai extensions in a
+      sandboxed host. The same app runs on Android.
+    </p>
+    <p>Two player modes are available in Settings:</p>
+    <ul>
+      <li>Embedded: libmpv drawn inside the app window, with the app controls.</li>
+      <li>External mpv: your own mpv in its own window, with your configuration, the enhanced mode (mpv-anime-build) and
+        frame generation through lsfg-vk.</li>
+    </ul>
+    <p xml:lang="es">
+      Nijiyome en el escritorio: explora tu biblioteca e historial, inicia sesión con AniList o MyAnimeList, reproduce
+      episodios con libmpv y escalado Anime4K o FSR, mira torrents, descarga episodios y ejecuta extensiones .kai locales
+      en un host aislado. La misma app funciona en Android.
+    </p>
+  </description>
+  <developer id="com.github.kushro">
+    <name>Nijiyome contributors</name>
+  </developer>
+  <url type="homepage">https://github.com/Kushro/Nijiyome</url>
+  <url type="bugtracker">https://github.com/Kushro/Nijiyome/issues</url>
+  <launchable type="desktop-id">app.nijiyome.desktop</launchable>
+  <provides>
+    <binary>nijiyome</binary>
+    <mediatype>x-scheme-handler/nijiyome</mediatype>
+    <mediatype>x-scheme-handler/magnet</mediatype>
+    <mediatype>application/x-bittorrent</mediatype>
+  </provides>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Player</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <releases>
+    <release version="0.1.0" date="2026-11-23">
+      <description>
+        <p>First desktop build of Nijiyome (Kotlin Multiplatform): the Android app's screens on Linux and Windows.</p>
+      </description>
+    </release>
+  </releases>
+</component>

@@ -1,0 +1,315 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.link
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.concurrent.TimeUnit
+
+@Serializable
+data class OutputDto(val width: Int, val height: Int)
+
+@Serializable
+data class ProfileDto(
+    val id: String,
+    val label: String,
+    val upscale: String,
+    val fg: String = "none",
+    val output: OutputDto,
+    /** `true`, `false` or the string `unknown`. */
+    @SerialName("measured_sustain") val measuredSustain: JsonElement = JsonPrimitive("unknown"),
+    /** Additive (LSFG): output fps = source fps x this multiplier. */
+    @SerialName("fg_multiplier") val fgMultiplier: Int? = null,
+    /** Additive (LSFG auto): the multiplier is chosen per source to approach this rate. */
+    @SerialName("fg_target_fps") val fgTargetFps: Int? = null,
+    /** The PC's encoder for this profile (`h264_amf`, `h264_vaapi`...; empty when it has none). */
+    val encoder: String? = null,
+)
+
+@Serializable
+data class CapabilitiesDto(
+    val contract: String,
+    @SerialName("server_version") val serverVersion: String,
+    @SerialName("instance_id") val instanceId: String,
+    @SerialName("server_name") val serverName: String,
+    val profiles: List<ProfileDto>,
+    @SerialName("default_profile") val defaultProfile: String,
+    @SerialName("client_fg") val clientFg: String = "suppressed",
+)
+
+@Serializable
+data class SessionCreatedDto(
+    @SerialName("session_id") val sessionId: String,
+    val generation: Int,
+    @SerialName("playback_path") val playbackPath: String,
+    @SerialName("duration_secs") val durationSecs: Double? = null,
+    @SerialName("segment_secs") val segmentSecs: Int,
+    @SerialName("heartbeat_interval_secs") val heartbeatIntervalSecs: Int,
+    @SerialName("idle_timeout_secs") val idleTimeoutSecs: Int,
+)
+
+@Serializable
+data class SessionStateDto(
+    val state: String,
+    val generation: Int,
+    @SerialName("instance_id") val instanceId: String,
+    val profile: String,
+    val error: String? = null,
+    // --- optional status fields (contract SessionState); the 0.4.0 ones (upscale ... fg_effective) only from 0.4.0 PCs ---
+    val throttled: Boolean = false,
+    @SerialName("lead_secs") val leadSecs: Double? = null,
+    @SerialName("degraded_from") val degradedFrom: String? = null,
+    val output: SessionOutputDto? = null,
+    val upscale: String? = null,
+    val anime4k: Anime4kDto? = null,
+    val fg: String? = null,
+    @SerialName("fg_effective") val fgEffective: FgEffectiveDto? = null,
+    val encoder: String? = null,
+    @SerialName("video_kbps") val videoKbps: Int? = null,
+    /** 0.4.0: the source's subtitle tracks (absent while the PC lists them, and on older PCs). */
+    val subtitles: List<SubtitleTrackDto>? = null,
+    @SerialName("subtitles_state") val subtitlesState: String? = null,
+    /** 0.4.1: the pipeline reached the real end of the source (`end_secs`), and what the PC holds around the playhead. */
+    val ended: Boolean = false,
+    @SerialName("end_secs") val endSecs: Double? = null,
+    val produced: ProducedDto? = null,
+)
+
+/** 0.4.1 `produced` of the session state: seconds of the source timeline. */
+@Serializable
+data class ProducedDto(@SerialName("from_secs") val fromSecs: Double? = null, @SerialName("to_secs") val toSecs: Double? = null)
+
+/** 0.4.0 `SubtitleTrack` of the session state (`subtitles[]`). */
+@Serializable
+data class SubtitleTrackDto(
+    val index: Int,
+    val language: String? = null,
+    val title: String? = null,
+    val codec: String = "",
+    val default: Boolean = false,
+    val forced: Boolean = false,
+    val text: Boolean = true,
+    val formats: List<String> = emptyList(),
+)
+
+@Serializable
+data class SessionOutputDto(val width: Int? = null, val height: Int? = null, val fps: Double? = null)
+
+@Serializable
+data class Anime4kDto(val mode: String? = null, val variant: String? = null)
+
+@Serializable
+data class FgEffectiveDto(
+    val multiplier: Int,
+    @SerialName("source_fps") val sourceFps: Double? = null,
+    @SerialName("out_fps") val outFps: Double? = null,
+)
+
+@Serializable
+data class LibraryItemDto(
+    val id: String,
+    val title: String,
+    @SerialName("duration_secs") val durationSecs: Double,
+    val width: Int,
+    val height: Int,
+    @SerialName("size_bytes") val sizeBytes: Long,
+)
+
+@Serializable
+data class LibraryDto(val items: List<LibraryItemDto>, val truncated: Boolean)
+
+/** `POST /v1/sessions` source. M0 supports `library` and `url` only (openapi.v1.json `SessionCreate`). */
+sealed interface SessionSource {
+    data class Library(val itemId: String) : SessionSource
+    data class Url(val url: String, val headers: Map<String, String>, val extensionId: String? = null, val container: String? = null) : SessionSource
+
+    /** Additive v1 extension (BUG-008 / BUG-022 / BUG-038): the source of an earlier session of this phone, open or closed. */
+    data class Session(val sessionId: String) : SessionSource
+
+    /** Additive v1 extension (BUG-009): a torrent the PC streams from its own engine. */
+    data class Torrent(val uri: String, val mediaId: String, val episode: Int) : SessionSource
+}
+
+/**
+ * REST client of Nijiyome Link v1 over an already-configured OkHttp client (mTLS + pinned CA in production, plain HTTP against a
+ * MockWebServer in tests). Every call returns a [LinkResult]; nothing throws for protocol-level failures and nothing is logged.
+ */
+class LinkClient(private val baseUrl: HttpUrl, private val client: OkHttpClient) {
+    suspend fun capabilities(): LinkResult<CapabilitiesDto> =
+        get("v1/capabilities", MAX_JSON) { LinkHttp.json.decodeFromString(CapabilitiesDto.serializer(), it.decodeToString()).also { c -> require(c.contract == "v1") } }
+
+    suspend fun library(): LinkResult<LibraryDto> =
+        get("v1/library", MAX_LIBRARY) { LinkHttp.json.decodeFromString(LibraryDto.serializer(), it.decodeToString()) }
+
+    suspend fun createSession(
+        source: SessionSource,
+        profile: String? = null,
+        audioTrack: Int? = null,
+        startSecs: Double? = null,
+    ): LinkResult<SessionCreatedDto> {
+        val body = buildJsonObject {
+            put("source", sourceJson(source))
+            if (profile != null) put("profile", profile)
+            if (audioTrack != null) put("audio_track", audioTrack)
+            if (startSecs != null) put("start_secs", startSecs)
+        }.toString().toByteArray(Charsets.UTF_8)
+        val request = LinkHttp.request(url("v1/sessions")).post(body.toRequestBody(LinkHttp.JSON_TYPE)).build()
+        // BUG-009: the PC waits up to 75 s for a magnet's metadata before it answers
+        val http = if (source is SessionSource.Torrent) {
+            client.newBuilder().readTimeout(TORRENT_CREATE_SECS, TimeUnit.SECONDS).callTimeout(TORRENT_CREATE_SECS + 5, TimeUnit.SECONDS).build()
+        } else {
+            client
+        }
+        return LinkHttp.exchange(http, request, MAX_JSON) { _, b ->
+            LinkHttp.json.decodeFromString(SessionCreatedDto.serializer(), b.decodeToString()).also {
+                require(SESSION_ID.matches(it.sessionId) && it.playbackPath.startsWith("/v1/sessions/") && ".." !in it.playbackPath)
+            }
+        }
+    }
+
+    suspend fun sessionState(sessionId: String): LinkResult<SessionStateDto> {
+        if (!SESSION_ID.matches(sessionId)) return LinkResult.Failure(LinkError.Api(LinkApiError.RequestInvalid))
+        return get("v1/sessions/$sessionId", MAX_JSON) { LinkHttp.json.decodeFromString(SessionStateDto.serializer(), it.decodeToString()) }
+    }
+
+    suspend fun deleteSession(sessionId: String): LinkResult<Unit> {
+        if (!SESSION_ID.matches(sessionId)) return LinkResult.Failure(LinkError.Api(LinkApiError.RequestInvalid))
+        return LinkHttp.exchange(client, LinkHttp.request(url("v1/sessions/$sessionId")).delete().build(), MAX_JSON) { _, _ -> Unit }
+    }
+
+    /** `POST /v1/sessions/{id}/position`: the 4 s heartbeat (120 s without one closes the session). */
+    suspend fun heartbeat(sessionId: String, positionSecs: Double, paused: Boolean): LinkResult<Unit> {
+        if (!SESSION_ID.matches(sessionId)) return LinkResult.Failure(LinkError.Api(LinkApiError.RequestInvalid))
+        val body = buildJsonObject {
+            put("position_secs", positionSecs.coerceAtLeast(0.0))
+            put("paused", paused)
+        }.toString().toByteArray(Charsets.UTF_8)
+        val request = LinkHttp.request(url("v1/sessions/$sessionId/position")).post(body.toRequestBody(LinkHttp.JSON_TYPE)).build()
+        return LinkHttp.exchange(client, request, MAX_JSON) { _, _ -> Unit }
+    }
+
+    /**
+     * 0.4.0: `GET /v1/sessions/{id}/subtitles/{index}.{format}` (`ass` | `vtt`), the text of one subtitle track of the session's
+     * source. The first request starts the PC's extraction: until it ends the PC answers `503 segment_wait_timeout` (ask again).
+     */
+    suspend fun subtitle(sessionId: String, index: Int, format: String): LinkResult<String> {
+        if (!SESSION_ID.matches(sessionId) || index !in 0..999 || format !in SUBTITLE_FORMATS) {
+            return LinkResult.Failure(LinkError.Api(LinkApiError.RequestInvalid))
+        }
+        return get("v1/sessions/$sessionId/subtitles/$index.$format", MAX_SUBTITLE) { it.decodeToString() }
+    }
+
+    /** Absolute URL of [subtitle] (for Media3, which fetches it with the same mTLS client). */
+    fun subtitleUrl(sessionId: String, index: Int, format: String): String = url("v1/sessions/$sessionId/subtitles/$index.$format").toString()
+
+    /** `DELETE /v1/devices/self`: this phone revokes its own certificate. */
+    suspend fun forgetSelf(): LinkResult<Unit> =
+        LinkHttp.exchange(client, LinkHttp.request(url("v1/devices/self")).delete().build(), MAX_JSON) { _, _ -> Unit }
+
+    // --- parity wave A, 2026-11-09 amendment (history over Link; see LinkHistoryClient.kt, desktop contract §3.8). Owner afterwards: worker q. ---
+
+    /** `GET /v1/history?since=<unix s>&limit=<1..=500>`: rows with watchedAt > [sinceUnix] (0 = all), oldest first, with the next cursor. */
+    suspend fun historySince(sinceUnix: Long, limit: Int = MAX_HISTORY_ROWS): LinkResult<LinkHistoryPageDto> {
+        val target = url("v1/history").newBuilder()
+            .addQueryParameter("since", sinceUnix.coerceAtLeast(0L).toString())
+            .addQueryParameter("limit", limit.coerceIn(1, MAX_HISTORY_ROWS).toString())
+            .build()
+        return LinkHttp.exchange(client, LinkHttp.request(target).get().build(), MAX_HISTORY) { _, b ->
+            LinkHttp.json.decodeFromString(LinkHistoryPageDto.serializer(), b.decodeToString())
+        }
+    }
+
+    /** `POST /v1/history` with the phone's dirty rows (1..[MAX_HISTORY_ROWS], <= 256 KiB); the PC merges them and answers how many entered. */
+    suspend fun historyPush(rows: List<LinkHistoryRow>): LinkResult<LinkHistoryPushResultDto> {
+        if (rows.isEmpty() || rows.size > MAX_HISTORY_ROWS) return LinkResult.Failure(LinkError.Api(LinkApiError.RequestInvalid))
+        val body = LinkHttp.json.encodeToString(LinkHistoryPushDto.serializer(), LinkHistoryPushDto(rows)).toByteArray(Charsets.UTF_8)
+        if (body.size > MAX_JSON) return LinkResult.Failure(LinkError.Api(LinkApiError.BodyTooLarge))
+        val request = LinkHttp.request(url("v1/history")).post(body.toRequestBody(LinkHttp.JSON_TYPE)).build()
+        return LinkHttp.exchange(client, request, MAX_JSON) { _, b ->
+            LinkHttp.json.decodeFromString(LinkHistoryPushResultDto.serializer(), b.decodeToString())
+        }
+    }
+
+    /** 2026-11: `GET /v1/history/mode` (404 on an older PC). */
+    suspend fun historyMode(): LinkResult<LinkHistoryModeDto> =
+        LinkHttp.exchange(client, LinkHttp.request(url("v1/history/mode")).get().build(), MAX_JSON) { _, b ->
+            LinkHttp.json.decodeFromString(LinkHistoryModeDto.serializer(), b.decodeToString())
+        }
+
+    /** 2026-11: `POST /v1/history/resync-done` (empty body) after pushing everything for a `push_all`. */
+    suspend fun historyResyncDone(): LinkResult<LinkResyncDoneDto> {
+        val request = LinkHttp.request(url("v1/history/resync-done")).post(ByteArray(0).toRequestBody(LinkHttp.JSON_TYPE)).build()
+        return LinkHttp.exchange(client, request, MAX_JSON) { _, b ->
+            if (b.isEmpty()) LinkResyncDoneDto() else LinkHttp.json.decodeFromString(LinkResyncDoneDto.serializer(), b.decodeToString())
+        }
+    }
+
+    /** `DELETE /v1/history` (204): the PC drops its whole history (only after the user confirmed "also on the PC"). */
+    suspend fun historyClear(): LinkResult<Unit> =
+        LinkHttp.exchange(client, LinkHttp.request(url("v1/history")).delete().build(), MAX_JSON) { _, _ -> Unit }
+
+    // --- parity wave B (16 §3.11, worker r): remote control, hand-off and PC -> phone events (canonical wire: LinkControl.kt) ---
+
+    private val control by lazy { LinkControlClient(baseUrl, client) }
+
+    /** `GET /v1/player`: null when the PC has nothing open or no remote control (404). */
+    suspend fun playerState(): LinkResult<PlayerStateDto?> = control.playerState()
+
+    /** `POST /v1/control` `{ "command": "prev" | "toggle" | "next" }` (`RemoteAction.id`). */
+    suspend fun playerAction(command: String): LinkResult<Unit> = control.control(ControlWire.simple(command))
+
+    /** "Continuar en la PC": `POST /v1/control` `{ "command": "open", "mediaId", "episode", "positionSecs" }`. */
+    suspend fun handoff(mediaId: String, episode: Int, positionSecs: Int): LinkResult<Unit> =
+        control.control(ControlWire.open(mediaId, episode, positionSecs))
+
+    /** `GET /v1/events?wait=<1..25>` long-poll; empty on `204`. */
+    suspend fun events(wait: Int = ControlWire.MAX_WAIT_SECS): LinkResult<List<PhoneEventDto>> = control.events(wait)
+
+    /** Absolute URL of a `playback_path` returned by the PC (same origin as this client). */
+    fun playbackUrl(playbackPath: String): String = baseUrl.newBuilder().encodedPath(playbackPath).build().toString()
+
+    private suspend fun <T> get(path: String, max: Long, decode: (ByteArray) -> T): LinkResult<T> =
+        LinkHttp.exchange(client, LinkHttp.request(url(path)).get().build(), max) { _, b -> decode(b) }
+
+    private fun url(path: String): HttpUrl = baseUrl.newBuilder().addPathSegments(path).build()
+
+    private fun sourceJson(source: SessionSource): JsonObject = when (source) {
+        is SessionSource.Library -> buildJsonObject { put("kind", "library"); put("item_id", source.itemId) }
+        is SessionSource.Session -> buildJsonObject { put("kind", "session"); put("session_id", source.sessionId) }
+        is SessionSource.Torrent -> buildJsonObject {
+            put("kind", "torrent")
+            put("uri", source.uri)
+            put("media_id", source.mediaId)
+            put("episode", source.episode)
+        }
+        is SessionSource.Url -> buildJsonObject {
+            put("kind", "url")
+            put("url", source.url)
+            if (source.headers.isNotEmpty()) put("headers", JsonObject(source.headers.mapValues { JsonPrimitive(it.value) }))
+            put("extension_id", source.extensionId?.let { JsonPrimitive(it) } ?: JsonNull)
+            put("container", source.container?.let { JsonPrimitive(it) } ?: JsonNull)
+        }.let { obj -> JsonObject(obj.filterValues { it !is JsonNull }) }
+    }
+
+    companion object {
+        /** BUG-009: read / call timeout of a `torrent` session create (the PC waits up to 75 s for metadata). */
+        const val TORRENT_CREATE_SECS = 90L
+        private const val MAX_JSON = 256L * 1024
+        private const val MAX_LIBRARY = 8L * 1024 * 1024
+        /** tk-link `subtitles::MAX_FILE_BYTES`. */
+        private const val MAX_SUBTITLE = 8L * 1024 * 1024
+        val SUBTITLE_FORMATS = setOf("ass", "vtt")
+        private const val MAX_HISTORY = 2L * 1024 * 1024
+        /** `tk-link::history::MAX_ROWS` (desktop contract §3.8). */
+        const val MAX_HISTORY_ROWS = 500
+        val SESSION_ID = Regex("""[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}""")
+    }
+}

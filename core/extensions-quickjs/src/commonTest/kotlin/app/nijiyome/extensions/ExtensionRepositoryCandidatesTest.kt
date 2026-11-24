@@ -1,0 +1,269 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.extensions
+
+import app.nijiyome.model.AppSettings
+import app.nijiyome.model.ExtLogLevel
+import app.nijiyome.model.Media
+import app.nijiyome.model.MediaKind
+import app.nijiyome.model.MediaRef
+import app.nijiyome.model.Quality
+import app.nijiyome.model.SettingsRepository
+import app.nijiyome.model.SourceCandidate
+import app.nijiyome.model.SourceKind
+import app.nijiyome.model.SourceStatsStore
+import app.nijiyome.model.WebInfo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.nio.file.Files
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
+/**
+ * resolveCandidates / reportSourceResult / detail / logs of [ExtensionRepositoryImpl] over a scripted engine: a custom extension with an
+ * explicit `torrent` route (Toko-like) answers both routes; the candidates come back ranked, with stored reliabilities and the pick.
+ */
+class ExtensionRepositoryCandidatesTest {
+    private class Session(val handlers: Map<String, (List<JsonElement>) -> JsonElement>) : JsSession {
+        override suspend fun hasMethod(name: String) = name in handlers
+        override suspend fun invoke(method: String, args: List<JsonElement>, collectChunks: Boolean) =
+            JsInvocation(handlers.getValue(method)(args))
+        override fun close() = Unit
+    }
+
+    private val streamBody = Json.parseToJsonElement(
+        """{ "sources": [
+            { "providerName": "alpha", "server": "Alpha", "sourceType": "hls", "url": "https://cdn.toko.example/a.m3u8", "quality": "1080p", "audioLanguage": "ja" },
+            { "providerName": "embed", "sourceType": "embed", "url": "https://embed.example/e" }
+        ]}""",
+    )
+    private val torrentBody = Json.parseToJsonElement(
+        """{ "sources": [
+            { "source": "nyaa", "providerName": "nyaa", "sourceType": "torrent", "quality": "1080p",
+              "url": "magnet:?xt=urn:btih:ABCDEF0123456789ABCDEF0123456789ABCDEF01&dn=x",
+              "torrentTitle": "[SubsPlease] Show - 05 (1080p) [A1B2C3D4].mkv", "releaseGroup": "SubsPlease", "seeders": 812, "leechers": 41 }
+        ]}""",
+    )
+
+    private val engine = object : JsEngine {
+        override suspend fun open(manifest: ExtensionManifest, bundle: String, host: JsHost): JsSession =
+            Session(mapOf("streamAll" to { _ -> streamBody }, "torrentAll" to { _ -> torrentBody }))
+    }
+
+    private object NoHost : JsHost {
+        override val networkPolicy = NetworkPolicy.NONE
+        override suspend fun fetch(request: HostFetchRequest): HostFetchResponse = throw ExtError.PermissionDenied()
+        override fun log(level: String, message: String) = Unit
+    }
+
+    private class Stats : SourceStatsStore {
+        val recorded = mutableListOf<Triple<String, String, Boolean>>()
+        override suspend fun reliability(extId: String, label: String) = if (label == "Alpha") 0.1f else 0.95f
+        override suspend fun recordSourceResult(extId: String, label: String, ok: Boolean): Float {
+            recorded += Triple(extId, label, ok)
+            return 0.5f
+        }
+        override suspend fun pickedSource(mediaId: String, episode: Int) = if (mediaId == "21" && episode == 5) "x.toko|web|Alpha" else null
+        override suspend fun setPickedSource(mediaId: String, episode: Int, key: String) = Unit
+        override suspend fun clearPickedSource(mediaId: String, episode: Int) = Unit
+    }
+
+    private class Settings : SettingsRepository {
+        override val settings: StateFlow<AppSettings> = MutableStateFlow(AppSettings())
+        override suspend fun update(transform: (AppSettings) -> AppSettings) = Unit
+    }
+
+    private fun kai(dir: File): File {
+        val manifest = """{"id":"x.toko","name":"Toko","version":"1.0.0","type":"custom","description":"All in one",
+            "permissions":["network:domain:toko.example","network:domain:sololatino.net"],
+            "browserDomains":["sololatino.net","evil.example"],
+            "apiServer":{"routes":["sources","stream","torrent"]}}"""
+        val bundle = "module.exports = class { async streamAll(o, cb) {} async torrentAll(o, cb) {} };"
+        val out = ByteArrayOutputStream()
+        ZipOutputStream(out).use { zip ->
+            zip.putNextEntry(ZipEntry("manifest.json")); zip.write(manifest.toByteArray()); zip.closeEntry()
+            zip.putNextEntry(ZipEntry("bundle.js")); zip.write(bundle.toByteArray()); zip.closeEntry()
+        }
+        return File(dir, "toko.kai").apply { writeBytes(out.toByteArray()) }
+    }
+
+    private val media = Media(
+        ref = MediaRef(anilistId = 21), kind = MediaKind.ANIME, title = "Show", titles = emptyMap(), cover = null, banner = null,
+        color = null, synopsis = null, genres = emptyList(), episodes = 12, status = null, season = null, year = null, score = null,
+        sourceProvider = "anilist",
+    )
+
+    @Test
+    fun withoutEmbedPagesThePlatformNeverOffersThem() = runBlocking {
+        val root = Files.createTempDirectory("nijiyome-ext-noembed").toFile()
+        try {
+            // Desktop without a sniffer: the embed page is left out although "Fuentes embed" is on by default.
+            val repo = ExtensionRepositoryImpl(
+                rootDir = File(root, "installed"),
+                openUri = { File(it).inputStream() },
+                host = ExtensionHost(engine, { NoHost }),
+                io = Dispatchers.Unconfined,
+                settings = Settings(),
+                stats = Stats(),
+                embedPages = { false },
+            )
+            repo.installFromUri(kai(root).path).getOrThrow()
+            val ranked = repo.resolveCandidates(media, 5)
+            assertEquals(2, ranked.size)
+            assertTrue(ranked.none { it.candidate.isEmbed })
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun candidatesAreRankedWithReliabilityAndPick() = runBlocking {
+        val root = Files.createTempDirectory("nijiyome-ext-cand").toFile()
+        try {
+            val stats = Stats()
+            val logs = ExtensionLogStore()
+            val repo = ExtensionRepositoryImpl(
+                rootDir = File(root, "installed"),
+                openUri = { File(it).inputStream() },
+                host = ExtensionHost(engine, { NoHost }),
+                io = Dispatchers.Unconfined,
+                settings = Settings(),
+                stats = stats,
+                logStore = logs,
+            )
+            val ext = repo.installFromUri(kai(root).path).getOrThrow()
+            assertEquals(listOf("sololatino.net"), ext.browserDomains)
+            assertEquals("All in one", ext.description)
+
+            val ranked = repo.resolveCandidates(media, 5)
+            // parity wave B (16 §3.3): the embed page is listed too, marked for the sniffer.
+            assertEquals(3, ranked.size)
+            assertEquals(setOf(SourceKind.WEB, SourceKind.TORRENT), ranked.map { it.candidate.kind }.toSet())
+            assertTrue(ranked.first().recommended && ranked.drop(1).none { it.recommended })
+            val embed = ranked.single { it.candidate.isEmbed }
+            assertEquals("EMBED", embed.candidate.container)
+            val web = ranked.single { it.candidate.kind == SourceKind.WEB && !it.candidate.isEmbed }
+            assertEquals(0.1f, web.candidate.reliability)
+            assertTrue(web.picked)
+            val torrent = ranked.single { it.candidate.kind == SourceKind.TORRENT }
+            assertEquals("SubsPlease", torrent.candidate.label)
+            assertEquals("abcdef0123456789abcdef0123456789abcdef01", torrent.candidate.torrent!!.infoHash)
+            assertTrue(ranked.zipWithNext().all { (a, b) -> a.score >= b.score })
+
+            repo.reportSourceResult(web.key, ok = false)
+            assertEquals(listOf(Triple("x.toko", "Alpha", false)), stats.recorded)
+
+            val detail = assertNotNull(repo.detail("x.toko"))
+            assertEquals(listOf("toko.example", "sololatino.net"), detail.domains)
+            assertEquals(listOf("stream", "torrent"), detail.sourceRoutes)
+            assertEquals("custom", detail.kind)
+            assertTrue(detail.hash.contains('…') && detail.hash.length == 9)
+            assertNotNull(detail.installedAtMs)
+
+            val lines = repo.logs("x.toko").first()
+            assertTrue(lines.any { it.op == "install" && it.level == ExtLogLevel.OK })
+            assertTrue(lines.any { it.op == "stream" && it.message == "2 sources" })
+            assertTrue(lines.any { it.op == "torrent" && it.message == "1 sources" })
+            assertTrue(lines.any { it.op == "source" && it.level == ExtLogLevel.WARN })
+            assertTrue(lines.any { it.op == "browser" && it.level == ExtLogLevel.WARN }) // evil.example ignored
+
+            repo.setEnabled("x.toko", false)
+            assertTrue(repo.resolveCandidates(media, 5).isEmpty())
+            assertFalse(repo.installed.value.single().enabled)
+        } finally {
+            root.deleteRecursively() // temp dir created above
+        }
+    }
+
+    /** docs/redesign/13 §3.10: extension-server candidates are ranked with the extensions; a failing source hides nothing. */
+    @Test
+    fun externalCandidatesAreMergedAndAFailingSourceIsIgnored() = runBlocking {
+        val root = Files.createTempDirectory("nijiyome-ext-external").toFile()
+        try {
+            val server = object : ExternalCandidateSource {
+                override suspend fun candidates(media: Media, episode: Int) = listOf(
+                    SourceCandidate(
+                        extId = "server:srv-1/a", extName = "Aniyomi X · Desk", kind = SourceKind.WEB, label = "Main",
+                        quality = Quality.P1080, container = "HLS",
+                        web = WebInfo(url = "http://192.168.1.2:8787/api/server/v1/media/t"),
+                    ),
+                )
+            }
+            val broken = object : ExternalCandidateSource {
+                override suspend fun candidates(media: Media, episode: Int): List<SourceCandidate> = error("server down")
+            }
+            val repo = ExtensionRepositoryImpl(
+                rootDir = File(root, "installed"),
+                openUri = { File(it).inputStream() },
+                host = ExtensionHost(engine, { NoHost }),
+                io = Dispatchers.Unconfined,
+                settings = Settings(),
+                stats = Stats(),
+                external = listOf(server, broken),
+            )
+            // No installed extension: the server alone still yields a source.
+            val onlyServer = repo.resolveCandidates(media, 5)
+            assertEquals(listOf("server:srv-1/a"), onlyServer.map { it.candidate.extId })
+            assertTrue(onlyServer.single().extEnabled)
+
+            repo.installFromUri(kai(root).path).getOrThrow()
+            val all = repo.resolveCandidates(media, 5)
+            assertEquals(4, all.size)
+            assertEquals(setOf("x.toko", "server:srv-1/a"), all.map { it.candidate.extId }.toSet())
+            assertTrue(all.all { it.extEnabled })
+            assertTrue(all.zipWithNext().all { (a, b) -> a.score >= b.score })
+        } finally {
+            root.deleteRecursively() // temp dir created above
+        }
+    }
+
+    /** BUG-011 / BUG-019: the progressive flow shows the fast answers first and ends on the same list as resolveCandidates. */
+    @Test
+    fun candidatesFlowEmitsProgressivelyAndEndsOnTheFullList() = runBlocking {
+        val root = Files.createTempDirectory("nijiyome-ext-flow").toFile()
+        try {
+            fun web(label: String) = SourceCandidate(
+                extId = "server:srv-1/a", extName = "Toko · Desk", kind = SourceKind.WEB, label = label,
+                quality = Quality.P1080, container = "HLS", web = WebInfo(url = "http://192.168.1.2:8787/api/server/v1/media/$label"),
+            )
+            val slowServer = object : ExternalCandidateSource {
+                override suspend fun candidates(media: Media, episode: Int) = listOf(web("Fast"), web("Late"))
+                override fun candidatesFlow(media: Media, episode: Int) = kotlinx.coroutines.flow.flow {
+                    emit(listOf(web("Fast")))
+                    kotlinx.coroutines.delay(50)
+                    emit(listOf(web("Fast"), web("Late")))
+                }
+            }
+            val repo = ExtensionRepositoryImpl(
+                rootDir = File(root, "installed"),
+                openUri = { File(it).inputStream() },
+                host = ExtensionHost(engine, { NoHost }),
+                io = Dispatchers.Unconfined,
+                settings = Settings(),
+                stats = Stats(),
+                external = listOf(slowServer),
+            )
+            repo.installFromUri(kai(root).path).getOrThrow()
+            val emissions = repo.candidatesFlow(media, 5).toList()
+            assertTrue(emissions.size >= 2, "one emission per answer, got ${emissions.size}")
+            assertTrue(emissions.first().size < emissions.last().size)
+            val full = repo.resolveCandidates(media, 5)
+            assertEquals(full.map { it.key }.toSet(), emissions.last().map { it.key }.toSet())
+            assertTrue(emissions.last().zipWithNext().all { (a, b) -> a.score >= b.score })
+        } finally {
+            root.deleteRecursively() // temp dir created above
+        }
+    }
+}

@@ -1,0 +1,340 @@
+package app.nijiyome.feature.link
+
+import app.cash.turbine.test
+import app.nijiyome.model.AppError
+import app.nijiyome.model.AppException
+import app.nijiyome.model.DiscoveredPc
+import app.nijiyome.model.HistoryEntry
+import app.nijiyome.model.HistoryRepository
+import app.nijiyome.model.LinkHandoff
+import app.nijiyome.model.LinkCapabilities
+import app.nijiyome.model.LinkProfile
+import app.nijiyome.model.LinkRepository
+import app.nijiyome.model.LinkSource
+import app.nijiyome.model.LinkState
+import app.nijiyome.model.LinkedDevice
+import app.nijiyome.model.LoadState
+import app.nijiyome.model.PairedPc
+import app.nijiyome.model.RemoteSession
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import java.time.Instant
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class LinkViewModelTest {
+
+    @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
+
+    private val pc = PairedPc("dev1", "Desktop", "192.168.1.9", 47321)
+    private val caps = LinkCapabilities(
+        serverName = "Desktop", serverVersion = "1", instanceId = "i", defaultProfile = "p-none",
+        clientFrameGenerationAllowed = false,
+        profiles = listOf(
+            LinkProfile("p-none", "Original", false, false, 1920, 1080, "true"),
+            LinkProfile("p-anime4k-1080", "Anime4K 1080p", true, false, 1920, 1080, "unknown"),
+        ),
+    )
+
+    private class FakeLink(val pairResult: () -> Result<PairedPc>, val caps: () -> Result<LinkCapabilities>) : LinkRepository {
+        override val state = MutableStateFlow<LinkState>(LinkState.Unpaired)
+        var pairedPayload: String? = null
+        var pairedName: String? = null
+        var lastProfile: String? = "unset"
+        var forgotten = false
+        var session: () -> Result<RemoteSession> = { Result.success(RemoteSession("s1", 0, "https://pc/m.m3u8", null, 4, 60)) }
+        override fun discover(): Flow<List<DiscoveredPc>> = emptyFlow()
+        override suspend fun pair(payload: String, deviceName: String): Result<PairedPc> {
+            pairedPayload = payload
+            pairedName = deviceName
+            return pairResult().onSuccess { state.value = LinkState.Paired(it, reachable = true) }
+        }
+        override suspend fun capabilities() = caps()
+        override suspend fun startSession(source: LinkSource, profileId: String?): Result<RemoteSession> {
+            lastProfile = profileId
+            return session()
+        }
+        override suspend fun stop(sessionId: String) {}
+        override suspend fun forget() {
+            forgotten = true
+            state.value = LinkState.Unpaired
+            device.value = null
+        }
+
+        val device = MutableStateFlow<LinkedDevice?>(null)
+        var preferred: String? = "unset"
+        override val linkedDevice get() = device
+        override suspend fun setPreferredProfile(profileId: String?) {
+            preferred = profileId
+            device.value = device.value?.copy(preferredProfile = profileId)
+        }
+
+        val handoff = MutableStateFlow<LinkHandoff?>(null)
+        override val pendingHandoff get() = handoff
+    }
+
+    /** BUG-136: the phone's history; [syncNow] pulls the PC's row ([pcRow]) like HistorySyncer (newest watchedAt wins). */
+    private class FakeHistory(row: HistoryEntry?) : HistoryRepository {
+        val rows = MutableStateFlow(listOfNotNull(row))
+        var pcRow: HistoryEntry? = null
+        var syncs = 0
+        override fun continueWatching(limit: Int): Flow<List<HistoryEntry>> = rows
+        override suspend fun record(entry: HistoryEntry) { rows.value = listOf(entry) }
+        override fun progressFor(anilistId: Int): Flow<Map<Int, HistoryEntry>> = emptyFlow()
+        override suspend fun syncNow(): Result<Unit> {
+            syncs++
+            pcRow?.let { pc -> if (rows.value.none { it.watchedAt >= pc.watchedAt }) rows.value = listOf(pc) }
+            return Result.success(Unit)
+        }
+    }
+
+    private fun og4(progressSec: Int, watchedAtMs: Long) = HistoryEntry(
+        animeId = "170083", title = "Overgeared", poster = null, episodeId = "170083:4", episode = 4, progressSec = progressSec,
+        durationSec = 1420, completed = false, watchedAt = Instant.ofEpochMilli(watchedAtMs), anilistId = 170083, malId = null,
+    )
+
+    @Test
+    fun `opening the screen pulls the PC history so Continuar en la PC has the newest point`() = runTest {
+        // BUG-136 (r8): the phone had OG4 at 15:37, the PC moved it to 15:03 later
+        val history = FakeHistory(og4(937, 1_000L)).apply { pcRow = og4(903, 2_000L) }
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        repo.state.value = LinkState.Paired(pc, reachable = true)
+
+        val vm = LinkViewModel(repo, "Pixel", history = history)
+
+        assertEquals(1, history.syncs)
+        assertEquals(903, vm.state.value.continueEntry?.progressSec)
+    }
+
+    @Test
+    fun `a PC hand-off of the same episode gives Continuar en la PC its position`() = runTest {
+        val history = FakeHistory(og4(937, 1_000L))
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        repo.state.value = LinkState.Paired(pc, reachable = true)
+        val vm = LinkViewModel(repo, "Pixel", history = history, nowMs = { 5_000L })
+        assertEquals(937, vm.state.value.continueEntry?.progressSec)
+
+        repo.handoff.value = LinkHandoff("abcdef0123456789", animeId = "170083", episode = 4, positionSec = 903, title = "Overgeared")
+
+        assertEquals(903, vm.state.value.continueEntry?.progressSec)
+        assertEquals(903, vm.state.value.pendingHandoff?.positionSec)
+        assertEquals(2, history.syncs) // on open, and again when the PC sent it
+    }
+
+    @Test
+    fun `the phone's own newer row or another episode is not replaced by the hand-off`() {
+        val h = LinkHandoff("abcdef0123456789", animeId = "170083", episode = 4, positionSec = 903)
+        // the phone watched on after the hand-off arrived
+        assertEquals(1000, LinkLogic.continuePoint(og4(1000, 9_000L), h to 5_000L)?.progressSec)
+        // another episode of the same series
+        assertEquals(937, LinkLogic.continuePoint(og4(937, 1_000L), h.copy(episode = 5) to 5_000L)?.progressSec)
+        assertNull(LinkLogic.continuePoint(null, h to 5_000L))
+        assertEquals(903, LinkLogic.continuePoint(og4(937, 1_000L), h to 5_000L)?.progressSec)
+    }
+
+    @Test
+    fun `pairing passes the payload and device name then loads capabilities`() = runTest {
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        val vm = LinkViewModel(repo, "Pixel")
+
+        vm.pair("  nijiyome-link:v1?abc  ")
+
+        assertEquals("nijiyome-link:v1?abc", repo.pairedPayload)
+        assertEquals("Pixel", repo.pairedName)
+        val s = vm.state.value
+        assertIs<LinkState.Paired>(s.link)
+        assertIs<LoadState.Ok<LinkCapabilities>>(s.capabilities)
+        assertNull(s.pairError)
+    }
+
+    @Test
+    fun `pairing failure is reported and blank input is ignored`() = runTest {
+        val repo = FakeLink({ Result.failure(AppException(AppError.Unknown("code expired"))) }, { Result.success(caps) })
+        val vm = LinkViewModel(repo, "Pixel")
+
+        vm.pair("   ")
+        assertNull(repo.pairedPayload)
+
+        vm.pair("nijiyome-link:v1?old")
+        assertEquals(AppError.Unknown("code expired"), vm.state.value.pairError)
+        assertEquals(false, vm.state.value.pairing)
+    }
+
+    @Test
+    fun `start session uses the selected profile and navigates with the remote session id`() = runTest {
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        val vm = LinkViewModel(repo, "Pixel")
+        vm.pair("x")
+        vm.selectProfile("p-anime4k-1080")
+
+        vm.events.test {
+            vm.startSession(" https://cdn.example/a.m3u8 ")
+            val event = assertIs<LinkEvent.NavigateToPlayer>(awaitItem())
+            assertEquals("s1", event.args.remoteSessionId)
+            assertEquals("p-anime4k-1080", repo.lastProfile)
+        }
+    }
+
+    @Test
+    fun `session failure keeps the screen and exposes the error`() = runTest {
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        repo.session = { Result.failure(AppException(AppError.Http(503))) }
+        val vm = LinkViewModel(repo, "Pixel")
+        vm.pair("x")
+
+        vm.startSession("https://cdn.example/a.m3u8")
+
+        assertEquals(AppError.Http(503), vm.state.value.sessionError)
+        assertEquals(false, vm.state.value.startingSession)
+    }
+
+    @Test
+    fun `forgetting the pc clears capabilities`() = runTest {
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        val vm = LinkViewModel(repo, "Pixel")
+        vm.pair("x")
+
+        vm.forget()
+
+        assertEquals(true, repo.forgotten)
+        assertEquals(LinkState.Unpaired, vm.state.value.link)
+        assertNull(vm.state.value.capabilities)
+    }
+
+    @Test
+    fun `capability failure can be retried`() = runTest {
+        var fail = true
+        val repo = FakeLink({ Result.success(pc) }, { if (fail) Result.failure(AppException(AppError.Offline)) else Result.success(caps) })
+        val vm = LinkViewModel(repo, "Pixel")
+        vm.pair("x")
+        assertIs<LoadState.Err>(vm.state.value.capabilities)
+
+        fail = false
+        vm.retryCapabilities()
+
+        assertIs<LoadState.Ok<LinkCapabilities>>(vm.state.value.capabilities)
+    }
+
+    @Test
+    fun `selecting a profile persists it as the preferred profile`() = runTest {
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        val vm = LinkViewModel(repo, "Pixel")
+        vm.pair("x")
+
+        vm.selectProfile("p-anime4k-1080")
+
+        assertEquals("p-anime4k-1080", repo.preferred)
+        assertEquals("p-anime4k-1080", vm.state.value.selectedProfile)
+    }
+
+    @Test
+    fun `the stored preferred profile is the initial selection and survives capability loads`() = runTest {
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        repo.device.value = LinkedDevice("dev1", "Desktop", "192.168.1.9", 47321, "7A3F 91C2", 1L, 2L, "p-anime4k-1080", "Pixel")
+        repo.state.value = LinkState.Paired(pc, reachable = true)
+
+        val vm = LinkViewModel(repo, "Pixel")
+
+        assertEquals("p-anime4k-1080", vm.state.value.selectedProfile)
+        assertEquals("7A3F 91C2", vm.state.value.device?.fingerprint)
+        assertIs<LoadState.Ok<LinkCapabilities>>(vm.state.value.capabilities)
+    }
+
+    @Test
+    fun `pasted pairing text is validated like the prototype`() = runTest {
+        val vm = LinkViewModel(FakeLink({ Result.success(pc) }, { Result.success(caps) }), "Pixel")
+
+        assertEquals(true, vm.isValidPairingText(" nijiyome-link:v1?h=192.168.1.24&p=47321&c=7K3MQ9ZX2B "))
+        assertEquals(true, vm.isValidPairingText("7k3mq9zx2b"))
+        assertEquals(false, vm.isValidPairingText("nijiyome-link:v1?"))
+        assertEquals(false, vm.isValidPairingText("https://example.test"))
+        assertEquals(false, vm.isValidPairingText("12345"))
+    }
+
+    @Test
+    fun `forgetting clears the selected profile`() = runTest {
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(caps) })
+        val vm = LinkViewModel(repo, "Pixel")
+        vm.pair("x")
+        vm.selectProfile("p-anime4k-1080")
+
+        vm.forget()
+
+        assertNull(vm.state.value.selectedProfile)
+        assertNull(vm.state.value.device)
+    }
+
+    /** BUG-132: the moto g51's AVC decoder (up to 1920x1088). */
+    private val g51 = object : app.nijiyome.model.VideoDecodeLimits {
+        override fun sizeSupported(width: Int, height: Int) = width <= 1920 && height <= 1088
+        override fun sizeAndRateSupported(width: Int, height: Int, fps: Double) = sizeSupported(width, height)
+    }
+
+    private val bigCaps = caps.copy(
+        profiles = caps.profiles + LinkProfile("p-anime4k-1440", "Anime4K 1440p", true, false, 2560, 1440, "unknown"),
+    )
+
+    @Test
+    fun `profiles the phone cannot decode are marked and a saved one is replaced once`() = runTest {
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(bigCaps) })
+        repo.device.value = LinkedDevice("dev1", "Desktop", "192.168.1.9", 47321, "7A3F 91C2", 1L, 2L, "p-anime4k-1440", "Pixel")
+        repo.state.value = LinkState.Paired(pc, reachable = true)
+
+        val vm = LinkViewModel(repo, "Pixel", decodeLimits = { g51 })
+
+        assertEquals(mapOf("p-anime4k-1440" to app.nijiyome.model.ProfileSupport.TooLarge(1440)), vm.state.value.unsupportedProfiles)
+        assertEquals("p-anime4k-1080", vm.state.value.selectedProfile)
+        assertEquals("p-anime4k-1080", repo.preferred)
+        assertEquals(app.nijiyome.model.LinkProfileFallback("p-anime4k-1440", "p-anime4k-1080"), vm.state.value.profileFallback)
+        // the disabled row cannot be saved
+        vm.selectProfile("p-anime4k-1440")
+        assertEquals("p-anime4k-1080", repo.preferred)
+        // choosing another profile clears the notice
+        vm.selectProfile("p-none")
+        assertNull(vm.state.value.profileFallback)
+    }
+
+    @Test
+    fun `a profile above the declared frame rate stays selectable and the preferred one is kept`() = runTest {
+        // BUG-135: the g51 declares about 1080p60 but plays LSFG auto120; r8 replaced the preferred auto120 with x2
+        val g51At60 = object : app.nijiyome.model.VideoDecodeLimits {
+            override fun sizeSupported(width: Int, height: Int) = width <= 1920 && height <= 1088
+            override fun sizeAndRateSupported(width: Int, height: Int, fps: Double) = sizeSupported(width, height) && fps <= 60.0
+        }
+        val fgCaps = caps.copy(
+            profiles = caps.profiles + listOf(
+                LinkProfile("p-anime4k-lsfg-1080-x2", "x2", true, true, 1920, 1080, "unknown", fgMultiplier = 2),
+                LinkProfile("p-anime4k-lsfg-1080-auto120", "auto120", true, true, 1920, 1080, "unknown", fgTargetFps = 120),
+            ),
+        )
+        val repo = FakeLink({ Result.success(pc) }, { Result.success(fgCaps) })
+        repo.device.value = LinkedDevice("dev1", "Desktop", "192.168.1.9", 47321, "7A3F 91C2", 1L, 2L, "p-anime4k-lsfg-1080-auto120", "Pixel")
+        repo.state.value = LinkState.Paired(pc, reachable = true)
+
+        val vm = LinkViewModel(repo, "Pixel", decodeLimits = { g51At60 })
+
+        assertTrue(vm.state.value.unsupportedProfiles.isEmpty())
+        assertEquals(setOf("p-anime4k-lsfg-1080-auto120"), vm.state.value.mayDropFramesProfiles)
+        assertEquals("p-anime4k-lsfg-1080-auto120", vm.state.value.selectedProfile)
+        assertEquals("unset", repo.preferred) // never rewritten
+        assertNull(vm.state.value.profileFallback)
+        // and it can be chosen again
+        vm.selectProfile("p-anime4k-lsfg-1080-auto120")
+        assertEquals("p-anime4k-lsfg-1080-auto120", repo.preferred)
+    }
+}

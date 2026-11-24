@@ -1,0 +1,235 @@
+package app.nijiyome.feature.home
+
+import app.cash.turbine.test
+import app.nijiyome.model.AppError
+import app.nijiyome.model.Episode
+import app.nijiyome.model.ExtensionHomeItem
+import app.nijiyome.model.ExtensionHomeRow
+import app.nijiyome.model.ExtensionRepository
+import app.nijiyome.model.FeedKind
+import app.nijiyome.model.FeedPage
+import app.nijiyome.model.HistoryEntry
+import app.nijiyome.model.HistoryRepository
+import app.nijiyome.model.InstalledExtension
+import app.nijiyome.model.LoadState
+import app.nijiyome.model.Media
+import app.nijiyome.model.MediaArtwork
+import app.nijiyome.model.MediaKind
+import app.nijiyome.model.MediaRef
+import app.nijiyome.model.MetadataRepository
+import app.nijiyome.model.StreamSource
+import java.io.IOException
+import java.time.Instant
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class HomeViewModelTest {
+
+    @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
+
+    private fun media(id: Int, genres: List<String> = emptyList()) = Media(
+        ref = MediaRef(anilistId = id), kind = MediaKind.ANIME, title = "Anime $id", titles = emptyMap(),
+        cover = null, banner = null, color = null, synopsis = null, genres = genres, episodes = 12,
+        status = null, season = null, year = 2024, score = 80, sourceProvider = "fake",
+    )
+
+    private class FakeMetadata(
+        val feeds: MutableMap<FeedKind, () -> FeedPage>,
+    ) : MetadataRepository {
+        var calls = 0
+        override suspend fun feed(kind: MediaKind, feed: FeedKind, page: Int): FeedPage {
+            calls++
+            return feeds.getValue(feed)()
+        }
+        override suspend fun search(kind: MediaKind, query: String, page: Int) = FeedPage(emptyList(), page, false)
+        override suspend fun media(kind: MediaKind, ref: MediaRef): Media? = null
+        override suspend fun episodes(ref: MediaRef): List<Episode> = emptyList()
+        var art: (MediaRef) -> MediaArtwork? = { null }
+        val artAsked = mutableListOf<Int?>()
+        override suspend fun artwork(ref: MediaRef): MediaArtwork? {
+            artAsked += ref.anilistId
+            return art(ref)
+        }
+    }
+
+    private class FakeHistory(initial: List<HistoryEntry> = emptyList()) : HistoryRepository {
+        val entries = MutableStateFlow(initial)
+        override fun continueWatching(limit: Int): Flow<List<HistoryEntry>> = entries
+        override suspend fun record(entry: HistoryEntry) {}
+        override fun progressFor(anilistId: Int): Flow<Map<Int, HistoryEntry>> = MutableStateFlow(emptyMap())
+    }
+
+    private class FakeExtensions(val rows: () -> List<ExtensionHomeRow>) : ExtensionRepository {
+        var calls = 0
+        override val installed: StateFlow<List<InstalledExtension>> = MutableStateFlow(emptyList())
+        override suspend fun installFromUri(uri: String) = Result.failure<InstalledExtension>(UnsupportedOperationException())
+        override suspend fun setEnabled(id: String, enabled: Boolean) {}
+        override suspend fun remove(id: String) {}
+        override suspend fun resolveStreams(media: Media, episode: Int): List<StreamSource> = emptyList()
+        override suspend fun customHomeRows(): List<ExtensionHomeRow> {
+            calls++
+            return rows()
+        }
+    }
+
+    private fun emptyFeeds() = FakeMetadata(HOME_FEEDS.associateWith { { FeedPage(emptyList(), 1, false) } }.toMutableMap())
+
+    private fun entry(ep: Int) = HistoryEntry(
+        animeId = "1", title = "Anime 1", poster = null, episodeId = "1?ep=$ep", episode = ep, progressSec = 60,
+        durationSec = 1400, completed = false, watchedAt = Instant.EPOCH, anilistId = 1, malId = null,
+    )
+
+    @Test
+    fun `every feed loads independently and the hero keeps five items`() = runTest {
+        val metadata = FakeMetadata(
+            HOME_FEEDS.associateWith { kind ->
+                { FeedPage((1..8).map { media(it + kind.ordinal * 100) }, 1, true) }
+            }.toMutableMap(),
+        )
+        val vm = HomeViewModel(metadata, FakeHistory())
+
+        val state = vm.state.first { s -> s.feeds.none { it.state is LoadState.Loading } }
+
+        assertEquals(HOME_FEEDS.size, metadata.calls)
+        val hero = assertIs<LoadState.Ok<List<Media>>>(state.hero)
+        assertEquals(HERO_SIZE, hero.value.size)
+        assertTrue(state.rows.none { it.kind == HERO_FEED })
+        assertTrue(state.rows.all { it.state is LoadState.Ok })
+    }
+
+    @Test
+    fun `hero artwork is looked up for the five hero titles and failures are ignored`() = runTest {
+        val metadata = FakeMetadata(
+            HOME_FEEDS.associateWith { kind -> { FeedPage((1..8).map { media(it + kind.ordinal * 100) }, 1, true) } }.toMutableMap(),
+        )
+        metadata.art = { ref -> if (ref.anilistId == 2) throw IOException("ani.zip down") else MediaArtwork(fanart = "f${ref.anilistId}") }
+        val vm = HomeViewModel(metadata, FakeHistory())
+        val state = vm.state.first { it.heroArt.size == 4 }
+        assertEquals(listOf(1, 2, 3, 4, 5), metadata.artAsked.sortedBy { it })
+        assertEquals("f1", state.heroArt["a1"]?.fanart)
+        assertNull(state.heroArt["a2"])
+        assertTrue(state.feeds.all { it.state is LoadState.Ok })
+    }
+
+    @Test
+    fun `a failing row does not break the others and retry reloads only that row`() = runTest {
+        var airingFails = true
+        val feeds = HOME_FEEDS.associateWith { kind ->
+            {
+                if (kind == FeedKind.AIRING && airingFails) throw IOException("offline")
+                FeedPage(listOf(media(kind.ordinal + 1)), 1, false)
+            }
+        }.toMutableMap()
+        val metadata = FakeMetadata(feeds)
+        val vm = HomeViewModel(metadata, FakeHistory())
+
+        val failed = vm.state.first { s -> s.feeds.none { it.state is LoadState.Loading } }
+        val airing = failed.feeds.first { it.kind == FeedKind.AIRING }.state
+        assertEquals(AppError.Offline, assertIs<LoadState.Err>(airing).cause)
+        assertTrue(failed.feeds.filter { it.kind != FeedKind.AIRING }.all { it.state is LoadState.Ok })
+
+        airingFails = false
+        val callsBefore = metadata.calls
+        vm.retry(FeedKind.AIRING)
+
+        val recovered = vm.state.first { s -> s.feeds.first { it.kind == FeedKind.AIRING }.state is LoadState.Ok }
+        assertEquals(callsBefore + 1, metadata.calls)
+        assertIs<LoadState.Ok<List<Media>>>(recovered.feeds.first { it.kind == FeedKind.AIRING }.state)
+    }
+
+    @Test
+    fun `continue watching follows the history flow`() = runTest {
+        val history = FakeHistory()
+        val metadata = FakeMetadata(HOME_FEEDS.associateWith { { FeedPage(emptyList(), 1, false) } }.toMutableMap())
+        val vm = HomeViewModel(metadata, history)
+
+        vm.state.test {
+            assertTrue(awaitUntil { it.continueWatching.isEmpty() && it.feeds.none { r -> r.state is LoadState.Loading } })
+            history.entries.value = listOf(entry(3))
+            assertTrue(awaitUntil { it.continueWatching.map { e -> e.episode } == listOf(3) })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `extension rows are requested lazily, once, and drop rows without items`() = runTest {
+        val ext = FakeExtensions {
+            listOf(
+                ExtensionHomeRow("toko", "latest", "Latest", listOf(ExtensionHomeItem("1", "Frieren", null))),
+                ExtensionHomeRow("toko", "empty", "Empty", emptyList()),
+            )
+        }
+        val vm = HomeViewModel(emptyFeeds(), FakeHistory(), extensions = ext)
+
+        assertNull(vm.state.first { s -> s.feeds.none { it.state is LoadState.Loading } }.extensionRows)
+        assertEquals(0, ext.calls)
+
+        vm.loadExtensionRows()
+        vm.loadExtensionRows()
+
+        val rows = assertIs<LoadState.Ok<List<ExtensionHomeRow>>>(vm.state.first { it.extensionRows is LoadState.Ok }.extensionRows)
+        assertEquals(listOf("latest"), rows.value.map { it.sourceId })
+        assertEquals(1, ext.calls)
+    }
+
+    @Test
+    fun `a failed extension request can be retried`() = runTest {
+        var fail = true
+        val ext = FakeExtensions { if (fail) throw IOException("offline") else emptyList() }
+        val vm = HomeViewModel(emptyFeeds(), FakeHistory(), extensions = ext)
+
+        vm.loadExtensionRows()
+        assertEquals(AppError.Offline, assertIs<LoadState.Err>(vm.state.first { it.extensionRows is LoadState.Err }.extensionRows).cause)
+
+        fail = false
+        vm.loadExtensionRows()
+        assertIs<LoadState.Ok<List<ExtensionHomeRow>>>(vm.state.first { it.extensionRows is LoadState.Ok }.extensionRows)
+        assertEquals(2, ext.calls)
+    }
+
+    @Test
+    fun `genre chips rank the most frequent genres and empty feeds make the empty state`() = runTest {
+        val metadata = FakeMetadata(
+            HOME_FEEDS.associateWith { kind ->
+                {
+                    if (kind == FeedKind.TRENDING) {
+                        FeedPage(listOf(media(1, listOf("Action", "Drama")), media(2, listOf("Action"))), 1, false)
+                    } else {
+                        FeedPage(emptyList(), 1, false)
+                    }
+                }
+            }.toMutableMap(),
+        )
+        val loaded = HomeViewModel(metadata, FakeHistory()).state.first { s -> s.feeds.none { it.state is LoadState.Loading } }
+        assertEquals(listOf("Action", "Drama"), loaded.genres)
+        assertEquals(false, loaded.isEmpty)
+
+        val empty = HomeViewModel(emptyFeeds(), FakeHistory()).state.first { s -> s.feeds.none { it.state is LoadState.Loading } }
+        assertTrue(empty.isEmpty)
+    }
+
+    private suspend fun app.cash.turbine.ReceiveTurbine<HomeUiState>.awaitUntil(predicate: (HomeUiState) -> Boolean): Boolean {
+        while (true) {
+            val item = awaitItem()
+            if (predicate(item)) return true
+        }
+    }
+}

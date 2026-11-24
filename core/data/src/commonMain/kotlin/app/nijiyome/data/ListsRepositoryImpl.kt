@@ -1,0 +1,848 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.data
+
+import app.nijiyome.database.FavoriteCharacterRow
+import app.nijiyome.database.LinkedAccountRow
+import app.nijiyome.database.ListChangeRow
+import app.nijiyome.database.ListConflictRow
+import app.nijiyome.database.ListEntryRow
+import app.nijiyome.database.ListsDao
+import app.nijiyome.model.AppError
+import app.nijiyome.model.AppException
+import app.nijiyome.model.AppLog
+import app.nijiyome.model.CharacterRef
+import app.nijiyome.model.ConflictChoice
+import app.nijiyome.model.LinkedAccount
+import app.nijiyome.model.ListConflict
+import app.nijiyome.model.ListEntry
+import app.nijiyome.model.ListProvider
+import app.nijiyome.model.ListStatus
+import app.nijiyome.model.ListSyncReport
+import app.nijiyome.model.ListsRepository
+import app.nijiyome.model.Media
+import app.nijiyome.model.MediaRef
+import app.nijiyome.model.ReadListPuller
+import app.nijiyome.model.SecretKeys
+import app.nijiyome.model.SecretStore
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.time.LocalDate
+
+/** Extra controls of the lists sync beyond the contract (Settings › Listas y cuentas: first sync mode, queue flush). */
+interface ListsSyncControl {
+    /** One provider, with the first-sync choice of `lists.import-export` (import remote / export local / merge). */
+    suspend fun syncWith(provider: ListProvider, mode: InitialSyncMode): Result<ListSyncReport>
+
+    /** Push the offline queue only (no full pull). */
+    suspend fun pushPending(): ListSyncReport
+
+    /** Score format of the account used to show / pick scores ("POINT_10_DECIMAL", "POINT_5", "mal"...); null without accounts. */
+    val scoreFormat: StateFlow<String?>
+
+    /**
+     * Linked providers whose first sync waits for the user's choice (`lists.import-export`): set by a link while the local list has
+     * entries ([needsFirstSyncChoice]), restored after a restart ([pendingFirstSyncs]), cleared by a successful [syncWith] or an unlink.
+     * [ListsRepository.syncNow] and [pushPending] leave these providers alone until then, so nothing is merged behind the user's back.
+     */
+    val firstSyncPending: StateFlow<Set<ListProvider>>
+}
+
+/** Asks for a push of the offline queue as soon as there is a network (WorkManager, survives process death). */
+fun interface ListSyncScheduler {
+    fun requestPush()
+}
+
+/**
+ * Lists, favorites and linked accounts (contract 15 §3.3; desktop `tk-core/lists`, classic `useWatchlist` + `listSync`). Local first:
+ * every write lands in Room at once and, for each linked provider, a coalesced change enters the offline queue (`list_change`), pushed by
+ * [ListSyncWorker] when a network exists. Before a push the remote values of that title are read: if they changed since the last agreed
+ * values (per-provider base snapshot) and differ from the local ones, a [ListConflict] is recorded instead of overwriting.
+ * [syncNow] pulls the whole remote lists with the same three-way rule ([decideSync]). Tokens live in [secrets] only.
+ */
+class ListsRepositoryImpl(
+    private val dao: ListsDao,
+    private val secrets: SecretStore,
+    private val anilist: AniListListClient,
+    private val mal: MalListClient,
+    private val clientIds: (ListProvider) -> String?,
+    private val scheduler: ListSyncScheduler? = null,
+    private val clock: () -> Long = System::currentTimeMillis,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    /** Sync once shortly after creation (app open) when an account is linked. */
+    syncOnStart: Boolean = true,
+    /**
+     * The manga / novel read lists (:core:manga, :core:novel), resolved at sync time (they depend on this repository). [syncNow] pulls
+     * every one of them on every call while AniList is linked, and adds what they received to [ListSyncReport.pulled].
+     */
+    private val readLists: () -> List<ReadListPuller> = { emptyList() },
+    /**
+     * `AppSettings.listsWriteBack` ("Enviar los cambios a las cuentas"). Off: nothing is queued or pushed to AniList / MAL (editor,
+     * automatic progress, watched toggles, favorites, conflict "keep local"); [syncNow] still pulls, local edits stay local.
+     */
+    private val writeBack: () -> Boolean = { true },
+    /**
+     * The OAuth redirect URI registered for each provider's client: `nijiyome://oauth/<id>` on Android (the default), the loopback
+     * `http://127.0.0.1:<port>/callback` on desktop. Sent in the MAL authorize URL and in both token exchanges. The redirect handed to
+     * [completeLink] is always in the `nijiyome://oauth/<id>?…` form (desktop rewrites what its loopback listener received).
+     */
+    private val redirectUri: (ListProvider) -> String = OAuthRedirect::redirectUri,
+) : ListsRepository, ListsSyncControl {
+
+    private val syncMutex = Mutex()
+
+    private val accountRows: StateFlow<List<LinkedAccountRow>> =
+        dao.observeAccounts().stateIn(scope, SharingStarted.Eagerly, emptyList())
+
+    override val accounts: StateFlow<List<LinkedAccount>> = accountRows
+        .map { rows -> rows.mapNotNull { it.toModel() } }
+        .stateIn(scope, SharingStarted.Eagerly, emptyList())
+
+    override val pendingChanges: StateFlow<Int> = dao.observeChangeCount().stateIn(scope, SharingStarted.Eagerly, 0)
+
+    override val lastSyncedAt: StateFlow<Long?> = accountRows
+        .map { rows -> rows.mapNotNull { it.lastSyncedAtMs }.maxOrNull() }
+        .stateIn(scope, SharingStarted.Eagerly, null)
+
+    override val scoreFormat: StateFlow<String?> = accountRows
+        .map { rows -> (rows.firstOrNull { it.provider == ListProvider.ANILIST.id } ?: rows.firstOrNull())?.scoreFormat }
+        .stateIn(scope, SharingStarted.Eagerly, null)
+
+    private val _firstSyncPending = MutableStateFlow<Set<ListProvider>>(emptySet())
+    override val firstSyncPending: StateFlow<Set<ListProvider>> = _firstSyncPending.asStateFlow()
+
+    /** Restores [firstSyncPending] from Room once; the start sync waits for it so it never merges a pending provider. */
+    private val pendingRestored = scope.async {
+        runCatching { pendingFirstSyncs(dao.accounts(), dao.all()) }.getOrDefault(emptySet())
+            .also { restored -> _firstSyncPending.update { it + restored } }
+    }
+
+    init {
+        if (syncOnStart) {
+            scope.launch {
+                pendingRestored.await()
+                delay(START_SYNC_DELAY_MS)
+                if (dao.accounts().isNotEmpty()) runCatching { syncNow() }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------ reads
+
+    override fun entries(status: ListStatus?): Flow<List<ListEntry>> =
+        (if (status == null) dao.observeListed() else dao.observeByStatus(status.id)).map { rows -> rows.mapNotNull { it.toEntry() } }
+
+    override fun favorites(): Flow<List<ListEntry>> = dao.observeFavorites().map { rows -> rows.map { it.toFavoriteEntry() } }
+
+    override fun entry(ref: MediaRef): Flow<ListEntry?> {
+        val key = keyOf(ref) ?: return kotlinx.coroutines.flow.flowOf(null)
+        return dao.observe(key).map { it?.toEntry() }.distinctUntilChanged()
+    }
+
+    override fun isFavorite(ref: MediaRef): Flow<Boolean> {
+        val key = keyOf(ref) ?: return kotlinx.coroutines.flow.flowOf(false)
+        return dao.observe(key).map { it?.favorite == true }.distinctUntilChanged()
+    }
+
+    override fun favoriteCharacters(): Flow<List<CharacterRef>> =
+        dao.observeVisibleCharacters().map { rows -> rows.map { CharacterRef(it.id, it.name, it.image) } }
+
+    override fun isCharacterFavorite(characterId: Int): Flow<Boolean> =
+        dao.observeVisibleCharacterCount(characterId).map { it > 0 }.distinctUntilChanged()
+
+    // ------------------------------------------------------------------------------------------------ writes (local first)
+
+    override suspend fun setStatus(media: Media, status: ListStatus?): Result<Unit> = write {
+        val key = keyOf(media.ref) ?: throw AppException(AppError.Unknown(ListErrors.NO_ID))
+        val prev = dao.get(key)
+        val now = clock()
+        if (status == null) {
+            if (prev == null || prev.status == null) return@write
+            store(prev.copy(status = null, updatedAtMs = now), queue = OP_SAVE)
+            return@write
+        }
+        val base = prev ?: ListEntryRow(
+            key = key,
+            anilistId = media.ref.anilistId,
+            malId = media.ref.malId,
+            title = media.title,
+            poster = media.cover,
+            status = null,
+            totalEpisodes = media.episodes,
+            updatedAtMs = now,
+        )
+        val total = base.totalEpisodes ?: media.episodes
+        val today = LocalDate.now().toString()
+        val row = base.copy(
+            anilistId = base.anilistId ?: media.ref.anilistId,
+            malId = base.malId ?: media.ref.malId,
+            title = base.title.ifBlank { media.title },
+            poster = base.poster ?: media.cover,
+            totalEpisodes = total,
+            status = status.id,
+            progress = if (status == ListStatus.COMPLETED && total != null && total > 0) total else base.progress,
+            startedAt = base.startedAt ?: today.takeIf { status == ListStatus.WATCHING || status == ListStatus.COMPLETED },
+            completedAt = if (status == ListStatus.COMPLETED) base.completedAt ?: today else base.completedAt,
+            updatedAtMs = now,
+        )
+        store(row, queue = OP_SAVE)
+    }
+
+    override suspend fun setProgress(ref: MediaRef, episode: Int): Result<Unit> = write {
+        val key = keyOf(ref) ?: throw AppException(AppError.Unknown(ListErrors.NO_ID))
+        val prev = dao.get(key)?.takeIf { it.status != null } ?: throw AppException(AppError.Unknown(ListErrors.NOT_ON_LIST))
+        store(progressed(prev, episode), queue = OP_SAVE)
+    }
+
+    override suspend fun setScore(ref: MediaRef, score: Int?): Result<Unit> = write {
+        val key = keyOf(ref) ?: throw AppException(AppError.Unknown(ListErrors.NO_ID))
+        val prev = dao.get(key)?.takeIf { it.status != null } ?: throw AppException(AppError.Unknown(ListErrors.NOT_ON_LIST))
+        store(prev.copy(score = score?.coerceIn(0, 100)?.takeIf { it > 0 }, updatedAtMs = clock()), queue = OP_SAVE)
+    }
+
+    override suspend fun setFavorite(media: Media, favorite: Boolean): Result<Unit> = write {
+        val key = keyOf(media.ref) ?: throw AppException(AppError.Unknown(ListErrors.NO_ID))
+        val prev = dao.get(key)
+        if (prev == null && !favorite) return@write
+        val row = (prev ?: ListEntryRow(
+            key = key, anilistId = media.ref.anilistId, malId = media.ref.malId, title = media.title, poster = media.cover,
+            status = null, totalEpisodes = media.episodes, updatedAtMs = clock(),
+        // the favorite flag alone keeps the row's time: it is the list / progress change time (Details reads a newer history row
+        // than it as a rewatch in progress, and the sync compares it with the provider's `updatedAt`)
+        )).copy(favorite = favorite, updatedAtMs = prev?.updatedAtMs ?: clock())
+        dao.upsert(row)
+        if (row.anilistId != null && writeBack() && isLinked(ListProvider.ANILIST)) {
+            dao.putChange(ListChangeRow(ListProvider.ANILIST.id, key, OP_FAVORITE, favorite = favorite, createdAtMs = clock()))
+            scheduler?.requestPush()
+        }
+        cleanup(row)
+    }
+
+    override suspend fun setCharacterFavorite(character: CharacterRef, favorite: Boolean): Result<Unit> = write {
+        // write-back off: a local favorite only (no tombstone / pending push for AniList)
+        val linked = writeBack() && isLinked(ListProvider.ANILIST)
+        val prev = dao.character(character.id)
+        when {
+            favorite -> dao.putCharacter(
+                FavoriteCharacterRow(character.id, character.name, character.image, prev?.addedAtMs ?: clock(), pendingRemote = if (linked) true else null),
+            )
+            linked -> dao.putCharacter(
+                (prev ?: FavoriteCharacterRow(character.id, character.name, character.image, clock())).copy(pendingRemote = false),
+            )
+            else -> dao.deleteCharacter(character.id)
+        }
+        if (linked) scheduler?.requestPush()
+    }
+
+    override suspend fun onEpisodeCompleted(ref: MediaRef, episode: Int) {
+        val key = keyOf(ref) ?: return
+        val prev = dao.get(key) ?: return
+        val status = statusOf(prev.status) ?: return
+        if (status == ListStatus.COMPLETED || status == ListStatus.DROPPED) return
+        if (episode <= prev.progress) return
+        runCatching { store(progressed(prev, episode), queue = OP_SAVE) }
+    }
+
+    /** PLANNING / PAUSED -> WATCHING on progress; WATCHING / REPEATING -> COMPLETED at the total. */
+    private fun progressed(prev: ListEntryRow, episode: Int): ListEntryRow {
+        val total = prev.totalEpisodes?.takeIf { it > 0 }
+        val ep = if (total != null) episode.coerceIn(0, total) else episode.coerceAtLeast(0)
+        var status = statusOf(prev.status) ?: ListStatus.WATCHING
+        if (ep > 0 && (status == ListStatus.PLANNING || status == ListStatus.PAUSED)) status = ListStatus.WATCHING
+        val done = total != null && ep >= total && ep > 0
+        if (done && (status == ListStatus.WATCHING || status == ListStatus.REPEATING)) status = ListStatus.COMPLETED
+        val today = LocalDate.now().toString()
+        return prev.copy(
+            progress = ep,
+            status = status.id,
+            startedAt = prev.startedAt ?: today.takeIf { ep > 0 },
+            completedAt = if (status == ListStatus.COMPLETED) prev.completedAt ?: today else prev.completedAt,
+            updatedAtMs = clock(),
+        )
+    }
+
+    /** Stores [row] and queues it for every linked provider. */
+    private suspend fun store(row: ListEntryRow, queue: String) {
+        dao.upsert(row)
+        val linked = if (writeBack()) dao.accounts() else emptyList()
+        linked.forEach { a -> dao.putChange(ListChangeRow(a.provider, row.key, queue, createdAtMs = clock())) }
+        if (linked.isNotEmpty()) scheduler?.requestPush()
+        cleanup(row)
+    }
+
+    /** Off the list, not a favorite, never synced anywhere: nothing to remember. */
+    private suspend fun cleanup(row: ListEntryRow) {
+        if (row.status == null && !row.favorite && row.bases().isEmpty() && dao.accounts().isEmpty()) dao.delete(row.key)
+    }
+
+    private suspend fun write(block: suspend () -> Unit): Result<Unit> = try {
+        block()
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    // ------------------------------------------------------------------------------------------------ OAuth
+
+    override suspend fun beginLink(provider: ListProvider): Result<String> {
+        val clientId = clientIds(provider)?.trim()?.takeIf { it.isNotEmpty() }
+            ?: return Result.failure(AppException(AppError.Unknown("${ListErrors.NO_CLIENT_ID}:${provider.id}")))
+        val state = Pkce.state()
+        val verifier = if (provider == ListProvider.MAL) Pkce.verifier() else null
+        secrets.put(KEY_PENDING, listJson.encodeToString(PendingOAuth.serializer(), PendingOAuth(provider.id, state, verifier, clock())))
+        return Result.success(
+            when (provider) {
+                ListProvider.ANILIST -> AniListListClient.authorizeUrl(clientId, state)
+                ListProvider.MAL -> MalListClient.authorizeUrl(clientId, state, verifier!!, redirectUri(provider))
+            },
+        )
+    }
+
+    override suspend fun completeLink(redirectUri: String): Result<LinkedAccount> = try {
+        Result.success(finishLink(redirectUri))
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: AppException) {
+        AppLog.w(TAG, "link failed: ${e.error}")
+        Result.failure(e)
+    } catch (e: Exception) {
+        Result.failure(AppException(AppError.Unknown(ListErrors.EXCHANGE), e))
+    }
+
+    private suspend fun finishLink(uri: String): LinkedAccount {
+        val provider = OAuthRedirect.providerOf(uri) ?: throw AppException(AppError.Unknown(ListErrors.INVALID_STATE))
+        val params = OAuthRedirect.params(uri)
+        val pending = secrets.get(KEY_PENDING)?.let { runCatching { listJson.decodeFromString(PendingOAuth.serializer(), it) }.getOrNull() }
+        params["error"]?.let { error ->
+            if (pending?.provider == provider.id) secrets.put(KEY_PENDING, null)
+            throw AppException(AppError.Unknown(if (error == "access_denied") ListErrors.CANCELLED else "${ListErrors.DENIED}:$error"))
+        }
+        val state = params["state"]
+        // Every redirect must echo the state it was sent with, the AniList implicit-grant token included (hito 6, review
+        // finding 4: before, a token without a state was accepted, which let a crafted nijiyome:// link sign the app in to
+        // someone else's account).
+        val valid = pending != null && pending.provider == provider.id && !pending.isExpired(clock()) &&
+            state != null && state == pending.state
+        if (!valid) throw AppException(AppError.Unknown(ListErrors.INVALID_STATE))
+        val clientId = clientIds(provider)?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw AppException(AppError.Unknown("${ListErrors.NO_CLIENT_ID}:${provider.id}"))
+        val redirect = redirectUri(provider)
+        val tokens = when (provider) {
+            ListProvider.ANILIST -> params["access_token"]?.let { access ->
+                TokenSet(access = access, expiresAtMs = params["expires_in"]?.toLongOrNull()?.let { clock() + it * 1000 })
+            } ?: params["code"]?.let { anilist.exchangeCode(clientId, it, redirect) }
+            ListProvider.MAL -> params["code"]?.let { code ->
+                val verifier = pending!!.verifier ?: throw AppException(AppError.Unknown(ListErrors.INVALID_STATE))
+                mal.exchangeCode(clientId, code, verifier, redirect)
+            }
+        } ?: throw AppException(AppError.Unknown(ListErrors.CANCELLED))
+        secrets.put(KEY_PENDING, null)
+        val account = try {
+            remote(provider).viewer(tokens.access)
+        } catch (e: AppException) {
+            if ((e.error as? AppError.Http)?.code == 401) throw AppException(AppError.Unknown(ListErrors.EXPIRED), e) else throw e
+        }
+        secrets.put(SecretKeys.listToken(provider.id), listJson.encodeToString(TokenSet.serializer(), tokens))
+        val row = LinkedAccountRow(
+            provider = provider.id,
+            userId = account.userId,
+            username = account.username,
+            avatar = account.avatar,
+            linkedAtMs = clock(),
+            expiresAtMs = tokens.expiresAtMs,
+            scoreFormat = account.scoreFormat,
+        )
+        pendingRestored.await()
+        dao.putAccount(row)
+        AppLog.i(TAG, "linked ${provider.id}")
+        if (needsFirstSyncChoice(dao.all())) {
+            // lists.import-export: the user picks import remote / export local / merge (Settings › Listas y cuentas sheet)
+            _firstSyncPending.update { it + provider }
+        } else {
+            // nothing local: every mode pulls the same, so merge right away
+            _firstSyncPending.update { it - provider }
+            scope.launch { runCatching { syncWith(provider, InitialSyncMode.MERGE) } }
+        }
+        return row.toModel()!!
+    }
+
+    override suspend fun unlink(provider: ListProvider) {
+        _firstSyncPending.update { it - provider }
+        secrets.put(SecretKeys.listToken(provider.id), null)
+        dao.deleteAccount(provider.id)
+        dao.deleteChangesOf(provider.id)
+        dao.deleteConflictsOf(provider.id)
+        val stillLinked = dao.accounts().isNotEmpty()
+        for (row in dao.all()) {
+            val base = row.base(provider) ?: continue
+            val pulledOnly = row.bases().keys == setOf(provider.id) && sameValues(row.values(), base)
+            val next = row.withBase(provider, null)
+            if (pulledOnly && !row.favorite) {
+                // came from that account and was never touched here: the remote list stops showing
+                dao.delete(row.key)
+            } else {
+                dao.upsert(next)
+                if (!stillLinked && next.status == null && !next.favorite) dao.delete(row.key)
+            }
+        }
+        if (provider == ListProvider.ANILIST) {
+            dao.observeCharacters().first().filter { it.pendingRemote == false }.forEach { dao.deleteCharacter(it.id) }
+            dao.observeCharacters().first().filter { it.pendingRemote == true }.forEach { dao.putCharacter(it.copy(pendingRemote = null)) }
+        }
+        AppLog.i(TAG, "unlinked ${provider.id}")
+    }
+
+    // ------------------------------------------------------------------------------------------------ sync
+
+    override suspend fun syncNow(): Result<ListSyncReport> {
+        val rows = dao.accounts()
+        if (rows.isEmpty()) return Result.success(ListSyncReport(0, 0, 0, 0))
+        var total = ListSyncReport(0, 0, 0, 0)
+        var firstError: Throwable? = null
+        for (row in rows) {
+            val provider = ListProvider.entries.firstOrNull { it.id == row.provider } ?: continue
+            // first sync not chosen yet (lists.import-export): wait for the user's import / export / merge choice
+            if (provider in _firstSyncPending.value) continue
+            syncWith(provider, InitialSyncMode.MERGE).fold(
+                onSuccess = { total = total + it },
+                onFailure = { if (firstError == null) firstError = it },
+            )
+        }
+        // The read lists (manga / novels) follow the AniList account: refreshed on every "Sincronizar ahora", not once per process.
+        if (rows.any { it.provider == ListProvider.ANILIST.id } && ListProvider.ANILIST !in _firstSyncPending.value) {
+            val pullers = runCatching { readLists() }.getOrDefault(emptyList())
+            for (puller in pullers) {
+                val result = try {
+                    puller.pullReadList()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+                result.fold(
+                    onSuccess = { n -> total = total.copy(pulled = total.pulled + n) },
+                    onFailure = { e ->
+                        AppLog.w(TAG, "read list pull failed: ${(e as? AppException)?.error ?: e::class.java.simpleName}")
+                        total = total.copy(failed = total.failed + 1)
+                    },
+                )
+            }
+        }
+        return firstError?.let { Result.failure(it) } ?: Result.success(total)
+    }
+
+    override suspend fun syncWith(provider: ListProvider, mode: InitialSyncMode): Result<ListSyncReport> = try {
+        Result.success(syncMutex.withLock { syncProvider(provider, mode) }).also { _firstSyncPending.update { it - provider } }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        AppLog.w(TAG, "sync ${provider.id} failed: ${(e as? AppException)?.error ?: e::class.java.simpleName}")
+        Result.failure(e)
+    }
+
+    private suspend fun syncProvider(provider: ListProvider, mode: InitialSyncMode): ListSyncReport {
+        val account = dao.accounts().firstOrNull { it.provider == provider.id } ?: throw AppException(AppError.Unknown(ListErrors.NOT_LINKED))
+        val api = remote(provider)
+        val step = scoreStep(provider, account.scoreFormat)
+        val remoteAccount = RemoteAccount(account.userId, account.username, account.avatar, account.scoreFormat)
+        val remoteList = withToken(provider) { api.fetchAll(it, remoteAccount) }
+        val queued = dao.changes().filter { it.provider == provider.id && it.op == OP_SAVE }.map { it.key }.toSet()
+
+        // map every remote entry onto a local key (provider id first, then the generic key)
+        val remoteByKey = LinkedHashMap<String, ListEntry>()
+        for (r in remoteList) {
+            val id = api.idOf(r) ?: continue
+            val existing = when (provider) {
+                ListProvider.ANILIST -> dao.byAniList(id)
+                ListProvider.MAL -> dao.byMal(id)
+            }
+            val key = existing?.key ?: keyOf(r.ref) ?: continue
+            remoteByKey[key] = r
+        }
+        val localRows = dao.all().associateBy { it.key }
+        val keys = LinkedHashSet<String>().apply {
+            addAll(localRows.filterValues { it.status != null || it.base(provider) != null }.keys)
+            addAll(remoteByKey.keys)
+        }
+        var pushed = 0
+        var pulled = 0
+        var conflicts = 0
+        var failed = 0
+        for (key in keys) {
+            val row = localRows[key]
+            val remoteEntry = remoteByKey[key]
+            val action = decideSync(row?.values(), remoteEntry?.values(), row?.base(provider), key in queued, step, mode)
+            try {
+                when (action) {
+                    SyncAction.NOOP -> Unit
+                    SyncAction.ADOPT -> row?.let { dao.upsert(it.withBase(provider, remoteEntry?.values())) }
+                    SyncAction.PULL -> {
+                        val base = row ?: remoteEntry!!.toRow(key).copy(status = null)
+                        dao.upsert(base.applyRemote(remoteEntry, clock()).withBase(provider, remoteEntry?.values()))
+                        pulled++
+                    }
+                    SyncAction.PUSH -> {
+                        // write-back off: the local edit stays local (the next pull still brings remote changes)
+                        if (row != null && writeBack()) {
+                            pushRow(provider, api, row)
+                            pushed++
+                        }
+                    }
+                    SyncAction.CONFLICT -> {
+                        if (row != null && remoteEntry != null) {
+                            recordConflict(provider, row, remoteEntry)
+                            conflicts++
+                        }
+                    }
+                }
+                // a push skipped by write-back off keeps its queued change for when it is turned on again
+                if (key in queued && (action != SyncAction.PUSH || writeBack())) dao.deleteChange(provider.id, key, OP_SAVE)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: AppException) {
+                if (e.error is AppError.Offline || e.error is AppError.RateLimited) throw e
+                failed++
+                noteFailure(provider, key, OP_SAVE, e)
+            }
+        }
+        if (provider == ListProvider.ANILIST) {
+            val f = syncFavorites()
+            pushed += f.first
+            pulled += f.second
+        }
+        dao.all().filter { it.status == null && !it.favorite && it.bases().isEmpty() }.forEach { dao.delete(it.key) }
+        dao.putAccount(account.copy(lastSyncedAtMs = clock()))
+        return ListSyncReport(pushed = pushed, pulled = pulled, conflicts = conflicts, failed = failed)
+    }
+
+    /** AniList favorites (titles and characters): queued toggles first, then the remote set wins. Returns (pushed, pulled). */
+    private suspend fun syncFavorites(): Pair<Int, Int> {
+        var pushed = 0
+        var pulled = 0
+        val nodes = withToken(ListProvider.ANILIST) { anilist.favoriteAnimeNodes(it) }
+        val remoteFavs = nodes.map { it.id }.toMutableSet()
+        val queuedFavorites = if (writeBack()) dao.changes().filter { it.provider == ListProvider.ANILIST.id && it.op == OP_FAVORITE } else emptyList()
+        for (change in queuedFavorites) {
+            val row = dao.get(change.key)
+            val id = row?.anilistId
+            val wanted = change.favorite ?: row?.favorite ?: false
+            if (id != null && (id in remoteFavs) != wanted) {
+                withToken(ListProvider.ANILIST) { anilist.toggleFavorite(it, animeId = id) }
+                if (wanted) remoteFavs += id else remoteFavs -= id
+                pushed++
+            }
+            dao.deleteChange(change.provider, change.key, change.op)
+        }
+        for (row in dao.all()) {
+            val id = row.anilistId ?: continue
+            val fav = id in remoteFavs
+            if (row.favorite != fav) dao.upsert(row.copy(favorite = fav))
+        }
+        for (n in nodes) {
+            if (dao.byAniList(n.id) != null) continue
+            dao.upsert(
+                ListEntryRow(
+                    key = n.id.toString(), anilistId = n.id, malId = n.malId, title = n.name, poster = n.image, status = null,
+                    totalEpisodes = n.episodes, favorite = true, updatedAtMs = clock(),
+                ),
+            )
+            pulled++
+        }
+        if (writeBack()) pushed += pushCharacters()
+        val remoteChars = withToken(ListProvider.ANILIST) { anilist.favoriteCharacterNodes(it) }
+        val remoteCharIds = remoteChars.map { it.id }.toSet()
+        for (c in dao.observeCharacters().first()) {
+            if (c.pendingRemote == null && c.id !in remoteCharIds) dao.deleteCharacter(c.id)
+        }
+        for (n in remoteChars) {
+            if (dao.character(n.id) == null) {
+                dao.putCharacter(FavoriteCharacterRow(n.id, n.name, n.image, clock()))
+                pulled++
+            }
+        }
+        return pushed to pulled
+    }
+
+    private suspend fun pushCharacters(): Int {
+        var pushed = 0
+        for (c in dao.pendingCharacters()) {
+            val wanted = c.pendingRemote ?: continue
+            val now = withToken(ListProvider.ANILIST) { anilist.isFavouriteCharacter(it, c.id) }
+            if (now != wanted) withToken(ListProvider.ANILIST) { anilist.toggleFavorite(it, characterId = c.id) }
+            if (wanted) dao.putCharacter(c.copy(pendingRemote = null)) else dao.deleteCharacter(c.id)
+            pushed++
+        }
+        return pushed
+    }
+
+    override suspend fun pushPending(): ListSyncReport = syncMutex.withLock {
+        // write-back off: nothing leaves the phone (anything queued before stays queued until it is turned on again)
+        if (!writeBack()) return@withLock ListSyncReport(0, 0, 0, 0)
+        var pushed = 0
+        var conflicts = 0
+        var failed = 0
+        val linked = dao.accounts().map { it.provider }.toSet()
+        val waiting = _firstSyncPending.value
+        for (change in dao.changes()) {
+            val provider = ListProvider.entries.firstOrNull { it.id == change.provider }
+            if (provider == null || provider.id !in linked) {
+                dao.deleteChange(change.provider, change.key, change.op)
+                continue
+            }
+            // first sync not chosen yet: the change stays queued and is applied by that sync (its `queued` rule)
+            if (provider in waiting) continue
+            try {
+                when (change.op) {
+                    OP_FAVORITE -> {
+                        val row = dao.get(change.key)
+                        val id = row?.anilistId
+                        if (id != null && provider == ListProvider.ANILIST) {
+                            val wanted = change.favorite ?: row?.favorite ?: false
+                            val now = withToken(provider) { anilist.isFavouriteAnime(it, id) }
+                            if (now != wanted) withToken(provider) { anilist.toggleFavorite(it, animeId = id) }
+                            pushed++
+                        }
+                        dao.deleteChange(change.provider, change.key, change.op)
+                    }
+                    else -> {
+                        val row = dao.get(change.key)
+                        if (row == null) {
+                            dao.deleteChange(change.provider, change.key, change.op)
+                            continue
+                        }
+                        val api = remote(provider)
+                        val id = providerId(provider, row) ?: throw AppException(AppError.Unknown(ListErrors.NO_ID))
+                        val step = scoreStep(provider, dao.accounts().firstOrNull { it.provider == provider.id }?.scoreFormat)
+                        val remoteEntry = withToken(provider) { api.fetchOne(it, id) }
+                        when (decideSync(row.values(), remoteEntry?.values(), row.base(provider), queued = true, step = step)) {
+                            SyncAction.CONFLICT -> {
+                                if (remoteEntry != null) recordConflict(provider, row, remoteEntry)
+                                conflicts++
+                            }
+                            SyncAction.ADOPT -> dao.upsert(row.withBase(provider, remoteEntry?.values()))
+                            else -> {
+                                pushRow(provider, api, row)
+                                pushed++
+                            }
+                        }
+                        dao.deleteChange(change.provider, change.key, change.op)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: AppException) {
+                failed++
+                noteFailure(provider, change.key, change.op, e)
+                if (e.error is AppError.Offline || e.error is AppError.RateLimited) break
+            } catch (e: Exception) {
+                failed++
+                noteFailure(provider, change.key, change.op, e)
+            }
+        }
+        if (ListProvider.ANILIST.id in linked && ListProvider.ANILIST !in waiting) {
+            try {
+                pushed += pushCharacters()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                failed++
+            }
+        }
+        ListSyncReport(pushed = pushed, pulled = 0, conflicts = conflicts, failed = failed)
+    }
+
+    /** Saves (or deletes, when off the list) [row] on [provider] and records the agreed values. */
+    private suspend fun pushRow(provider: ListProvider, api: ListRemote, row: ListEntryRow) {
+        val id = providerId(provider, row) ?: throw AppException(AppError.Unknown(ListErrors.NO_ID))
+        val entry = row.toEntry()
+        withToken(provider) { token -> if (entry == null) api.delete(token, id) else api.save(token, id, entry) }
+        dao.upsert((dao.get(row.key) ?: row).withBase(provider, entry?.values()))
+    }
+
+    /** The provider's id of a row, resolving the other id through AniList's public API when missing. */
+    private suspend fun providerId(provider: ListProvider, row: ListEntryRow): Int? {
+        val known = when (provider) {
+            ListProvider.ANILIST -> row.anilistId
+            ListProvider.MAL -> row.malId
+        }
+        if (known != null) return known
+        val (a, m) = runCatching { anilist.crossId(row.anilistId, row.malId) }.getOrNull() ?: return null
+        dao.get(row.key)?.let { dao.upsert(it.copy(anilistId = it.anilistId ?: a, malId = it.malId ?: m)) }
+        return if (provider == ListProvider.ANILIST) a else m
+    }
+
+    private suspend fun recordConflict(provider: ListProvider, row: ListEntryRow, remoteEntry: ListEntry) {
+        val local = row.toEntry() ?: row.toFavoriteEntry()
+        val remote = remoteEntry.copy(ref = MediaRef(anilistId = row.anilistId ?: remoteEntry.ref.anilistId, malId = row.malId ?: remoteEntry.ref.malId))
+        dao.putConflict(
+            ListConflictRow(
+                id = "${provider.id}:${row.key}",
+                provider = provider.id,
+                key = row.key,
+                localJson = listJson.encodeToString(ListEntry.serializer(), local),
+                remoteJson = listJson.encodeToString(ListEntry.serializer(), remote),
+                createdAtMs = clock(),
+            ),
+        )
+    }
+
+    private suspend fun noteFailure(provider: ListProvider, key: String, op: String, e: Exception) {
+        val change = dao.changes().firstOrNull { it.provider == provider.id && it.key == key && it.op == op } ?: return
+        val reason = (e as? AppException)?.error?.toString() ?: e::class.java.simpleName
+        if (change.attempts + 1 >= MAX_ATTEMPTS && (e as? AppException)?.error !is AppError.Offline) {
+            // a change the provider keeps refusing (unknown title, invalid values) must not block the queue forever
+            dao.deleteChange(change.provider, change.key, change.op)
+            AppLog.w(TAG, "dropped ${provider.id} change after ${change.attempts + 1} attempts: $reason")
+        } else {
+            dao.putChange(change.copy(attempts = change.attempts + 1, lastError = reason.take(120)))
+        }
+    }
+
+    override fun conflicts(): Flow<List<ListConflict>> = dao.observeConflicts().map { rows ->
+        rows.mapNotNull { c ->
+            val provider = ListProvider.entries.firstOrNull { it.id == c.provider } ?: return@mapNotNull null
+            val local = runCatching { listJson.decodeFromString(ListEntry.serializer(), c.localJson) }.getOrNull() ?: return@mapNotNull null
+            val remote = runCatching { listJson.decodeFromString(ListEntry.serializer(), c.remoteJson) }.getOrNull() ?: return@mapNotNull null
+            ListConflict(c.id, provider, local, remote)
+        }
+    }
+
+    override suspend fun resolveConflict(id: String, choice: ConflictChoice) {
+        val c = dao.conflict(id) ?: return
+        val provider = ListProvider.entries.firstOrNull { it.id == c.provider }
+        val remote = runCatching { listJson.decodeFromString(ListEntry.serializer(), c.remoteJson) }.getOrNull()
+        dao.deleteConflict(id)
+        if (provider == null || remote == null) return
+        val row = dao.get(c.key) ?: remote.toRow(c.key).copy(status = null)
+        when (choice) {
+            ConflictChoice.KEEP_LOCAL -> {
+                // the remote values are acknowledged as the base: the queued push then overwrites them without a new conflict
+                dao.upsert(row.withBase(provider, remote.values()))
+                if (writeBack()) dao.putChange(ListChangeRow(provider.id, c.key, OP_SAVE, createdAtMs = clock()))
+            }
+            ConflictChoice.KEEP_REMOTE -> {
+                val next = row.applyRemote(remote, clock()).withBase(provider, remote.values())
+                dao.upsert(next)
+                // the other linked providers follow the new local values
+                dao.accounts().filter { it.provider != provider.id && writeBack() }.forEach { a ->
+                    dao.putChange(ListChangeRow(a.provider, c.key, OP_SAVE, createdAtMs = clock()))
+                }
+            }
+        }
+        scheduler?.requestPush()
+    }
+
+    // ------------------------------------------------------------------------------------------------ import / export
+
+    override suspend fun exportJson(): String = exportEntries(dao.all().mapNotNull { it.toEntry() }.sortedByDescending { it.updatedAtMs })
+
+    override suspend fun importJson(json: String): Result<Int> = importParsed { parseExport(json) }
+
+    override suspend fun importFile(text: String): Result<Int> = importParsed { parseListFile(text, clock()).entries }
+
+    override suspend fun exportCsv(): String = exportEntriesCsv(dao.all().mapNotNull { it.toEntry() }.sortedByDescending { it.updatedAtMs })
+
+    /** Merges what [parse] read (a file it cannot read is [ListErrors.BAD_FILE]); returns the number of entries imported or updated. */
+    private suspend fun importParsed(parse: () -> List<ListEntry>): Result<Int> = try {
+        val incoming = try {
+            parse()
+        } catch (e: Exception) {
+            throw AppException(AppError.Unknown(ListErrors.BAD_FILE), e)
+        }
+        var count = 0
+        for (entry in incoming) {
+            val key = keyOf(entry.ref) ?: continue
+            val existing = dao.get(key)
+            if (!shouldImport(existing, entry)) continue
+            val row = entry.toRow(key, existing).copy(favorite = entry.favorite || existing?.favorite == true)
+            store(row, queue = OP_SAVE)
+            count++
+        }
+        Result.success(count)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    // ------------------------------------------------------------------------------------------------ tokens
+
+    private suspend fun isLinked(provider: ListProvider): Boolean = dao.accounts().any { it.provider == provider.id }
+
+    private fun remote(provider: ListProvider): ListRemote = when (provider) {
+        ListProvider.ANILIST -> anilist
+        ListProvider.MAL -> mal
+    }
+
+    /** parity wave B (16 §3.7, contract): the social layer (t) and the readlist sync (s) borrow the AniList / MAL token; null = not usable. */
+    override suspend fun accessToken(provider: ListProvider): String? = try {
+        if (isLinked(provider)) token(provider) else null
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+
+    /** A valid access token (MAL refreshes when expired); [AppError.Unknown] `oauth:expired` when the user must link again. */
+    private suspend fun token(provider: ListProvider, forceRefresh: Boolean = false): String {
+        val raw = secrets.get(SecretKeys.listToken(provider.id)) ?: throw AppException(AppError.Unknown(ListErrors.NOT_LINKED))
+        val set = runCatching { listJson.decodeFromString(TokenSet.serializer(), raw) }.getOrNull()
+            ?: throw AppException(AppError.Unknown(ListErrors.EXPIRED))
+        if (!forceRefresh && !set.isExpired(clock())) return set.access
+        if (provider != ListProvider.MAL || set.refresh == null) throw AppException(AppError.Unknown(ListErrors.EXPIRED))
+        val clientId = clientIds(provider)?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw AppException(AppError.Unknown("${ListErrors.NO_CLIENT_ID}:${provider.id}"))
+        val fresh = mal.refresh(clientId, set.refresh)
+        val stored = fresh.copy(refresh = fresh.refresh ?: set.refresh)
+        secrets.put(SecretKeys.listToken(provider.id), listJson.encodeToString(TokenSet.serializer(), stored))
+        dao.accounts().firstOrNull { it.provider == provider.id }?.let { dao.putAccount(it.copy(expiresAtMs = stored.expiresAtMs)) }
+        return stored.access
+    }
+
+    /** Runs [block] with a token; a 401 refreshes once (MAL) or reports `oauth:expired`. */
+    private suspend fun <T> withToken(provider: ListProvider, block: suspend (String) -> T): T {
+        val first = token(provider)
+        return try {
+            block(first)
+        } catch (e: AppException) {
+            if ((e.error as? AppError.Http)?.code != 401) throw e
+            if (provider != ListProvider.MAL) throw AppException(AppError.Unknown(ListErrors.EXPIRED), e)
+            block(token(provider, forceRefresh = true))
+        }
+    }
+
+    private fun LinkedAccountRow.toModel(): LinkedAccount? {
+        val p = ListProvider.entries.firstOrNull { it.id == provider } ?: return null
+        return LinkedAccount(p, userId, username, avatar, linkedAtMs, expiresAtMs)
+    }
+
+    private operator fun ListSyncReport.plus(o: ListSyncReport) =
+        ListSyncReport(pushed + o.pushed, pulled + o.pulled, conflicts + o.conflicts, failed + o.failed)
+
+    private companion object {
+        const val TAG = "lists"
+        const val KEY_PENDING = "list.oauth.pending"
+        const val OP_SAVE = "save"
+        const val OP_FAVORITE = "favorite"
+        const val MAX_ATTEMPTS = 8
+        const val START_SYNC_DELAY_MS = 4_000L
+    }
+}

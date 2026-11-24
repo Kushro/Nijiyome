@@ -1,0 +1,17 @@
+{
+  "format": "tatakai-lists",
+  "version": 1,
+  "exported_at": 1731000000,
+  "entries": [
+    {"media_id": "21", "anilist_id": 21, "mal_id": 21, "title": "One Piece", "poster": "https://img.example/op.jpg", "status": "watching",
+     "progress": 1105, "episodes": null, "score": 95, "started_at": "2020-01-02", "finished_at": null, "repeats": 0, "notes": null,
+     "remote_id": 9001, "updated_at": 1731000000},
+    {"media_id": "mal:5114", "anilist_id": null, "mal_id": null, "title": "Fullmetal Alchemist: Brotherhood", "status": "repeating",
+     "progress": 3, "episodes": 64, "score": null, "repeats": 1, "updated_at": 0},
+    {"media_id": "", "anilist_id": null, "mal_id": null, "title": "No id", "status": "watching"},
+    {"media_id": "30", "anilist_id": 30, "title": "Evangelion", "status": "rewatching?"}
+  ],
+  "favorites": [
+    {"media_id": "21", "title": "One Piece", "poster": null, "added_at": 1731000000}
+  ]
+}

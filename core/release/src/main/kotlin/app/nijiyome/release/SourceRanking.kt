@@ -1,0 +1,103 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.release
+
+import app.nijiyome.model.INITIAL_RELIABILITY
+import app.nijiyome.model.SourceCandidate
+import app.nijiyome.model.SourceKind
+import app.nijiyome.model.SourcePrefs
+import app.nijiyome.model.normalizeLangCodes
+
+// Port 1:1 of apps/desktop-native/crates/tk-core/src/sources.rs::{score, rank, update_reliability, lang_codes} (docs/redesign/12 §3.1).
+// Decision (12 §7): the ranking lives here in :core:release (pure JVM, same owner as the release parser) and not in :core:extensions.
+// Oracle: contracts/fixtures/sources/sources-for.json + the order asserted by tk-core/tests/sources_ranking.rs. Bodies: worker a.
+
+const val RELIABILITY_ALPHA: Float = 0.2f
+
+/** Score bonus of a SeaDex "best" torrent release. */
+const val SEADEX_BEST_BONUS: Float = 4f
+
+/**
+ * parity wave A (worker q, checklist sources.debrid.ranking; additive): bonus of a torrent instantly available on a linked debrid service
+ * (`SourceCandidate.debrid?.cached == true`). Such a torrent also skips the seeder bonus / penalty and counts as a web source for the
+ * preferred-kind rule: it plays as a direct HTTPS stream, like a web source.
+ */
+const val DEBRID_CACHED_BONUS: Float = 10f
+
+/**
+ * parity wave B (16 §3.3, worker r, checklist sources.embed-sniffer.ranking; additive): an embed page needs the hidden-WebView sniffer
+ * before it can play, so it ranks below any direct HLS / MP4 of the same quality. Added by the contract; r keeps it.
+ */
+const val EMBED_PENALTY: Float = 15f
+
+/**
+ * QA round 1, BUG-029 (port of desktop 7ea82a73): taken off a source whose only audio is not the preferred one (and not dual audio), so it
+ * ranks below any release with the preferred audio of similar quality.
+ */
+const val FOREIGN_DUB_PENALTY: Float = 15f
+
+/** BUG-029: taken off a torrent season pack (`tags.batch`): close singles win, a well-seeded pack still beats a dead single. */
+const val BATCH_PENALTY: Float = 5f
+
+/**
+ * `reliability*50 ± 20 (preferred kind) + 6*min(rank,3) − 25 if below minQuality + 10 (subLang in subs) + 6 (dubLang in dubs)
+ * − FOREIGN_DUB_PENALTY if the only audio is another language (not dual audio)
+ * + torrent: min(seeders,500)/50 − 20 if seeders < 20 (known seeders only) + SEADEX_BEST_BONUS if tags.seadexBest − BATCH_PENALTY if
+ * tags.batch | web: −min(latency,1000)/100 − 1000 when the extension is disabled`.
+ */
+fun score(c: SourceCandidate, prefs: SourcePrefs, extEnabled: Boolean): Float {
+    var v = c.reliability * 50f
+    val debridCached = c.kind == SourceKind.TORRENT && c.debrid?.cached == true
+    val kind = prefs.prefer
+    if (kind != null) v += if (c.kind == kind || (debridCached && kind == SourceKind.WEB)) 20f else -20f
+    val q = c.quality.rank()
+    v += minOf(q, 3).toFloat() * 6f
+    if (q < prefs.minQuality.rank()) v -= 25f
+    if (c.subs.any { it == prefs.subLang }) v += 10f
+    if (c.dubs.any { it == prefs.dubLang }) {
+        v += 6f
+    } else if (c.dubs.isNotEmpty() && !c.tags.dualAudio) {
+        // Only other audio (aniliberty's Russian-dubbed packs for a JA-audio user, BUG-029).
+        v -= FOREIGN_DUB_PENALTY
+    }
+    when (c.kind) {
+        SourceKind.TORRENT -> {
+            if (debridCached) {
+                v += DEBRID_CACHED_BONUS
+            } else {
+                // Unknown seeders (the index does not report them) are neither a bonus nor the "< 20" penalty: SubsPlease's own feed has
+                // none and its releases are the best seeded (BUG-030).
+                val seeders = c.torrent?.seeders
+                if (seeders != null) {
+                    v += minOf(seeders, 500).toFloat() / 50f
+                    if (seeders < 20) v -= 20f
+                }
+            }
+            if (c.tags.seadexBest) v += SEADEX_BEST_BONUS
+            // A season pack downloads (and must index) every episode to play one: the single release wins a close call (BUG-029).
+            if (c.tags.batch) v -= BATCH_PENALTY
+        }
+        SourceKind.WEB -> {
+            // not measured yet = no penalty
+            val ms = c.web?.latencyMs
+            if (ms != null) v -= minOf(ms, 1000).toFloat() / 100f
+            if (c.isEmbed) v -= EMBED_PENALTY
+        }
+    }
+    if (!extEnabled) v -= 1000f
+    return v
+}
+
+/** Score every candidate and sort by score, highest first; stable (ties keep the input order). [extEnabled] gets `extId`. */
+fun rank(candidates: List<SourceCandidate>, prefs: SourcePrefs, extEnabled: (String) -> Boolean): List<Pair<SourceCandidate, Float>> =
+    // sortedByDescending is stable: equal scores keep the input order (Rust sort_by + total_cmp)
+    candidates.map { it to score(it, prefs, extEnabled(it.extId)) }.sortedByDescending { it.second }
+
+/** `prev*(1-α) + α*(ok ? 1 : 0)`, α = [RELIABILITY_ALPHA], clamped 0..1; non-finite prev -> INITIAL_RELIABILITY. */
+fun updateReliability(prev: Float, ok: Boolean): Float {
+    val p = if (prev.isFinite()) prev.coerceIn(0f, 1f) else INITIAL_RELIABILITY
+    val hit = if (ok) 1f else 0f
+    return (p * (1f - RELIABILITY_ALPHA) + RELIABILITY_ALPHA * hit).coerceIn(0f, 1f)
+}
+
+/** Lowercase ISO 639-1 (`es-419` -> `es`), dropping `und` / empty / duplicates, first-seen order. */
+fun langCodes(tags: Iterable<String>): List<String> = normalizeLangCodes(tags)

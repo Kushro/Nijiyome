@@ -1,0 +1,284 @@
+name: Release
+
+# A `v<semver>` tag builds Nijiyome for Linux (AppImage), Windows (installer + portable zip) and Android (APKs signed with the
+# release key, certificate fingerprint checked) and publishes them as "Nijiyome <version>", marked latest (the update notice of
+# both apps reads releases/latest). Adapted from Tatakai Next's next-release.yml. The tag must match `nijiyome.version` in
+# gradle.properties. workflow_dispatch builds everything without publishing (artifacts only, kept 7 days).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Public client ids (repository variables, not secrets; empty = that login stays disabled in the build). AniList and MAL allow
+  # one redirect per client: the desktop clients use http://127.0.0.1:47410/callback, the Android ones nijiyome://oauth/<provider>.
+  ANILIST_DESKTOP: ${{ vars.ANILIST_CLIENT_ID_DESKTOP }}
+  ANILIST_ANDROID: ${{ vars.ANILIST_CLIENT_ID_ANDROID }}
+  MAL_DESKTOP: ${{ vars.MAL_CLIENT_ID_DESKTOP }}
+  MAL_ANDROID: ${{ vars.MAL_CLIENT_ID_ANDROID }}
+  DISCORD_APP_ID: ${{ vars.DISCORD_APP_ID }}
+  NIJIYOME_SECRETS: file
+
+jobs:
+  runner:
+    uses: ./.github/workflows/runner.yml
+
+  meta:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      code: ${{ steps.v.outputs.code }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - id: v
+        shell: bash
+        run: |
+          set -euo pipefail
+          declared=$(sed -n 's/^nijiyome\.version=\(.*\)$/\1/p' gradle.properties | head -n1)
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            publish=true
+            if [ "$version" != "$declared" ]; then
+              echo "::error::tag $GITHUB_REF_NAME does not match nijiyome.version=$declared in gradle.properties"
+              exit 1
+            fi
+          else
+            version="$declared"
+            publish=false
+          fi
+          [[ "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::not semver: $version"; exit 1; }
+          # Android versionCode: MMmmpp (0.1.0 -> 100, 1.2.3 -> 10203)
+          code=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 + BASH_REMATCH[3] ))
+          {
+            echo "version=$version"
+            echo "code=$code"
+            echo "publish=$publish"
+          } >> "$GITHUB_OUTPUT"
+          echo "Nijiyome $version (Android versionCode $code), publish=$publish"
+
+  linux:
+    name: Linux AppImage
+    needs: [runner, meta]
+    runs-on: ${{ needs.runner.outputs.linux }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ curl python3 xvfb desktop-file-utils
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@da187c8e6ffbd3802e00f2477aa5a822b25f2dda # v4.4.4
+      - name: temple-lsfg (LSFG helper)
+        run: echo "NIJIYOME_TEMPLE_LSFG=$(bash packaging/linux/build-temple-lsfg.sh | tail -n1)" >> "$GITHUB_ENV"
+      - name: App image
+        env:
+          NIJIYOME_VERSION_NAME: ${{ needs.meta.outputs.version }}
+          NIJIYOME_ANILIST_CLIENT_ID_DESKTOP: ${{ env.ANILIST_DESKTOP }}
+          NIJIYOME_MAL_CLIENT_ID_DESKTOP: ${{ env.MAL_DESKTOP }}
+          NIJIYOME_DISCORD_APP_ID: ${{ env.DISCORD_APP_ID }}
+        run: bash gradlew :desktopApp:createReleaseDistributable --no-daemon --stacktrace
+      - name: AppImage (appimagetool and runtime pinned by hash)
+        run: |
+          set -euo pipefail
+          v='${{ needs.meta.outputs.version }}'
+          bash packaging/linux/build-appimage.sh --version "$v" --out "$GITHUB_WORKSPACE/out" --tools "$RUNNER_TEMP/appimage-tools" \
+            --image desktopApp/build/compose/binaries/main-release/app/Nijiyome
+          rm -rf "$GITHUB_WORKSPACE"/out/build.*
+          ls -la "$GITHUB_WORKSPACE/out"
+      # --version exits before any window, data folder or lock exists; it also proves the runtime and the launcher start.
+      - name: Smoke check
+        run: |
+          set -euo pipefail
+          v='${{ needs.meta.outputs.version }}'
+          app="out/Nijiyome-v$v-linux-x86_64.AppImage"
+          out=$(APPIMAGE_EXTRACT_AND_RUN=1 "$app" --version 2>/dev/null | tail -n1)
+          echo "$out"
+          [ "$out" = "nijiyome $v" ] || { echo "::error::--version answered '$out'"; exit 1; }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-linux
+          path: out/*.AppImage
+          if-no-files-found: error
+          retention-days: 7
+
+  windows:
+    name: Windows installer + portable
+    needs: [runner, meta]
+    runs-on: ${{ needs.runner.outputs.windows }}
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@da187c8e6ffbd3802e00f2477aa5a822b25f2dda # v4.4.4
+      # cl / link on PATH for temple-lsfg (C++/Vulkan, static CRT); Ninja comes with the VS CMake tools.
+      - name: MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+      # NSIS ships on GitHub's Windows images; other images get it from Chocolatey.
+      - name: NSIS
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue) -and -not (Test-Path 'C:\Program Files (x86)\NSIS\makensis.exe')) {
+            # A fixed version; Chocolatey checks the installer against the checksum its package pins.
+            choco install nsis --version=3.10 -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "choco install nsis failed ($LASTEXITCODE)" }
+          }
+      - name: Installer and portable zip
+        env:
+          NIJIYOME_ANILIST_CLIENT_ID_DESKTOP: ${{ env.ANILIST_DESKTOP }}
+          NIJIYOME_MAL_CLIENT_ID_DESKTOP: ${{ env.MAL_DESKTOP }}
+          NIJIYOME_DISCORD_APP_ID: ${{ env.DISCORD_APP_ID }}
+        run: ./packaging/windows/build-windows.ps1 -Version '${{ needs.meta.outputs.version }}' -Out (Join-Path $PWD 'out')
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-windows
+          path: |
+            out/*-setup.exe
+            out/*-portable.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  android:
+    name: Android APK (release key)
+    needs: [runner, meta]
+    runs-on: ${{ needs.runner.outputs.linux }}
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          packages: platform-tools
+      - name: Platform + build tools
+        run: |
+          sdkmanager "build-tools;36.0.0"
+          sdkmanager "platforms;android-37.0" || sdkmanager "platforms;android-37"
+      - uses: gradle/actions/setup-gradle@da187c8e6ffbd3802e00f2477aa5a822b25f2dda # v4.4.4
+      # The release keystore (alias `nijiyome`) from repository secrets, read by app/build.gradle.kts through NIJIYOME_SIGNING.
+      - name: Release key
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ANDROID_KEYSTORE_B64" ]; then
+            echo "::error::ANDROID_KEYSTORE_B64 is missing: refusing to build an APK with a throwaway key"
+            exit 1
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/nijiyome.keystore"
+          {
+            printf 'storeFile=%s\n' "$RUNNER_TEMP/nijiyome.keystore"
+            printf 'storeType=PKCS12\n'
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+            printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+          } > "$RUNNER_TEMP/nijiyome.keystore.properties"
+          printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
+      - name: Assemble release
+        env:
+          NIJIYOME_SIGNING: ${{ runner.temp }}/nijiyome.keystore.properties
+          NIJIYOME_ANILIST_CLIENT_ID: ${{ env.ANILIST_ANDROID }}
+          NIJIYOME_MAL_CLIENT_ID: ${{ env.MAL_ANDROID }}
+          NIJIYOME_VERSION_NAME: ${{ needs.meta.outputs.version }}
+          NIJIYOME_VERSION_CODE: ${{ needs.meta.outputs.code }}
+          NIJIYOME_ABI_SPLITS: 'true'
+        run: bash gradlew :app:assembleRelease --no-daemon --stacktrace
+      # Every published APK must carry the Nijiyome release certificate (docs/plan-migracion.md §10), never a debug key.
+      # app-<abi>-release.apk -> Nijiyome-v<version>-android-<abi>.apk (universal included).
+      - name: Verify signatures and name the APKs
+        run: |
+          set -euo pipefail
+          apksigner="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          expected=9fe9bad769b690f5768ee9840c6d410627c396496dfefc142ef26818ebb5febd
+          mkdir -p out
+          n=0
+          for src in app/build/outputs/apk/release/app-*-release.apk; do
+            digest=$("$apksigner" verify --print-certs "$src" | grep -m1 'certificate SHA-256 digest' | sed 's/.*: //')
+            echo "$(basename "$src"): $digest"
+            if [ "$digest" != "$expected" ]; then
+              echo "::error::$(basename "$src") is not signed with the Nijiyome release key"
+              exit 1
+            fi
+            abi=$(basename "$src" | sed -E 's/^app-(.*)-release\.apk$/\1/')
+            cp "$src" "out/Nijiyome-v${{ needs.meta.outputs.version }}-android-$abi.apk"
+            n=$((n + 1))
+          done
+          [ "$n" -ge 2 ] || { echo "::error::expected the ABI APKs and the universal one, got $n"; exit 1; }
+          ls -la out
+      # Whatever happened above, the release key never stays on the runner.
+      - name: Remove the release key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/nijiyome.keystore" "$RUNNER_TEMP/nijiyome.keystore.properties"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-android
+          path: out/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish the GitHub release
+    needs: [runner, meta, linux, windows, android]
+    if: needs.meta.outputs.publish == 'true'
+    runs-on: ${{ needs.runner.outputs.linux }}
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums and notes
+        run: |
+          set -euo pipefail
+          v='${{ needs.meta.outputs.version }}'
+          (cd dist && sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          # Notes: the CHANGELOG.md section of this version, if any
+          awk -v v="$v" '$0 ~ "^## \\[" v "\\]" {f=1; next} f && /^## \[/ {exit} f' CHANGELOG.md > notes.md 2>/dev/null || true
+          {
+            echo
+            echo '| Platform | Download |'
+            echo '|---|---|'
+            echo "| Windows x64 | \`Nijiyome-v$v-windows-x64-setup.exe\` (installer) or \`…-portable.zip\` |"
+            echo "| Linux x86_64 | \`Nijiyome-v$v-linux-x86_64.AppImage\` (glibc 2.38 or newer) |"
+            echo "| Android | \`Nijiyome-v$v-android-arm64-v8a.apk\` (almost every phone), \`…-armeabi-v7a.apk\` (old 32-bit phones), \`…-x86_64.apk\` (emulators, Chromebooks) or \`…-universal.apk\` (any, bigger). Signed with the Nijiyome release key. |"
+            echo
+            echo 'Windows builds are not code-signed: SmartScreen may warn on first run.'
+          } >> notes.md
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          v='${{ needs.meta.outputs.version }}'
+          # 1.2.3-beta.1 is a pre-release (never "latest"); a plain version becomes latest
+          if [[ "$v" == *-* ]]; then kind=(--prerelease --latest=false); else kind=(--latest); fi
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "Nijiyome $v" --notes-file notes.md "${kind[@]}"

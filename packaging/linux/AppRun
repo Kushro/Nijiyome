@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# AppImage entry point (the AppDir's AppRun, installed by build-appimage.sh). The app is the jpackage image under usr/lib/nijiyome:
+# its launcher starts the bundled Java runtime. On Linux the app then starts itself once more with the runtime's libjsig.so preloaded
+# (desktopApp SignalChaining.kt, needed by libtorrent4j); the AppImage stays mounted while this first process waits for it.
+HERE="$(dirname "$(readlink -f "$0")")"
+export APPDIR="${APPDIR:-$HERE}"
+# The AppImage path (autostart registers it) is $APPIMAGE, set by the AppImage runtime; the caller's directory stays in $OWD.
+exec "$APPDIR/usr/lib/nijiyome/bin/Nijiyome" "$@"

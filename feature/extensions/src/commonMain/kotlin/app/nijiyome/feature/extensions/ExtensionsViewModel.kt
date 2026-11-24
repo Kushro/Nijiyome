@@ -1,0 +1,203 @@
+package app.nijiyome.feature.extensions
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import app.nijiyome.model.ExtensionDetail
+import app.nijiyome.model.ExtensionLogEntry
+import app.nijiyome.model.ExtensionRepository
+import app.nijiyome.model.InstalledExtension
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+/** One-shot outcome of the last install attempt, shown inline (never as stacked toasts). */
+sealed interface InstallMessage {
+    data class Installed(val name: String) : InstallMessage
+
+    /** [reason] is the manifest/validation error reported by the host, so the user sees which field failed. */
+    data class Failed(val reason: String) : InstallMessage
+}
+
+/** Hash / domains / date of one row ([ExtensionRepository.detail]). */
+sealed interface DetailState {
+    data object Loading : DetailState
+
+    /** [detail] null = the repository knows nothing more about it (the foot line is hidden). */
+    data class Ready(val detail: ExtensionDetail?) : DetailState
+
+    data object Failed : DetailState
+}
+
+/** BUG-094: a picked `.kai` is older than the installed copy; installing it waits for the user's confirmation. */
+data class DowngradePrompt(val uri: String, val name: String, val newVersion: String, val installedVersion: String)
+
+/** BUG-094: the prompt for installing [pkg] over [installed], or null when it is not older (or not installed yet). */
+internal fun downgradePrompt(uri: String, pkg: app.nijiyome.model.ExtensionPackageInfo?, installed: List<InstalledExtension>): DowngradePrompt? {
+    pkg ?: return null
+    val current = installed.firstOrNull { it.id == pkg.id } ?: return null
+    if (compareVersions(pkg.version, current.version) >= 0) return null
+    return DowngradePrompt(uri, current.name.ifBlank { pkg.name }, pkg.version, current.version)
+}
+
+data class ExtensionsUiState(
+    val items: List<InstalledExtension> = emptyList(),
+    val installing: Boolean = false,
+    val message: InstallMessage? = null,
+    /** True while the installed list has not been read yet (the screen shows the loading indicator after 150 ms). */
+    val loading: Boolean = false,
+    val details: Map<String, DetailState> = emptyMap(),
+    /** Rows whose collapsible log is open. */
+    val expandedLogs: Set<String> = emptySet(),
+    val downgrade: DowngradePrompt? = null,
+)
+
+class ExtensionsViewModel(private val repo: ExtensionRepository) : ViewModel() {
+
+    private val transient = MutableStateFlow(Transient())
+    private val details = MutableStateFlow<Map<String, DetailState>>(emptyMap())
+    private val expanded = MutableStateFlow<Set<String>>(emptySet())
+
+    /** The repository has no "ready" signal: an empty list counts as loading until it has had [LOAD_GRACE_MS] to fill. */
+    private val settled = MutableStateFlow(repo.installed.value.isNotEmpty())
+
+    /** id -> version whose detail was requested, so a reinstall (new hash) reloads it. */
+    private val requested = HashMap<String, String>()
+
+    val state: StateFlow<ExtensionsUiState> =
+        combine(repo.installed, transient, details, expanded, settled) { items, t, d, e, s ->
+            ExtensionsUiState(
+                items = items,
+                installing = t.installing,
+                message = t.message,
+                loading = items.isEmpty() && !s,
+                details = d.filterKeys { id -> items.any { it.id == id } },
+                expandedLogs = e,
+                downgrade = t.downgrade,
+            )
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            ExtensionsUiState(items = repo.installed.value, loading = repo.installed.value.isEmpty()),
+        )
+
+    init {
+        viewModelScope.launch {
+            delay(LOAD_GRACE_MS)
+            settled.value = true
+        }
+        viewModelScope.launch {
+            repo.installed.collect { items ->
+                if (items.isNotEmpty()) settled.value = true
+                items.forEach { ext -> if (requested[ext.id] != ext.version) loadDetail(ext) }
+                requested.keys.retainAll(items.map { it.id }.toSet())
+            }
+        }
+    }
+
+    /** [uri] comes from the SAF document picker (`.kai` package). */
+    fun install(uri: String) {
+        if (transient.value.installing) return
+        transient.value = Transient(installing = true)
+        viewModelScope.launch {
+            // BUG-094: an older package over a newer installed copy asks first ("Vas a instalar v4.5.9 sobre v4.6.0").
+            downgradePrompt(uri, repo.peekPackage(uri), repo.installed.value)?.let { prompt ->
+                transient.value = Transient(downgrade = prompt)
+                return@launch
+            }
+            doInstall(uri)
+        }
+    }
+
+    /** BUG-094: "Instalar igual" of the downgrade prompt. */
+    fun confirmDowngrade() {
+        val prompt = transient.value.downgrade ?: return
+        transient.value = Transient(installing = true)
+        viewModelScope.launch { doInstall(prompt.uri) }
+    }
+
+    fun cancelDowngrade() {
+        if (transient.value.downgrade != null) transient.value = Transient()
+    }
+
+    private suspend fun doInstall(uri: String) {
+        run {
+            val result = repo.installFromUri(uri)
+            transient.value = Transient(
+                message = result.fold(
+                    onSuccess = { InstallMessage.Installed(it.name) },
+                    onFailure = { InstallMessage.Failed(it.message ?: it::class.java.simpleName) },
+                ),
+            )
+            // A reinstall of the same version still changes the package hash.
+            result.getOrNull()?.let { loadDetail(it) }
+        }
+    }
+
+    /** parity wave B (16 §3.4, ext.install-url): a `.kai` URL or the `manifest.json` next to one; same inline outcome as [install]. */
+    fun installFromUrl(url: String) {
+        if (transient.value.installing) return
+        transient.value = Transient(installing = true)
+        viewModelScope.launch {
+            val result = try {
+                repo.installFromUrl(url.trim())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+            transient.value = Transient(
+                message = result.fold(
+                    onSuccess = { InstallMessage.Installed(it.name) },
+                    onFailure = { InstallMessage.Failed(it.reason()) },
+                ),
+            )
+            result.getOrNull()?.let { loadDetail(it) }
+        }
+    }
+
+    fun setEnabled(id: String, enabled: Boolean) {
+        viewModelScope.launch { repo.setEnabled(id, enabled) }
+    }
+
+    fun remove(id: String) {
+        viewModelScope.launch { repo.remove(id) }
+    }
+
+    fun dismissMessage() = transient.update { it.copy(message = null) }
+
+    fun toggleLog(id: String) = expanded.update { if (id in it) it - id else it + id }
+
+    fun retryDetail(id: String) {
+        repo.installed.value.firstOrNull { it.id == id }?.let(::loadDetail)
+    }
+
+    fun logs(id: String): Flow<List<ExtensionLogEntry>> = repo.logs(id)
+
+    private fun loadDetail(ext: InstalledExtension) {
+        requested[ext.id] = ext.version
+        details.update { it + (ext.id to DetailState.Loading) }
+        viewModelScope.launch {
+            val next = try {
+                DetailState.Ready(repo.detail(ext.id))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                DetailState.Failed
+            }
+            details.update { it + (ext.id to next) }
+        }
+    }
+
+    private data class Transient(val installing: Boolean = false, val message: InstallMessage? = null, val downgrade: DowngradePrompt? = null)
+
+    companion object {
+        const val LOAD_GRACE_MS = 600L
+    }
+}

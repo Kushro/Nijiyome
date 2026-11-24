@@ -1,0 +1,9 @@
+# Copy to local.properties (gitignored) and fill in. Nothing here is ever committed.
+sdk.dir=/ruta/al/Android/Sdk
+# parity wave A (docs/redesign/15-parity-wave-a-contract-android.md §3.3): OAuth client ids of the list providers (public ids, not secrets;
+# still not committed). Also readable from env. Both are OPTIONAL: without one, "Vincular" is disabled with the reason. Register the
+# Android client at each provider with redirect URI nijiyome://oauth/anilist and nijiyome://oauth/mal (one client per platform: AniList
+# allows a single redirect per client, desktop uses loopback).
+# There is no own login any more (2026-11-09): the former hosted-backend URL / anon key entries are gone.
+NIJIYOME_ANILIST_CLIENT_ID=
+NIJIYOME_MAL_CLIENT_ID=

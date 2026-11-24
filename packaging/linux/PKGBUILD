@@ -1,0 +1,71 @@
+# Maintainer: Nijiyome contributors
+#
+# Arch Linux / CachyOS package of the desktop app, built from THIS checkout (no download of the app sources): run `makepkg -si`
+# inside packaging/linux. Gradle builds the Compose Desktop image (jlink runtime, so no Java package is needed at run time) and
+# CMake the temple-lsfg helper; install-tree.sh lays them out:
+#   /usr/lib/nijiyome/{bin/Nijiyome, lib/app/*.jar, lib/app/resources/temple-lsfg, lib/runtime/}, /usr/bin/nijiyome -> ../lib/…
+# libmpv comes inside MediaMP's runtime jar and libtorrent4j's native inside its jar (glibc 2.38 or newer).
+# `makepkg --nocheck` skips the desktop tests.
+
+pkgname=nijiyome
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Anime player (Kotlin Multiplatform + libmpv) with Anime4K, torrents and sandboxed .kai extensions'
+arch=('x86_64')
+url='https://github.com/Kushro/Nijiyome'
+license=('AGPL-3.0-or-later' 'GPL-3.0-only' 'MIT' 'Apache-2.0' 'LGPL-2.1-or-later' 'OFL-1.1')
+depends=(
+    'glibc'              # 2.38 or newer (libtorrent4j's native)
+    'libx11' 'libxext' 'libxrender' 'libxtst' 'libxi' 'libxrandr'   # AWT / Compose window
+    'fontconfig' 'freetype2' 'alsa-lib'
+    'libglvnd'           # OpenGL for the embedded libmpv
+    'vulkan-icd-loader'  # libvulkan.so.1 for temple-lsfg (Link LSFG profiles)
+    'hicolor-icon-theme'
+    'xdg-utils'          # opening links and folders
+)
+optdepends=(
+    'libsecret: keep account tokens in the system keyring (secret-tool)'
+    'glib2: system notifications through gdbus'
+    'libnotify: system notifications through notify-send'
+    'mpv: the External player engine'
+    'ffmpeg: Nijiyome Link sessions'
+    'lsfg-vk: frame generation on the external mpv'
+    'noto-fonts-cjk: kanji and kana in titles'
+)
+makedepends=('jdk21-openjdk' 'cmake' 'ninja')
+# Gradle downloads its dependencies in build(); no LTO or stripping of the bundled runtime and native libraries.
+options=('!lto' '!strip' '!debug')
+
+# This file lives in packaging/linux.
+_repo="$(cd "$startdir/../.." && pwd)"
+
+pkgver() {
+    local ver
+    ver="$(sed -n 's/^nijiyome\.version=\(.*\)$/\1/p' "$_repo/gradle.properties" | head -n1)"
+    if git -C "$_repo" rev-parse --git-dir >/dev/null 2>&1; then
+        printf '%s.r%s.g%s' "${ver//-/_}" "$(git -C "$_repo" rev-list --count HEAD)" "$(git -C "$_repo" rev-parse --short HEAD)"
+    else
+        printf '%s' "${ver//-/_}"
+    fi
+}
+
+build() {
+    cd "$_repo"
+    export JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+    bash "$_repo/packaging/linux/build-temple-lsfg.sh" --out "$srcdir/temple-lsfg" >/dev/null
+    NIJIYOME_TEMPLE_LSFG="$srcdir/temple-lsfg/temple-lsfg" \
+        bash gradlew :desktopApp:createReleaseDistributable --no-daemon --console=plain
+}
+
+check() {
+    cd "$_repo"
+    export JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+    NIJIYOME_SECRETS=file bash gradlew :desktopApp:test --no-daemon --console=plain
+}
+
+package() {
+    bash "$_repo/packaging/linux/install-tree.sh" \
+        --image "$_repo/desktopApp/build/compose/binaries/main-release/app/Nijiyome" \
+        --root "$pkgdir" \
+        --prefix /usr
+}

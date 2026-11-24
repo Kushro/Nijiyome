@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "platform": "windows-x64",
+  "packages": [
+    {
+      "id": "ffmpeg",
+      "repository": "BtbN/FFmpeg-Builds",
+      "release": "autobuild-2026-11-09-12-42",
+      "version": "n9.0.2-48-gd4070a14ce",
+      "variant": "win64-lgpl",
+      "license": "LGPL-3.0-or-later",
+      "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-11-09-12-42/ffmpeg-n9.0.2-48-gd4070a14ce-win64-lgpl-9.0.zip",
+      "sha256": "fc9fbc4615986fdfea41904396074fe8fc0ba061cd974f63bd301cc5e1949a35",
+      "archiveRoot": "ffmpeg-n9.0.2-48-gd4070a14ce-win64-lgpl-9.0",
+      "executables": [
+        "bin/ffmpeg.exe",
+        "bin/ffprobe.exe"
+      ],
+      "requiredFiles": [
+        "LICENSE.txt"
+      ],
+      "requiredEncoders": [
+        "libopenh264",
+        "aac"
+      ]
+    }
+  ]
+}
