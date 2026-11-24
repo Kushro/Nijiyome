@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.PhonelinkSetup
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -106,6 +107,7 @@ internal fun LinkServerSection(server: LinkServerController) {
     }
     var revoking by remember { mutableStateOf<LinkServerDevice?>(null) }
     var renaming by remember { mutableStateOf<LinkServerDevice?>(null) }
+    var confirmRegenerate by remember { mutableStateOf(false) }
 
     SectionHint(stringResource(Res.string.settings_linksrv_hint))
     SwitchRow(
@@ -118,6 +120,7 @@ internal fun LinkServerSection(server: LinkServerController) {
         st.starting -> stringResource(Res.string.settings_linksrv_starting)
         st.error == "port_in_use" -> stringResource(Res.string.settings_linksrv_error_port, st.port.toString())
         st.error == "no_address" -> stringResource(Res.string.settings_linksrv_error_address)
+        st.error == "identity" -> stringResource(Res.string.settings_linksrv_error_identity)
         st.error != null -> stringResource(Res.string.settings_linksrv_error_other)
         st.running -> stringResource(Res.string.settings_linksrv_running, st.addresses.ifEmpty { listOf(":${st.port}") }.joinToString(", "))
         else -> stringResource(Res.string.settings_linksrv_stopped)
@@ -127,6 +130,11 @@ internal fun LinkServerSection(server: LinkServerController) {
         val alt = LinkServerPorts.alternative(st.port, LinkServerPorts.LINK_DEFAULT).takeIf { it != st.extPort }
             ?: LinkServerPorts.alternative(st.port + 10, LinkServerPorts.LINK_DEFAULT)
         TextButton(onClick = { server.setPort(alt) }) { Text(stringResource(Res.string.settings_linksrv_try_port, alt.toString())) }
+    }
+    if (st.error == "identity") {
+        FilledTonalButton(onClick = { confirmRegenerate = true }, enabled = !st.starting, modifier = Modifier.padding(top = 4.dp)) {
+            Text(stringResource(Res.string.settings_linksrv_regenerate))
+        }
     }
     st.fingerprint?.let { fp ->
         Text(stringResource(Res.string.settings_linksrv_fingerprint, fp), style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace, modifier = Modifier.padding(top = 4.dp))
@@ -205,6 +213,12 @@ internal fun LinkServerSection(server: LinkServerController) {
         onSave = server::setPort,
     )
     FirewallRow(st, server)
+    if (st.error != "identity") {
+        // 1.1.2: also offered when the identity works (a new fingerprint on purpose); with the identity error it sits by the status
+        SettingRow(label = stringResource(Res.string.settings_linksrv_regenerate), hint = stringResource(Res.string.settings_linksrv_regenerate_hint), stack = true) {
+            OutlinedButton(onClick = { confirmRegenerate = true }, enabled = !st.starting) { Text(stringResource(Res.string.settings_linksrv_regenerate_confirm)) }
+        }
+    }
 
     // integrated extension server
     Text(stringResource(Res.string.settings_linksrv_ext), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
@@ -281,6 +295,20 @@ internal fun LinkServerSection(server: LinkServerController) {
         ExtLogs(st.extLogs)
     }
 
+    if (confirmRegenerate) {
+        AlertDialog(
+            onDismissRequest = { confirmRegenerate = false },
+            title = { Text(stringResource(Res.string.settings_linksrv_regenerate_title)) },
+            text = { Text(stringResource(Res.string.settings_linksrv_regenerate_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    server.regenerateIdentity()
+                    confirmRegenerate = false
+                }) { Text(stringResource(Res.string.settings_linksrv_regenerate_confirm)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmRegenerate = false }) { Text(stringResource(Res.string.settings_linksrv_cancel)) } },
+        )
+    }
     revoking?.let { d ->
         AlertDialog(
             onDismissRequest = { revoking = null },

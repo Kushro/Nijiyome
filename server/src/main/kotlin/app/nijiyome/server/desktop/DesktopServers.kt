@@ -2,6 +2,7 @@
 // The desktop app's servers, after Tatakai Next tk-app/src/live/link.rs (LinkService) and live/ext_server.rs (AGPL-3.0, same author).
 package app.nijiyome.server.desktop
 
+import app.nijiyome.model.AppLog
 import app.nijiyome.model.ExtPasswordResult
 import app.nijiyome.model.ExtensionServerDevice
 import app.nijiyome.model.ExtensionServerLogEntry
@@ -208,17 +209,16 @@ class DesktopServers(
             if (settings.announce) announce(s)
             _state.update { it.copy(error = null) }
         } catch (e: LinkStartException) {
-            _state.update {
-                it.copy(
-                    error = when (e) {
-                        is LinkStartException.AddrInUse -> "port_in_use"
-                        is LinkStartException.NoAddress -> "no_address"
-                        is LinkStartException.Identity -> "identity"
-                        is LinkStartException.PublicBind -> "no_address"
-                    },
-                )
+            val error = when (e) {
+                is LinkStartException.AddrInUse -> "port_in_use"
+                is LinkStartException.NoAddress -> "no_address"
+                is LinkStartException.Identity -> "identity"
+                is LinkStartException.PublicBind -> "no_address"
             }
+            AppLog.w(TAG, "Link did not start ($error): ${startFailure(e)}")
+            _state.update { it.copy(error = error) }
         } catch (e: Exception) {
+            AppLog.w(TAG, "Link did not start (other): ${startFailure(e)}")
             _state.update { it.copy(error = "other") }
         } finally {
             _state.update { it.copy(starting = false) }
@@ -236,6 +236,15 @@ class DesktopServers(
         allowHttpSources = settings.allowHttpSources,
         lsfg = LsfgSetup.Detect(runCatching { lsfgDll() }.getOrNull()?.trim()?.ifBlank { null }),
     )
+
+    override fun regenerateIdentity() = launchLocked {
+        stopLinkLocked()
+        val stamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+        val moved = moveIdentityAside(linkDir, stamp)
+        AppLog.w(TAG, "Link identity regenerated; ${moved.size} files moved to link/$IDENTITY_BACKUP_PREFIX$stamp, phones must pair again")
+        _state.update { it.copy(error = null) }
+        if (settings.linkEnabled) startLinkLocked()
+    }
 
     private fun stopLinkLocked() {
         announcement?.let { runCatching { it.close() } }
@@ -529,6 +538,44 @@ class DesktopServers(
             s.logs(0).first.takeLast(LinkServerState.EXT_LOG_LIMIT).asReversed().map { e ->
                 ExtensionServerLogEntry(e.id, e.atUnix * 1000, e.event, e.route, e.name, e.count, e.durationMs, e.error)
             }
+
+        private const val TAG = "link"
+        const val IDENTITY_BACKUP_PREFIX = "identity-backup-"
+
+        /**
+         * Moves the identity files and `devices.json` of [linkDir] into `identity-backup-<stamp>/` (never deleted); the next start
+         * creates a new identity. Returns the names moved.
+         */
+        internal fun moveIdentityAside(linkDir: File, stamp: String): List<String> {
+            val names = app.nijiyome.server.link.Identity.FILES + "devices.json"
+            val present = names.filter { File(linkDir, it).exists() }
+            if (present.isEmpty()) return emptyList()
+            var backup = File(linkDir, IDENTITY_BACKUP_PREFIX + stamp)
+            var n = 2
+            while (backup.exists()) backup = File(linkDir, "$IDENTITY_BACKUP_PREFIX$stamp-${n++}")
+            backup.mkdirs()
+            return present.filter { name ->
+                val from = File(linkDir, name)
+                runCatching { java.nio.file.Files.move(from.toPath(), File(backup, name).toPath()) }.isSuccess.also { ok ->
+                    if (!ok) AppLog.w(TAG, "could not move $name to the identity backup")
+                }
+            }.also { names.forEach { File(linkDir, "$it.tmp").delete() } }
+        }
+
+        /** What a start failure says in the log: our own messages, the class of anything else (no secrets, no paths). */
+        internal fun startFailure(e: Throwable): String {
+            val chain = generateSequence(e) { it.cause }.take(4).toList()
+            return chain.joinToString(" <- ") { t ->
+                when (t) {
+                    is LinkStartException.AddrInUse -> "port ${t.port} in use"
+                    is LinkStartException.NoAddress -> "no LAN address"
+                    is LinkStartException.PublicBind -> "refused a public address"
+                    is LinkStartException.Identity -> "identity"
+                    is app.nijiyome.server.link.IdentityException -> "identity: ${t.message}"
+                    else -> t.javaClass.simpleName
+                }
+            }
+        }
 
         fun isWindows(): Boolean = System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
 

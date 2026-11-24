@@ -166,6 +166,73 @@ class DesktopServersTest {
         assertEquals("7A3F 91C2 0E5D B8A4", DesktopServers.displayFingerprint("7a3f91c20e5db8a4ffff"))
     }
 
+    private class MemorySecrets : app.nijiyome.model.SecretStore {
+        val map = java.util.concurrent.ConcurrentHashMap<String, String>()
+        override suspend fun get(key: String): String? = map[key]
+        override suspend fun put(key: String, value: String?) {
+            if (value == null) map.remove(key) else map[key] = value
+        }
+        override suspend fun clear() = map.clear()
+    }
+
+    /**
+     * 1.1.2: an identity sealed with a key that is gone from the secret store (the keyring was replaced) is the `identity` error,
+     * logged without secrets or paths, and "Regenerar identidad" moves the old one and devices.json aside and starts a new one.
+     */
+    @Test
+    fun aSealedIdentityWithoutItsKeyIsReportedAndCanBeRegenerated() {
+        val secrets = MemorySecrets()
+        val dir = Files.createTempDirectory("desktop-servers").toFile().also { d -> cleanup += { d.deleteRecursively() } }
+        ServerSettings.save(File(dir, "link/server-settings.json"), ServerSettings(linkEnabled = true, port = 0, announce = false, extPort = 0))
+        fun make() = DesktopServers(
+            dir, { TestHost() }, FakeCatalog(), announcer = MemAnnouncer(), bindIps = listOf("127.0.0.1"),
+            keySealer = app.nijiyome.server.link.SecretStoreSealer(secrets),
+        ).also { cleanup += { it.close() } }
+
+        val first = make().also { it.start() }
+        val oldFingerprint = first.await("running") { it.running }.fingerprint
+        assertNotNull(oldFingerprint)
+        first.close()
+        File(dir, "link/devices.json").let { if (!it.exists()) it.writeText("[]") }
+        val caBefore = File(dir, "link/ca.der").readBytes()
+        secrets.map.clear() // the keyring lost the key that seals ca.key / server.key
+
+        val logs = Collections.synchronizedList(mutableListOf<String>())
+        val previous = app.nijiyome.model.AppLog.sink
+        app.nijiyome.model.AppLog.sink = app.nijiyome.model.LogSink { level, tag, message, t -> logs += "$level $tag $message ${t ?: ""}" }
+        try {
+            val s = make().also { it.start() }
+            val st = s.await("identity error") { it.error != null && !it.starting }
+            assertEquals("identity", st.error)
+            assertFalse(st.running)
+            val line = logs.single { it.startsWith("WARN link Link did not start") }
+            assertTrue("(identity)" in line && "secret store" in line, line)
+            assertFalse(dir.path in line, "no full paths in the log: $line")
+
+            s.regenerateIdentity()
+            val again = s.await("running with a new identity") { it.running }
+            assertNull(again.error)
+            assertNotNull(again.fingerprint)
+            assertTrue(again.fingerprint != oldFingerprint, "a new fingerprint")
+            assertTrue(again.devices.isEmpty())
+            val backup = File(dir, "link").listFiles()!!.single { it.isDirectory && it.name.startsWith(DesktopServers.IDENTITY_BACKUP_PREFIX) }
+            assertTrue(caBefore.contentEquals(File(backup, "ca.der").readBytes()), "the old CA is kept")
+            assertTrue(File(backup, "ca.key").isFile && File(backup, "server.key").isFile && File(backup, "devices.json").isFile)
+            assertTrue(logs.any { it.startsWith("WARN link Link identity regenerated") })
+        } finally {
+            app.nijiyome.model.AppLog.sink = previous
+        }
+    }
+
+    @Test
+    fun startFailuresAreDescribedWithoutTheirMessages() {
+        val e = app.nijiyome.server.link.LinkStartException.Identity(
+            app.nijiyome.server.link.IdentityException("CA key is unreadable", java.io.FileNotFoundException("/home/someone/secret/ca.key")),
+        )
+        val text = DesktopServers.startFailure(e)
+        assertEquals("identity <- identity: CA key is unreadable <- FileNotFoundException", text)
+    }
+
     private fun waitUntil(f: () -> Boolean) {
         repeat(200) {
             if (f()) return

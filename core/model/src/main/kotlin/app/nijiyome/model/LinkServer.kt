@@ -49,6 +49,13 @@ interface LinkServerController {
      */
     fun allowPrivateNetwork()
 
+    /**
+     * 1.1.2: a new Link identity (CA, server certificate, fingerprint) for a PC whose keys cannot be opened any more
+     * ([LinkServerState.error] `identity`). The old identity files and the paired devices are moved to a backup folder, so every
+     * phone has to pair again; the server is started again when it is on.
+     */
+    fun regenerateIdentity() {}
+
     // ---- integrated extension server ----
 
     fun setExtensionServerEnabled(enabled: Boolean)

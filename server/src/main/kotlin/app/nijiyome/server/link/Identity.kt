@@ -155,6 +155,8 @@ class Identity private constructor(
         val SERVER_RENEWAL_MARGIN: Duration = Duration.ofDays(30)
         /** Back-dating tolerates clock skew between PC and phone. */
         private val BACKDATE: Duration = Duration.ofHours(1)
+        /** Every file of the identity in its directory (1.1.2: moved aside together when it is regenerated). */
+        val FILES: List<String> get() = listOf(CA_CERT_FILE, CA_KEY_FILE, SERVER_CERT_FILE, SERVER_KEY_FILE)
         private const val CA_CERT_FILE = "ca.der"
         private const val CA_KEY_FILE = "ca.key"
         private const val SERVER_CERT_FILE = "server.crt.pem"
