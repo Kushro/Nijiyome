@@ -51,6 +51,13 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.1.2" date="2026-11-24">
+      <description>
+        <p>The key that protects saved account tokens is now kept in its own keyring item per data folder, so a second data folder can no longer replace the key of the first. On update, the shared key of earlier versions is copied to the folder whose secrets it opens, so nothing has to be linked again.</p>
+        <p>Saved secrets that cannot be opened are never treated as empty or overwritten: the file is kept aside and Settings › Data asks to link the accounts again.</p>
+        <p>Nijiyome Link explains when its keys cannot be opened, logs why it did not start, and offers Regenerate identity (the old identity is kept in a backup folder; phones must pair again).</p>
+      </description>
+    </release>
     <release version="1.1.1" date="2026-11-24">
       <description>
         <p>Windows: the fallback downloads folder no longer shares the download engine's own folder, so resetting the app cannot delete downloaded episodes.</p>
