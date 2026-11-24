@@ -32,6 +32,8 @@ internal class DesktopTorrentHost(
     private val chosenFolder: () -> String? = { null },
     /** 1.1: the outbound proxy of Settings › Red; libtorrent only uses a SOCKS5 one (an HTTP proxy cannot carry its UDP). */
     private val outbound: StateFlow<app.nijiyome.network.ProxyEndpoint?>? = null,
+    /** 1.1.2: [TorrentHost.verifyStreamedPieces], on where libtorrent's mapped writes may not be visible to plain reads (Windows). */
+    override val verifyStreamedPieces: Boolean = System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true),
 ) : TorrentHost {
     override fun proxy(): TorrentProxy? = torrentProxyOf(outbound?.value)
 

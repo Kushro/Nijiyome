@@ -77,13 +77,26 @@ class TorrentLoopbackIntegrationTest {
     }
 
     @Test
-    fun seedsDownloadsAndStreamsOverLoopback(): Unit = runBlocking {
+    fun seedsDownloadsAndStreamsOverLoopback() = streamOverLoopback(verify = null, extraFirstFile = 0)
+
+    /**
+     * 1.1.2: the Windows path (TorrentHost.verifyStreamedPieces) on any OS: every piece served is first checked on disk, by its
+     * SHA-1 when it lies wholly in the file, or after a confirmed cache flush when it is shared with the neighbour file (a
+     * two-file torrent whose first file does not end on a piece boundary).
+     */
+    @Test
+    fun streamedPiecesAreCheckedOnDiskFirst() = streamOverLoopback(verify = true, extraFirstFile = 100_003)
+
+    /** [verify] null: the host's own default (on only on Windows). */
+    private fun streamOverLoopback(verify: Boolean?, extraFirstFile: Int): Unit = runBlocking {
         assertIs<LibtorrentNative.Result.Loaded>(LibtorrentNative.load(File(dir, "cache")))
-        // The content: one "episode" (random bytes; the stream server does not look inside).
+        // The content: one "episode" (random bytes; the stream server does not look inside), maybe after another file.
         val seedDir = File(dir, "seed").apply { mkdirs() }
         val data = Random(42).nextBytes(3 * 1024 * 1024 + 12_345)
-        val video = File(seedDir, "Clip - 01.mkv").apply { writeBytes(data) }
-        val torrentBytes = TorrentBuilder().path(video).pieceSize(64 * 1024).generate().entry().bencode()
+        val root = if (extraFirstFile > 0) File(seedDir, "Clip").apply { mkdirs() } else seedDir
+        if (extraFirstFile > 0) File(root, "Clip - 00.nfo").writeBytes(Random(7).nextBytes(extraFirstFile))
+        val video = File(root, "Clip - 01.mkv").apply { writeBytes(data) }
+        val torrentBytes = TorrentBuilder().path(if (extraFirstFile > 0) root else video).pieceSize(64 * 1024).generate().entry().bencode()
         val info = TorrentInfo(torrentBytes)
         val hash = info.infoHash().toHex()
         val torrentFile = File(dir, "Clip.torrent").apply { writeBytes(torrentBytes) }
@@ -92,8 +105,13 @@ class TorrentLoopbackIntegrationTest {
         val port = freePort()
         val settings = TorrentSettings(listenPort = port, dht = false, lsd = false, pex = false, upnp = false, wifiOnly = false, pauseOnLowBattery = false)
         val downloads = File(dir, "Downloads/Nijiyome")
+        val logs = java.util.Collections.synchronizedList(mutableListOf<String>())
         val repo = TorrentRepositoryImpl(
-            host = DesktopTorrentHost(File(dir, "state"), downloads, File(dir, "Downloads"), logger = {}),
+            host = if (verify == null) {
+                DesktopTorrentHost(File(dir, "state"), downloads, File(dir, "Downloads"), logger = { logs += it })
+            } else {
+                DesktopTorrentHost(File(dir, "state"), downloads, File(dir, "Downloads"), logger = { logs += it }, verifyStreamedPieces = verify)
+            },
             settingsRepository = FixedSettings(settings),
             debrid = null,
         ).also { engine = it }
@@ -137,7 +155,7 @@ class TorrentLoopbackIntegrationTest {
         }
 
         assertEquals(hash, result.torrentId)
-        assertEquals("Clip - 01.mkv", result.fileName.substringAfterLast('/'))
+        assertEquals("Clip - 01.mkv", result.fileName.substringAfterLast('/').substringAfterLast('\\'))
         val url = result.stream.url
         assertTrue(url.startsWith("http://127.0.0.1:"), url)
 
@@ -152,7 +170,12 @@ class TorrentLoopbackIntegrationTest {
         assertEquals(206, tailCode)
         assertContentEquals(data.copyOfRange(data.size - 100, data.size), tail)
         // The engine wrote it under its download folder.
-        assertTrue(File(downloads, "Clip - 01.mkv").isFile)
+        assertTrue(File(if (extraFirstFile > 0) File(downloads, "Clip") else downloads, "Clip - 01.mkv").isFile)
+        if (verify == true && extraFirstFile > 0) {
+            // the file's first piece is shared with the .nfo: served after a flush libtorrent confirmed
+            assertTrue(logs.any { "cache flush" in it }, "no flush logged: $logs")
+            assertTrue(logs.none { "CACHE_FLUSHED" in it }, "a flush was not confirmed: $logs")
+        }
         dialer.cancelAndJoin()
         repo.playbackEnded(hash, completed = true)
     }

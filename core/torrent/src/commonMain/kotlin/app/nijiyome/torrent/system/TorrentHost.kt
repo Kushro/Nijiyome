@@ -55,6 +55,14 @@ internal interface TorrentHost {
     /** Emits when [proxy] changes (desktop; a cold flow collected by the engine's own scope). Android: never. */
     val proxyChanges: kotlinx.coroutines.flow.Flow<Unit> get() = kotlinx.coroutines.flow.emptyFlow()
 
+    /**
+     * 1.1.2: before the loopback stream serves a piece read from the file, check those bytes against the piece's SHA-1 and, when
+     * they do not match yet, have libtorrent flush its cache and read again. Needed where libtorrent writes through memory-mapped
+     * files that plain reads of the same file may not see yet (Windows: `mmap_disk_io`, and `ReadFile` is not guaranteed coherent
+     * with a mapped view). Android's engine writes with pread / pwrite (`posix_disk_io`): false there, reads stay as they were.
+     */
+    val verifyStreamedPieces: Boolean get() = false
+
     /** Battery low (or battery saver on): the `pauseOnLowBattery` policy. */
     val batteryLow: StateFlow<Boolean>
 

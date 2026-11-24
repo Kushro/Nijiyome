@@ -315,6 +315,8 @@ internal class LibtorrentSession(
             AlertType.STATE_CHANGED,
             AlertType.PIECE_FINISHED,
             AlertType.TORRENT_REMOVED,
+            // only posted after a flushCache() request (desktop stream reads on Windows, see TorrentHost.verifyStreamedPieces)
+            AlertType.CACHE_FLUSHED,
         )
 
         /**

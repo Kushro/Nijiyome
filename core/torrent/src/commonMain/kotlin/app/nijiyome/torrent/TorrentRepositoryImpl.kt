@@ -167,6 +167,9 @@ internal class TorrentRepositoryImpl(
     private val tickLock = Any()
     private val pieceSignal = Object()
 
+    /** 1.1.2: CACHE_FLUSHED alerts seen per torrent (TorrentStream.awaitOnDisk waits for the one it asked for). */
+    private val cacheFlushes = ConcurrentHashMap<String, AtomicInteger>()
+
     private val runtimes = ConcurrentHashMap<String, Runtime>()
     /** Metadata fetched by [preview] (info-hash -> bencoded `.torrent`), used by the add that follows. */
     private val previewCache = ConcurrentHashMap<String, ByteArray>()
@@ -921,6 +924,7 @@ internal class TorrentRepositoryImpl(
             val available = minOf(length.toLong(), file.span.pieceEndInFile(piece) - position, file.size - position).toInt()
             if (available <= 0) return -1
             val f = raf ?: RandomAccessFile(handle.fileOnDisk(file), "r").also { raf = it }
+            if (host.verifyStreamedPieces) awaitOnDisk(piece, f)
             f.seek(position)
             val read = f.read(buffer, offset, available)
             return if (read <= 0) throw IOException("short read") else read
@@ -942,6 +946,59 @@ internal class TorrentRepositoryImpl(
                 synchronized(pieceSignal) { pieceSignal.wait(PIECE_POLL_MS) }
             }
         }
+
+        /**
+         * 1.1.2 ([TorrentHost.verifyStreamedPieces]): libtorrent reports a piece as had once it is written to its memory-mapped
+         * file, and on Windows a plain read of that file may still return the old (sparse, zero) bytes. A piece that lies wholly in
+         * this file is served only once the bytes read from the file match its SHA-1 (libtorrent is asked to flush its cache when
+         * they do not); a piece shared with a neighbour file cannot be hashed from this file alone, so it is served after a flush
+         * libtorrent confirmed. Each piece is checked once per torrent.
+         */
+        private fun awaitOnDisk(piece: Int, f: RandomAccessFile) {
+            if (piece in rt.onDisk) return
+            val ti = torrentInfo ?: return
+            val start = file.span.pieceStartInFile(piece)
+            val length = file.span.pieceEndInFile(piece) - start
+            val expected = runCatching { ti.hashForPiece(piece).toHex() }.getOrNull()?.takeIf { it.any { c -> c != '0' } }
+            val hashable = expected != null && length == runCatching { ti.pieceSize(piece).toLong() }.getOrDefault(-1L)
+            val deadline = System.currentTimeMillis() + READ_TIMEOUT_MS
+            var flushes = 0
+            var nextFlushAt = 0L
+            while (true) {
+                if (closed) throw IOException("closed")
+                if (hashable && sha1Hex(f, start, length.toInt()) == expected) break
+                if (!hashable && flushes > 0) break
+                val now = System.currentTimeMillis()
+                if (now > deadline) throw IOException("piece $piece is not on disk")
+                if (now >= nextFlushAt) {
+                    flushAndWait()
+                    flushes++
+                    nextFlushAt = now + FLUSH_RETRY_MS
+                } else {
+                    synchronized(pieceSignal) { pieceSignal.wait(PIECE_POLL_MS) }
+                }
+            }
+            if (flushes > 0) host.log("piece $piece of $id was served after $flushes cache flush(es)")
+            rt.onDisk += piece
+        }
+
+        /** Asks libtorrent to write its cache for this torrent and waits (up to [FLUSH_WAIT_MS]) for the CACHE_FLUSHED alert. */
+        private fun flushAndWait() {
+            val counter = cacheFlushes.getOrPut(id) { AtomicInteger() }
+            val before = counter.get()
+            try {
+                handle.flushCache()
+            } catch (_: Exception) {
+                throw IOException("torrent removed")
+            }
+            val until = System.currentTimeMillis() + FLUSH_WAIT_MS
+            while (counter.get() == before && System.currentTimeMillis() < until && !closed) {
+                synchronized(pieceSignal) { pieceSignal.wait(PIECE_POLL_MS) }
+            }
+            if (counter.get() == before && !closed) host.log("no CACHE_FLUSHED for $id after ${FLUSH_WAIT_MS / 1000} s")
+        }
+
+        private val torrentInfo: TorrentInfo? by lazy { runCatching { handle.torrentFile() }.getOrNull() }
 
         /** Deadlines on the [window] pieces from the read position; a seek drops the deadlines this stream set before. */
         private fun prioritize(piece: Int) {
@@ -1289,6 +1346,11 @@ internal class TorrentRepositoryImpl(
     private fun onAlert(alert: Alert<*>) {
         when (alert.type()) {
             AlertType.PIECE_FINISHED -> synchronized(pieceSignal) { pieceSignal.notifyAll() }
+            AlertType.CACHE_FLUSHED -> {
+                val handle = (alert as TorrentAlert<*>).handle()
+                if (handle.isValid) cacheFlushes.getOrPut(handle.infoHash().toHex()) { AtomicInteger() }.incrementAndGet()
+                synchronized(pieceSignal) { pieceSignal.notifyAll() }
+            }
             AlertType.METADATA_RECEIVED -> {
                 val handle = (alert as TorrentAlert<*>).handle()
                 // The metadata-only torrent of a desktop preview is not ours, and LibtorrentSession.fetchMagnet removes it as soon as
@@ -1652,6 +1714,8 @@ internal class TorrentRepositoryImpl(
         @Volatile var endJob: Job? = null
         /** Files already queued by the next-episode preload. */
         val preloaded: MutableSet<Int> = ConcurrentHashMap.newKeySet()
+        /** 1.1.2: pieces whose bytes on disk were checked before streaming them ([TorrentHost.verifyStreamedPieces]). */
+        val onDisk: MutableSet<Int> = ConcurrentHashMap.newKeySet()
 
         fun openStreams(): Int = streams.values.sumOf { it.get().coerceAtLeast(0) }
 
@@ -1677,6 +1741,25 @@ internal class TorrentRepositoryImpl(
         private const val METADATA_POLL_MS = 250L
         private const val READ_TIMEOUT_MS = 120_000L
         private const val PIECE_POLL_MS = 200L
+        private const val FLUSH_WAIT_MS = 10_000L
+        private const val FLUSH_RETRY_MS = 2_000L
+
+        /** SHA-1 of [length] bytes of [f] from [start], as lowercase hex (the torrent's v1 piece hash). */
+        internal fun sha1Hex(f: RandomAccessFile, start: Long, length: Int): String {
+            val digest = java.security.MessageDigest.getInstance("SHA-1")
+            val buf = ByteArray(minOf(length, 256 * 1024).coerceAtLeast(1))
+            var position = start
+            var left = length
+            while (left > 0) {
+                f.seek(position)
+                val n = f.read(buf, 0, minOf(buf.size, left))
+                if (n <= 0) break
+                digest.update(buf, 0, n)
+                position += n
+                left -= n
+            }
+            return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+        }
         private const val DEADLINE_BASE_MS = 300
         private const val DEADLINE_STEP_MS = 150
         private const val PERSIST_EVERY_TICKS = 30L
