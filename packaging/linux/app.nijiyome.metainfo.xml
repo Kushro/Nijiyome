@@ -51,6 +51,11 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.1.1" date="2026-11-24">
+      <description>
+        <p>Windows: the fallback downloads folder no longer shares the download engine's own folder, so resetting the app cannot delete downloaded episodes.</p>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-11-24">
       <description>
         <p>Nijiyome 1.1.0 for Linux and Windows, from the same code as the Android app.</p>
