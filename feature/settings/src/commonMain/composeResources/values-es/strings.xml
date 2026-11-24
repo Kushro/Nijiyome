@@ -346,6 +346,12 @@
     <string name="settings_linksrv_error_port">Otro programa usa el puerto %1$s.</string>
     <string name="settings_linksrv_error_address">No hay una dirección de red privada: conectá esta PC a tu Wi-Fi o red local.</string>
     <string name="settings_linksrv_error_other">Nijiyome Link no pudo arrancar.</string>
+    <string name="settings_linksrv_error_identity">Las claves de Nijiyome Link de esta PC no se pueden abrir: la clave que las protege ya no está en el almacén de secretos (por ejemplo, tras cambiar o borrar el llavero). Regenera la identidad para empezar de nuevo.</string>
+    <string name="settings_linksrv_regenerate">Regenerar identidad</string>
+    <string name="settings_linksrv_regenerate_hint">Un certificado y una huella nuevos para esta PC. Los anteriores se guardan en una carpeta de respaldo.</string>
+    <string name="settings_linksrv_regenerate_title">¿Regenerar la identidad de Link?</string>
+    <string name="settings_linksrv_regenerate_body">Esta PC tendrá un certificado y una huella nuevos y se olvidarán todos los teléfonos emparejados: tendrás que volver a emparejarlos. La identidad anterior y la lista de dispositivos se mueven a una carpeta de respaldo dentro de link/.</string>
+    <string name="settings_linksrv_regenerate_confirm">Regenerar</string>
     <string name="settings_linksrv_fingerprint">Huella %1$s</string>
     <string name="settings_linksrv_fingerprint_hint">Tu teléfono muestra la misma huella antes de emparejar.</string>
     <string name="settings_linksrv_name">Nombre que ven los teléfonos</string>
@@ -444,6 +450,9 @@
     <string name="settings_system_discord_hint">Muestra en Discord lo que estás viendo y el tiempo restante. Necesita la app de Discord abierta.</string>
     <string name="settings_system_discord_unconfigured">Esta compilación no tiene id de aplicación de Discord (NIJIYOME_DISCORD_APP_ID).</string>
     <string name="settings_system_secrets_file">Ningún llavero del sistema respondió: los tokens de tus cuentas se sellan con una clave guardada en la carpeta de datos, legible solo por tu usuario.</string>
+    <string name="settings_system_secrets_unreadable">Los secretos guardados no se pudieron abrir; vuelve a vincular tus cuentas.</string>
+    <string name="settings_system_secrets_unreadable_hint">El llavero ya no tiene la clave de esta carpeta de datos (se cambió, se borró o se reemplazó). El archivo anterior quedó guardado como %1$s en la carpeta de datos; no se sobrescribió nada.</string>
+    <string name="settings_system_secrets_unreadable_ok">Entendido</string>
     <string name="settings_accounts_no_client_id_desktop">Esta compilación no tiene id de cliente para este servicio (NIJIYOME_*_CLIENT_ID_DESKTOP), así que no se puede vincular.</string>
     <string name="settings_accounts_transfer_hint_desktop">Exporta en JSON (el mismo formato que Nijiyome en Android) o CSV. Importar lee ese JSON, una exportación XML de MyAnimeList, un volcado de listas de AniList o un archivo de listas de Tatakai Next.</string>
     <!-- Hito 6 (D1): textos de escritorio de Datos, restablecer, almacenamiento e inicio de sesión -->

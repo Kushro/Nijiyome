@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.feature.settings
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -20,6 +33,9 @@ import app.nijiyome.feature.settings.resources.settings_system_discord_unconfigu
 import app.nijiyome.feature.settings.resources.settings_system_link_handler
 import app.nijiyome.feature.settings.resources.settings_system_link_handler_hint
 import app.nijiyome.feature.settings.resources.settings_system_secrets_file
+import app.nijiyome.feature.settings.resources.settings_system_secrets_unreadable
+import app.nijiyome.feature.settings.resources.settings_system_secrets_unreadable_hint
+import app.nijiyome.feature.settings.resources.settings_system_secrets_unreadable_ok
 import app.nijiyome.feature.settings.resources.settings_system_start_minimized
 import app.nijiyome.feature.settings.resources.settings_system_start_minimized_hint
 import app.nijiyome.feature.settings.resources.settings_system_tray
@@ -29,6 +45,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 
@@ -66,6 +85,15 @@ interface DesktopSystemControl {
 
     /** Where the secrets key is kept: "secret-service", "dpapi", "file" (no keyring) or null when not used yet. */
     val secretsBackend: String?
+
+    /**
+     * 1.1.2: opens the secret store if nothing did yet and answers the name of the `secrets.bin.unreadable-<date>` file set aside
+     * because no key opened it (the notice "link your accounts again"), or null. Blocking.
+     */
+    fun secretsUnreadable(): String? = null
+
+    /** Dismisses that notice (the set-aside file stays). */
+    fun dismissSecretsUnreadable() {}
 
     /** Reads the system's autostart entry back into [prefs] (the switch shows the real state, not only the saved one). */
     fun refreshAutostart() {}
@@ -125,6 +153,37 @@ internal actual fun PlatformSystemRows() {
     )
     if (control.linkHandlerSupported) LinkHandlerRow(control)
     if (control.secretsBackend == "file") SectionHint(stringResource(Res.string.settings_system_secrets_file))
+    SecretsUnreadableNotice(control)
+}
+
+/** 1.1.2: "The saved secrets could not be opened; link your accounts again", until dismissed. */
+@Composable
+private fun SecretsUnreadableNotice(control: DesktopSystemControl) {
+    var backup by remember(control) { mutableStateOf<String?>(null) }
+    LaunchedEffect(control) { backup = withContext(Dispatchers.IO) { control.secretsUnreadable() } }
+    val name = backup ?: return
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.ErrorOutline, contentDescription = null)
+                Text(stringResource(Res.string.settings_system_secrets_unreadable), style = MaterialTheme.typography.titleSmall)
+            }
+            Text(stringResource(Res.string.settings_system_secrets_unreadable_hint, name), style = MaterialTheme.typography.bodySmall)
+            TextButton(
+                onClick = {
+                    control.dismissSecretsUnreadable()
+                    backup = null
+                },
+                modifier = Modifier.align(Alignment.End),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer),
+            ) { Text(stringResource(Res.string.settings_system_secrets_unreadable_ok)) }
+        }
+    }
 }
 
 /** v1.1 (F6): "Abrir enlaces magnet con Nijiyome", showing the system's real state (null while it is read). */

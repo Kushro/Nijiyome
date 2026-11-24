@@ -346,6 +346,12 @@
     <string name="settings_linksrv_error_port">Port %1$s is in use by another program.</string>
     <string name="settings_linksrv_error_address">No private network address found: connect this PC to your Wi-Fi or LAN.</string>
     <string name="settings_linksrv_error_other">Nijiyome Link could not start.</string>
+    <string name="settings_linksrv_error_identity">The Nijiyome Link keys of this PC cannot be opened: the key that protects them is no longer in the secret store (for example after the keyring was changed or cleared). Regenerate the identity to start again.</string>
+    <string name="settings_linksrv_regenerate">Regenerate identity</string>
+    <string name="settings_linksrv_regenerate_hint">A new certificate and fingerprint for this PC. The old ones are kept in a backup folder.</string>
+    <string name="settings_linksrv_regenerate_title">Regenerate the Link identity?</string>
+    <string name="settings_linksrv_regenerate_body">This PC gets a new certificate and fingerprint, and every paired phone is forgotten: you will have to pair your phones again. The old identity and device list are moved to a backup folder inside link/.</string>
+    <string name="settings_linksrv_regenerate_confirm">Regenerate</string>
     <string name="settings_linksrv_fingerprint">Fingerprint %1$s</string>
     <string name="settings_linksrv_fingerprint_hint">Your phone shows the same fingerprint before pairing.</string>
     <string name="settings_linksrv_name">Name phones see</string>
@@ -444,6 +450,9 @@
     <string name="settings_system_discord_hint">Shows in Discord what you are watching, with the time left. Needs the Discord app open.</string>
     <string name="settings_system_discord_unconfigured">This build has no Discord application id (NIJIYOME_DISCORD_APP_ID).</string>
     <string name="settings_system_secrets_file">No system keyring answered: your account tokens are sealed with a key kept in the data folder, readable only by your user.</string>
+    <string name="settings_system_secrets_unreadable">The saved secrets could not be opened; link your accounts again.</string>
+    <string name="settings_system_secrets_unreadable_hint">The keyring no longer has the key of this data folder (it was changed, reset or replaced). The old file was kept as %1$s in the data folder; nothing was overwritten.</string>
+    <string name="settings_system_secrets_unreadable_ok">OK</string>
     <string name="settings_accounts_no_client_id_desktop">This build has no client id for this service (NIJIYOME_*_CLIENT_ID_DESKTOP), so it cannot be linked.</string>
     <string name="settings_accounts_transfer_hint_desktop">Export as JSON (the same format as Nijiyome on Android) or CSV. Import reads that JSON, a MyAnimeList XML export, an AniList list dump or a Tatakai Next list file.</string>
     <!-- Hito 6 (D1): desktop Datos, reset, storage and sign-in texts -->

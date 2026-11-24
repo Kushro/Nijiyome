@@ -78,6 +78,16 @@ class DesktopSystem(
 
     override val secretsBackend: String? get() = (secrets as? DesktopSecretStore)?.backend
 
+    override fun secretsUnreadable(): String? {
+        val store = secrets as? DesktopSecretStore ?: return null
+        runCatching { kotlinx.coroutines.runBlocking { store.prepare() } }
+        return store.unreadableBackup
+    }
+
+    override fun dismissSecretsUnreadable() {
+        (secrets as? DesktopSecretStore)?.dismissUnreadable()
+    }
+
     /** The tray could not be shown after all (the native side failed). */
     fun trayFailed() {
         _trayAvailable.value = false
