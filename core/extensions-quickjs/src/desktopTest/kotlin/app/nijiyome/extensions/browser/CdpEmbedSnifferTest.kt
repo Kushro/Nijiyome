@@ -5,12 +5,14 @@ import app.nijiyome.extensions.ExtensionLogStore
 import app.nijiyome.model.Container
 import app.nijiyome.model.EmbedSniffException
 import kotlinx.coroutines.runBlocking
+import mockwebserver3.RecordedRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 /** The desktop [CdpEmbedSniffer] against the local test site, with the installed Chrome / Edge / Chromium (skipped without one). */
 class CdpEmbedSnifferTest {
@@ -30,6 +32,20 @@ class CdpEmbedSnifferTest {
         }
     }
 
+    /**
+     * The request for [path] as the local server recorded it. The sniffer answers on `Network.requestWillBeSent`, before the request
+     * leaves the browser, so it can reach the server a moment after [CdpEmbedSniffer.sniff] returned (seen with Chrome on the CI
+     * runner): waited for, up to [timeoutMs].
+     */
+    private fun LocalPages.awaitRequest(path: String, timeoutMs: Long = 5_000, also: (RecordedRequest) -> Boolean = { true }): RecordedRequest {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (true) {
+            requests.firstOrNull { it.url.encodedPath == path && also(it) }?.let { return it }
+            if (System.currentTimeMillis() > deadline) fail("$path never reached the local server in $timeoutMs ms: ${paths()}")
+            Thread.sleep(20)
+        }
+    }
+
     @Test
     fun capturesTheStreamOfACrossSiteIframeAfterTheNudge() = withSniffer("capturesTheStreamOfACrossSiteIframeAfterTheNudge") { sniffer, pages, logs ->
         val cap = sniffer.sniff(pages.base + "/player", emptyMap(), "ext", 15_000)
@@ -39,7 +55,7 @@ class CdpEmbedSnifferTest {
         assertFalse(cap.headers["User-Agent"].orEmpty().contains("Headless"), cap.headers.toString())
         assertTrue(cap.headers["User-Agent"].orEmpty().isNotEmpty())
         // the XHR really went out from the out-of-process iframe, after the click
-        assertTrue("/hls/master.m3u8" in pages.paths("localhost"))
+        pages.awaitRequest("/hls/master.m3u8") { it.headers["Host"].orEmpty().startsWith("localhost") }
         assertTrue(logs.flow("ext").value.any { it.op == "embed" && it.message.contains("-> HLS") })
     }
 
@@ -52,10 +68,10 @@ class CdpEmbedSnifferTest {
             15_000,
         )
         assertEquals("${pages.other}/hls/master.m3u8?token=222", cap.url)
-        val embed = pages.requests.first { it.url.encodedPath == "/embed" }
+        val embed = pages.awaitRequest("/embed")
         assertEquals("1", embed.headers["X-Ext"])
         assertEquals("NijiyomeTest/1.0", embed.headers["User-Agent"])
-        val media = pages.requests.first { it.url.encodedPath == "/hls/master.m3u8" }
+        val media = pages.awaitRequest("/hls/master.m3u8")
         assertNull(media.headers["X-Ext"], "extra headers are for the embed page itself, as on Android")
         assertEquals("NijiyomeTest/1.0", cap.headers["User-Agent"])
     }
