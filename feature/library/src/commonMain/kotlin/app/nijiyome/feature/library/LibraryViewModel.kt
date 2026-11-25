@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.nijiyome.model.AppError
 import app.nijiyome.model.HistoryEntry
 import app.nijiyome.model.HistoryRepository
+import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.torrent.TorrentRepository
 import app.nijiyome.ui.state.runCatchingApp
@@ -54,6 +55,8 @@ internal fun List<HistoryEntry>.newestFirst(): List<HistoryEntry> = sortedByDesc
 class LibraryViewModel(
     private val history: HistoryRepository,
     torrents: TorrentRepository? = null,
+    /** Sparkles (S7): "Sincronizar ahora" also syncs the AniList / MAL lists when the lists service is bound. */
+    private val lists: ListsRepository? = null,
 ) : ViewModel() {
 
     private val reload = MutableStateFlow(0)
@@ -92,12 +95,19 @@ class LibraryViewModel(
         reload.value += 1
     }
 
-    /** "Sincronizar ahora": push pending rows and pull remote ones (no-op success without an account). */
+    /**
+     * "Sincronizar ahora": push pending history rows and pull remote ones, then push and pull the AniList / MAL lists (no-op success
+     * without an account). The first failure is reported; the screen's snackbar offers to retry.
+     */
     fun syncNow() {
         if (syncing.value) return
         syncing.value = true
         viewModelScope.launch {
-            val result = runCatchingApp { history.syncNow().getOrThrow() }
+            val result = runCatchingApp {
+                history.syncNow().getOrThrow()
+                lists?.syncNow()?.getOrThrow()
+                Unit
+            }
             syncing.value = false
             _events.trySend(
                 result.fold(

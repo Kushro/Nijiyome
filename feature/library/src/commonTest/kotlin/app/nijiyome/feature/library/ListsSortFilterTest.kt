@@ -29,6 +29,35 @@ class ListsSortFilterTest {
     }
 
     @Test
+    fun sortsByStatusInLibraryOrder() {
+        val mixed = listOf(
+            list[0].copy(status = ListStatus.COMPLETED),
+            list[1].copy(status = ListStatus.PLANNING),
+            list[2].copy(status = ListStatus.WATCHING),
+            list[3].copy(status = ListStatus.PLANNING),
+        )
+        // Watching, then Planning (newest change first), then Completed.
+        assertEquals(listOf(3, 2, 4, 1), mixed.sortedFor(ListSort.STATUS).map { it.ref.anilistId })
+    }
+
+    @Test
+    fun everyLibraryTabStillOpensAPlace() {
+        assertEquals(LibraryDestination(LibraryMedium.ANIME, LibraryView.MY_LIST), LibraryTab.CONTINUE.destination())
+        assertEquals(LibraryDestination(LibraryMedium.ANIME, LibraryView.MY_LIST), LibraryTab.LISTS.destination())
+        assertEquals(LibraryDestination(LibraryMedium.ANIME, LibraryView.HISTORY), LibraryTab.HISTORY.destination())
+        assertEquals(LibraryDestination(LibraryMedium.ANIME, LibraryView.FAVORITES), LibraryTab.FAVORITES.destination())
+        assertEquals(LibraryDestination(LibraryMedium.ANIME, LibraryView.MY_LIST), LibraryTab.FAVORITES.destination(listsAvailable = false))
+        assertEquals(LibraryMedium.MANGA, LibraryTab.MANGA.destination().medium)
+        assertEquals(LibraryMedium.NOVEL, LibraryTab.NOVELS.destination().medium)
+        assertEquals(true, LibraryTab.TORRENTS.destination().torrents)
+    }
+
+    @Test
+    fun entryKeyMatchesTheCardKey() {
+        assertEquals("anime:1", list[0].key)
+    }
+
+    @Test
     fun filterIgnoresCaseAndAccents() {
         assertEquals(listOf(1), list.filteredBy("esta").map { it.ref.anilistId })
         assertEquals(listOf(3, 4), list.filteredBy("ETA").map { it.ref.anilistId })
