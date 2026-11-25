@@ -157,7 +157,10 @@ private fun PlayerBody(
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val session = state.session
         when {
-            state.phase == PlayerPhase.EXTERNAL && state.external != null -> ExternalBranch(vm, state, title, onBack, onOpenSettings, onOpenPicker = { pickerOpen = true })
+            // Sparkles S5: the args reach the external mpv card too (its "Enviar a dispositivo")
+            state.phase == PlayerPhase.EXTERNAL && state.external != null -> androidx.compose.runtime.CompositionLocalProvider(LocalDownloadArgs provides args) {
+                ExternalBranch(vm, state, title, onBack, onOpenSettings, onOpenPicker = { pickerOpen = true })
+            }
             session != null && state.phase != PlayerPhase.ERROR -> androidx.compose.runtime.CompositionLocalProvider(LocalDownloadArgs provides args) { PlayerContent(
                 vm = vm,
                 session = session,

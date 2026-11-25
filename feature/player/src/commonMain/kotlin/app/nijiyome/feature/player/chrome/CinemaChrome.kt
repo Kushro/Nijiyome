@@ -57,6 +57,7 @@ private fun BoxScope.PointerCinema(model: PlayerChromeModel, actions: PlayerChro
                 if (compact) {
                     // BUG-060: on a narrow window the secondary actions go to the Más sheet and the chips get a row of their own
                     ChromeTitle(model, Modifier.weight(1f))
+                    SendToDeviceButton(model)
                     PipAndFullscreen(model, actions)
                     MoreButton(actions)
                 } else {

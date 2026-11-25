@@ -86,6 +86,11 @@ import app.nijiyome.feature.player.chrome.panelShowsTabs
 import app.nijiyome.feature.player.chrome.rememberSeekUiState
 import app.nijiyome.feature.player.resources.Res
 import app.nijiyome.feature.player.resources.*
+import app.nijiyome.feature.player.sheets.PlayerSheetActions
+import app.nijiyome.feature.player.sheets.PlayerSheetContent
+import app.nijiyome.feature.player.sheets.PlayerSheetData
+import app.nijiyome.feature.player.sheets.PlayerSheetHost
+import app.nijiyome.feature.player.sheets.PlayerSheetKind
 import app.nijiyome.model.AspectMode
 import app.nijiyome.model.PlayerStructure
 import app.nijiyome.model.SettingsSection
@@ -478,184 +483,50 @@ internal fun PlayerContent(
         }
     }
 
-    // 0.4.1 (subtitle settings): "Estilo" and "Más opciones" preview slider steps live and save when the finger lifts.
-    val styleSheets = setOf(Sheet.SubtitleStyle, Sheet.SubtitleStyleFull)
-    val styleOpen = sheet in styleSheets || (panelTabs && panelTab in styleSheets)
-    LaunchedEffect(styleOpen) { if (!styleOpen) stylePreview = null }
-    val previewStyle: (app.nijiyome.model.SubtitleStyle) -> Unit = { stylePreview = it; vm.previewSubtitleStyle(it) }
-    val saveStyle: (app.nijiyome.model.SubtitleStyle) -> Unit = { stylePreview = it; vm.saveSubtitleStyle(it) }
+    // 0.4.1 (subtitle settings): the style steps of the Pistas sheet preview slider steps live and save when the finger lifts; the
+    // draft goes away once the Pistas sheet (or the panel's Pistas tab) closes.
+    val tracksOpen = sheet?.sheetKind() == PlayerSheetKind.TRACKS || (panelTabs && panelTab.sheetKind() == PlayerSheetKind.TRACKS)
+    LaunchedEffect(tracksOpen) { if (!tracksOpen) stylePreview = null }
 
-    // What each sheet holds, shared by the sheets over the video and the Panel structure's tabs ([close]: the sheet closes, the panel
-    // goes back from a style step to Pistas).
+    // Sparkles S6's grouped sheets: what they read and what they ask the chrome to do (a null action hides its row).
+    val sheetData = PlayerSheetData(
+        vm = vm,
+        session = session,
+        state = state,
+        ps = ps,
+        quality = quality,
+        processing = processing,
+        frameGen = frameGen,
+        statsVisible = statsVisible,
+        aspect = activeAspect,
+    )
+    val sheetActions = PlayerSheetActions(
+        onStatsChange = { statsVisible = it },
+        onPreviewSubtitleStyle = { stylePreview = it; vm.previewSubtitleStyle(it) },
+        onSaveSubtitleStyle = { stylePreview = it; vm.saveSubtitleStyle(it) },
+        onLoadSubtitleFile = if (capabilities.subtitleFile) ({ sheet = null; subtitlePicker() }) else null,
+        onOpenSettings = onOpenSettings,
+        onAspect = { setAspect(it) },
+        onOpenSheet = { openSheet(it.chromeSheet()) },
+        onScreenshot = if (capabilities.screenshot) ({ screenshot() }) else null,
+        onLock = if (capabilities.screenLock) chromeActions.onLock else null,
+        onShortcuts = if (model.hasKeyboard) ({ helpOpen = true }) else null,
+        onOpenPicker = onOpenPicker,
+        onOpenTorrent = onOpenTorrent,
+        onEpisodes = if (model.canBrowseEpisodes) ({ openSheet(Sheet.Episodes) }) else null,
+    )
+
+    // The chrome's own sheet (the episode list) and, in the Panel structure, the tab content ([close]: the sheet closes; nothing in the
+    // fixed panel).
     val sheetBody: @Composable (Sheet, () -> Unit) -> Unit = { kind, close ->
-        val audioRows: @Composable () -> Unit = {
-            if (ps.audioTracks.isEmpty()) {
-                Text(
-                    stringResource(Res.string.rd_s5_no_audio_tracks),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                )
-            } else {
-                val anySelected = ps.audioTracks.any { it.selected }
-                ps.audioTracks.forEach { a ->
-                    val rowLabel = listOfNotNull(a.label, a.detail).joinToString(" · ")
-                    SheetRow(rowLabel, a.selected) { session.selectAudio(a.id); close() }
-                }
-                SheetRow(stringResource(Res.string.rd_s5_audio_off), !anySelected) {
-                    session.selectAudio(app.nijiyome.player.AUDIO_TRACK_OFF)
-                    close()
-                }
-            }
-        }
-        val subtitleRows: @Composable () -> Unit = {
-            SubtitlesSheetContent(
-                vm = vm,
-                session = session,
-                ps = ps,
-                state = state,
-                onLoadFile = if (capabilities.subtitleFile) ({ close(); subtitlePicker() }) else null,
-                onDone = close,
-                onOpenStyle = { openSheet(Sheet.SubtitleStyle) },
-            )
-        }
-        val qualityRows: @Composable () -> Unit = {
-            // Hito 6 (desktop): the qualities of the episode's sources; picking one switches source (SourceQualities.kt)
-            if (capabilities.sourceQualities && ps.videoHeights.isEmpty()) {
-                SourceQualityRows(vm, state, close)
-            } else {
-                SheetRow(stringResource(Res.string.player_quality_auto), ps.selectedHeight == null) { session.selectVideoHeight(null); close() }
-                ps.videoHeights.forEach { h ->
-                    SheetRow(stringResource(Res.string.player_quality_height, h), ps.selectedHeight == h) { session.selectVideoHeight(h); close() }
-                }
-            }
-        }
-        when (kind) {
-            Sheet.Enhancements -> EnhancementPanel(
-                vm = vm,
-                session = session,
-                state = state,
-                quality = quality,
-                processing = processing,
-                frameGen = frameGen,
-                statsVisible = statsVisible,
-                onStatsChange = { statsVisible = it },
-                onOpenFgSettings = { close(); session.pause(); onOpenSettings(SettingsSection.PLAYER) },
-                onClose = close,
-            )
-            Sheet.SubtitleStyle -> SubtitleStyleQuickPanel(
-                style = settings.subtitleStyle,
-                onPreview = previewStyle,
-                onChange = saveStyle,
-                onMore = { openSheet(Sheet.SubtitleStyleFull) },
-                onClose = close,
-                showAss = ps.fullAss,
-            )
-            Sheet.SubtitleStyleFull -> SubtitleStyleEditor(
-                style = settings.subtitleStyle,
-                onChange = saveStyle,
-                onPreview = previewStyle,
-                onClose = close,
-            )
-            Sheet.Quality -> qualityRows()
-            Sheet.Subtitles -> subtitleRows()
-            Sheet.Audio -> audioRows()
-            Sheet.Tracks -> Column {
-                SectionLabel(stringResource(Res.string.player_audio))
-                audioRows()
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                SectionLabel(stringResource(Res.string.player_subtitles))
-                subtitleRows()
-            }
-            Sheet.Picture -> Column {
-                val hasQuality = ps.videoHeights.isNotEmpty() || (capabilities.sourceQualities && sourceQualityChip(state) != null)
-                if (hasQuality) {
-                    SectionLabel(stringResource(Res.string.player_quality))
-                    qualityRows()
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                }
-                SectionLabel(stringResource(Res.string.rd_s5_aspect))
-                // B-OCULTA-03: 16:9 and 4:3 too, which the quick cycle skips
-                Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                    Segmented(
-                        options = AspectMode.entries.map { SegmentedOption(it, stringResource(aspectLabelRes(it))) },
-                        selected = activeAspect,
-                        onSelect = { setAspect(it) },
-                        small = true,
-                    )
-                }
-                ListItem(
-                    headlineContent = { Text(stringResource(Res.string.rd_s5_picture_more)) },
-                    supportingContent = { Text(stringResource(Res.string.rd_s5_picture_more_hint)) },
-                    leadingContent = { Icon(Icons.Rounded.Tune, contentDescription = null) },
-                    colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.clickable { openSheet(Sheet.Enhancements) },
-                )
-            }
-            Sheet.Speed -> Column {
-                SectionLabel(stringResource(Res.string.rd_s5_speed))
-                FlowRow(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    capabilities.speeds.forEach { sp ->
-                        FilterChip(
-                            selected = ps.speed == sp,
-                            onClick = { session.setSpeed(sp) },
-                            label = { Text(stringResource(Res.string.player_speed_value, speedText(sp))) },
-                            leadingIcon = if (ps.speed == sp) ({ Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }) else null,
-                        )
-                    }
-                }
-                Text(
-                    stringResource(if (touch) Res.string.rd_s5_speed_hold_hint else Res.string.rd_s5_speed_keys_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-                HorizontalDivider()
-                SleepTimerRows(vm, state)
-            }
-            Sheet.More -> MoreSheetContent(
-                vm = vm,
-                state = state,
-                actions = {
-                    // PLY-06 / PLA-03: the old "Más opciones" menu
-                    if (capabilities.screenshot) {
-                        MoreActionRow(Icons.Rounded.PhotoCamera, stringResource(Res.string.player_screenshot), { close(); screenshot() }, enabled = ps.started)
-                    }
-                    LocalDownloadArgs.current?.let { a ->
-                        DownloadAction(a, state.current?.candidate?.toStream(), state.current?.candidate?.label.orEmpty(), asMenuItem = true, onDone = close)
-                    }
-                    state.torrent?.takeIf { it.fileIndex != null }?.torrentId?.let { id ->
-                        MoreActionRow(Icons.AutoMirrored.Rounded.OpenInNew, stringResource(Res.string.player_torrent_open_client), { close(); onOpenTorrent(id) })
-                    }
-                    if (state.canPickSource) {
-                        MoreActionRow(Icons.Rounded.Language, stringResource(Res.string.rd_s5_change_source), { close(); onOpenPicker() })
-                    }
-                    if (model.canBrowseEpisodes) {
-                        MoreActionRow(Icons.Rounded.VideoLibrary, stringResource(Res.string.player_episodes), { openSheet(Sheet.Episodes) })
-                    }
-                    MoreActionRow(Icons.Rounded.AutoAwesome, stringResource(Res.string.player_fx_title), { openSheet(Sheet.Enhancements) })
-                    if (capabilities.screenLock) {
-                        MoreActionRow(Icons.Rounded.Lock, stringResource(Res.string.player_lock), { close(); chromeActions.onLock() })
-                    }
-                    if (model.hasKeyboard) {
-                        MoreActionRow(Icons.Rounded.Keyboard, stringResource(Res.string.player_shortcuts), { close(); helpOpen = true })
-                    }
-                    sendToDevice?.let { send ->
-                        send.phones.forEach { p ->
-                            MoreActionRow(Icons.Outlined.SendToMobile, stringResource(Res.string.rd_s5_send_to, p.name), { close(); send.send(p) }, enabled = !send.busy)
-                        }
-                    }
-                },
-                onOpenSettings = { close(); session.pause(); onOpenSettings(SettingsSection.PLAYER) },
-            )
-            Sheet.Episodes -> EpisodesSheetContent(vm, state, current = vm.episodeNumber, onPick = { n -> close(); vm.playEpisode(n) })
+        val grouped = kind.sheetKind()
+        if (grouped != null) {
+            PlayerSheetContent(grouped, sheetData, sheetActions, onClose = close)
+        } else {
+            EpisodesSheetContent(vm, state, current = vm.episodeNumber, onPick = { n -> close(); vm.playEpisode(n) })
         }
     }
-    val panelClose: () -> Unit = { if (panelTab in styleSheets) panelTab = Sheet.Tracks }
+    val panelClose: () -> Unit = {}
 
     Box(
         Modifier
@@ -721,43 +592,46 @@ internal fun PlayerContent(
     }
 
     sheet?.let { kind ->
-        // v1.2.0: side sheet in landscape / wide windows so the anime stays visible while picking audio, subs, speed or episodes;
-        // bottom sheet on narrow portrait phones. Mejoras and the subtitle style steps draw their own header.
-        EnhancementSheet(onDismiss = { sheet = null }) {
-            if (kind != Sheet.Enhancements && kind !in styleSheets) {
+        val grouped = kind.sheetKind()
+        if (grouped != null) {
+            // Sparkles S6: the grouped sheets (sheets/PlayerSheets.kt) in their common container
+            PlayerSheetHost(grouped, sheetData, sheetActions, onDismiss = { sheet = null })
+        } else {
+            // The episode list stays the chrome's own sheet (side sheet on wide windows, bottom sheet on a phone in portrait).
+            EnhancementSheet(onDismiss = { sheet = null }) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(sheetTitle(kind), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    Text(stringResource(Res.string.player_episodes), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                     IconButton(onClick = { sheet = null }) {
                         Icon(Icons.Rounded.Close, stringResource(Res.string.player_fx_close))
                     }
                 }
+                sheetBody(kind) { sheet = null }
+                Spacer(Modifier.height(12.dp))
             }
-            sheetBody(kind) { sheet = null }
-            Spacer(Modifier.height(12.dp))
         }
     }
 }
 
-@Composable
-private fun sheetTitle(kind: Sheet): String = when (kind) {
-    Sheet.Quality -> stringResource(Res.string.player_quality)
-    Sheet.Subtitles -> stringResource(Res.string.player_subtitles)
-    Sheet.Audio -> stringResource(Res.string.player_audio)
-    Sheet.Speed -> stringResource(Res.string.rd_s5_speed_timer)
-    Sheet.More -> stringResource(Res.string.player_more)
-    Sheet.Episodes -> stringResource(Res.string.player_episodes)
-    Sheet.Tracks -> stringResource(Res.string.rd_s5_tracks)
-    Sheet.Picture -> stringResource(Res.string.rd_s5_picture)
-    Sheet.Enhancements -> stringResource(Res.string.player_fx_title)
-    Sheet.SubtitleStyle, Sheet.SubtitleStyleFull -> stringResource(Res.string.player_subtitles)
+/** The grouped sheet of S6 a chrome sheet opens; null = the episode list (the chrome's own). */
+internal fun Sheet.sheetKind(): PlayerSheetKind? = when (this) {
+    Sheet.Tracks, Sheet.Subtitles, Sheet.Audio, Sheet.SubtitleStyle, Sheet.SubtitleStyleFull -> PlayerSheetKind.TRACKS
+    Sheet.Quality, Sheet.Picture -> PlayerSheetKind.PICTURE
+    Sheet.Speed -> PlayerSheetKind.SPEED
+    Sheet.Enhancements -> PlayerSheetKind.ENHANCEMENTS
+    Sheet.More -> PlayerSheetKind.MORE
+    Sheet.Episodes -> null
 }
 
-@Composable
-private fun SectionLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+/** The chrome sheet of an S6 sheet (its "Mejoras" row and the like). */
+internal fun PlayerSheetKind.chromeSheet(): Sheet = when (this) {
+    PlayerSheetKind.TRACKS -> Sheet.Tracks
+    PlayerSheetKind.ENHANCEMENTS -> Sheet.Enhancements
+    PlayerSheetKind.PICTURE -> Sheet.Picture
+    PlayerSheetKind.SPEED -> Sheet.Speed
+    PlayerSheetKind.MORE -> Sheet.More
 }
 
 /**

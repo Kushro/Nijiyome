@@ -72,6 +72,7 @@ internal fun BoxScope.MinimalChrome(model: PlayerChromeModel, actions: PlayerChr
                     PipAndFullscreen(model, actions)
                     MoreButton(actions)
                 } else if (compact) {
+                    SendToDeviceButton(model)
                     PipAndFullscreen(model, actions)
                     MoreButton(actions)
                 } else {

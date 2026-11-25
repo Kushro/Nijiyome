@@ -65,15 +65,13 @@ import java.net.URI
 
 /**
  * The desktop player screen [content] plus Nijiyome Link: while it is open it is the PC's player for paired phones (its state answers
- * `GET /v1/player`, `POST /v1/control` drives it, embedded libmpv and external mpv alike: both are a [PlayerSession]), and, when a
- * phone is paired, a small "Enviar al teléfono" button (shown with the pointer, like the controls) hands the episode over at the
- * current position. Without the Link services in the graph it is just [content].
+ * `GET /v1/player`, `POST /v1/control` drives it, embedded libmpv and external mpv alike: both are a [PlayerSession]). Without the Link
+ * services in the graph it is just [content]. [sendableSource] is what "Enviar a dispositivo" hands over.
  */
 @Composable
 internal fun DesktopLinkRemote(vm: PlayerViewModel, args: PlayerArgs, content: @Composable () -> Unit) {
     val koin = getKoin()
     val hub = remember(koin) { koin.getOrNull<PcPlayerHub>() }
-    val sender = remember(koin) { koin.getOrNull<SendToPhone>() }
     val state by vm.state.collectAsState()
     val session = state.session
     val scope = rememberCoroutineScope()
@@ -94,102 +92,9 @@ internal fun DesktopLinkRemote(vm: PlayerViewModel, args: PlayerArgs, content: @
             s.state.collect { pb -> hub.publish(owner, playerState(args, pb)) }
         }
     }
-
-    if (sender == null) {
-        content()
-        return
-    }
-    val phones by sender.phones.collectAsState()
-    var lastMove by remember { mutableLongStateOf(0L) }
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var menu by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf<SendStatus?>(null) }
-    LaunchedEffect(lastMove, status) {
-        now = System.currentTimeMillis()
-        delay(SHOW_MS)
-        now = System.currentTimeMillis()
-    }
-    Box(
-        Modifier.pointerInput(Unit) {
-            awaitPointerEventScope {
-                while (true) {
-                    awaitPointerEvent(PointerEventPass.Initial)
-                    lastMove = System.currentTimeMillis()
-                }
-            }
-        },
-    ) {
-        content()
-        val source = sendableSource(state, args)
-        val visible = phones.isNotEmpty() && source != null && (menu || status != null || now - lastMove < SHOW_MS)
-        if (visible && source != null) {
-            fun send(phone: PhoneTarget) {
-                menu = false
-                val position = ((session?.currentPositionMs() ?: args.startMs) / 1000).toInt().coerceAtLeast(0)
-                status = SendStatus.Sending
-                scope.launch {
-                    val r = sender.send(
-                        phone.id,
-                        SendToPhoneRequest(
-                            mediaId = HistoryEntry.animeIdOf(args.media.anilistId, args.media.malId),
-                            episode = args.episode,
-                            positionSecs = position,
-                            title = args.title,
-                            source = source,
-                        ),
-                    )
-                    status = r.fold({ SendStatus.Done(phone.name) }, { SendStatus.Failed(it.message ?: "") })
-                    if (r.isSuccess) session?.pause()
-                    delay(SHOW_MS)
-                    status = null
-                }
-            }
-            val label = stringResource(Res.string.player_send_phone)
-            Column(Modifier.align(Alignment.TopEnd).padding(top = 72.dp, end = 16.dp), horizontalAlignment = Alignment.End) {
-                Box {
-                    FilledTonalIconButton(
-                        onClick = { if (phones.size == 1) send(phones.single()) else menu = true },
-                        enabled = status != SendStatus.Sending,
-                        modifier = Modifier.semantics { contentDescription = label },
-                    ) { Icon(Icons.Outlined.SendToMobile, contentDescription = null, modifier = Modifier.size(20.dp)) }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        for (p in phones) DropdownMenuItem(text = { Text(p.name) }, onClick = { send(p) })
-                    }
-                }
-                status?.let { st ->
-                    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.padding(top = 8.dp)) {
-                        Text(
-                            when (st) {
-                                SendStatus.Sending -> stringResource(Res.string.player_send_phone_sending)
-                                is SendStatus.Done -> stringResource(Res.string.player_send_phone_done, st.name)
-                                is SendStatus.Failed -> stringResource(Res.string.player_send_phone_failed, localizedSendError(st.code))
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-private const val SHOW_MS = 3_000L
-
-private sealed interface SendStatus {
-    data object Sending : SendStatus
-    data class Done(val name: String) : SendStatus
-    data class Failed(val code: String) : SendStatus
-}
-
-@Composable
-private fun localizedSendError(code: String): String = when (code) {
-    "internal" -> stringResource(Res.string.player_send_phone_err_internal)
-    "source_unavailable", "library_item_not_found" -> stringResource(Res.string.player_send_phone_err_source)
-    "url_source_denied" -> stringResource(Res.string.player_send_phone_err_denied)
-    "link_off" -> stringResource(Res.string.player_send_phone_err_offline)
-    "device_not_authorized" -> stringResource(Res.string.player_send_phone_err_device)
-    else -> code.ifBlank { stringResource(Res.string.player_send_phone_err_internal) }
+    // Sparkles S5 (PLY-27): "Enviar a dispositivo" left its floating button here for the chrome's top bar (rememberSendToDevice in
+    // PlayerScreenPlatform.desktop.kt) and the external mpv card.
+    content()
 }
 
 /** A phone's command on the open player (main thread). Next / previous only when there is one, like the controls. */
