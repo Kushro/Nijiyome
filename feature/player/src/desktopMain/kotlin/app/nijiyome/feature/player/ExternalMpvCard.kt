@@ -288,7 +288,7 @@ private fun ExternalMpvCard(
                     Text(stringResource(Res.string.player_back), Modifier.padding(start = 8.dp))
                 }
                 val sender = send
-                sender?.phones?.forEach { phone ->
+                if (sender != null) sender.phones.forEach { phone ->
                     TextButton(onClick = { sender.send(phone) }, enabled = !sender.busy) {
                         Icon(Icons.Outlined.SendToMobile, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.rd_s5_send_to, phone.name), Modifier.padding(start = 8.dp))
