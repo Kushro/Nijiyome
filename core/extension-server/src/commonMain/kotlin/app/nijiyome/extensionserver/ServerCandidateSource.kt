@@ -4,7 +4,7 @@ package app.nijiyome.extensionserver
 import app.nijiyome.extensions.ExternalCandidateSource
 import app.nijiyome.model.Media
 import app.nijiyome.model.SourceCandidate
-import app.nijiyome.model.searchTitles
+import app.nijiyome.model.extensionSearchTitles
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -156,7 +156,7 @@ class ServerCandidateSource(
             media.ref.anilistId?.let { put("anilistId", it) }
             media.ref.malId?.let { put("malId", it) }
             put("title", media.title)
-            val titles = media.searchTitles()
+            val titles = media.extensionSearchTitles()
             put("titles", JsonArray(titles.map { JsonPrimitive(it) }))
             put("episode", episode)
         }

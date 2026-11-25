@@ -279,4 +279,8 @@
     </plurals>
     <string name="details_download_queued_debrid">Download added (via %1$s)</string>
     <string name="details_download_debrid_fallback">%1$s could not serve it (%2$s): downloading over P2P</string>
+    <string name="details_copy_title">Copy title</string>
+    <string name="details_title_copied">Title copied</string>
+    <string name="details_open_anilist">Open in AniList</string>
+    <string name="details_open_mal">Open in MyAnimeList</string>
 </resources>

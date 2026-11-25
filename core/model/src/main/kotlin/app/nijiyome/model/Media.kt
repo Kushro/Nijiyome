@@ -52,6 +52,74 @@ data class Media(
 fun Media.searchTitles(): List<String> =
     (listOf(title) + titles.values + altTitles).filter { it.isNotBlank() }.distinct()
 
+private val TITLE_SPLIT_REGEX = Regex("[:：~～]|\\s+-\\s+")
+private val MULTI_SPACE_REGEX = Regex("\\s+")
+
+/**
+ * v1.2.1: search titles sent to torrent/stream extensions (`streamParams`, Stremio, Extension Server).
+ * Keeps the original full titles (so release token matchers keep every show word) AND adds <=58-char
+ * word-boundary prefixes and hyphen-safe variants right inside the first 8 entries when a light-novel
+ * title exceeds 60 chars or contains multiple hyphens (fixing 0-result Nyaa/AnimeTosho/nekoBT searches).
+ */
+fun Media.extensionSearchTitles(): List<String> {
+    val raw = searchTitles()
+    if (raw.isEmpty()) return raw
+    val needsSynthesis = raw.any { it.length > 60 || it.count { ch -> ch == '-' } >= 2 }
+    if (!needsSynthesis) return raw
+
+    fun shorten(s: String, maxLen: Int = 58): String? {
+        val cleaned = s.replace(MULTI_SPACE_REGEX, " ").trim()
+        if (cleaned.length <= maxLen) return cleaned.takeIf { it.length >= 3 }
+        val head = TITLE_SPLIT_REGEX.split(cleaned, limit = 2)[0]
+            .trim()
+            .trimEnd('.', ',', ';', '!', '?', '-', '~', ' ')
+        if (head.length in 4..maxLen) return head
+        val source = if (head.length >= 12) head else cleaned
+        val cut = source.take(maxLen)
+        val lastSpace = cut.lastIndexOf(' ')
+        val trimmed = (if (lastSpace >= 12) cut.substring(0, lastSpace) else cut)
+            .trimEnd('.', ',', ';', '!', '?', '-', '~', ' ')
+        return trimmed.takeIf { it.length >= 4 }
+    }
+
+    fun dehyphen(s: String): String? {
+        if (s.count { it == '-' } < 2) return null
+        val cleaned = s.replace('-', ' ').replace(MULTI_SPACE_REGEX, " ").trim()
+        return shorten(cleaned)
+    }
+
+    val seen = LinkedHashSet<String>()
+    val out = ArrayList<String>()
+    fun add(candidate: String?) {
+        val t = candidate?.replace(MULTI_SPACE_REGEX, " ")?.trim() ?: return
+        if (t.isEmpty()) return
+        if (seen.add(t.lowercase())) out += t
+    }
+
+    val primary = listOfNotNull(
+        title.takeIf { it.isNotBlank() },
+        titles["english"]?.takeIf { it.isNotBlank() },
+        titles["romaji"]?.takeIf { it.isNotBlank() },
+    ).distinct()
+
+    for (t in primary) {
+        add(t)
+        if (t.length > 60) add(shorten(t))
+        dehyphen(t)?.let(::add)
+    }
+    // Put short synonyms (<= 60 chars) before long/native titles so they land inside an extension's first 8 slots.
+    val shortAlts = altTitles.filter { it.isNotBlank() && it.trim().length <= 60 }
+    shortAlts.forEach { t ->
+        add(t)
+        dehyphen(t)?.let(::add)
+    }
+    for (t in raw) {
+        add(t)
+        if (t.length > 60) add(shorten(t))
+    }
+    return out
+}
+
 /** [extra] titles not already in [searchTitles] (case-insensitive) appended to [Media.altTitles]. */
 fun Media.withAltTitles(extra: List<String>): Media {
     val seen = searchTitles().mapTo(HashSet()) { it.trim().lowercase() }

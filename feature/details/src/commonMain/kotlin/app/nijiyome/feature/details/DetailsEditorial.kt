@@ -82,16 +82,18 @@ internal fun EditorialHeader(
                 Modifier.align(Alignment.BottomStart).padding(horizontal = 16.dp).padding(bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.displaySmall.copy(lineBreak = LineBreak.Heading),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.semantics { heading() },
-                )
+                androidx.compose.foundation.text.selection.SelectionContainer {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.displaySmall.copy(lineBreak = LineBreak.Heading),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                }
                 facts?.invoke()
-                if (adultBadge) AdultBadge()
+                TitleQuickActions(title = title, media = media, actions = actions, adultBadge = adultBadge)
             }
         }
     }

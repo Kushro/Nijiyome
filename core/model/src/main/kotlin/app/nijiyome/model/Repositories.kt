@@ -83,7 +83,31 @@ interface MetadataRepository {
      * cooldown (`MetadataRouter.isCoolingDown`). Default = nothing known (Settings shows the providers without status).
      */
     fun providerStatus(): Flow<List<ProviderStatus>> = emptyFlow()
+
+    /**
+     * v1.2.1: live rate-limit / fallback state when the primary metadata provider enters cooldown and the router
+     * switches to the next provider in the ladder. Null when the primary provider is healthy.
+     */
+    val fallbackState: StateFlow<MetadataFallbackState?> get() = NO_FALLBACK
+
+    /** v1.2.1: clears provider cooldowns so the user can retry the primary metadata provider immediately. */
+    fun resetProviderHealth() {}
 }
+
+private val NO_FALLBACK: StateFlow<MetadataFallbackState?> = MutableStateFlow<MetadataFallbackState?>(null).asStateFlow()
+
+/**
+ * v1.2.1: live rate-limit / fallback banner state so screens can announce immediate fallback
+ * (e.g. AniList -> Kitsu) with a countdown and auto-recover to the primary provider once cooldown ends.
+ */
+data class MetadataFallbackState(
+    val limitedProvider: String,
+    val fallbackProvider: String?,
+    val startedAtMs: Long,
+    val cooldownUntilMs: Long,
+    val isRateLimited: Boolean = true,
+    val reason: String? = null,
+)
 
 /** Page size of [MetadataRepository.airingSchedule]. */
 const val PER_PAGE_AIRING: Int = 50

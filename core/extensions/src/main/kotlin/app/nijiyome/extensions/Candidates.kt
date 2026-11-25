@@ -117,8 +117,9 @@ object Candidates {
             else -> Quality.UNKNOWN
         }
         val subtitles = subtitlesOf(s)
-        val subs = stringListOf(s["subs"])?.let { langCodes(it) } ?: langCodes(subtitles.map { it.lang })
-        val dubs = stringListOf(s["dubs"])?.let { langCodes(it) } ?: langCodes(listOfNotNull(s.string("audioLanguage")))
+        val rawSubs = stringListOf(s["subs"])?.let { langCodes(it) } ?: langCodes(subtitles.map { it.lang })
+        val rawDubs = stringListOf(s["dubs"])?.let { langCodes(it) }
+            ?: langCodes(listOfNotNull(s.string("audioLanguage"), s.string("language")?.takeIf { s.bool("isDub") == true }))
         val note = text(s["note"])
         if (ty == "torrent" || (s["isTorrent"] as? JsonPrimitive)?.booleanOrNull == true) {
             fun isMagnet(u: String) = u.asciiLower().startsWith("magnet:")
@@ -130,7 +131,9 @@ object Candidates {
                 ?: text(s["fileName"]) ?: magnet?.let(::magnetName)
             var tags = releaseName?.let(::parseRelease) ?: ReleaseTags()
             if (tags.resolution == Quality.UNKNOWN) tags = tags.copy(resolution = quality)
-            if (s.bool("dualAudio") == true) tags = tags.copy(dualAudio = true)
+            val hints = parseTrackHints(releaseName, note, text(s["server"]), rawSubs, rawDubs, s.bool("dualAudio") == true || tags.dualAudio, s.bool("isDub") == true)
+            if (hints.dualAudio) tags = tags.copy(dualAudio = true)
+            if (hints.multiSub) tags = tags.copy(multiSub = true)
             if (s.bool("isBatch") == true || s.bool("batch") == true) tags = tags.copy(batch = true)
             val explicitBest = listOf("seadexBest", "isBest", "best").firstNotNullOfOrNull { s.bool(it) }
             val fromSeadex = listOf("providerName", "source", "providerKey").any { s.string(it)?.equals("seadex", ignoreCase = true) == true }
@@ -151,8 +154,8 @@ object Candidates {
                 label = label,
                 quality = finalQuality,
                 container = text(s["codec"]) ?: text(s["container"]),
-                subs = subs,
-                dubs = dubs,
+                subs = hints.subs,
+                dubs = hints.dubs,
                 reliability = INITIAL_RELIABILITY,
                 note = note,
                 web = null,
@@ -164,6 +167,7 @@ object Candidates {
         val embed = isEmbedEntry(s, url)
         val container = if (embed) null else (webContainer(s, url) ?: return null)
         val label = text(s["server"]) ?: provider
+        val webHints = parseTrackHints(null, note, label, rawSubs, rawDubs, s.bool("dualAudio") == true, s.bool("isDub") == true)
         return SourceCandidate(
             extId = extId,
             extName = extName,
@@ -171,8 +175,8 @@ object Candidates {
             label = label,
             quality = quality,
             container = container?.let(::containerLabel) ?: EMBED_CONTAINER_LABEL,
-            subs = subs,
-            dubs = dubs,
+            subs = webHints.subs,
+            dubs = webHints.dubs,
             reliability = INITIAL_RELIABILITY,
             note = note,
             web = WebInfo(
@@ -184,7 +188,7 @@ object Candidates {
                 embed = embed,
             ),
             torrent = null,
-            tags = ReleaseTags(),
+            tags = ReleaseTags(dualAudio = webHints.dualAudio, multiSub = webHints.multiSub),
         )
     }
 
@@ -194,6 +198,127 @@ object Candidates {
         val flagged = declared == "embed" || (declared.isEmpty() && s.bool("isEmbed") == true)
         val lower = url.asciiLower()
         return flagged && (lower.startsWith("https://") || lower.startsWith("http://"))
+    }
+
+    internal data class TrackHints(
+        val subs: List<String>,
+        val dubs: List<String>,
+        val dualAudio: Boolean,
+        val multiSub: Boolean,
+    )
+
+    private val DUAL_AUDIO_RE = Regex(
+        "\\b(dual[\\s._-]?audio|multi[\\s._-]?audio|dual[\\s._-]?dub|2[\\s._-]?audio|(?:eng|en)\\s*\\+\\s*(?:jpn|jap|ja)|(?:jpn|jap|ja)\\s*\\+\\s*(?:eng|en)|(?:es|esp|spa|lat)\\s*\\+\\s*(?:jpn|jap|ja)|(?:jpn|jap|ja)\\s*\\+\\s*(?:es|esp|spa|lat))\\b",
+        RegexOption.IGNORE_CASE,
+    )
+    private val MULTI_DUB_RE = Regex("\\b(multi[\\s._-]?dubs?|3\\+?\\s*audios?)\\b", RegexOption.IGNORE_CASE)
+    private val MULTI_SUB_RE = Regex("\\b(multi[\\s._-]?subs?|multi[\\s._-]?subtitles?|multiple[\\s._-]?subs?)\\b", RegexOption.IGNORE_CASE)
+    private val ENG_DUB_RE = Regex("\\b(english[\\s._-]?dub|eng[\\s._-]?dub|dubbed|\\[dub\\]|\\(dub\\)|\\bdub\\b)\\b", RegexOption.IGNORE_CASE)
+    private val LAT_DUB_RE = Regex("\\b(latino|es[\\s._-]?419|es[\\s._-]?lat|lat[\\s._-]?dub|audio[\\s._-]?latino)\\b", RegexOption.IGNORE_CASE)
+    private val CAST_DUB_RE = Regex("\\b(castellano|es[\\s._-]?es|esp[\\s._-]?dub)\\b", RegexOption.IGNORE_CASE)
+    private val FR_DUB_RE = Regex("\\b(vf|vff|vfq|french[\\s._-]?dub|fr[\\s._-]?dub)\\b", RegexOption.IGNORE_CASE)
+    private val DE_DUB_RE = Regex("\\b(ger[\\s._-]?dub|german[\\s._-]?dub|deutsch)\\b", RegexOption.IGNORE_CASE)
+    private val PT_DUB_RE = Regex("\\b(pt[\\s._-]?br[\\s._-]?dub|dublado|portuguese[\\s._-]?dub)\\b", RegexOption.IGNORE_CASE)
+    private val IT_DUB_RE = Regex("\\b(ita[\\s._-]?dub|italian[\\s._-]?dub)\\b", RegexOption.IGNORE_CASE)
+    private val VOSTFR_RE = Regex("\\bvostfr\\b", RegexOption.IGNORE_CASE)
+    private val SUB_ES_RE = Regex("\\b(sub[\\s._-]?(?:esp|es|español|espanol|spa)|subtitulado|es[\\s._-]?sub)\\b", RegexOption.IGNORE_CASE)
+    private val SUB_EN_RE = Regex("\\b(eng[\\s._-]?sub|english[\\s._-]?sub|sub[\\s._-]?eng)\\b", RegexOption.IGNORE_CASE)
+    private val SUB_PT_RE = Regex("\\b(pt[\\s._-]?br[\\s._-]?sub|legendado|sub[\\s._-]?pt)\\b", RegexOption.IGNORE_CASE)
+    private val BRACKET_LANGS_RE = Regex("[\\[\\(]([^\\]\\)]{2,48})[\\]\\)]")
+
+    private val LANG_TOKEN_MAP = mapOf(
+        "en" to "en", "eng" to "en", "english" to "en",
+        "ja" to "ja", "jp" to "ja", "jpn" to "ja", "jap" to "ja", "japanese" to "ja",
+        "es" to "es", "esp" to "es", "spa" to "es", "spanish" to "es",
+        "lat" to "es-419", "latino" to "es-419", "es-419" to "es-419", "es-lat" to "es-419",
+        "castellano" to "es-es", "es-es" to "es-es",
+        "pt" to "pt", "por" to "pt", "pt-br" to "pt-br", "ptbr" to "pt-br", "portuguese" to "pt",
+        "fr" to "fr", "fre" to "fr", "fra" to "fr", "french" to "fr",
+        "de" to "de", "ger" to "de", "deu" to "de", "german" to "de",
+        "it" to "it", "ita" to "it", "italian" to "it",
+        "ru" to "ru", "rus" to "ru", "russian" to "ru",
+        "ar" to "ar", "ara" to "ar", "arabic" to "ar",
+        "zh" to "zh", "chi" to "zh", "zho" to "zh",
+        "ko" to "ko", "kor" to "ko",
+    )
+
+    /**
+     * v1.2.1: extracts audio/dub/subtitle language hints from torrent release titles and webstream notes/labels
+     * without changing [ReleaseTags] contract JSON.
+     */
+    internal fun parseTrackHints(
+        releaseName: String?,
+        note: String?,
+        label: String?,
+        existingSubs: List<String>,
+        existingDubs: List<String>,
+        explicitDualAudio: Boolean,
+        explicitIsDub: Boolean,
+    ): TrackHints {
+        val text = listOfNotNull(releaseName, note, label).joinToString(" ")
+        val subs = LinkedHashSet<String>(existingSubs.map { it.lowercase() })
+        val dubs = LinkedHashSet<String>(existingDubs.map { it.lowercase() })
+
+        val multiDub = MULTI_DUB_RE.containsMatchIn(text)
+        var dualAudio = explicitDualAudio || DUAL_AUDIO_RE.containsMatchIn(text) || multiDub
+        var multiSub = MULTI_SUB_RE.containsMatchIn(text)
+
+        if (LAT_DUB_RE.containsMatchIn(text)) dubs += "es-419"
+        if (CAST_DUB_RE.containsMatchIn(text)) dubs += "es-es"
+        if (FR_DUB_RE.containsMatchIn(text)) dubs += "fr"
+        if (DE_DUB_RE.containsMatchIn(text)) dubs += "de"
+        if (PT_DUB_RE.containsMatchIn(text)) dubs += "pt-br"
+        if (IT_DUB_RE.containsMatchIn(text)) dubs += "it"
+        if (ENG_DUB_RE.containsMatchIn(text) || explicitIsDub) {
+            if (dubs.none { it != "ja" }) dubs += "en"
+        }
+        if (VOSTFR_RE.containsMatchIn(text)) {
+            dubs += "ja"
+            subs += "fr"
+        }
+        if (SUB_ES_RE.containsMatchIn(text)) subs += "es"
+        if (SUB_EN_RE.containsMatchIn(text)) subs += "en"
+        if (SUB_PT_RE.containsMatchIn(text)) subs += "pt-br"
+
+        // Scan bracketed language packs like `[JA+EN+ES]`, `[EN/ES/PT/FR]`, `(Dual Audio, Multi-Subs)`.
+        if (!releaseName.isNullOrBlank()) {
+            for (m in BRACKET_LANGS_RE.findAll(releaseName)) {
+                val inner = m.groupValues[1].trim()
+                val tokens = inner.split(Regex("[+,/|\\s]+")).map { it.lowercase() }.filter { it.isNotEmpty() }
+                if (tokens.size >= 2) {
+                    val mapped = tokens.mapNotNull { LANG_TOKEN_MAP[it] }.distinct()
+                    if (mapped.size == tokens.size && mapped.size >= 2) {
+                        val isAudioPack = inner.contains('+') || "audio" in inner.lowercase() || "dub" in inner.lowercase()
+                        if (isAudioPack) {
+                            dubs += mapped
+                            if (mapped.size >= 2) dualAudio = true
+                        } else {
+                            subs += mapped
+                            if (mapped.size >= 2) multiSub = true
+                        }
+                    }
+                }
+            }
+        }
+
+        if (dualAudio) {
+            dubs += "ja"
+            if (dubs.size < 2) dubs += "en"
+        }
+        if (multiDub && dubs.size < 3) {
+            dubs += "ja"
+            dubs += "en"
+            dubs += "es"
+        }
+        if (subs.size >= 2) multiSub = true
+        if (dubs.size >= 2) dualAudio = true
+
+        return TrackHints(
+            subs = subs.toList(),
+            dubs = dubs.toList(),
+            dualAudio = dualAudio,
+            multiSub = multiSub,
+        )
     }
 
     // ---- field helpers (desktop candidates.rs / host.rs) -----------------------------------------------------------------------

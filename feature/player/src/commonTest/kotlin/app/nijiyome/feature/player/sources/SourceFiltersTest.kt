@@ -128,10 +128,53 @@ class SourceFiltersTest {
         val f = SourceFilters(
             kind = SourceKind.WEB, sources = setOf(ReleaseSource.BD), resolutions = setOf(Quality.P720), codecs = setOf(VideoCodec.HEVC),
             tenBit = true, batch = true, minReliability = RelFloor.HIGH, deviceCompatible = true,
+            debridOnly = true, audioModes = setOf(AudioFilter.DUB, AudioFilter.MULTI_DUB),
+            audioLangs = setOf("ES-419", "JA"), subLangs = setOf("ES", "EN"),
         )
         assertEquals(f, SourceFilters.decode(f.encode()))
         assertEquals(SourceFilters(), SourceFilters.decode(SourceFilters().encode()))
         assertEquals(SourceFilters(kind = SourceKind.WEB), f.cleared())
+    }
+
+    @Test
+    fun debridAudioModesAndLanguageFiltersWork() {
+        val cachedDual = RankedSource(
+            candidate = app.nijiyome.model.SourceCandidate(
+                extId = "toko", extName = "Toko", kind = SourceKind.TORRENT, label = "Trix",
+                quality = Quality.P1080, subs = listOf("es-419", "en", "pt-br"), dubs = listOf("ja", "en"),
+                tags = ReleaseTags(dualAudio = true, multiSub = true),
+                debrid = app.nijiyome.model.torrent.DebridStatus(app.nijiyome.model.torrent.DebridService.TORBOX, cached = true),
+            ),
+            score = 0.9f, extEnabled = true, recommended = true, picked = false,
+        )
+        val multiDub = RankedSource(
+            candidate = app.nijiyome.model.SourceCandidate(
+                extId = "toko", extName = "Toko", kind = SourceKind.TORRENT, label = "Multi",
+                quality = Quality.P1080, subs = listOf("en"), dubs = listOf("ja", "en", "es-419"),
+                tags = ReleaseTags(dualAudio = true),
+            ),
+            score = 0.8f, extEnabled = true, recommended = false, picked = false,
+        )
+        val subOnly = RankedSource(
+            candidate = app.nijiyome.model.SourceCandidate(
+                extId = "toko", extName = "Toko", kind = SourceKind.WEB, label = "SubOnly",
+                quality = Quality.P720, subs = listOf("fr"), dubs = listOf("ja"),
+            ),
+            score = 0.7f, extEnabled = true, recommended = false, picked = false,
+        )
+        val all = listOf(cachedDual, multiDub, subOnly)
+        val opts = FilterOptions.of(all)
+        assertTrue(opts.debridCached)
+        assertTrue(AudioFilter.MULTI_DUB in opts.audioModes)
+        assertTrue(AudioFilter.DUB in opts.audioModes)
+        assertTrue("ES-419" in opts.audioLangs)
+        assertTrue("FR" in opts.subLangs)
+
+        assertEquals(listOf("Trix"), SourceFilters(debridOnly = true).apply(all).map { it.candidate.label })
+        assertEquals(listOf("Multi"), SourceFilters(audioModes = setOf(AudioFilter.MULTI_DUB)).apply(all).map { it.candidate.label })
+        assertEquals(listOf("Multi"), SourceFilters(audioLangs = setOf("ES")).apply(all).map { it.candidate.label })
+        assertEquals(listOf("Trix"), SourceFilters(subLangs = setOf("ES")).apply(all).map { it.candidate.label })
+        assertEquals(listOf("SubOnly"), SourceFilters(subLangs = setOf("FR")).apply(all).map { it.candidate.label })
     }
 
     @Test

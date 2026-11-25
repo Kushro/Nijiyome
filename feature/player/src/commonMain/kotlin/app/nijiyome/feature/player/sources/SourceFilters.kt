@@ -25,6 +25,51 @@ enum class RelFloor(val min: Float) {
 /** Resolutions the picker can filter by, best first. */
 val FILTER_RESOLUTIONS: List<Quality> = listOf(Quality.P2160, Quality.P1440, Quality.P1080, Quality.P720, Quality.P480)
 
+/** Audio/dub mode filters in the source picker (v1.2.1). */
+enum class AudioFilter { SUB, DUB, DUAL_AUDIO, MULTI_DUB }
+
+private fun candidateDubCodes(s: RankedSource): List<String> =
+    s.candidate.dubs.map(::langCode).filter { it.isNotEmpty() }.distinct()
+
+private fun candidateSubCodes(s: RankedSource): List<String> =
+    s.candidate.subs.map(::langCode).filter { it.isNotEmpty() }.distinct()
+
+private fun isMultiDubCandidate(s: RankedSource): Boolean =
+    candidateDubCodes(s).size >= 3 ||
+        s.candidate.note.orEmpty().contains("multi-dub", ignoreCase = true) ||
+        s.candidate.note.orEmpty().contains("multidub", ignoreCase = true)
+
+private fun isDualAudioCandidate(s: RankedSource): Boolean =
+    s.candidate.tags.dualAudio || candidateDubCodes(s).size >= 2
+
+private fun isDubCandidate(s: RankedSource): Boolean {
+    val dubs = candidateDubCodes(s)
+    return isDualAudioCandidate(s) ||
+        dubs.any { !it.equals("JA", ignoreCase = true) && !it.equals("JPN", ignoreCase = true) } ||
+        s.candidate.note.orEmpty().contains("dub", ignoreCase = true)
+}
+
+private fun isSubCandidate(s: RankedSource): Boolean {
+    val subs = candidateSubCodes(s)
+    val dubs = candidateDubCodes(s)
+    return s.candidate.tags.multiSub ||
+        subs.isNotEmpty() ||
+        dubs.any { it.equals("JA", ignoreCase = true) || it.equals("JPN", ignoreCase = true) } ||
+        !isDubCandidate(s)
+}
+
+private fun langMatches(candidateCodes: List<String>, selected: Set<String>): Boolean {
+    if (selected.isEmpty()) return true
+    return selected.any { want ->
+        val w = want.uppercase()
+        candidateCodes.any { have ->
+            have.equals(w, ignoreCase = true) ||
+                have.startsWith("$w-", ignoreCase = true) ||
+                w.startsWith("$have-", ignoreCase = true)
+        }
+    }
+}
+
 /** Empty sets = no constraint (a set is "any of"); a `true` flag = "must have". */
 data class SourceFilters(
     val kind: SourceKind? = null,
@@ -39,21 +84,43 @@ data class SourceFilters(
     val minReliability: RelFloor? = null,
     /** Android only: hide what the device cannot decode (HEVC / AV1 10-bit). */
     val deviceCompatible: Boolean = false,
+    /** v1.2.1: show only sources confirmed cached in a linked debrid service. */
+    val debridOnly: Boolean = false,
+    /** v1.2.1: audio/dub mode filters (Sub, Dub, Dual Audio, Multi-Dub). */
+    val audioModes: Set<AudioFilter> = emptySet(),
+    /** v1.2.1: filter by one or more audio track languages (normalized codes like `JA`, `EN`, `ES-419`). */
+    val audioLangs: Set<String> = emptySet(),
+    /** v1.2.1: filter by one or more subtitle languages (normalized codes like `ES`, `EN`, `PT-BR`). */
+    val subLangs: Set<String> = emptySet(),
 ) {
     fun matches(s: RankedSource, caps: CodecCaps = CodecCaps.ALL): Boolean {
         val c = s.candidate
         val tags = c.tags
+        val dubCodes = candidateDubCodes(s)
+        val subCodes = candidateSubCodes(s)
+        val modeOk = audioModes.isEmpty() || audioModes.any { mode ->
+            when (mode) {
+                AudioFilter.SUB -> isSubCandidate(s)
+                AudioFilter.DUB -> isDubCandidate(s)
+                AudioFilter.DUAL_AUDIO -> isDualAudioCandidate(s)
+                AudioFilter.MULTI_DUB -> isMultiDubCandidate(s)
+            }
+        }
         return (kind == null || c.kind == kind) &&
             (sources.isEmpty() || tags.source in sources) &&
             (resolutions.isEmpty() || c.quality in resolutions) &&
             (codecs.isEmpty() || tags.codec in codecs) &&
             (!tenBit || tags.bitDepth == 10) &&
-            (!dualAudio || tags.dualAudio) &&
-            (!multiSub || tags.multiSub) &&
+            (!dualAudio || isDualAudioCandidate(s)) &&
+            (!multiSub || tags.multiSub || subCodes.size >= 2) &&
             (!batch || tags.batch) &&
             (!seadexBest || tags.seadexBest) &&
             (minReliability == null || c.reliability >= minReliability.min) &&
-            (!deviceCompatible || isDeviceCompatible(tags, caps))
+            (!deviceCompatible || isDeviceCompatible(tags, caps)) &&
+            (!debridOnly || c.debrid?.cached == true) &&
+            modeOk &&
+            langMatches(dubCodes, audioLangs) &&
+            langMatches(subCodes, subLangs)
     }
 
     /** The sources that pass, in the given (ranked) order. */
@@ -61,9 +128,14 @@ data class SourceFilters(
 
     /** Active chip filters (the kind segment is not counted: it is always visible). */
     fun active(): Int =
-        sources.size + resolutions.size + codecs.size +
-            listOf(tenBit, dualAudio, multiSub, batch, seadexBest, deviceCompatible).count { it } +
+        sources.size + resolutions.size + codecs.size + audioModes.size + audioLangs.size + subLangs.size +
+            listOf(tenBit, dualAudio, multiSub, batch, seadexBest, deviceCompatible, debridOnly).count { it } +
             (if (minReliability != null) 1 else 0)
+
+    /** Count of active filters housed in the expandable "Languages & video" section. */
+    fun activeAdvanced(): Int =
+        audioLangs.size + subLangs.size + sources.size + codecs.size +
+            listOf(tenBit, batch, seadexBest, deviceCompatible).count { it }
 
     fun toggleFloor(floor: RelFloor): SourceFilters = copy(minReliability = if (minReliability == floor) null else floor)
 
@@ -82,6 +154,10 @@ data class SourceFilters(
         if (batch) add("batch")
         if (seadexBest) add("seadexBest")
         if (deviceCompatible) add("device")
+        if (debridOnly) add("debrid")
+        audioModes.forEach { add("amode=${it.name}") }
+        audioLangs.forEach { add("alang=$it") }
+        subLangs.forEach { add("slang=$it") }
         minReliability?.let { add("rel=${it.name}") }
     }
 
@@ -101,6 +177,10 @@ data class SourceFilters(
                     "batch" -> f.copy(batch = true)
                     "seadexBest" -> f.copy(seadexBest = true)
                     "device" -> f.copy(deviceCompatible = true)
+                    "debrid" -> f.copy(debridOnly = true)
+                    "amode" -> AudioFilter.entries.firstOrNull { it.name == v }?.let { f.copy(audioModes = f.audioModes + it) } ?: f
+                    "alang" -> if (v.isNotBlank()) f.copy(audioLangs = f.audioLangs + v) else f
+                    "slang" -> if (v.isNotBlank()) f.copy(subLangs = f.subLangs + v) else f
                     "rel" -> f.copy(minReliability = RelFloor.entries.firstOrNull { it.name == v })
                     else -> f
                 }
@@ -124,22 +204,49 @@ data class FilterOptions(
     val seadexBest: Boolean = false,
     /** Some source would be hidden by the device filter. */
     val deviceIncompatible: Boolean = false,
+    /** v1.2.1: at least one source is cached on a linked debrid service. */
+    val debridCached: Boolean = false,
+    /** v1.2.1: audio/dub modes present in the current list. */
+    val audioModes: List<AudioFilter> = emptyList(),
+    /** v1.2.1: distinct normalized audio track language codes present in the list. */
+    val audioLangs: List<String> = emptyList(),
+    /** v1.2.1: distinct normalized subtitle language codes present in the list. */
+    val subLangs: List<String> = emptyList(),
 ) {
-    val anyFeature: Boolean get() = tenBit || dualAudio || multiSub || batch || seadexBest
+    val anyFeature: Boolean get() = tenBit || dualAudio || multiSub || batch || seadexBest || debridCached || audioModes.isNotEmpty()
+    val hasAdvanced: Boolean get() =
+        audioLangs.isNotEmpty() || subLangs.isNotEmpty() || sources.isNotEmpty() || codecs.isNotEmpty() ||
+            tenBit || batch || seadexBest || deviceIncompatible
 
     companion object {
         fun of(list: List<RankedSource>, caps: CodecCaps = CodecCaps.ALL): FilterOptions {
             val tags = list.map { it.candidate.tags }
+            val hasDub = list.any(::isDubCandidate)
+            val hasSub = list.any(::isSubCandidate)
+            val hasDual = list.any(::isDualAudioCandidate)
+            val hasMultiDub = list.any(::isMultiDubCandidate)
+            val modes = buildList {
+                if (hasSub && (hasDub || list.any { candidateSubCodes(it).isNotEmpty() })) add(AudioFilter.SUB)
+                if (hasDub) add(AudioFilter.DUB)
+                if (hasDual) add(AudioFilter.DUAL_AUDIO)
+                if (hasMultiDub) add(AudioFilter.MULTI_DUB)
+            }
+            val audioLangs = list.flatMap(::candidateDubCodes).distinct().sorted()
+            val subLangs = list.flatMap(::candidateSubCodes).distinct().sorted()
             return FilterOptions(
                 sources = ReleaseSource.entries.filter { x -> tags.any { it.source == x } },
                 resolutions = FILTER_RESOLUTIONS.filter { q -> list.any { it.candidate.quality == q } },
                 codecs = VideoCodec.entries.filter { x -> tags.any { it.codec == x } },
                 tenBit = tags.any { it.bitDepth == 10 },
-                dualAudio = tags.any { it.dualAudio },
-                multiSub = tags.any { it.multiSub },
+                dualAudio = hasDual,
+                multiSub = tags.any { it.multiSub } || list.any { candidateSubCodes(it).size >= 2 },
                 batch = tags.any { it.batch },
                 seadexBest = tags.any { it.seadexBest },
                 deviceIncompatible = tags.any { !isDeviceCompatible(it, caps) },
+                debridCached = list.any { it.candidate.debrid?.cached == true },
+                audioModes = modes,
+                audioLangs = audioLangs,
+                subLangs = subLangs,
             )
         }
     }
@@ -161,6 +268,7 @@ sealed interface TagChip {
     data class Code(val text: String) : TagChip
     data class BitDepth(val bits: Int) : TagChip
     data object DualAudio : TagChip
+    data object MultiDub : TagChip
     data object MultiSub : TagChip
     data class Batch(val from: Int?, val to: Int?) : TagChip
 }
@@ -182,7 +290,8 @@ fun tagChips(s: RankedSource): List<TagChip> {
         c.container?.takeIf { it.isNotEmpty() }?.let { out += TagChip.Code(it) }
     }
     tags.bitDepth?.let { out += TagChip.BitDepth(it) }
-    if (tags.dualAudio) out += TagChip.DualAudio
+    if (isMultiDubCandidate(s)) out += TagChip.MultiDub
+    else if (tags.dualAudio) out += TagChip.DualAudio
     if (tags.multiSub) out += TagChip.MultiSub
     if (tags.batch) {
         val e = tags.episodes

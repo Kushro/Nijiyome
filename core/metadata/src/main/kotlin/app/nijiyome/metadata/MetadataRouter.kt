@@ -1,5 +1,6 @@
 package app.nijiyome.metadata
 
+import app.nijiyome.metadata.providers.AniZipProvider
 import app.nijiyome.model.AiringEpisode
 import app.nijiyome.model.AppLog
 import app.nijiyome.model.Episode
@@ -10,6 +11,7 @@ import app.nijiyome.model.Media
 import app.nijiyome.model.MediaArtwork
 import app.nijiyome.model.MediaKind
 import app.nijiyome.model.MediaRef
+import app.nijiyome.model.MetadataFallbackState
 import app.nijiyome.model.ProviderStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +51,10 @@ class MetadataRouter(
     private val _status = MutableStateFlow<Map<String, ProviderStatus>>(emptyMap())
     val status: StateFlow<Map<String, ProviderStatus>> = _status.asStateFlow()
 
+    /** v1.2.1: active rate-limit / fallback state when the primary metadata provider is cooling down. */
+    private val _fallback = MutableStateFlow<MetadataFallbackState?>(null)
+    val fallback: StateFlow<MetadataFallbackState?> = _fallback.asStateFlow()
+
     /** Ids of the enabled providers, best first (the user's `providerPriority`). */
     fun enabledIds(): List<String> = priority()
 
@@ -68,23 +74,54 @@ class MetadataRouter(
 
     fun isCoolingDown(id: String): Boolean = (downUntil[id] ?: 0L) > clock()
 
+    /** Clears expired fallback/cooldown state once [clock] reaches `cooldownUntilMs` so observers can auto-recover. */
+    fun clearExpiredFallback() {
+        val now = clock()
+        val current = _fallback.value
+        if (current != null && now >= current.cooldownUntilMs) {
+            downUntil.remove(current.limitedProvider)
+            _fallback.value = null
+            _status.update { m ->
+                m[current.limitedProvider]?.let { s -> m + (current.limitedProvider to s.copy(cooldownUntilMs = null)) } ?: m
+            }
+        }
+    }
+
     fun resetHealth() {
         downUntil.clear()
+        _fallback.value = null
         _status.update { m -> m.mapValues { it.value.copy(cooldownUntilMs = null) } }
     }
+
+    private fun nextFallbackId(failedId: String): String? =
+        (candidates(Capability.MEDIA, MediaKind.ANIME, includeCoolingDown = false) +
+            candidates(Capability.FEED, MediaKind.ANIME, includeCoolingDown = false))
+            .firstOrNull { it.id != failedId }?.id
 
     private fun recordOk(id: String) {
         downUntil.remove(id)
         val now = clock()
+        if (_fallback.value?.limitedProvider == id) _fallback.value = null
         _status.update { m -> m + (id to (m[id] ?: ProviderStatus(id, true)).copy(lastOkAtMs = now, lastError = null, cooldownUntilMs = null)) }
     }
 
     private fun recordError(id: String, e: Exception) {
         // 0.3.1: a 429 cools the provider down for the wait it asked for (Retry-After / the gateway's budget), not a fixed time.
-        val until = if (e is ProviderException && e.tripsCooldown) clock() + cooldownFor(e) else null
+        val now = clock()
+        val until = if (e is ProviderException && e.tripsCooldown) now + cooldownFor(e) else null
         if (until != null) downUntil[id] = until
         val msg = errorLabel(e)
         _status.update { m -> m + (id to (m[id] ?: ProviderStatus(id, true)).copy(lastError = msg, cooldownUntilMs = until)) }
+        if (until != null && id == primaryId(MediaKind.ANIME)) {
+            _fallback.value = MetadataFallbackState(
+                limitedProvider = id,
+                fallbackProvider = nextFallbackId(id),
+                startedAtMs = now,
+                cooldownUntilMs = until,
+                isRateLimited = e is ProviderException && e.status == 429,
+                reason = msg,
+            )
+        }
     }
 
     private fun cooldownFor(e: ProviderException): Long =
@@ -134,15 +171,33 @@ class MetadataRouter(
      * fail the call. None of them is AniList (it has no EPISODES capability), so this costs no AniList budget.
      */
     suspend fun episodes(ref: MediaRef): Routed<List<Episode>> {
-        val first = route(Capability.EPISODES, MediaKind.ANIME, { it.isEmpty() }) { it.episodes(ref) }
+        // v1.2.1: enrich missing MAL/Kitsu IDs from AniZip's memoized `/mappings` before walking MAL-keyed providers
+        // (e.g. Tenrai/Jikan) so titles missing episode details on AniList/ani.zip still get complete MAL episode metadata.
+        var resolvedRef = ref
+        if (resolvedRef.malId == null || resolvedRef.kitsuId == null) {
+            val zip = candidates(Capability.EPISODES, MediaKind.ANIME, includeCoolingDown = false)
+                .filterIsInstance<AniZipProvider>()
+                .firstOrNull()
+            if (zip != null) {
+                val mapped = runCatching { zip.ids(resolvedRef) }.getOrNull()
+                if (mapped != null) {
+                    resolvedRef = resolvedRef.copy(
+                        anilistId = resolvedRef.anilistId ?: mapped.anilistId,
+                        malId = resolvedRef.malId ?: mapped.malId,
+                        kitsuId = resolvedRef.kitsuId ?: mapped.kitsuId,
+                    )
+                }
+            }
+        }
+        val first = route(Capability.EPISODES, MediaKind.ANIME, { it.isEmpty() }) { it.episodes(resolvedRef) }
         var value = first.value
-        if (value.isEmpty() || !EpisodeMerge.hasGaps(value, clock())) return first
+        if (value.isNotEmpty() && !EpisodeMerge.hasGaps(value, clock())) return first
         val fillers = candidates(Capability.EPISODES, MediaKind.ANIME, includeCoolingDown = false)
             .filter { it.id != first.provider }
             .sortedBy { if (it.id == ANIZIP_ID) 0 else 1 }
-        for (p in fillers.take(MAX_FILLERS)) {
+        for (p in fillers) {
             try {
-                val extra = p.episodes(ref)
+                val extra = p.episodes(resolvedRef)
                 recordOk(p.id)
                 if (extra.isNotEmpty()) value = EpisodeMerge.merge(value, extra, clock())
             } catch (e: CancellationException) {
@@ -150,7 +205,7 @@ class MetadataRouter(
             } catch (e: Exception) {
                 recordError(p.id, e)
             }
-            if (!EpisodeMerge.hasGaps(value, clock())) break
+            if (value.isNotEmpty() && !EpisodeMerge.hasGaps(value, clock())) break
         }
         return if (value === first.value) first else Routed(value, first.provider, first.fallbackFrom)
     }

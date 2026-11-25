@@ -81,6 +81,7 @@ internal object SettingsCodec {
     private val CONTRAST = stringPreferencesKey("contrast")
     private val DYNAMIC = booleanPreferencesKey("dynamic_color")
     private val PRIORITY = stringPreferencesKey("provider_priority")
+    private val PROVIDER_LADDER_V121 = booleanPreferencesKey("provider_ladder_v121")
     private val HEADERS_DEBUG = booleanPreferencesKey("player_headers_debug")
     private val MPV_TLS_VERIFY = booleanPreferencesKey("player_mpv_tls_verify")
 
@@ -151,12 +152,19 @@ internal object SettingsCodec {
         // player_quality_json, so a later explicit Media3 choice sticks.
         val storedEngine = enumOr(p[PLAYER_ENGINE], d.playerEngine)
         val fromMedia3 = p[PLAYER_QUALITY] == null && p[PLAYER_ENGINE] != null && storedEngine == PlayerEngine.MEDIA3
+        val rawPriority = p[PRIORITY]?.split(',')?.filter { it.isNotBlank() }
+        val migratedPriority = when {
+            rawPriority == null -> d.providerPriority
+            p[PROVIDER_LADDER_V121] != true && rawPriority == listOf("anilist", "anizip", "kitsu") ->
+                AppSettings.DEFAULT_PROVIDER_PRIORITY
+            else -> rawPriority
+        }
         return AppSettings(
             paletteId = p[PALETTE] ?: d.paletteId,
             amoled = p[AMOLED] ?: d.amoled,
             contrast = enumOr(p[CONTRAST], d.contrast),
             dynamicColor = p[DYNAMIC] ?: d.dynamicColor,
-            providerPriority = p[PRIORITY]?.split(',')?.filter { it.isNotBlank() } ?: d.providerPriority,
+            providerPriority = migratedPriority,
             playerHeadersDebug = p[HEADERS_DEBUG] ?: d.playerHeadersDebug,
             mpvTlsVerify = p[MPV_TLS_VERIFY] ?: d.mpvTlsVerify,
             themeMode = enumOr(p[THEME_MODE], d.themeMode),
@@ -209,6 +217,7 @@ internal object SettingsCodec {
         p[CONTRAST] = s.contrast.name
         p[DYNAMIC] = s.dynamicColor
         p[PRIORITY] = s.providerPriority.distinct().joinToString(",")
+        p[PROVIDER_LADDER_V121] = true
         p[HEADERS_DEBUG] = s.playerHeadersDebug
         p[MPV_TLS_VERIFY] = s.mpvTlsVerify
         p[THEME_MODE] = s.themeMode.name

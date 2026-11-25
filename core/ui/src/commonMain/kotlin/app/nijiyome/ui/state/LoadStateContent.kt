@@ -20,9 +20,8 @@ fun <T> LoadStateContent(
 ) {
     when (state) {
         LoadState.Loading -> loading()
-        is LoadState.Err -> ErrorState(
-            message = state.cause.userMessage(),
-            retryLabel = stringResource(Res.string.ui_retry),
+        is LoadState.Err -> AppErrorState(
+            cause = state.cause,
             onRetry = onRetry,
             modifier = modifier,
             title = stringResource(Res.string.ui_error_title),

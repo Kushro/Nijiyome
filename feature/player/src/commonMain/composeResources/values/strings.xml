@@ -151,6 +151,16 @@
     <string name="src_filter_rel_mid">Medium or higher</string>
     <string name="src_filter_rel_high">High only</string>
     <string name="src_filter_device">Compatible with this device</string>
+    <string name="src_filter_debrid">Debrid cached</string>
+    <string name="src_filter_sub">Sub</string>
+    <string name="src_filter_dub">Dub</string>
+    <string name="src_filter_multi_dub">Multi-dub</string>
+    <string name="src_filter_more">Languages &amp; video</string>
+    <string name="src_filter_more_count">Languages &amp; video (%1$d)</string>
+    <string name="src_filter_section_audio">Audio tracks</string>
+    <string name="src_filter_section_subs">Subtitle languages</string>
+    <string name="src_filter_section_video">Quality &amp; release</string>
+    <string name="src_tag_multi_dub">Multi-dub</string>
     <string name="src_filter_empty_title">No source matches the filters</string>
     <string name="src_filter_empty_body">Turn some filters off to see more sources.</string>
     <string name="src_tag_seadex_best">SeaDex best</string>

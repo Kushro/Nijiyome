@@ -180,16 +180,35 @@ object ExtraMappers {
         val list = o?.child("data").arr().orEmpty().mapNotNull { el ->
             val e = el.obj() ?: return@mapNotNull null
             val n = e.int("mal_id") ?: e.int("episode") ?: return@mapNotNull null
+            val title = e.str("title")
+                ?: e.str("title_romanji")
+                ?: e.str("title_japanese")
             Episode(
                 number = n,
-                title = e.str("title"),
-                image = e.sub("images")?.sub("jpg")?.str("image_url"),
+                title = title,
+                image = e.sub("images")?.sub("jpg")?.str("image_url")
+                    ?: e.sub("images")?.sub("webp")?.str("image_url"),
                 airDate = e.str("aired"),
                 isFiller = (e.child("filler") as? JsonPrimitive)?.content == "true",
             )
         }
         val hasNext = (o?.sub("pagination")?.child("has_next_page") as? JsonPrimitive)?.content == "true"
         return list to hasNext
+    }
+
+    /** `/anime/{id}/videos/episodes`: maps episode number -> thumbnail URL when MAL provides episode stills. */
+    fun jikanEpisodeThumbnails(doc: JsonElement): Map<Int, String> {
+        val out = linkedMapOf<Int, String>()
+        doc.obj()?.child("data").arr().orEmpty().forEach { el ->
+            val e = el.obj() ?: return@forEach
+            val n = e.int("mal_id")
+                ?: e.str("episode")?.let { Regex("\\d+").find(it)?.value?.toIntOrNull() }
+                ?: return@forEach
+            val img = e.sub("images")?.sub("jpg")?.str("image_url")
+                ?: e.sub("images")?.sub("webp")?.str("image_url")
+            if (!img.isNullOrBlank()) out[n] = img
+        }
+        return out
     }
 
     // ---- AniList airing schedule ----

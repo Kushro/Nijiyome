@@ -17,6 +17,7 @@ import org.koin.compose.getKoin
 import app.nijiyome.model.SourcePrefs
 import app.nijiyome.model.SettingsRepository
 import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -36,8 +37,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.FilterListOff
 import androidx.compose.material.icons.rounded.Language
@@ -153,7 +157,10 @@ private fun PickerContent(
 ) {
     var filters by rememberSaveable(stateSaver = FiltersSaver) { mutableStateOf(SourceFilters()) }
     val caps = remember { deviceCodecCaps() }
-    val options = remember(sources, caps) { FilterOptions.of(sources, caps) }
+    val scopedSources = remember(sources, filters.kind) {
+        if (filters.kind == null) sources else sources.filter { it.candidate.kind == filters.kind }
+    }
+    val options = remember(scopedSources, caps) { FilterOptions.of(scopedSources, caps) }
     // BUG-018 (plan §11.1): the earlier choice is preselected at the top; the rest keeps the ranking order.
     val shown = remember(sources, filters, caps) { filters.apply(sources, caps).sortedByDescending { it.picked } }
 
@@ -296,55 +303,186 @@ private fun PickerLoading() {
 
 @Composable
 private fun FilterBar(filters: SourceFilters, options: FilterOptions, onChange: (SourceFilters) -> Unit) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val advancedCount = filters.activeAdvanced()
     val scroll = rememberScrollState()
-    HorizontalScrollStrip(scrollState = scroll, showChevrons = true) {
-        Row(
-            Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-        options.sources.forEach { src ->
-            FilterChip(selected = src in filters.sources, onClick = { onChange(filters.copy(sources = filters.sources.toggled(src))) }, label = { Text(src.label()) })
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        HorizontalScrollStrip(scrollState = scroll, showChevrons = true) {
+            Row(
+                Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (options.debridCached || filters.debridOnly) {
+                    FilterChip(
+                        selected = filters.debridOnly,
+                        onClick = { onChange(filters.copy(debridOnly = !filters.debridOnly)) },
+                        leadingIcon = { Icon(Icons.Rounded.Bolt, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        label = { Text(stringResource(Res.string.src_filter_debrid)) },
+                    )
+                }
+                val visibleModes = (options.audioModes + filters.audioModes).distinct()
+                visibleModes.forEach { mode ->
+                    val labelRes = when (mode) {
+                        AudioFilter.SUB -> Res.string.src_filter_sub
+                        AudioFilter.DUB -> Res.string.src_filter_dub
+                        AudioFilter.DUAL_AUDIO -> Res.string.src_tag_dual_audio
+                        AudioFilter.MULTI_DUB -> Res.string.src_filter_multi_dub
+                    }
+                    FilterChip(
+                        selected = mode in filters.audioModes || (mode == AudioFilter.DUAL_AUDIO && filters.dualAudio),
+                        onClick = {
+                            if (mode == AudioFilter.DUAL_AUDIO && filters.dualAudio) {
+                                onChange(filters.copy(dualAudio = false, audioModes = filters.audioModes - AudioFilter.DUAL_AUDIO))
+                            } else {
+                                onChange(filters.copy(audioModes = filters.audioModes.toggled(mode)))
+                            }
+                        },
+                        label = { Text(stringResource(labelRes)) },
+                    )
+                }
+                if (options.multiSub || filters.multiSub) {
+                    FilterChip(
+                        selected = filters.multiSub,
+                        onClick = { onChange(filters.copy(multiSub = !filters.multiSub)) },
+                        label = { Text(stringResource(Res.string.src_tag_multi_sub)) },
+                    )
+                }
+                options.resolutions.forEach { q ->
+                    FilterChip(
+                        selected = q in filters.resolutions,
+                        onClick = { onChange(filters.copy(resolutions = filters.resolutions.toggled(q))) },
+                        label = { Text(q.label()) },
+                    )
+                }
+                FilterChip(
+                    selected = filters.minReliability == RelFloor.MID,
+                    onClick = { onChange(filters.toggleFloor(RelFloor.MID)) },
+                    label = { Text(stringResource(Res.string.src_filter_rel_mid)) },
+                )
+                FilterChip(
+                    selected = filters.minReliability == RelFloor.HIGH,
+                    onClick = { onChange(filters.toggleFloor(RelFloor.HIGH)) },
+                    label = { Text(stringResource(Res.string.src_filter_rel_high)) },
+                )
+                if (options.hasAdvanced || advancedCount > 0) {
+                    FilterChip(
+                        selected = expanded || advancedCount > 0,
+                        onClick = { expanded = !expanded },
+                        trailingIcon = {
+                            Icon(
+                                if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        },
+                        label = {
+                            Text(
+                                if (advancedCount > 0) stringResource(Res.string.src_filter_more_count, advancedCount)
+                                else stringResource(Res.string.src_filter_more),
+                            )
+                        },
+                    )
+                }
+            }
         }
-        options.resolutions.forEach { q ->
-            FilterChip(selected = q in filters.resolutions, onClick = { onChange(filters.copy(resolutions = filters.resolutions.toggled(q))) }, label = { Text(q.label()) })
-        }
-        options.codecs.forEach { c ->
-            FilterChip(selected = c in filters.codecs, onClick = { onChange(filters.copy(codecs = filters.codecs.toggled(c))) }, label = { Text(c.label()) })
-        }
-        if (options.tenBit) {
-            FilterChip(selected = filters.tenBit, onClick = { onChange(filters.copy(tenBit = !filters.tenBit)) }, label = { Text(stringResource(Res.string.src_tag_bit_depth, 10)) })
-        }
-        if (options.dualAudio) {
-            FilterChip(selected = filters.dualAudio, onClick = { onChange(filters.copy(dualAudio = !filters.dualAudio)) }, label = { Text(stringResource(Res.string.src_tag_dual_audio)) })
-        }
-        if (options.multiSub) {
-            FilterChip(selected = filters.multiSub, onClick = { onChange(filters.copy(multiSub = !filters.multiSub)) }, label = { Text(stringResource(Res.string.src_tag_multi_sub)) })
-        }
-        if (options.batch) {
-            FilterChip(selected = filters.batch, onClick = { onChange(filters.copy(batch = !filters.batch)) }, label = { Text(stringResource(Res.string.src_tag_batch)) })
-        }
-        if (options.seadexBest) {
-            FilterChip(selected = filters.seadexBest, onClick = { onChange(filters.copy(seadexBest = !filters.seadexBest)) }, label = { Text(stringResource(Res.string.src_tag_seadex_best)) })
-        }
-        FilterChip(
-            selected = filters.minReliability == RelFloor.MID,
-            onClick = { onChange(filters.toggleFloor(RelFloor.MID)) },
-            label = { Text(stringResource(Res.string.src_filter_rel_mid)) },
-        )
-        FilterChip(
-            selected = filters.minReliability == RelFloor.HIGH,
-            onClick = { onChange(filters.toggleFloor(RelFloor.HIGH)) },
-            label = { Text(stringResource(Res.string.src_filter_rel_high)) },
-        )
-        if (options.deviceIncompatible || filters.deviceCompatible) {
-            FilterChip(
-                selected = filters.deviceCompatible,
-                onClick = { onChange(filters.copy(deviceCompatible = !filters.deviceCompatible)) },
-                label = { Text(stringResource(Res.string.src_filter_device)) },
-            )
-        }
+        AnimatedVisibility(visible = expanded) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    val audioLangList = (options.audioLangs + filters.audioLangs).distinct().sorted()
+                    if (audioLangList.isNotEmpty()) {
+                        FilterGroupLabel(stringResource(Res.string.src_filter_section_audio))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            audioLangList.forEach { code ->
+                                FilterChip(
+                                    selected = code in filters.audioLangs,
+                                    onClick = { onChange(filters.copy(audioLangs = filters.audioLangs.toggled(code))) },
+                                    label = { Text(code) },
+                                )
+                            }
+                        }
+                    }
+                    val subLangList = (options.subLangs + filters.subLangs).distinct().sorted()
+                    if (subLangList.isNotEmpty()) {
+                        FilterGroupLabel(stringResource(Res.string.src_filter_section_subs))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            subLangList.forEach { code ->
+                                FilterChip(
+                                    selected = code in filters.subLangs,
+                                    onClick = { onChange(filters.copy(subLangs = filters.subLangs.toggled(code))) },
+                                    label = { Text(code) },
+                                )
+                            }
+                        }
+                    }
+                    val hasVideoChips = options.sources.isNotEmpty() || options.codecs.isNotEmpty() ||
+                        options.tenBit || options.batch || options.seadexBest ||
+                        options.deviceIncompatible || filters.deviceCompatible ||
+                        filters.sources.isNotEmpty() || filters.codecs.isNotEmpty() ||
+                        filters.tenBit || filters.batch || filters.seadexBest
+                    if (hasVideoChips) {
+                        FilterGroupLabel(stringResource(Res.string.src_filter_section_video))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            (options.sources + filters.sources).distinct().forEach { src ->
+                                FilterChip(
+                                    selected = src in filters.sources,
+                                    onClick = { onChange(filters.copy(sources = filters.sources.toggled(src))) },
+                                    label = { Text(src.label()) },
+                                )
+                            }
+                            (options.codecs + filters.codecs).distinct().forEach { c ->
+                                FilterChip(
+                                    selected = c in filters.codecs,
+                                    onClick = { onChange(filters.copy(codecs = filters.codecs.toggled(c))) },
+                                    label = { Text(c.label()) },
+                                )
+                            }
+                            if (options.tenBit || filters.tenBit) {
+                                FilterChip(
+                                    selected = filters.tenBit,
+                                    onClick = { onChange(filters.copy(tenBit = !filters.tenBit)) },
+                                    label = { Text(stringResource(Res.string.src_tag_bit_depth, 10)) },
+                                )
+                            }
+                            if (options.batch || filters.batch) {
+                                FilterChip(
+                                    selected = filters.batch,
+                                    onClick = { onChange(filters.copy(batch = !filters.batch)) },
+                                    label = { Text(stringResource(Res.string.src_tag_batch)) },
+                                )
+                            }
+                            if (options.seadexBest || filters.seadexBest) {
+                                FilterChip(
+                                    selected = filters.seadexBest,
+                                    onClick = { onChange(filters.copy(seadexBest = !filters.seadexBest)) },
+                                    label = { Text(stringResource(Res.string.src_tag_seadex_best)) },
+                                )
+                            }
+                            if (options.deviceIncompatible || filters.deviceCompatible) {
+                                FilterChip(
+                                    selected = filters.deviceCompatible,
+                                    onClick = { onChange(filters.copy(deviceCompatible = !filters.deviceCompatible)) },
+                                    label = { Text(stringResource(Res.string.src_filter_device)) },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun FilterGroupLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /**
@@ -456,6 +594,7 @@ private fun TagChipView(chip: TagChip) {
         is TagChip.Code -> chip.text
         is TagChip.BitDepth -> stringResource(Res.string.src_tag_bit_depth, chip.bits)
         TagChip.DualAudio -> stringResource(Res.string.src_tag_dual_audio)
+        TagChip.MultiDub -> stringResource(Res.string.src_tag_multi_dub)
         TagChip.MultiSub -> stringResource(Res.string.src_tag_multi_sub)
         is TagChip.Batch -> if (chip.from != null && chip.to != null) {
             stringResource(Res.string.src_tag_batch_range, chip.from, chip.to)
