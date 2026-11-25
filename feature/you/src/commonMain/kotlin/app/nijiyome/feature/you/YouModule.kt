@@ -17,6 +17,8 @@ val youFeatureModule: Module = module {
             extensions = get(),
             link = get(),
             torrents = getOrNull(),
+            // Sparkles S7: unread badge of the Notificaciones row (the social layer may be absent).
+            social = getOrNull(),
         )
     }
 }

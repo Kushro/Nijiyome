@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rediseño Sparkles, carril S7: el hub Tú. -->
+<resources>
+    <string name="rd_s7_you_group_read">Leer y descubrir</string>
+    <string name="rd_s7_you_group_activity">Tu actividad</string>
+    <string name="rd_s7_you_group_device">Equipo y fuentes</string>
+    <string name="rd_s7_you_profile_summary">Actividad, estadísticas, favoritos y seguidores</string>
+    <string name="rd_s7_you_transfers">Transferencias</string>
+    <string name="rd_s7_you_sources">Fuentes</string>
+    <string name="rd_s7_you_link">Nijiyome Link</string>
+    <string name="rd_s7_you_unread">%1$d sin leer</string>
+    <string name="rd_s7_you_active">%1$d descargas activas</string>
+    <string name="rd_s7_you_synced">Historial y listas sincronizados</string>
+    <string name="rd_s7_you_sync_failed">No se pudo sincronizar. Revisa la conexión y vuelve a intentarlo.</string>
+</resources>
