@@ -173,7 +173,12 @@ fun Route.topLevel(): Route = topLevel(wide = false)
 fun Route.topLevel(wide: Boolean): Route = when (this) {
     is Route.SearchFor, is Route.ImageSearch -> Route.Search
     Route.ForYou -> Route.Search
-    is Route.LibraryTab -> Route.Library
+    // The torrents left Library for Transferencias (the shell draws Transferencias for this tab).
+    is Route.LibraryTab -> if (tab == app.nijiyome.feature.library.LibraryTab.TORRENTS) {
+        if (wide) Route.Downloads() else Route.You
+    } else {
+        Route.Library
+    }
     Route.Calendar -> Route.Calendar
     is Route.Torrents, is Route.Downloads -> if (wide) Route.Downloads() else Route.You
     Route.Extensions, is Route.Provider, is Route.ProviderItem, Route.ExtensionServers -> if (wide) Route.Extensions else Route.You

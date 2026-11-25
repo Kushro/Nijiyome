@@ -93,6 +93,7 @@ import app.nijiyome.designsystem.theme.rememberReduceMotion
 import app.nijiyome.feature.details.CharacterScreen
 import app.nijiyome.feature.details.DetailsScreen
 import app.nijiyome.feature.downloads.DownloadsScreen
+import app.nijiyome.feature.downloads.TransfersTorrentSlots
 import app.nijiyome.feature.extensions.ExtensionsScreen
 import app.nijiyome.feature.extensions.ProviderItemScreen
 import app.nijiyome.feature.extensions.ProviderScreen
@@ -128,6 +129,8 @@ import app.nijiyome.feature.social.ActivityThreadScreen
 import app.nijiyome.feature.social.NotificationsScreen
 import app.nijiyome.feature.social.ProfileScreen
 import app.nijiyome.feature.torrents.TorrentsScreen
+import app.nijiyome.feature.torrents.TransfersAddTorrentHost
+import app.nijiyome.feature.torrents.TransfersTorrentDetail
 import app.nijiyome.feature.you.YouScreen
 import app.nijiyome.model.AppSettings
 import app.nijiyome.model.DownloadRepository
@@ -194,6 +197,8 @@ fun NijiyomeApp(
      * Non-null turns the window-wide drop layer on. Android passes none (files arrive by Open with / Share).
      */
     openExternal: ((String) -> Boolean)? = null,
+    /** Desktop: opens the Link monitor dialog (Inicio's Link panel "Monitor"). Null on Android: that button opens the Link screen. */
+    openLinkMonitor: (() -> Unit)? = null,
     platformEffects: @Composable (settings: AppSettings, dark: Boolean) -> Unit = { _, _ -> },
 ) {
     val settingsRepo = koinInject<SettingsRepository>()
@@ -234,7 +239,7 @@ fun NijiyomeApp(
                 } else {
                     AppShell(
                         snackbar, chrome, torrentLinks, serverLinks, accountLinks, imageLinks, routeLinks, shortcuts,
-                        hostTopBar = windowTopBar != null, openExternal = openExternal,
+                        hostTopBar = windowTopBar != null, openExternal = openExternal, openLinkMonitor = openLinkMonitor,
                     )
                 }
             }
@@ -265,6 +270,7 @@ private fun AppShell(
     shortcuts: ShellShortcuts? = null,
     hostTopBar: Boolean = false,
     openExternal: ((String) -> Boolean)? = null,
+    openLinkMonitor: (() -> Unit)? = null,
 ) {
     val backStack = rememberNavBackStack(RouteSavedState, Route.Home)
     val current = backStack.lastOrNull() as? Route
@@ -533,7 +539,11 @@ private fun AppShell(
                             Box(Modifier.weight(1f).fillMaxWidth()) {
                                 // Sparkles motion "ficha": the card and the Details header meet inside this host.
                                 CardToDetailsHost {
-                                    AppNavDisplay(backStack, wide, available, snackbar, shortcuts)
+                                    AppNavDisplay(
+                                        backStack, wide, available, snackbar, shortcuts,
+                                        openSettingsAt = { section -> openSettings(section, null) },
+                                        openLinkMonitor = openLinkMonitor,
+                                    )
                                 }
                             }
                             AnimatedVisibility(visible = showOffline, enter = expandVertically(), exit = shrinkVertically()) {
@@ -652,6 +662,8 @@ private fun AppNavDisplay(
     available: RouteAvailability,
     snackbar: AppSnackbarController,
     shortcuts: ShellShortcuts?,
+    openSettingsAt: (SettingsSection) -> Unit,
+    openLinkMonitor: (() -> Unit)?,
 ) {
     // List-detail on expanded windows: Search/Library are list panes, Details the detail pane.
     // BUG-045: two panes only when the window really is wide and tall enough (read from the configuration, which follows rotation at
@@ -720,6 +732,38 @@ private fun AppNavDisplay(
     }
     val tasteAtlas: @Composable (modifier: Modifier) -> Unit = { m -> TasteAtlas(::openMedia, m) }
 
+    /**
+     * Transferencias (S8) with the torrent client inside it (:feature:downloads cannot see :feature:torrents, so the shell hands
+     * the torrent detail and "Añadir torrent" in as slots). [torrentId] opens on that torrent, at [section] when it is a per-torrent one.
+     */
+    val transfers: @Composable (tab: DownloadsTab, torrentId: String?, section: TorrentSection) -> Unit = { tab, torrentId, section ->
+        DownloadsScreen(
+            initialTab = tab,
+            onBack = if (wide && torrentId == null) null else ::back,
+            onPlay = ::play,
+            onOpenDetails = ::openDetails,
+            onOpenTorrent = ::openTorrent,
+            onOpenMangaReader = { args -> push(Route.MangaReader(args)) },
+            onOpenNovelReader = { args -> push(Route.NovelReader(args)) },
+            torrentSlots = TransfersTorrentSlots(
+                detail = { id, onDetailBack, showBack, m ->
+                    TransfersTorrentDetail(
+                        torrentId = id,
+                        onBack = onDetailBack,
+                        onPlay = ::play,
+                        showBack = showBack,
+                        modifier = m,
+                        initialSection = if (id == torrentId && section.perTorrent) section else TorrentSection.OVERVIEW,
+                    )
+                },
+                addTorrent = { open, onOpenChange, onAdded -> TransfersAddTorrentHost(open, onOpenChange, onAdded) },
+            ),
+            initialTorrentId = torrentId,
+            onOpenSettings = { openSettingsAt(SettingsSection.TORRENTS) },
+            onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
+        )
+    }
+
     // Reduce motion: instant screen changes (no slide / fade), predictive back included.
     val reduceMotion = LocalReduceMotion.current
     val instant = remember { ContentTransform(EnterTransition.None, ExitTransition.None) }
@@ -781,6 +825,12 @@ private fun AppNavDisplay(
                         onOpenItem = { ext, source, item -> push(Route.ProviderItem(ext, source, item)) },
                     ),
                     onOpenDetails = ::openDetails,
+                    // Sparkles (S2)
+                    onOpenDownloads = { openDownloads() },
+                    onOpenLink = { push(Route.Linked) },
+                    onOpenLinkMonitor = openLinkMonitor,
+                    onOpenMetadataSettings = { openSettingsAt(SettingsSection.METADATA) },
+                    onOpenExtensions = { push(Route.Extensions) },
                 )
             }
             // parity wave B (16 §3.1, worker r): calendar and "Para ti" sub-screens of Home.
@@ -852,20 +902,27 @@ private fun AppNavDisplay(
                     onOpenMangaDetails = ::openMangaDetails,
                     onOpenNovelDetails = ::openNovelDetails,
                     onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
+                    onOpenTransfers = { openDownloads() },
                 )
             }
             entry<Route.LibraryTab>(metadata = ListDetailSceneStrategy.listPane()) { key ->
-                LibraryScreen(
-                    onOpenDetails = ::openDetails,
-                    onPlay = ::play,
-                    onExplore = { backStack.navigateTop(Route.Home) },
-                    initialTab = key.tab,
-                    onOpenTorrent = ::openTorrent,
-                    onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
-                    onOpenMangaDetails = ::openMangaDetails,
-                    onOpenNovelDetails = ::openNovelDetails,
-                    onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
-                )
+                // Sparkles: the torrents left Library for Transferencias.
+                if (key.tab == LibraryTab.TORRENTS && available.offers(Route.Downloads())) {
+                    transfers(DownloadsTab.ACTIVE, null, TorrentSection.LIBRARY)
+                } else {
+                    LibraryScreen(
+                        onOpenDetails = ::openDetails,
+                        onPlay = ::play,
+                        onExplore = { backStack.navigateTop(Route.Home) },
+                        initialTab = key.tab,
+                        onOpenTorrent = ::openTorrent,
+                        onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
+                        onOpenMangaDetails = ::openMangaDetails,
+                        onOpenNovelDetails = ::openNovelDetails,
+                        onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
+                        onOpenTransfers = { openDownloads() },
+                    )
+                }
             }
             entry<Route.Details>(metadata = ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata) { key ->
                 if (key.kind == MediaKind.MANGA) {
@@ -994,17 +1051,7 @@ private fun AppNavDisplay(
                 )
             }
             // parity wave B (16 §3.2, worker r): Downloads page (rail destination on wide windows: no back arrow).
-            entry<Route.Downloads> { key ->
-                DownloadsScreen(
-                    initialTab = key.tab,
-                    onBack = if (wide) null else ::back,
-                    onPlay = ::play,
-                    onOpenDetails = ::openDetails,
-                    onOpenTorrent = ::openTorrent,
-                    onOpenMangaReader = { args -> push(Route.MangaReader(args)) },
-                    onOpenNovelReader = { args -> push(Route.NovelReader(args)) },
-                )
-            }
+            entry<Route.Downloads> { key -> transfers(key.tab, null, TorrentSection.LIBRARY) }
             // parity wave B (16 §3.5 / §3.6, worker s): manga and novels.
             entry<Route.Manga>(metadata = ListDetailSceneStrategy.listPane()) { key ->
                 MangaHomeScreen(
@@ -1082,13 +1129,22 @@ private fun AppNavDisplay(
             }
             entry<Route.ExtensionServers> { ExtensionServersScreen(onBack = ::back) }
             entry<Route.Torrents> { key ->
-                TorrentsScreen(
-                    section = key.section,
-                    torrentId = key.torrentId,
-                    onNavigate = { section, torrentId -> replaceTop(Route.Torrents(section, torrentId)) },
-                    onBack = ::back,
-                    onPlay = ::play,
-                )
+                // Sparkles: the torrent client is a section of Transferencias. A torrent opens its detail there; the client's lists
+                // go to Transferencias; Debrid and the torrent settings keep their own pages until S9 / S10 take them.
+                val inTransfers = key.section != TorrentSection.DEBRID && key.section != TorrentSection.SETTINGS &&
+                    (key.torrentId != null || !key.section.perTorrent) && available.offers(Route.Downloads())
+                if (inTransfers) {
+                    val tab = if (key.torrentId == null && key.section == TorrentSection.HISTORY) DownloadsTab.HISTORY else DownloadsTab.ACTIVE
+                    transfers(tab, key.torrentId, key.section)
+                } else {
+                    TorrentsScreen(
+                        section = key.section,
+                        torrentId = key.torrentId,
+                        onNavigate = { section, torrentId -> replaceTop(Route.Torrents(section, torrentId)) },
+                        onBack = ::back,
+                        onPlay = ::play,
+                    )
+                }
             }
         },
     )

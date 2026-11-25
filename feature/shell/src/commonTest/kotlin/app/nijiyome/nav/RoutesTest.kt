@@ -63,6 +63,8 @@ class RoutesTest {
     fun `compact folds transfers and settings-like routes into you`() {
         assertEquals(Route.You, Route.Torrents(TorrentSection.PEERS, "abc").topLevel(wide = false))
         assertEquals(Route.Library, Route.LibraryTab(LibraryTab.HISTORY).topLevel(wide = false))
+        assertEquals(Route.You, Route.LibraryTab(LibraryTab.TORRENTS).topLevel(wide = false))
+        assertEquals(Route.Downloads(), Route.LibraryTab(LibraryTab.TORRENTS).topLevel(wide = true))
         listOf(Route.Extensions, Route.Link, Route.Linked, Route.Settings, Route.SettingsSection(SettingsSection.PLAYER), Route.You)
             .forEach { assertEquals(Route.You, it.topLevel(wide = false), "$it") }
         assertEquals(Route.Search, Route.SearchFor(feed = FeedKind.entries.first()).topLevel(wide = false))

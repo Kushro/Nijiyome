@@ -371,6 +371,7 @@ fun main(args: Array<String>) {
                                     shortcuts = shortcuts,
                                     // Sparkles file drop: a magnet or a .torrent dropped on the window goes where the command line sends it.
                                     openExternal = { raw -> LaunchArgs.targetOf(raw)?.let { router.open(it); true } ?: false },
+                                    openLinkMonitor = { linkMonitorOpen = true },
                                     windowTopBar = if (nativeBar) null else ({
                                         DesktopTitleBar(
                                             window = window,
