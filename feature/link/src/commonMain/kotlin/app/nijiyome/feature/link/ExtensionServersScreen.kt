@@ -133,27 +133,55 @@ fun ExtensionServersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(
-                    stringResource(platformHint(Res.string.extserver_intro)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                state.error?.let { ErrorBanner(errorText(it), onDismiss = viewModel::clearError) }
-                ConnectPanel(
-                    connecting = state.connecting,
-                    isPlausible = viewModel::isPlausibleLink,
-                    onLink = viewModel::connectWithText,
-                    onManual = viewModel::connectManual,
-                )
-                ServersPanel(
-                    state = state,
-                    onEnabled = viewModel::setEnabled,
-                    onRemove = viewModel::remove,
-                )
-                InfoPanel()
+                ExtensionServersBody(viewModel, state)
             }
         }
     }
+}
+
+/**
+ * Sparkles S9: the extension-server content without its own scaffold or scroll, so Fuentes › Servidores en tu PC can embed it (the shell
+ * passes `serversContent = { ExtensionServersContent() }` to `ExtensionsScreen`). Connect (QR, pasted link, address and viewer password),
+ * the linked servers (enable, remove with confirmation, state), the folded "Más información" and the confirmation of an incoming
+ * `nijiyome://` link.
+ */
+@Composable
+fun ExtensionServersContent(modifier: Modifier = Modifier) {
+    val viewModel: ExtensionServersViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbar = LocalAppSnackbar.current
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ExtensionServersEvent.Connected -> snackbar.show(getString(Res.string.extserver_connected, event.name))
+            }
+        }
+    }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ExtensionServersBody(viewModel, state)
+    }
+}
+
+@Composable
+private fun ExtensionServersBody(viewModel: ExtensionServersViewModel, state: ExtensionServersUiState) {
+    Text(
+        stringResource(platformHint(Res.string.extserver_intro)),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    state.error?.let { ErrorBanner(errorText(it), onDismiss = viewModel::clearError) }
+    ConnectPanel(
+        connecting = state.connecting,
+        isPlausible = viewModel::isPlausibleLink,
+        onLink = viewModel::connectWithText,
+        onManual = viewModel::connectManual,
+    )
+    ServersPanel(
+        state = state,
+        onEnabled = viewModel::setEnabled,
+        onRemove = viewModel::remove,
+    )
+    InfoPanel()
     state.pendingLink?.let { link ->
         AlertDialog(
             onDismissRequest = viewModel::dismissPending,
@@ -442,7 +470,24 @@ private fun StatusPill(enabled: Boolean, status: ServerStatus) {
 
 @Composable
 private fun InfoPanel() {
-    Panel(icon = Icons.Outlined.Info, title = stringResource(platformHint(Res.string.extserver_benefits_title))) {
+    // Sparkles S9 (LNK-16): the long fixed text is folded under "Más información".
+    var open by rememberSaveable { mutableStateOf(false) }
+    Panel(
+        icon = Icons.Outlined.Info,
+        title = stringResource(platformHint(Res.string.extserver_benefits_title)),
+        trailing = {
+            TextButton(onClick = { open = !open }) {
+                Text(stringResource(if (open) Res.string.rd_s9_less_info else Res.string.rd_s9_more_info))
+            }
+        },
+    ) {
+        if (open) InfoBody()
+    }
+}
+
+@Composable
+private fun InfoBody() {
+    run {
         InfoList(
             stringResource(Res.string.extserver_pros_title),
             listOf(
@@ -521,32 +566,3 @@ private fun ErrorBanner(text: String, onDismiss: () -> Unit) {
         }
     }
 }
-
-/** Prototype `.panel` with a titled header (same look as the Linked device screen). */
-@Composable
-private fun Panel(icon: ImageVector, title: String, content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.semantics { heading() },
-                )
-            }
-            content()
-        }
-    }
-}
-
-@Composable
-private fun Hint(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-

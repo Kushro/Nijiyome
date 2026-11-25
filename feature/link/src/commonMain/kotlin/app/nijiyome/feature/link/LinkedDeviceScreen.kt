@@ -8,41 +8,54 @@ import app.nijiyome.feature.link.resources.Res
 import app.nijiyome.feature.link.resources.*
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.LinkOff
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.QrCode
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -56,6 +69,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -76,7 +90,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -86,44 +100,56 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.nijiyome.designsystem.components.EmptyState
-import app.nijiyome.designsystem.components.ErrorState
 import app.nijiyome.designsystem.components.LinkStatusAvatar
 import app.nijiyome.designsystem.components.LocalAppSnackbar
 import app.nijiyome.designsystem.components.Pill
 import app.nijiyome.designsystem.components.PillTone
 import app.nijiyome.designsystem.components.SkeletonBox
 import app.nijiyome.designsystem.components.rememberAfterDelay
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.EmptyArt
+import app.nijiyome.designsystem.direction.EmptyKind
+import app.nijiyome.designsystem.direction.LocalSignalColors
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.motionFadeIn
+import app.nijiyome.designsystem.motion.motionFadeOut
 import app.nijiyome.designsystem.theme.NijiyomeFonts
+import app.nijiyome.link.LinkHistoryMode
 import app.nijiyome.model.DiscoveredPc
-import app.nijiyome.model.LinkCapabilities
 import app.nijiyome.model.LinkHandoff
-import app.nijiyome.model.RemoteAction
-import app.nijiyome.model.LinkProfile
-import app.nijiyome.model.LinkProfileFallback
-import app.nijiyome.model.ProfileSupport
+import app.nijiyome.model.LinkRepository
+import app.nijiyome.model.LinkServerController
 import app.nijiyome.model.LinkState
+import app.nijiyome.model.LinkStructure
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.PlayerArgs
+import app.nijiyome.model.RemoteAction
 import app.nijiyome.ui.format.relativeTime
+import app.nijiyome.ui.look.structures
 import app.nijiyome.ui.platform.rememberNotificationPermission
 import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.userMessage
 import kotlinx.coroutines.delay
+import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 
-// android wave contract (docs/redesign/12 §3.13). Owner: worker b. Name and signature FIXED.
-
 /**
- * "Dispositivo enlazado" (prototype android.js `S.linked`): unpaired -> EmptyState + scan QR (CameraX + zxing, QrScanner.kt) / paste
- * code; paired -> status card (connected / unreachable with error + retry), PC capabilities, enhance profile list
- * (LinkRepository.setPreferredProfile), remote control of the PC player (wave B: GET /v1/player every 2 s, POST /v1/control),
- * "Continuar en la PC", PCs found over mDNS, the "Reproducir aquí" card of a PC -> phone hand-off, forget dialog. Replaces LinkScreen
- * for Route.Link and Route.Linked.
+ * Nijiyome Link (Sparkles S9; artifact `screens-c.js` screen `link`), its own screen in the two structures of `structures.link`:
+ * [LinkStructure.MAP] (a map of this device and the paired ones with the wire between them, in the direction's `LINK` region) and
+ * [LinkStructure.PANEL] (status cards, one per service, with their main action). Name and signature kept for the shell
+ * (Route.Link / Route.Linked); the new parameters have defaults.
  *
- * The "enhance a stream" card of the former LinkScreen is kept below the remote control (it is how [onPlay] starts a PC session).
+ * - On a Link client (Android: `LinkRepository` registered) it is the phone side: pairing (QR, code, PCs on the network), connection
+ *   with latency and recovery, hand-off, remote control, history sync, the enhancement profile with "Mejorar un stream" inside it,
+ *   the PC's extension servers and forgetting the PC.
+ * - On a Link server (desktop: `LinkServerController` registered, no `LinkRepository`) it is the PC side ([LinkServerScreen]): what this
+ *   PC serves, the paired phones, the sessions (monitor), the profile offer, both servers and pairing windows. It resolves only what the
+ *   desktop registers, so it is safe to open there.
+ *
+ * [onOpenLogs] opens the device logs (Settings › About › Logs); [onOpenLinkSettings], [onOpenMonitor] and [onOpenTorrents] are the
+ * desktop's ways to the Link settings, the full Link monitor dialog and Transfers. Null hides each entry.
  */
 @Composable
 fun LinkedDeviceScreen(
@@ -132,6 +158,69 @@ fun LinkedDeviceScreen(
     modifier: Modifier = Modifier,
     /** docs/redesign/13 §3.10: opens the PC extension server screen; null hides its entry card. */
     onOpenExtensionServers: (() -> Unit)? = null,
+    /** Sparkles S9: device logs (Settings › About › Logs). */
+    onOpenLogs: (() -> Unit)? = null,
+    /** Sparkles S9 (desktop): Settings › Nijiyome Link. */
+    onOpenLinkSettings: (() -> Unit)? = null,
+    /** Sparkles S9 (desktop): the full Link and system monitor (disk, app memory). */
+    onOpenMonitor: (() -> Unit)? = null,
+    /** Sparkles S9 (desktop): Transfers, from the monitor's active torrents. */
+    onOpenTorrents: (() -> Unit)? = null,
+) {
+    val koin = getKoin()
+    // Which side of Link this build is. Nothing is created that the platform does not register (desktop has no LinkRepository).
+    val client = remember(koin) { runCatching { koin.getOrNull<LinkRepository>() }.getOrNull() != null }
+    val server = remember(koin) { if (client) null else runCatching { koin.getOrNull<LinkServerController>() }.getOrNull() }
+    when {
+        client -> LinkClientScreen(onBack, onPlay, modifier, onOpenExtensionServers, onOpenLogs)
+        server != null -> LinkServerScreen(server, onBack, modifier, onOpenLinkSettings, onOpenMonitor, onOpenTorrents, onOpenLogs, onOpenExtensionServers)
+        else -> LinkUnavailable(onBack, modifier)
+    }
+}
+
+@Composable
+private fun LinkUnavailable(onBack: () -> Unit, modifier: Modifier) {
+    Scaffold(
+        modifier = modifier,
+        contentWindowInsets = screenInsets,
+        topBar = { LinkTopBar(onBack = onBack, meta = null) },
+    ) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        ) {
+            EmptyArt(EmptyKind.LINK, Modifier.size(120.dp))
+            Text(stringResource(Res.string.rd_s9_link_unavailable), style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+@Composable
+internal fun LinkTopBar(onBack: () -> Unit, meta: String?, actions: @Composable () -> Unit = {}) {
+    TopAppBar(
+        title = {
+            Column {
+                Text(stringResource(Res.string.rd_s9_link_title), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                meta?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            }
+        },
+        navigationIcon = {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
+        },
+        actions = { actions() },
+    )
+}
+
+// ================================================================ client (phone)
+
+@Composable
+private fun LinkClientScreen(
+    onBack: () -> Unit,
+    onPlay: (PlayerArgs) -> Unit,
+    modifier: Modifier,
+    onOpenExtensionServers: (() -> Unit)?,
+    onOpenLogs: (() -> Unit)?,
 ) {
     val viewModel: LinkViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -154,76 +243,243 @@ fun LinkedDeviceScreen(
     LaunchedEffect(paired) {
         if (paired && !notifyPermission.isGranted()) notifyPermission.request()
     }
-    // parity wave B: GET /v1/player every 2 s while this screen is visible (link.remote-control).
+    // parity wave B: GET /v1/player every 2 s while this screen is visible (link.remote-control); it also measures the latency.
     LaunchedEffect(viewModel, paired) { if (paired) viewModel.pollRemote() }
+    val actions = ClientActions(
+        onPair = viewModel::pair,
+        isValid = viewModel::isValidPairingText,
+        onPairDiscovered = viewModel::pairDiscovered,
+        fingerprintOf = viewModel::fingerprintOf,
+        canPairDiscovered = viewModel.canPairDiscovered,
+        onRetry = viewModel::retryCapabilities,
+        onForget = viewModel::forget,
+        onSelectProfile = viewModel::selectProfile,
+        onStart = viewModel::startSession,
+        onContinue = viewModel::continueOnPc,
+        onRemote = viewModel::remote,
+        onPlayHandoff = viewModel::playHandoff,
+        onDismissHandoff = viewModel::dismissHandoff,
+        onSyncHistory = if (viewModel.canSyncHistory) viewModel::syncHistoryNow else null,
+        onOpenExtensionServers = onOpenExtensionServers,
+    )
     Scaffold(
         modifier = modifier,
         contentWindowInsets = screenInsets,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Res.string.linked_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
-                    }
-                },
-            )
+            LinkTopBar(onBack = onBack, meta = clientMeta(state)) {
+                if (onOpenLogs != null) {
+                    IconButton(onClick = onOpenLogs) { Icon(Icons.AutoMirrored.Outlined.ReceiptLong, contentDescription = stringResource(Res.string.rd_s9_link_logs)) }
+                }
+            }
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(
-                Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 840.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                Modifier.widthIn(max = 960.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(
-                    stringResource(Res.string.linked_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                state.pendingHandoff?.let { h ->
-                    HandoffCard(h, onPlay = viewModel::playHandoff, onDismiss = viewModel::dismissHandoff)
+                // The one switch of this screen on its own structure (CONTRATO-COMPOSE: once, at the root).
+                when (structures.link) {
+                    LinkStructure.MAP -> ClientMapLayout(state, actions)
+                    LinkStructure.PANEL -> ClientPanelLayout(state, actions)
                 }
-                if (onOpenExtensionServers != null) ExtensionServerCard(onOpen = onOpenExtensionServers)
-                when (val link = state.link) {
-                    LinkState.Unpaired, LinkState.Pairing -> {
-                        UnpairedContent(
-                            pairing = state.pairing || link == LinkState.Pairing,
-                            error = state.pairError?.userMessage(),
-                            isValid = viewModel::isValidPairingText,
-                            onPair = viewModel::pair,
-                        )
-                        DiscoveredPanel(
-                            pcs = LinkLogic.others(state.discovered, null, null),
-                            pairing = state.pairing || link == LinkState.Pairing,
-                            enabled = viewModel.canPairDiscovered,
-                            fingerprintOf = viewModel::fingerprintOf,
-                            onPair = viewModel::pairDiscovered,
-                        )
+            }
+        }
+    }
+}
+
+/** Everything the client panels can do, shared by both structures. */
+internal class ClientActions(
+    val onPair: (String) -> Unit,
+    val isValid: (String) -> Boolean,
+    val onPairDiscovered: (DiscoveredPc, String) -> Unit,
+    val fingerprintOf: (DiscoveredPc) -> String?,
+    val canPairDiscovered: Boolean,
+    val onRetry: () -> Unit,
+    val onForget: () -> Unit,
+    val onSelectProfile: (String?) -> Unit,
+    val onStart: (String) -> Unit,
+    val onContinue: () -> Unit,
+    val onRemote: (RemoteAction) -> Unit,
+    val onPlayHandoff: () -> Unit,
+    val onDismissHandoff: () -> Unit,
+    val onSyncHistory: (() -> Unit)?,
+    val onOpenExtensionServers: (() -> Unit)?,
+)
+
+@Composable
+private fun clientMeta(state: LinkUiState): String? = when (val l = state.link) {
+    is LinkState.Paired -> listOfNotNull(
+        state.device?.serverName ?: l.pc.serverName,
+        stringResource(if (l.reachable) Res.string.linked_connected else Res.string.linked_unreachable),
+        state.latencyMs?.takeIf { l.reachable }?.let { stringResource(Res.string.rd_s9_link_latency, it) },
+    ).joinToString(" · ")
+    else -> null
+}
+
+/** MAP: the phone and its PC joined by the wire (latency on it), then the panels. */
+@Composable
+private fun ClientMapLayout(state: LinkUiState, a: ClientActions) {
+    when (val link = state.link) {
+        LinkState.Unpaired, LinkState.Pairing -> UnpairedContent(state, link == LinkState.Pairing, a)
+        is LinkState.Failed -> FailedPanel(link.message, a)
+        is LinkState.Paired -> {
+            state.pendingHandoff?.let { h -> HandoffCard(h, onPlay = a.onPlayHandoff, onDismiss = a.onDismissHandoff) }
+            val phone = stringResource(Res.string.rd_s9_link_this_phone)
+            val pcName = state.device?.serverName ?: link.pc.serverName
+            val pcState = if (link.reachable) MapNodeState.CONNECTED else MapNodeState.FAILED
+            DeviceMap(
+                hub = MapNode("phone", phone, state.device?.localDeviceName, Icons.Outlined.PhoneAndroid, pcState),
+                nodes = listOf(MapNode("pc", pcName, stringResource(if (link.reachable) Res.string.linked_connected else Res.string.linked_unreachable), Icons.Outlined.Computer, pcState)),
+                wireLabel = wireLabel(state, link.reachable),
+                description = stringResource(Res.string.rd_s9_link_map_description, phone, pcName),
+            )
+            PairedPanels(state, link, a)
+        }
+    }
+}
+
+/** PANEL: a card per service with its main action, then the panels. A failed link opens on its recovery. */
+@Composable
+private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
+    when (val link = state.link) {
+        LinkState.Unpaired, LinkState.Pairing -> UnpairedContent(state, link == LinkState.Pairing, a)
+        is LinkState.Failed -> FailedPanel(link.message, a)
+        is LinkState.Paired -> {
+            state.pendingHandoff?.let { h -> HandoffCard(h, onPlay = a.onPlayHandoff, onDismiss = a.onDismissHandoff) }
+            FlowRow(
+                Modifier.fillMaxWidth().decor(DecorRegion.LINK),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                val online = link.reachable
+                StatCard(
+                    icon = Icons.Outlined.Link,
+                    title = state.device?.serverName ?: link.pc.serverName,
+                    state = stringResource(if (online) Res.string.linked_connected else Res.string.linked_unreachable),
+                    tone = if (online) PillTone.OK else PillTone.ERR,
+                    text = state.latencyMs?.takeIf { online }?.let { stringResource(Res.string.rd_s9_link_latency, it) } ?: stringResource(Res.string.linked_unreachable_hint),
+                ) {
+                    if (online) {
+                        TextButton(onClick = a.onContinue, enabled = state.continueEntry != null && !state.handingOff) { Text(stringResource(Res.string.linked_continue)) }
+                    } else {
+                        TextButton(onClick = a.onRetry) { Text(stringResource(UiR.string.ui_retry)) }
                     }
-                    is LinkState.Failed -> {
-                        ErrorState(
-                            message = link.message,
-                            retryLabel = stringResource(UiR.string.ui_retry),
-                            onRetry = viewModel::retryCapabilities,
-                            title = stringResource(Res.string.linked_problem),
-                        )
-                        ForgetButton(onForget = viewModel::forget)
-                    }
-                    is LinkState.Paired -> PairedContent(
-                        state = state,
-                        paired = link,
-                        onRetry = viewModel::retryCapabilities,
-                        onSelectProfile = viewModel::selectProfile,
-                        onForget = viewModel::forget,
-                        onStart = viewModel::startSession,
-                        onContinue = viewModel::continueOnPc,
-                        onRemote = viewModel::remote,
-                    )
                 }
+                val caps = (state.capabilities as? LoadState.Ok)?.value
+                val current = caps?.profiles?.firstOrNull { it.id == (state.selectedProfile ?: caps.defaultProfile) }
+                StatCard(
+                    icon = Icons.Outlined.AutoAwesome,
+                    title = stringResource(Res.string.linked_profile),
+                    state = current?.let { sustainText(it) } ?: stringResource(Res.string.rd_s9_link_profile_unknown),
+                    tone = if (current?.measuredSustain == "true") PillTone.OK else PillTone.NEUTRAL,
+                    text = current?.let { profileLabel(it) } ?: stringResource(Res.string.rd_s9_link_profile_default),
+                ) {}
+                StatCard(
+                    icon = Icons.Outlined.History,
+                    title = stringResource(Res.string.rd_s9_link_history),
+                    state = stringResource(historyStateRes(state)),
+                    tone = if (state.historyMode == LinkHistoryMode.PAUSED) PillTone.WARN else PillTone.OK,
+                    text = state.lastHistorySyncMs?.let { stringResource(Res.string.rd_s9_link_history_synced, relativeTime(it)) } ?: stringResource(Res.string.rd_s9_link_history_not_yet),
+                ) {
+                    a.onSyncHistory?.let { sync -> TextButton(onClick = sync, enabled = !state.historySyncing) { Text(stringResource(Res.string.rd_s9_link_sync_now)) } }
+                }
+                StatCard(
+                    icon = Icons.Outlined.PhoneAndroid,
+                    title = stringResource(Res.string.linked_remote),
+                    state = stringResource(
+                        when {
+                            state.remote == null -> Res.string.rd_s9_link_remote_idle_short
+                            state.remote.playing -> Res.string.linked_remote_playing
+                            else -> Res.string.linked_remote_paused
+                        },
+                    ),
+                    tone = if (state.remote?.playing == true) PillTone.OK else PillTone.NEUTRAL,
+                    text = state.remote?.title ?: stringResource(Res.string.linked_remote_idle),
+                ) {
+                    if (state.remote != null) {
+                        TextButton(onClick = { a.onRemote(RemoteAction.PLAY_PAUSE) }, enabled = !state.remoteBusy) {
+                            Text(stringResource(if (state.remote.playing) Res.string.linked_remote_pause else Res.string.linked_remote_play))
+                        }
+                    }
+                }
+                a.onOpenExtensionServers?.let { open ->
+                    StatCard(
+                        icon = Icons.Outlined.Extension,
+                        title = stringResource(Res.string.extserver_entry_title),
+                        state = stringResource(Res.string.rd_s9_link_servers_state),
+                        tone = PillTone.NEUTRAL,
+                        text = stringResource(Res.string.extserver_entry_body),
+                    ) { TextButton(onClick = open) { Text(stringResource(Res.string.rd_s9_link_manage)) } }
+                }
+            }
+            PairedPanels(state, link, a)
+        }
+    }
+}
+
+/** One status card of the PANEL structure: icon, title, state pill, one line and its main action. */
+@Composable
+internal fun StatCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    state: String,
+    tone: PillTone,
+    text: String,
+    modifier: Modifier = Modifier,
+    action: @Composable () -> Unit,
+) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large, modifier = modifier.widthIn(min = 260.dp, max = 420.dp)) {
+        Column(Modifier.width(300.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).semantics { heading() })
+                Pill(state, tone = tone)
+            }
+            Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row { action() }
+        }
+    }
+}
+
+private fun historyStateRes(state: LinkUiState) = when {
+    state.historyResyncing -> Res.string.linked_history_resyncing
+    state.historyMode == LinkHistoryMode.RECEIVE_ONLY -> Res.string.rd_s9_link_history_receive
+    state.historyMode == LinkHistoryMode.PAUSED -> Res.string.rd_s9_link_history_paused
+    else -> Res.string.rd_s9_link_history_full
+}
+
+@Composable
+private fun wireLabel(state: LinkUiState, reachable: Boolean): String? {
+    if (!reachable) return stringResource(Res.string.linked_unreachable)
+    val ms = state.latencyMs ?: return stringResource(Res.string.rd_s9_link_https)
+    return stringResource(Res.string.rd_s9_link_wire, ms)
+}
+
+/** The panels under the map or the cards: connection, remote, history, profile (with Mejorar un stream), PC extensions, forget. */
+@Composable
+private fun PairedPanels(state: LinkUiState, paired: LinkState.Paired, a: ClientActions) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val wide = maxWidth >= 840.dp
+        if (wide) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    StatusCard(state, paired, a)
+                    RemotePanel(state, onRemote = a.onRemote)
+                    HistoryPanel(state, a)
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    ProfilePanel(state, a)
+                    a.onOpenExtensionServers?.let { ExtensionServerCard(onOpen = it) }
+                }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                StatusCard(state, paired, a)
+                RemotePanel(state, onRemote = a.onRemote)
+                HistoryPanel(state, a)
+                ProfilePanel(state, a)
+                a.onOpenExtensionServers?.let { ExtensionServerCard(onOpen = it) }
             }
         }
     }
@@ -232,7 +488,8 @@ fun LinkedDeviceScreen(
 // ---------------------------------------------------------------- unpaired
 
 @Composable
-private fun UnpairedContent(pairing: Boolean, error: String?, isValid: (String) -> Boolean, onPair: (String) -> Unit) {
+private fun UnpairedContent(state: LinkUiState, linkPairing: Boolean, a: ClientActions) {
+    val pairing = state.pairing || linkPairing
     var scanning by rememberSaveable { mutableStateOf(false) }
     var denied by rememberSaveable { mutableStateOf(false) }
     var pasting by rememberSaveable { mutableStateOf(false) }
@@ -240,39 +497,33 @@ private fun UnpairedContent(pairing: Boolean, error: String?, isValid: (String) 
         denied = !granted
         scanning = granted
     }
-
-    EmptyState(
-        icon = Icons.Outlined.Computer,
-        title = stringResource(Res.string.linked_none),
-        message = stringResource(Res.string.linked_none_body),
-    )
+    Text(stringResource(Res.string.linked_intro), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(
+        Modifier.fillMaxWidth().decor(DecorRegion.EMPTY),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        EmptyArt(EmptyKind.LINK, Modifier.size(120.dp))
+        Text(stringResource(Res.string.linked_none), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+        Text(stringResource(Res.string.rd_s9_link_none_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
     Panel(icon = Icons.Outlined.QrCode, title = stringResource(Res.string.linked_pair_title)) {
         if (scanning) {
             QrScanner(
                 onResult = {
                     scanning = false
-                    onPair(it)
+                    a.onPair(it)
                 },
                 modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.large),
             )
             TextButton(onClick = { scanning = false }) { Text(stringResource(Res.string.linked_scan_cancel)) }
         } else {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = {
-                        if (permission.isGranted()) scanning = true else permission.request()
-                    },
-                    enabled = !pairing,
-                ) {
-                    if (pairing) {
-                        LoadingIndicator(Modifier.size(20.dp))
-                    } else {
-                        Icon(Icons.Outlined.PhotoCamera, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                if (qrCameraAvailable) {
+                    Button(onClick = { if (permission.isGranted()) scanning = true else permission.request() }, enabled = !pairing) {
+                        if (pairing) LoadingIndicator(Modifier.size(20.dp)) else Icon(Icons.Outlined.PhotoCamera, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Text(stringResource(if (pairing) Res.string.linked_pairing else Res.string.linked_scan), modifier = Modifier.padding(start = 8.dp))
                     }
-                    Text(
-                        stringResource(if (pairing) Res.string.linked_pairing else Res.string.linked_scan),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
                 }
                 FilledTonalButton(onClick = { pasting = true }, enabled = !pairing) {
                     Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
@@ -280,27 +531,84 @@ private fun UnpairedContent(pairing: Boolean, error: String?, isValid: (String) 
                 }
             }
         }
-        if (denied) {
-            Text(
-                stringResource(Res.string.linked_camera_denied),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        if (error != null) {
-            Text(error, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
-        }
+        if (denied) Text(stringResource(Res.string.linked_camera_denied), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        // Pairing failures with their recovery: an expired code asks the PC for a new one, a wrong code is checked again...
+        state.pairProblem?.let { p ->
+            Surface(color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer, shape = MaterialTheme.shapes.medium) {
+                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(pairProblemTitle(p)), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(pairProblemBody(p)), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        } ?: state.pairError?.let { Text(it.userMessage(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
         Hint(stringResource(Res.string.linked_camera))
     }
+    DiscoveredPanel(
+        pcs = LinkLogic.others(state.discovered, null, null),
+        pairing = pairing,
+        enabled = a.canPairDiscovered,
+        fingerprintOf = a.fingerprintOf,
+        onPair = a.onPairDiscovered,
+    )
+    WhyLinkPanel()
     if (pasting) {
         PasteCodeDialog(
-            isValid = isValid,
+            isValid = a.isValid,
             onDismiss = { pasting = false },
             onPair = {
                 pasting = false
-                onPair(it)
+                a.onPair(it)
             },
         )
+    }
+}
+
+private fun pairProblemTitle(p: PairProblem) = when (p) {
+    PairProblem.EXPIRED -> Res.string.rd_s9_link_pair_expired_title
+    PairProblem.WRONG_CODE -> Res.string.rd_s9_link_pair_wrong_title
+    PairProblem.TOO_MANY -> Res.string.rd_s9_link_pair_toomany_title
+    PairProblem.UNREACHABLE -> Res.string.rd_s9_link_pair_unreachable_title
+}
+
+private fun pairProblemBody(p: PairProblem) = when (p) {
+    PairProblem.EXPIRED -> Res.string.rd_s9_link_pair_expired_body
+    PairProblem.WRONG_CODE -> Res.string.rd_s9_link_pair_wrong_body
+    PairProblem.TOO_MANY -> Res.string.rd_s9_link_pair_toomany_body
+    PairProblem.UNREACHABLE -> Res.string.rd_s9_link_pair_unreachable_body
+}
+
+/** "¿Para qué enlazar el teléfono con la PC?" folded (LNK-16 style: long fixed text becomes a collapsible). */
+@Composable
+private fun WhyLinkPanel() {
+    var open by rememberSaveable { mutableStateOf(false) }
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+        Column {
+            Row(
+                Modifier.fillMaxWidth().toggleable(value = open, role = Role.Button, onValueChange = { open = it }).padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Icons.Outlined.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(stringResource(Res.string.rd_s9_link_why_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f).semantics { heading() })
+                Icon(if (open) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, contentDescription = null)
+            }
+            AnimatedVisibility(open, enter = motionFadeIn(), exit = motionFadeOut()) {
+                Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(
+                        Res.string.rd_s9_link_why_1,
+                        Res.string.rd_s9_link_why_2,
+                        Res.string.rd_s9_link_why_3,
+                        Res.string.rd_s9_link_why_4,
+                        Res.string.rd_s9_link_why_5,
+                    ).forEach { res ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("•", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                            Text(stringResource(res), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -309,6 +617,7 @@ private fun PasteCodeDialog(isValid: (String) -> Boolean, onDismiss: () -> Unit,
     var code by rememberSaveable { mutableStateOf("") }
     var showError by rememberSaveable { mutableStateOf(false) }
     val invalid = showError && !isValid(code)
+    val readClipboard = rememberClipboardReader()
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Outlined.QrCode, contentDescription = null) },
@@ -330,43 +639,69 @@ private fun PasteCodeDialog(isValid: (String) -> Boolean, onDismiss: () -> Unit,
                     } else {
                         null
                     },
+                    trailingIcon = {
+                        IconButton(onClick = { readClipboard()?.let { code = it; showError = false } }) {
+                            Icon(Icons.Outlined.ContentPaste, contentDescription = stringResource(Res.string.rd_s9_link_paste_clipboard))
+                        }
+                    },
                     textStyle = TextStyle(fontFamily = NijiyomeFonts.jetBrainsMono),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, autoCorrectEnabled = false),
                     modifier = Modifier.focusOnOpen().fillMaxWidth(),
                 )
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = { if (isValid(code)) onPair(code.trim()) else showError = true },
-                enabled = code.isNotBlank(),
-            ) { Text(stringResource(Res.string.linked_pair)) }
+            TextButton(onClick = { if (isValid(code)) onPair(code.trim()) else showError = true }, enabled = code.isNotBlank()) {
+                Text(stringResource(Res.string.linked_pair))
+            }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }
 
-// ---------------------------------------------------------------- paired
+// ---------------------------------------------------------------- failed
 
+/** LNK-11: the link failed. What may be wrong, then Reintentar and Olvidar PC. */
 @Composable
-private fun PairedContent(
-    state: LinkUiState,
-    paired: LinkState.Paired,
-    onRetry: () -> Unit,
-    onSelectProfile: (String?) -> Unit,
-    onForget: () -> Unit,
-    onStart: (String) -> Unit,
-    onContinue: () -> Unit,
-    onRemote: (RemoteAction) -> Unit,
-) {
-    StatusCard(state, paired, onRetry = onRetry, onContinue = onContinue, onForget = onForget)
-    CapabilitiesPanel(state, onRetry = onRetry, onSelectProfile = onSelectProfile)
-    RemotePanel(state, onRemote = onRemote)
-    EnhancePanel(state, onStart = onStart)
+private fun FailedPanel(message: String, a: ClientActions) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(1.dp, LocalSignalColors.current.err),
+        modifier = Modifier.fillMaxWidth().decor(DecorRegion.LINK),
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.Outlined.LinkOff, contentDescription = null, tint = LocalSignalColors.current.err, modifier = Modifier.size(32.dp))
+            Text(stringResource(Res.string.linked_problem), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+            Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            RecoveryTips()
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Button(onClick = a.onRetry) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                    Text(stringResource(UiR.string.ui_retry), modifier = Modifier.padding(start = 8.dp))
+                }
+                ForgetButton(a.onForget)
+            }
+        }
+    }
 }
 
 @Composable
-private fun StatusCard(state: LinkUiState, paired: LinkState.Paired, onRetry: () -> Unit, onContinue: () -> Unit, onForget: () -> Unit) {
+private fun RecoveryTips() {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        listOf(Res.string.rd_s9_link_tip_wifi, Res.string.rd_s9_link_tip_open, Res.string.rd_s9_link_tip_tunnel).forEach { res ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("•", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(res), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- paired
+
+@Composable
+private fun StatusCard(state: LinkUiState, paired: LinkState.Paired, a: ClientActions) {
     val online = paired.reachable
     val device = state.device
     Surface(
@@ -379,20 +714,31 @@ private fun StatusCard(state: LinkUiState, paired: LinkState.Paired, onRetry: ()
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 LinkStatusAvatar(connected = online, icon = Icons.Outlined.Computer)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        stringResource(if (online) Res.string.linked_connected else Res.string.linked_unreachable),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
+                    Text(stringResource(if (online) Res.string.linked_connected else Res.string.linked_unreachable), style = MaterialTheme.typography.titleMedium)
                     Text(
                         "${device?.serverName ?: paired.pc.serverName} · https://${paired.pc.host}:${paired.pc.port}",
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (online) {
+                        state.latencyMs?.let { ms ->
+                            Text(
+                                stringResource(
+                                    when (LinkLogic.latencyTone(ms)) {
+                                        LatencyTone.GOOD -> Res.string.rd_s9_link_latency_good
+                                        LatencyTone.FAIR -> Res.string.rd_s9_link_latency_fair
+                                        else -> Res.string.rd_s9_link_latency_slow
+                                    },
+                                    ms,
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
                     device?.fingerprint?.let { fp ->
-                        // BUG-090 / BUG-105: the label in the normal font on its own line, and only the fingerprint in monospace below:
-                        // "B452 3914 … 0A7C DF6D" (~22 characters, far from the ~288 dp of the column, so the last group, the one compared
-                        // with the PC, is never cut). "Ver detalles" shows the whole one in rows of 4 groups, broken on purpose.
+                        // BUG-090 / BUG-105: the label in the normal font on its own line, only the fingerprint in monospace below; "Ver
+                        // detalles" shows the whole one in rows of 4 groups.
                         var full by rememberSaveable { mutableStateOf(false) }
                         val mono = MaterialTheme.typography.bodySmall.copy(fontFamily = NijiyomeFonts.jetBrainsMono)
                         Column(Modifier.padding(top = 4.dp)) {
@@ -429,32 +775,13 @@ private fun StatusCard(state: LinkUiState, paired: LinkState.Paired, onRetry: ()
             }
             if (!online) {
                 Text(stringResource(Res.string.linked_unreachable_hint), style = MaterialTheme.typography.bodySmall)
-            }
-            // 2026-11 history per device: how the PC treats this phone's history, and a running resync
-            LinkLogic.historyNotices(state.historyMode, state.historyResyncing).forEach { notice ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (notice == HistoryNotice.RESYNCING) LoadingIndicator(Modifier.size(16.dp))
-                    Text(
-                        stringResource(
-                            when (notice) {
-                                HistoryNotice.RECEIVE_ONLY -> Res.string.linked_history_receive_only
-                                HistoryNotice.PAUSED -> Res.string.linked_history_paused
-                                HistoryNotice.RESYNCING -> Res.string.linked_history_resyncing
-                            },
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+                RecoveryTips()
             }
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 if (online) {
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        FilledTonalButton(onClick = onContinue, enabled = state.continueEntry != null && !state.handingOff) {
-                            if (state.handingOff) {
-                                LoadingIndicator(Modifier.size(20.dp))
-                            } else {
-                                Icon(Icons.Outlined.Cast, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-                            }
+                        FilledTonalButton(onClick = a.onContinue, enabled = state.continueEntry != null && !state.handingOff) {
+                            if (state.handingOff) LoadingIndicator(Modifier.size(20.dp)) else Icon(Icons.Outlined.Cast, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                             Text(stringResource(Res.string.linked_continue), modifier = Modifier.padding(start = 8.dp))
                         }
                         Text(
@@ -467,96 +794,148 @@ private fun StatusCard(state: LinkUiState, paired: LinkState.Paired, onRetry: ()
                         )
                     }
                 } else {
-                    FilledTonalButton(onClick = onRetry) {
+                    FilledTonalButton(onClick = a.onRetry) {
                         Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         Text(stringResource(UiR.string.ui_retry), modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }
-            // BUG-090: forgetting the PC belongs to this card (it was under the remote's transport buttons), as a
-            // secondary destructive action on its own line (393 dp: it does not fit next to "Continuar en la PC")
-            ForgetButton(onForget)
+            // BUG-090: forgetting the PC belongs to this card, as a secondary destructive action on its own line.
+            ForgetButton(a.onForget)
         }
     }
 }
 
+/** History sync with the PC: how the PC treats this phone's history, a running resync, the last sync and "Sincronizar ahora". */
 @Composable
-private fun CapabilitiesPanel(state: LinkUiState, onRetry: () -> Unit, onSelectProfile: (String?) -> Unit) {
-    Panel(icon = Icons.Outlined.Memory, title = stringResource(Res.string.linked_caps)) {
+private fun HistoryPanel(state: LinkUiState, a: ClientActions) {
+    Panel(icon = Icons.Outlined.History, title = stringResource(Res.string.rd_s9_link_history), trailing = { Pill(stringResource(historyStateRes(state))) }) {
+        Text(
+            state.lastHistorySyncMs?.let { stringResource(Res.string.rd_s9_link_history_synced, relativeTime(it)) } ?: stringResource(Res.string.rd_s9_link_history_not_yet),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        // 2026-11 history per device: how the PC treats this phone's history, and a running resync
+        LinkLogic.historyNotices(state.historyMode, state.historyResyncing).forEach { notice ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (notice == HistoryNotice.RESYNCING) LoadingIndicator(Modifier.size(16.dp))
+                Hint(
+                    stringResource(
+                        when (notice) {
+                            HistoryNotice.RECEIVE_ONLY -> Res.string.linked_history_receive_only
+                            HistoryNotice.PAUSED -> Res.string.linked_history_paused
+                            HistoryNotice.RESYNCING -> Res.string.linked_history_resyncing
+                        },
+                    ),
+                )
+            }
+        }
+        a.onSyncHistory?.let { sync ->
+            OutlinedButton(onClick = sync, enabled = !state.historySyncing) {
+                if (state.historySyncing) LoadingIndicator(Modifier.size(18.dp)) else Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(if (state.historySyncing) Res.string.rd_s9_link_syncing else Res.string.rd_s9_link_sync_now), modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Perfil de mejora (LNK-06) with its two axes, the PC's capabilities, and "Mejorar un stream por URL" inside it (contract decision:
+ * Link › Perfil de mejora; "Procesar en" stays in the player's Mejoras sheet).
+ */
+@Composable
+private fun ProfilePanel(state: LinkUiState, a: ClientActions) {
+    Panel(icon = Icons.Outlined.AutoAwesome, title = stringResource(Res.string.linked_profile)) {
+        Hint(stringResource(Res.string.rd_s9_link_profile_hint))
         when (val caps = state.capabilities) {
             null, LoadState.Loading -> if (rememberAfterDelay(150)) {
                 SkeletonBox(Modifier.fillMaxWidth().aspectRatio(5f))
                 SkeletonBox(Modifier.fillMaxWidth(0.6f).aspectRatio(8f))
             }
-            is LoadState.Err -> ErrorState(
+            is LoadState.Err -> app.nijiyome.designsystem.components.ErrorState(
                 message = caps.cause.userMessage(),
                 retryLabel = stringResource(UiR.string.ui_retry),
-                onRetry = onRetry,
+                onRetry = a.onRetry,
                 compact = true,
             )
-            is LoadState.Ok -> CapabilitiesBody(
-                caps.value,
-                state.selectedProfile,
-                state.unsupportedProfiles,
-                state.mayDropFramesProfiles,
-                state.profileFallback,
-                onSelectProfile,
-            )
+            is LoadState.Ok -> {
+                val c = caps.value
+                Cap(stringResource(Res.string.linked_caps_server), "${c.serverName} · ${c.serverVersion}")
+                Cap(stringResource(Res.string.linked_caps_frame_gen), stringResource(if (c.clientFrameGenerationAllowed) Res.string.linked_yes else Res.string.linked_no))
+                // Prototype: profiles measured as not sustainable are hidden.
+                val usable = c.profiles.filter { it.measuredSustain != "false" }
+                if (usable.isEmpty()) {
+                    Hint(stringResource(Res.string.linked_profiles_none))
+                } else {
+                    // BUG-132: the profiles this phone cannot decode stay visible, disabled with the reason; never the selected one
+                    val playable = usable.filter { it.id !in state.unsupportedProfiles }
+                    val current = state.selectedProfile?.takeIf { id -> playable.any { it.id == id } }
+                        ?: c.defaultProfile.takeIf { id -> playable.any { it.id == id } }
+                        ?: (playable.firstOrNull() ?: usable.first()).id
+                    ProfileAxisPicker(
+                        profiles = usable,
+                        selected = current,
+                        unavailable = state.unsupportedProfiles,
+                        mayDropFrames = state.mayDropFramesProfiles,
+                        fallback = state.profileFallback,
+                        allProfiles = c.profiles,
+                        onSelect = { a.onSelectProfile(it) },
+                    )
+                }
+            }
         }
+        androidx.compose.material3.HorizontalDivider()
+        EnhanceSection(state, a.onStart)
     }
 }
 
 @Composable
-private fun CapabilitiesBody(
-    caps: LinkCapabilities,
-    selected: String?,
-    unsupported: Map<String, ProfileSupport>,
-    mayDropFrames: Set<String>,
-    fallback: LinkProfileFallback?,
-    onSelect: (String?) -> Unit,
-) {
-    Cap(stringResource(Res.string.linked_caps_server), "${caps.serverName} · ${caps.serverVersion}")
-    Cap(
-        stringResource(Res.string.linked_caps_frame_gen),
-        stringResource(if (caps.clientFrameGenerationAllowed) Res.string.linked_yes else Res.string.linked_no),
+private fun EnhanceSection(state: LinkUiState, onStart: (String) -> Unit) {
+    var url by rememberSaveable { mutableStateOf("") }
+    val readClipboard = rememberClipboardReader()
+    Text(stringResource(Res.string.linked_enhance_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+    Hint(stringResource(Res.string.rd_s9_link_enhance_hint))
+    val canStart = !state.startingSession && url.isNotBlank() && state.capabilities is LoadState.Ok
+    val problem = state.enhanceProblem?.let { enhanceProblemText(it) }
+    // BUG-024: a URL keyboard without auto-capitalisation or correction, and "Go" on the keyboard (the button can sit under it)
+    OutlinedTextField(
+        value = url,
+        onValueChange = { url = it },
+        label = { Text(stringResource(Res.string.linked_enhance_url)) },
+        // BUG-104: only the URL's own problem goes under the field; the PC's answer is the red line below
+        supportingText = { Text(LinkLogic.fieldProblem(state.enhanceProblem)?.let { enhanceProblemText(it) } ?: stringResource(Res.string.linked_enhance_hint)) },
+        isError = state.enhanceProblem == EnhanceProblem.INVALID_URL || (url.isNotBlank() && !LinkLogic.enhanceUrlValid(url)),
+        leadingIcon = { Icon(Icons.Outlined.Link, contentDescription = null) },
+        trailingIcon = {
+            IconButton(onClick = { readClipboard()?.let { url = it } }) {
+                Icon(Icons.Outlined.ContentPaste, contentDescription = stringResource(Res.string.rd_s9_link_paste_clipboard))
+            }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.None,
+            autoCorrectEnabled = false,
+            keyboardType = KeyboardType.Uri,
+            imeAction = ImeAction.Go,
+        ),
+        keyboardActions = KeyboardActions(onGo = { if (canStart) onStart(url) }),
+        modifier = Modifier.fillMaxWidth(),
     )
-    // Prototype: profiles measured as not sustainable are hidden from the segmented.
-    val usable = caps.profiles.filter { it.measuredSustain != "false" }
-    if (usable.isEmpty()) {
-        Hint(stringResource(Res.string.linked_profiles_none))
-        return
+    if (state.enhanceProblem != null && LinkLogic.fieldProblem(state.enhanceProblem) == null) {
+        Text(problem.orEmpty(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
     }
-    Text(stringResource(Res.string.linked_profile), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
-    // BUG-132: the profiles this phone cannot decode stay in the list, disabled with the reason; never the selected one
-    val playable = usable.filter { it.id !in unsupported }
-    val current = selected?.takeIf { id -> playable.any { it.id == id } }
-        ?: caps.defaultProfile.takeIf { id -> playable.any { it.id == id } }
-        ?: (playable.firstOrNull() ?: usable.first()).id
-    // A vertical list: with LSFG and Anime4K + LSFG a PC offers ~15 profiles, too many for a segmented row.
-    ProfileList(profiles = usable, selected = current, unavailable = unsupported, mayDropFrames = mayDropFrames, onSelect = { onSelect(it) })
-    if (fallback != null) {
-        val from = caps.profiles.firstOrNull { it.id == fallback.from }
-        val to = caps.profiles.firstOrNull { it.id == fallback.to }
-        if (from != null && to != null) Hint(stringResource(Res.string.linked_profile_fallback, profileLabel(from), profileLabel(to)))
-    }
-    usable.firstOrNull { it.id == current }?.let { profile ->
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Pill(sustainText(profile), tone = if (profile.measuredSustain == "true") PillTone.OK else PillTone.NEUTRAL)
-            Text(
-                "${profile.outputWidth}×${profile.outputHeight}",
-                style = MaterialTheme.typography.bodySmall.copy(fontFamily = NijiyomeFonts.jetBrainsMono),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    state.sessionError?.let { Text(it.userMessage(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
+    Button(onClick = { onStart(url) }, enabled = canStart) {
+        if (state.startingSession) LoadingIndicator(Modifier.padding(end = 8.dp).size(20.dp))
+        Text(stringResource(if (state.startingSession) Res.string.linked_enhance_starting else Res.string.linked_enhance_start))
     }
 }
 
 @Composable
-private fun sustainText(profile: LinkProfile): String = stringResource(
-    when (profile.measuredSustain) {
-        "true" -> Res.string.linked_sustain_ok
-        "false" -> Res.string.linked_sustain_no
-        else -> Res.string.linked_sustain_unknown
+private fun enhanceProblemText(p: EnhanceProblem): String = stringResource(
+    when (p) {
+        EnhanceProblem.INVALID_URL -> Res.string.linked_enhance_invalid
+        EnhanceProblem.REJECTED -> Res.string.linked_enhance_rejected
+        EnhanceProblem.TIMEOUT -> Res.string.linked_enhance_timeout
     },
 )
 
@@ -749,55 +1128,6 @@ private fun ForgetButton(onForget: () -> Unit) {
     }
 }
 
-@Composable
-private fun EnhancePanel(state: LinkUiState, onStart: (String) -> Unit) {
-    var url by rememberSaveable { mutableStateOf("") }
-    Panel(icon = Icons.Outlined.Cast, title = stringResource(Res.string.linked_enhance_title)) {
-        val canStart = !state.startingSession && url.isNotBlank() && state.capabilities is LoadState.Ok
-        val problem = state.enhanceProblem?.let { enhanceProblemText(it) }
-        // BUG-024: a URL keyboard without auto-capitalisation or correction, and "Go" on the keyboard (the button can sit under it)
-        OutlinedTextField(
-            value = url,
-            onValueChange = { url = it },
-            label = { Text(stringResource(Res.string.linked_enhance_url)) },
-            // BUG-104: only the URL's own problem goes under the field (red, with isError); the PC's answer is the red line below
-            supportingText = { Text(LinkLogic.fieldProblem(state.enhanceProblem)?.let { enhanceProblemText(it) } ?: stringResource(Res.string.linked_enhance_hint)) },
-            isError = state.enhanceProblem == EnhanceProblem.INVALID_URL,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None,
-                autoCorrectEnabled = false,
-                keyboardType = KeyboardType.Uri,
-                imeAction = ImeAction.Go,
-            ),
-            keyboardActions = KeyboardActions(onGo = { if (canStart) onStart(url) }),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (state.enhanceProblem != null && LinkLogic.fieldProblem(state.enhanceProblem) == null) {
-            Text(problem.orEmpty(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-        }
-        state.sessionError?.let {
-            Text(it.userMessage(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-        }
-        Button(
-            onClick = { onStart(url) },
-            enabled = canStart,
-        ) {
-            if (state.startingSession) LoadingIndicator(Modifier.padding(end = 8.dp).size(20.dp))
-            Text(stringResource(if (state.startingSession) Res.string.linked_enhance_starting else Res.string.linked_enhance_start))
-        }
-    }
-}
-
-@Composable
-private fun enhanceProblemText(p: EnhanceProblem): String = stringResource(
-    when (p) {
-        EnhanceProblem.INVALID_URL -> Res.string.linked_enhance_invalid
-        EnhanceProblem.REJECTED -> Res.string.linked_enhance_rejected
-        EnhanceProblem.TIMEOUT -> Res.string.linked_enhance_timeout
-    },
-)
-
 // ---------------------------------------------------------------- PC extension server entry (docs/redesign/13 §3.10)
 
 @Composable
@@ -809,53 +1139,4 @@ private fun ExtensionServerCard(onOpen: () -> Unit) {
             Text(stringResource(Res.string.extserver_entry_open), modifier = Modifier.padding(start = 8.dp))
         }
     }
-}
-
-// ---------------------------------------------------------------- building blocks
-
-/** Prototype `.panel` with a titled header. */
-@Composable
-private fun Panel(icon: ImageVector, title: String, content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.semantics { heading() },
-                )
-            }
-            content()
-        }
-    }
-}
-
-@Composable
-private fun Cap(key: String, value: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            key,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1.4f),
-        )
-    }
-}
-
-@Composable
-private fun Hint(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
