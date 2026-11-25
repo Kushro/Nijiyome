@@ -98,8 +98,10 @@ import app.nijiyome.feature.extensions.ProviderItemScreen
 import app.nijiyome.feature.extensions.ProviderScreen
 import app.nijiyome.feature.extensions.rememberProviderResume
 import app.nijiyome.feature.home.CalendarScreen
-import app.nijiyome.feature.home.ForYouScreen
+import app.nijiyome.feature.home.ForYouPanel
+import app.nijiyome.feature.home.ForYouPreview
 import app.nijiyome.feature.home.HomeScreen
+import app.nijiyome.feature.home.TasteAtlas
 import app.nijiyome.feature.library.LibraryScreen
 import app.nijiyome.feature.library.LibraryTab
 import app.nijiyome.feature.link.ExtensionServersScreen
@@ -111,6 +113,7 @@ import app.nijiyome.feature.novel.NovelDetailsScreen
 import app.nijiyome.feature.novel.NovelHomeScreen
 import app.nijiyome.feature.novel.NovelReaderScreen
 import app.nijiyome.feature.player.PlayerScreen
+import app.nijiyome.feature.search.ExploreTab
 import app.nijiyome.feature.search.ImageSearchScreen
 import app.nijiyome.feature.search.SearchScreen
 import app.nijiyome.feature.settings.OnboardingScreen
@@ -708,6 +711,15 @@ private fun AppNavDisplay(
     fun openUser(userName: String) = push(Route.Profile(userName))
     fun openActivity(activityId: Int) = push(Route.ActivityThread(activityId))
 
+    // Explorar's Para ti pieces live in :feature:home; Explorar (:feature:search) takes them as slots.
+    val forYouPanel: @Composable (onGenre: (String) -> Unit, modifier: Modifier) -> Unit = { onGenre, m ->
+        ForYouPanel(onMediaClick = ::openMedia, modifier = m, onGenre = onGenre)
+    }
+    val forYouPreview: @Composable (onSeeAll: () -> Unit, onGenre: (String) -> Unit, modifier: Modifier) -> Unit = { onSeeAll, onGenre, m ->
+        ForYouPreview(::openMedia, onSeeAll, onGenre, m)
+    }
+    val tasteAtlas: @Composable (modifier: Modifier) -> Unit = { m -> TasteAtlas(::openMedia, m) }
+
     // Reduce motion: instant screen changes (no slide / fade), predictive back included.
     val reduceMotion = LocalReduceMotion.current
     val instant = remember { ContentTransform(EnterTransition.None, ExitTransition.None) }
@@ -777,8 +789,18 @@ private fun AppNavDisplay(
                 CalendarScreen(onBack = null, onMediaClick = ::openMedia)
             }
             entry<Route.ForYou>(metadata = ListDetailSceneStrategy.listPane()) {
-                // Sparkles: Para ti is a tab of Explorar (S3); this page is reached from Inicio, Tú and the palette, so it goes back.
-                ForYouScreen(onBack = ::back, onMediaClick = ::openMedia)
+                // Sparkles: Para ti is a tab of Explorar (S3); Route.ForYou opens Explorar on it.
+                SearchScreen(
+                    onMediaClick = { media -> media.ref.anilistId?.let { openDetails(it) } },
+                    onOpenImageSearch = { push(Route.ImageSearch()) },
+                    onOpenMangaSearch = { q -> push(Route.Manga(q.ifBlank { null })) },
+                    onOpenNovelSearch = { q -> push(Route.Novels(q.ifBlank { null })) },
+                    initialTab = ExploreTab.FOR_YOU,
+                    forYouPanel = forYouPanel,
+                    forYouPreview = forYouPreview,
+                    tasteAtlas = tasteAtlas,
+                    onOpenExtensions = { push(Route.Extensions) },
+                )
             }
             entry<Route.Search>(metadata = ListDetailSceneStrategy.listPane()) {
                 SearchScreen(
@@ -789,6 +811,10 @@ private fun AppNavDisplay(
                     onOpenNovelSearch = { q -> push(Route.Novels(q.ifBlank { null })) },
                     focusQuery = shortcuts?.focusSearchPending == true,
                     onQueryFocused = { shortcuts?.focusSearchPending = false },
+                    forYouPanel = forYouPanel,
+                    forYouPreview = forYouPreview,
+                    tasteAtlas = tasteAtlas,
+                    onOpenExtensions = { push(Route.Extensions) },
                 )
             }
             entry<Route.SearchFor>(metadata = ListDetailSceneStrategy.listPane()) { key ->
@@ -802,6 +828,10 @@ private fun AppNavDisplay(
                     // parity wave B (s, manga.route / novel.route): the Manga / Novel type chips open those homes.
                     onOpenMangaSearch = { q -> push(Route.Manga(q.ifBlank { null })) },
                     onOpenNovelSearch = { q -> push(Route.Novels(q.ifBlank { null })) },
+                    forYouPanel = forYouPanel,
+                    forYouPreview = forYouPreview,
+                    tasteAtlas = tasteAtlas,
+                    onOpenExtensions = { push(Route.Extensions) },
                 )
             }
             // parity wave A (15 §3.1, worker o): image search (trace.moe), opened from the search bar or by sharing a picture.

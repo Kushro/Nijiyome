@@ -165,14 +165,14 @@ fun Route.topLevel(): Route = topLevel(wide = false)
 
 /**
  * The top-level destination that owns this route, used to highlight the nav item.
- * Compact (artifact `andCur`): everything that is not Inicio, Explorar, Calendario or Biblioteca belongs to Tú, Manga and Novelas
+ * Compact (artifact `andCur`): everything that is not Inicio, Explorar (Para ti included), Calendario or Biblioteca belongs to Tú, Manga and Novelas
  * included. Wide: Explorar owns Search pages and Para ti, Transferencias owns Downloads and Torrents, Fuentes owns providers and the
  * PC extension servers, Ajustes owns its sections and Tú, Perfil owns the social pages.
  * Routes without an owner (Details, Player) return themselves; the shell then highlights the entry below them in the back stack.
  */
 fun Route.topLevel(wide: Boolean): Route = when (this) {
     is Route.SearchFor, is Route.ImageSearch -> Route.Search
-    Route.ForYou -> if (wide) Route.Search else Route.You
+    Route.ForYou -> Route.Search
     is Route.LibraryTab -> Route.Library
     Route.Calendar -> Route.Calendar
     is Route.Torrents, is Route.Downloads -> if (wide) Route.Downloads() else Route.You

@@ -54,9 +54,9 @@ class RoutesTest {
         assertEquals(Route.Extensions, Route.ExtensionServers.topLevel(wide = true))
         assertEquals(Route.Calendar, Route.Calendar.topLevel(wide = false))
         assertEquals(Route.Calendar, Route.Calendar.topLevel(wide = true))
-        // Para ti is a tab of Explorar on wide windows and a row of Tú on phones.
+        // Para ti is a tab of Explorar on every window.
         assertEquals(Route.Search, Route.ForYou.topLevel(wide = true))
-        assertEquals(Route.You, Route.ForYou.topLevel(wide = false))
+        assertEquals(Route.Search, Route.ForYou.topLevel(wide = false))
     }
 
     @Test
