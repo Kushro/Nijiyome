@@ -50,6 +50,9 @@ import app.nijiyome.model.CardSize
 import app.nijiyome.model.Density
 import app.nijiyome.model.ListStatus
 import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.LocalCardPlayAction
+import app.nijiyome.ui.cards.cardPlayAction
+import app.nijiyome.ui.cards.cardPlayLabel
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.labels.genreLabel
@@ -237,12 +240,16 @@ internal fun ObiFrame(
     onLongClick: (() -> Unit)?,
     shape: Shape,
     modifier: Modifier,
+    /** Title of the card, for the play action's label when the screen gives one (CONTINUE): the content's semantics are cleared. */
+    playTitle: String? = null,
     content: @Composable (raised: Boolean) -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     val focused by interaction.collectIsFocusedAsState()
     val ring = MaterialTheme.colorScheme.onSurface
+    val play = LocalCardPlayAction.current
+    val playLabel = playTitle?.let { cardPlayLabel(it) }
     Box(
         modifier
             .drawWithContent {
@@ -267,7 +274,10 @@ internal fun ObiFrame(
                 onClick = onClick,
             )
             .hoverable(interaction)
-            .semantics(mergeDescendants = true) { contentDescription = spoken },
+            .semantics(mergeDescendants = true) {
+                contentDescription = spoken
+                cardPlayAction(play, playLabel)
+            },
     ) {
         Box(Modifier.clearAndSetSemantics { }) { content(hovered || focused) }
     }

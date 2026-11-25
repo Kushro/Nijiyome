@@ -225,6 +225,7 @@ internal fun EntryCard(
             show = show,
             onLongClick = menu::showSheet,
             modifier = cardModifier.cardSway(index).cardToDetailsSource(entry.key),
+            index = index,
         )
     }
 }
@@ -257,6 +258,8 @@ internal fun ContinueShelf(entries: List<HistoryEntry>, onPlay: (HistoryEntry) -
                     onClick = { onPlay(e) },
                     context = CardContext.CONTINUE,
                     modifier = Modifier.cardSway(i),
+                    onPlay = { onPlay(e) },
+                    index = i,
                 )
             }
         }

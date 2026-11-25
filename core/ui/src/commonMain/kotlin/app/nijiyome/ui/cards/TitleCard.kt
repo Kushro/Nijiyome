@@ -2,7 +2,10 @@
 package app.nijiyome.ui.cards
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import app.nijiyome.designsystem.direction.StatusSlot
@@ -124,7 +127,19 @@ object TitleCards {
     fun byId(id: String?): TitleCardStyle = all.firstOrNull { it.id == id } ?: MaterialCard.Detailed
 }
 
-/** The card of a title in the style the user picked. This is what screens call. */
+/**
+ * The play action of the card being drawn, set by [TitleCard] from its `onPlay`. A style reads it in [CardContext.CONTINUE] and
+ * [CardContext.HERO]: non-null makes its play disc a real button (see [CardPlayTarget]); null keeps the disc decorative.
+ */
+val LocalCardPlayAction: ProvidableCompositionLocal<(() -> Unit)?> = compositionLocalOf { null }
+
+/** Position of the card being drawn in its row or grid (0-based), set by [TitleCard] from its `index`; -1 = unknown. For staggering. */
+val LocalCardIndex: ProvidableCompositionLocal<Int> = compositionLocalOf { -1 }
+
+/**
+ * The card of a title in the style the user picked. This is what screens call. [onPlay] = the resume / play action of a CONTINUE or
+ * HERO card (the card's play disc becomes its button); [index] = the card's position in its row, when the screen has it.
+ */
 @Composable
 fun TitleCard(
     data: TitleCardData,
@@ -134,8 +149,13 @@ fun TitleCard(
     size: CardSize = LocalLook.current.cardSize,
     show: CardShow = CardShow(),
     onLongClick: (() -> Unit)? = null,
+    onPlay: (() -> Unit)? = null,
+    index: Int = -1,
 ) {
-    TitleCards.byId(LocalLook.current.effectiveCardId()).Card(data, context, size, show, onClick, modifier, onLongClick)
+    val style = TitleCards.byId(LocalLook.current.effectiveCardId())
+    CompositionLocalProvider(LocalCardPlayAction provides onPlay, LocalCardIndex provides index) {
+        style.Card(data, context, size, show, onClick, modifier, onLongClick)
+    }
 }
 
 /** Card data of a [Media] with nothing user-specific; `copy(...)` the progress, list status and next label on top. */

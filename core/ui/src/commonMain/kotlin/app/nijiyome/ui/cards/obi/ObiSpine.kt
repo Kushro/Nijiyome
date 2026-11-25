@@ -51,6 +51,7 @@ import app.nijiyome.designsystem.direction.obi.obiSweepBackground
 import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.model.CardSize
 import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardPlayTarget
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.media.MediaCover
@@ -224,7 +225,7 @@ private fun FlatSpine(
         phrase.long
     }
     val spatial = LocalMotion.current.spatial
-    ObiFrame(spoken, onClick, onLongClick, RoundedCornerShape(3.dp), frame) { raised ->
+    ObiFrame(spoken, onClick, onLongClick, RoundedCornerShape(3.dp), frame, playTitle = data.title.takeIf { !compact }) { raised ->
         val slide by animateFloatAsState(
             targetValue = if (raised && spatial) 1f else 0f,
             animationSpec = if (spatial) tween(durationMillis = 320, easing = ObiEaseOut) else snap(),
@@ -289,11 +290,13 @@ private fun FlatSpine(
                     }
                     if (!compact) {
                         // Play block in the band's ink (artifact `.lomo-go`): the inverse of the band.
-                        Box(
-                            Modifier.width(44.dp).heightIn(min = 64.dp).background(band.fg),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = band.bg, modifier = Modifier.size(24.dp))
+                        CardPlayTarget(data.title, shape = RectangleShape) {
+                            Box(
+                                Modifier.width(44.dp).heightIn(min = 64.dp).background(band.fg),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = band.bg, modifier = Modifier.size(24.dp))
+                            }
                         }
                     }
                 }

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.direction.sumi.SumiInkLine
 import app.nijiyome.model.CardSize
 import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardPlayTarget
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.look.CardSizing
@@ -112,7 +113,7 @@ internal fun HankoContinue(data: TitleCardData, size: CardSize, show: CardShow, 
             CardSub(data.sumiContinueSub(), CardContext.CONTINUE)
             if (p != null) SumiInkLine(p, Modifier.padding(top = 4.dp))
         }
-        PlayDisc(44.dp)
+        CardPlayTarget(data.title) { PlayDisc(44.dp) }
     }
 }
 
@@ -162,7 +163,9 @@ internal fun EnsoContinue(data: TitleCardData, size: CardSize, show: CardShow, o
                 CardTitle(data.title, CardSize.MEDIUM, maxLines = 1)
                 CardSub(data.sumiContinueSub(), CardContext.CONTINUE)
             }
-            if (p != null) RingPlay(p, 58.dp, traceKey = "continue:" + data.key, traceIndex = 0) else PlayDisc(42.dp)
+            CardPlayTarget(data.title) {
+                if (p != null) RingPlay(p, 58.dp, traceKey = "continue:" + data.key, traceIndex = 0) else PlayDisc(42.dp)
+            }
         }
     }
 }
@@ -223,7 +226,7 @@ internal fun PaperContinue(data: TitleCardData, size: CardSize, show: CardShow, 
             CardSub(data.sumiContinueSub(), CardContext.CONTINUE)
             if (p != null) SumiInkLine(p, Modifier.padding(top = 6.dp))
         }
-        PlayDisc(44.dp, Modifier.padding(end = 4.dp), ink = true)
+        CardPlayTarget(data.title, Modifier.padding(end = 4.dp)) { PlayDisc(44.dp, ink = true) }
     }
 }
 

@@ -50,6 +50,7 @@ import app.nijiyome.designsystem.direction.obi.obiSweepBackground
 import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.model.CardSize
 import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardPlayTarget
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.media.MediaCover
@@ -302,7 +303,7 @@ private fun BandContinue(
         obiFacts(data),
         data.episodesTotal?.takeIf { it > 0 }?.let { stringResource(Res.string.rd_obi_eps, it) },
     ).joinToString(" · ")
-    ObiFrame(spoken, onClick, onLongClick, shape, modifier.width(obiContinueWidth(size))) { raised ->
+    ObiFrame(spoken, onClick, onLongClick, shape, modifier.width(obiContinueWidth(size)), playTitle = data.title) { raised ->
         Box(
             Modifier
                 .fillMaxWidth()
@@ -359,14 +360,18 @@ private fun BandContinue(
                         ) {
                             ObiCondText(phrase.long, band.fg, if (big) 16.sp else 14.sp, Modifier.weight(1f))
                             Box(Modifier.padding(horizontal = 8.dp).width(1.dp).height(20.dp).background(band.fg.copy(alpha = 0.3f)))
-                            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = band.fg, modifier = Modifier.size(18.dp))
-                            Text(
-                                stringResource(Res.string.rd_obi_resume),
-                                style = obiUiStyle(12.5.sp, FontWeight.W800),
-                                color = band.fg,
-                                maxLines = 1,
-                                modifier = Modifier.padding(start = 2.dp),
-                            )
+                            CardPlayTarget(data.title, shape = RoundedCornerShape(2.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = band.fg, modifier = Modifier.size(18.dp))
+                                    Text(
+                                        stringResource(Res.string.rd_obi_resume),
+                                        style = obiUiStyle(12.5.sp, FontWeight.W800),
+                                        color = band.fg,
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(start = 2.dp),
+                                    )
+                                }
+                            }
                         }
                         ObiBandProgress(data.obiProgress() ?: 0f, band.fg, Modifier.align(Alignment.TopStart))
                     }

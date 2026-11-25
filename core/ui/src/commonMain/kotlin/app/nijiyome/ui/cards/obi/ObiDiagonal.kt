@@ -50,6 +50,7 @@ import app.nijiyome.designsystem.direction.obi.ObiFonts
 import app.nijiyome.designsystem.direction.obi.obiNoveltyBand
 import app.nijiyome.model.CardSize
 import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardPlayTarget
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.media.MediaCover
@@ -205,7 +206,7 @@ private fun DiagonalContinue(
     modifier: Modifier,
 ) {
     val shape = RoundedCornerShape(6.dp)
-    ObiFrame(spoken, onClick, onLongClick, shape, modifier.width(obiContinueWidth(size))) { raised ->
+    ObiFrame(spoken, onClick, onLongClick, shape, modifier.width(obiContinueWidth(size)), playTitle = data.title) { raised ->
         Box(
             Modifier
                 .fillMaxWidth()
@@ -248,11 +249,13 @@ private fun DiagonalContinue(
                         track = MaterialTheme.colorScheme.surfaceContainerHighest,
                     )
                 }
-                Box(
-                    Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+                CardPlayTarget(data.title) {
+                    Box(
+                        Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+                    }
                 }
             }
             if (novelty != null) ObiRibbon(novelty, ribbonMetrics(size, CardContext.CONTINUE), Modifier.matchParentSize())

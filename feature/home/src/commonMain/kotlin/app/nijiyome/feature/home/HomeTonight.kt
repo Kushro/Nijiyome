@@ -105,7 +105,16 @@ private fun TonightSlot(item: TonightItem, index: Int, ctx: HomeRowCtx) {
                 sheetHeader = { MenuSheetHeader(e.title) },
             ) { menu ->
                 CardWithCaption(
-                    card = { TitleCard(data, onClick = { a.onOpenEntry(e) }, context = CardContext.CONTINUE, onLongClick = menu::showSheet) },
+                    card = {
+                        TitleCard(
+                            data,
+                            onClick = { a.onOpenEntry(e) },
+                            context = CardContext.CONTINUE,
+                            onLongClick = menu::showSheet,
+                            onPlay = { a.onResumeEntry(e) },
+                            index = index,
+                        )
+                    },
                     caption = {
                         SlotCaption(Icons.Outlined.PlayCircle, stringResource(Res.string.rd_s2_tonight_resume)) {
                             PlayButton(resumeLabel, filled = true) { a.onResumeEntry(e) }
@@ -139,7 +148,16 @@ private fun TonightSlot(item: TonightItem, index: Int, ctx: HomeRowCtx) {
             ) { menu ->
                 CardWithCaption(
                     card = {
-                        GatedTitleCard(data, media, ctx.gate, onClick = { a.onMediaClick(media) }, context = CardContext.CONTINUE, onLongClick = menu::showSheet)
+                        GatedTitleCard(
+                            data,
+                            media,
+                            ctx.gate,
+                            onClick = { a.onMediaClick(media) },
+                            context = CardContext.CONTINUE,
+                            onLongClick = menu::showSheet,
+                            onPlay = { a.onPlayEpisode(media, ep.episode) },
+                            index = index,
+                        )
                     },
                     caption = { SlotCaption(Icons.Outlined.NewReleases, caption) { PlayButton(playLabel, filled = false, onClick = play) } },
                 )
@@ -151,7 +169,7 @@ private fun TonightSlot(item: TonightItem, index: Int, ctx: HomeRowCtx) {
             val data = d.cardFor(media, nextLabel = stringResource(Res.string.rd_s2_ep_short, ep.episode), aired = (ep.episode - 1).takeIf { it > 0 })
             CardWithCaption(
                 modifier = Modifier.cardSway(index),
-                card = { GatedTitleCard(data, media, ctx.gate, onClick = { a.onMediaClick(media) }, context = CardContext.CONTINUE) },
+                card = { GatedTitleCard(data, media, ctx.gate, onClick = { a.onMediaClick(media) }, context = CardContext.CONTINUE, index = index) },
                 caption = {
                     SlotCaption(Icons.Outlined.Schedule, stringResource(Res.string.rd_s2_tonight_airs_at, ep.episode, timeOf(ep))) {
                         ReminderBell(media, on = d.reminds(media.ref), onToggle = a.onToggleReminder)

@@ -67,6 +67,7 @@ import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.designsystem.motion.MotionLevel
 import app.nijiyome.model.CardSize
 import app.nijiyome.model.Density
+import app.nijiyome.ui.cards.CardPlayTarget
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.look.CardSizing
@@ -392,7 +393,7 @@ internal fun TzContinue(
 @Composable
 private fun continueSub(data: TitleCardData, texts: TzTexts): String = texts.wish ?: data.subtitle.orEmpty()
 
-/** The play disc of Continuar (decorative: the whole card resumes). */
+/** The play disc of Continuar; wrapped in [CardPlayTarget] it is the card's play button when the screen gives one. */
 @Composable
 internal fun TzPlayDisc(background: Color, glyph: Color, modifier: Modifier = Modifier, lifted: Boolean = false) {
     val perf = LocalMotion.current.level == MotionLevel.PERF
@@ -442,7 +443,9 @@ private fun TzContinueTall(
         ) {
             Box(Modifier.padding(start = 6.dp, end = 6.dp, top = 16.dp)) {
                 TzPoster(data.coverUrl, tzPaperShape)
-                TzPlayDisc(TanabataMaterials.ink, base, Modifier.align(Alignment.BottomEnd).padding(end = 6.dp, bottom = 8.dp), lifted = true)
+                CardPlayTarget(texts.title, Modifier.align(Alignment.BottomEnd).padding(end = 6.dp, bottom = 8.dp)) {
+                    TzPlayDisc(TanabataMaterials.ink, base, lifted = true)
+                }
             }
             Column(
                 Modifier
@@ -531,6 +534,8 @@ private fun TzContinueWide(
                 if (panel) TzTag(it, data.listStatus) else Text(it, style = TzType.sub(12.5.sp), color = textColor, maxLines = 1)
             }
         }
-        if (panel) TzPlayDisc(cs.primary, cs.onPrimary) else TzPlayDisc(TanabataMaterials.ink, base)
+        CardPlayTarget(texts.title) {
+            if (panel) TzPlayDisc(cs.primary, cs.onPrimary) else TzPlayDisc(TanabataMaterials.ink, base)
+        }
     }
 }

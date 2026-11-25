@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, contract integration: shared card pieces. -->
+    <string name="rd_contract_play_title">Play %1$s</string>
+</resources>

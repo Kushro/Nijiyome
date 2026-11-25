@@ -181,7 +181,7 @@ object LineCard : TitleCardStyle {
                 val narrow = maxWidth < 420.dp
                 val trailing: @Composable () -> Unit = {
                     if (resume) {
-                        PlayDisc()
+                        PlayDisc(data.title)
                     } else if (status != null) {
                         StatusMark(status.first, status.second)
                     }
