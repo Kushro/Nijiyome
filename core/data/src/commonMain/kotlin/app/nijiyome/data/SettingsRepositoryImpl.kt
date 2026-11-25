@@ -13,6 +13,7 @@ import app.nijiyome.model.FrameGenSettings
 import app.nijiyome.model.EpisodeView
 import app.nijiyome.model.LookPrefs
 import app.nijiyome.model.NovelReaderSettings
+import app.nijiyome.model.PlayerChromeStyle
 import app.nijiyome.model.PlayerEngine
 import app.nijiyome.model.PlayerQualityPrefs
 import app.nijiyome.model.QualityPresets
@@ -129,6 +130,8 @@ internal object SettingsCodec {
     private val PLAYER_QUALITY = stringPreferencesKey("player_quality_json")
     // --- 0.4.0 player quality (worker B): phone frame generation ---
     private val FRAME_GEN = stringPreferencesKey("frame_gen_json")
+    // --- v1.2.0: touch player chrome style ---
+    private val PLAYER_CHROME_STYLE = stringPreferencesKey("player_chrome_style")
     private val KEYMAP_SERIALIZER = MapSerializer(String.serializer(), String.serializer())
     const val COUNTDOWN_MIN_SECS = 3
     const val COUNTDOWN_MAX_SECS = 30
@@ -196,6 +199,7 @@ internal object SettingsCodec {
             look = decodeLook(p[LOOK]) ?: d.look,
             playerQuality = decode(p[PLAYER_QUALITY], PlayerQualityPrefs.serializer())?.sanitized() ?: d.playerQuality,
             frameGen = decode(p[FRAME_GEN], FrameGenSettings.serializer())?.sanitized() ?: d.frameGen,
+            playerChromeStyle = enumOr(p[PLAYER_CHROME_STYLE], d.playerChromeStyle),
         )
     }
 
@@ -248,6 +252,7 @@ internal object SettingsCodec {
         p[MATURE_CONTENT] = s.matureContent.name
         p[LOOK] = json.encodeToString(LookPrefs.serializer(), s.look.sanitized())
         p[PLAYER_QUALITY] = json.encodeToString(PlayerQualityPrefs.serializer(), s.playerQuality.sanitized())
+        p[PLAYER_CHROME_STYLE] = s.playerChromeStyle.name
         p[FRAME_GEN] = json.encodeToString(FrameGenSettings.serializer(), s.frameGen.sanitized())
     }
 

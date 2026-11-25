@@ -18,18 +18,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
+import app.nijiyome.designsystem.theme.LocalReduceMotion
 import kotlinx.coroutines.delay
 
-/** Placeholder block with the final shape of the content (02 §5). */
+/** Placeholder block with the final shape of the content (02 §5). Honours [LocalReduceMotion]. */
 @Composable
 fun SkeletonBox(modifier: Modifier = Modifier, shape: Shape = MaterialTheme.shapes.medium) {
-    val transition = rememberInfiniteTransition(label = "skeleton")
-    val alpha by transition.animateFloat(
-        initialValue = 0.45f,
-        targetValue = 0.9f,
-        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
-        label = "skeletonAlpha",
-    )
+    val alpha = if (LocalReduceMotion.current) {
+        0.65f
+    } else {
+        val transition = rememberInfiniteTransition(label = "skeleton")
+        val anim by transition.animateFloat(
+            initialValue = 0.45f,
+            targetValue = 0.9f,
+            animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+            label = "skeletonAlpha",
+        )
+        anim
+    }
     Box(
         modifier
             .alpha(alpha)

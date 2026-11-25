@@ -91,6 +91,7 @@ import app.nijiyome.model.StremioAddon
 import app.nijiyome.model.InstalledExtension
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.ui.state.screenInsets
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -101,7 +102,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExtensionsScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
     viewModel: ExtensionsViewModel = koinViewModel(),
     // parity wave B (docs/redesign/16-parity-wave-b-contract-android.md §3.4, worker t): "Proveedores" section (customSources) -> Route.Provider.
@@ -154,12 +155,15 @@ fun ExtensionsScreen(
 
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = screenInsets,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.extensions_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
+                        }
                     }
                 },
                 actions = {
@@ -183,7 +187,7 @@ fun ExtensionsScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().widthIn(max = 840.dp),
+                modifier = Modifier.widthIn(max = 840.dp).fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {

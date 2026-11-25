@@ -76,6 +76,7 @@ internal fun ResetAppRow(vm: SettingsViewModel) {
                     saveExport("nijiyome-history-${LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)}.json", event.json)
                 SystemEvent.HistoryCleared -> currentSnackbar.show(getString(Res.string.settings_data_history_cleared))
                 SystemEvent.LogsCleared -> currentSnackbar.show(getString(Res.string.settings_logs_cleared))
+                is SystemEvent.LogsPushed -> Unit
                 is SystemEvent.Failed -> currentSnackbar.show(getString(Res.string.settings_action_failed))
             }
         }

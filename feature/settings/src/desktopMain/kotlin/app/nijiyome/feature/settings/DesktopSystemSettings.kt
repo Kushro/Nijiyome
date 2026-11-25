@@ -63,6 +63,8 @@ data class DesktopSystemPrefs(
     val startWithSystem: Boolean = false,
     /** Discord Rich Presence: what is being watched, over Discord's local IPC. */
     val discordPresence: Boolean = false,
+    /** Use the OS native window title bar instead of the custom frameless title bar (requires restart). */
+    val nativeTitleBar: Boolean = false,
 )
 
 /**
@@ -150,6 +152,12 @@ internal actual fun PlatformSystemRows() {
         checked = prefs.discordPresence && control.discordConfigured,
         enabled = control.discordConfigured,
         onChange = { on -> control.update { it.copy(discordPresence = on) } },
+    )
+    SwitchRow(
+        label = "Barra de título nativa del sistema",
+        hint = "Usa las decoraciones de ventana del sistema operativo (aplica al reiniciar).",
+        checked = prefs.nativeTitleBar,
+        onChange = { on -> control.update { it.copy(nativeTitleBar = on) } },
     )
     if (control.linkHandlerSupported) LinkHandlerRow(control)
     if (control.secretsBackend == "file") SectionHint(stringResource(Res.string.settings_system_secrets_file))

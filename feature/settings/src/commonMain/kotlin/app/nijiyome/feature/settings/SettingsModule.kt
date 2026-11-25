@@ -31,7 +31,15 @@ fun settingsModule(images: Scope.() -> ImageCache?): Module = module {
         )
     }
     // parity wave A (15 §3.3-3.4, worker q): Acerca de / Datos actions, first-run wizard.
-    viewModel { SystemViewModel(logs = getOrNull(), updates = getOrNull(), history = getOrNull()) }
+    viewModel {
+        SystemViewModel(
+            logs = getOrNull(),
+            updates = getOrNull(),
+            history = getOrNull(),
+            remoteLogs = getOrNull(),
+            logPush = getOrNull(),
+        )
+    }
     viewModel { OnboardingViewModel(settingsRepo = get()) }
     // parity wave A (15 §3.3, worker q): Listas y cuentas (OAuth redirect from PendingOAuthRedirect) and the wizard's lists step.
     // A provider without a client id (NIJIYOME_*_CLIENT_ID unset) shows "Vincular" disabled with the reason. Only created where a

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FolderOpen
@@ -105,6 +106,7 @@ import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.platform.rememberFilePicker
 import app.nijiyome.ui.platform.rememberFolderPicker
 import app.nijiyome.ui.platform.rememberNotificationPermission
+import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.toAppError
 import app.nijiyome.ui.state.userMessage
 import kotlinx.coroutines.flow.flowOf
@@ -136,10 +138,11 @@ fun DownloadsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = LocalAppSnackbar.current
     LaunchedEffect(initialTab) { viewModel.selectTab(initialTab) }
-    // Downloads notify (progress / done): ask POST_NOTIFICATIONS here, never at app start (16 §0.12).
+    // Ask POST_NOTIFICATIONS only once an active download actually starts (never cold-prompt on an empty screen).
     val permission = rememberNotificationPermission()
-    LaunchedEffect(Unit) {
-        if (!permission.isGranted()) permission.request()
+    val hasActive = state.active.isNotEmpty() || state.activeTorrents.isNotEmpty()
+    LaunchedEffect(hasActive) {
+        if (hasActive && !permission.isGranted()) permission.request()
     }
     val msgChecked = stringResource(Res.string.downloads_checked)
     val msgVerified = stringResource(Res.string.downloads_verified)
@@ -164,6 +167,7 @@ fun DownloadsScreen(
     }
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = screenInsets,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.downloads_title)) },
@@ -199,6 +203,15 @@ fun DownloadsScreen(
                 value = state.query,
                 onValueChange = viewModel::setQuery,
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                trailingIcon = if (state.query.isNotEmpty()) {
+                    {
+                        IconButton(onClick = { viewModel.setQuery("") }) {
+                            Icon(Icons.Outlined.Close, contentDescription = "Limpiar búsqueda")
+                        }
+                    }
+                } else {
+                    null
+                },
                 placeholder = { Text(stringResource(Res.string.downloads_search)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -737,16 +750,22 @@ private fun LocalRow(item: LocalLibraryItem, vm: DownloadsViewModel, onPlay: (Pl
             title = { Text(stringResource(Res.string.downloads_local_remove)) },
             text = { Text(stringResource(Res.string.downloads_local_remove_body, item.fileName)) },
             confirmButton = {
-                TextButton(onClick = {
-                    vm.removeLocal(item.id, deleteFile = true)
-                    confirm = false
-                }) { Text(stringResource(Res.string.downloads_local_remove_file)) }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = {
+                        vm.removeLocal(item.id, deleteFile = false)
+                        confirm = false
+                    }) { Text(stringResource(Res.string.downloads_local_remove_entry)) }
+                    TextButton(
+                        onClick = {
+                            vm.removeLocal(item.id, deleteFile = true)
+                            confirm = false
+                        },
+                        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    ) { Text(stringResource(Res.string.downloads_local_remove_file)) }
+                }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    vm.removeLocal(item.id, deleteFile = false)
-                    confirm = false
-                }) { Text(stringResource(Res.string.downloads_local_remove_entry)) }
+                TextButton(onClick = { confirm = false }) { Text(stringResource(UiR.string.ui_cancel)) }
             },
         )
     }

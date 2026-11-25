@@ -6,8 +6,10 @@ package app.nijiyome.feature.settings
 import app.nijiyome.feature.settings.resources.Res
 import app.nijiyome.feature.settings.resources.*
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,23 +19,35 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.NewReleases
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -47,6 +61,7 @@ import app.nijiyome.designsystem.components.PillTone
 import app.nijiyome.designsystem.components.rememberAfterDelay
 import app.nijiyome.designsystem.theme.NijiyomeFonts
 import app.nijiyome.model.LoadState
+import app.nijiyome.ui.platform.rememberOpenFolder
 import app.nijiyome.ui.state.userMessage
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
@@ -94,16 +109,39 @@ internal fun UpdateCheckRow(system: SystemViewModel, updateCheckEnabled: Boolean
     }
 }
 
-/** "Abrir registros": last 500 lines of the app log (newest at the bottom) + Compartir (FileProvider) + Vaciar. */
+private enum class SeverityFilter { ALL, WARN_UP, ERROR_ONLY }
+
+/** "Abrir registros": last 500 lines of local or linked-device logs + severity/search filters + push-to-PC + share + clear. */
 @Composable
 internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
     val state by system.state.collectAsStateWithLifecycle()
     val shareLog = rememberShareLog(system)
+    val openFolder = rememberOpenFolder()
     val shareFailed = stringResource(Res.string.settings_logs_share_failed)
+    val actionFailed = stringResource(Res.string.settings_action_failed)
     val snackbar = LocalAppSnackbar.current
+    var severity by remember { mutableStateOf(SeverityFilter.ALL) }
+    var query by remember { mutableStateOf("") }
+
     LaunchedEffect(system) { system.loadLogs() }
+    LaunchedEffect(system) {
+        system.events.collect { ev ->
+            when (ev) {
+                is SystemEvent.LogsPushed -> snackbar.show(
+                    if (ev.count > 0) "Se enviaron ${ev.count} líneas a la PC" else "Los registros ya estaban al día en la PC",
+                )
+                is SystemEvent.Failed -> snackbar.show(actionFailed)
+                else -> Unit
+            }
+        }
+    }
+
     AdaptiveSheet(onDismissRequest = onDismiss) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             Icon(Icons.Outlined.Terminal, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Text(
                 stringResource(Res.string.settings_logs),
@@ -111,6 +149,17 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
             val lines = (state.logs as? LoadState.Ok)?.value.orEmpty()
+            IconButton(onClick = system::loadLogs) {
+                Icon(Icons.Outlined.Refresh, contentDescription = "Actualizar")
+            }
+            if (openFolder != null) {
+                val folder = system.logsFolder()
+                if (folder != null) {
+                    IconButton(onClick = { openFolder(folder.absolutePath) }) {
+                        Icon(Icons.Outlined.FolderOpen, contentDescription = "Abrir carpeta")
+                    }
+                }
+            }
             TextButton(onClick = system::clearLogs, enabled = lines.isNotEmpty()) {
                 Icon(Icons.Outlined.DeleteSweep, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text(stringResource(Res.string.settings_logs_clear), modifier = Modifier.padding(start = 4.dp))
@@ -125,6 +174,91 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                 Text(stringResource(Res.string.settings_logs_share), modifier = Modifier.padding(start = 4.dp))
             }
         }
+
+        // Device source strip (Desktop when linked devices have shipped logs) + Push to PC (Android when paired).
+        if (state.logDevices.isNotEmpty() || system.canPushLogs) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (state.logDevices.isNotEmpty()) {
+                    FilterChip(
+                        selected = state.logSource == LogSourceFilter.Local,
+                        onClick = { system.selectLogSource(LogSourceFilter.Local) },
+                        label = { Text("Esta PC") },
+                    )
+                    state.logDevices.forEach { dev ->
+                        FilterChip(
+                            selected = (state.logSource as? LogSourceFilter.Device)?.id == dev.id,
+                            onClick = { system.selectLogSource(LogSourceFilter.Device(dev.id, dev.name)) },
+                            label = { Text(dev.name) },
+                        )
+                    }
+                    FilterChip(
+                        selected = state.logSource == LogSourceFilter.All,
+                        onClick = { system.selectLogSource(LogSourceFilter.All) },
+                        label = { Text("Todos") },
+                    )
+                }
+                if (system.canPushLogs) {
+                    FilledTonalButton(
+                        onClick = system::pushLogsToPc,
+                        enabled = !state.pushingLogs,
+                    ) {
+                        if (state.pushingLogs) {
+                            LoadingIndicator(Modifier.size(18.dp))
+                        } else {
+                            Icon(Icons.Outlined.CloudUpload, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        }
+                        Text("Enviar a la PC", modifier = Modifier.padding(start = 6.dp))
+                    }
+                }
+            }
+        }
+
+        // Severity filter + live search filter.
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilterChip(
+                    selected = severity == SeverityFilter.ALL,
+                    onClick = { severity = SeverityFilter.ALL },
+                    label = { Text("Todos") },
+                )
+                FilterChip(
+                    selected = severity == SeverityFilter.WARN_UP,
+                    onClick = { severity = SeverityFilter.WARN_UP },
+                    label = { Text("WARN+") },
+                )
+                FilterChip(
+                    selected = severity == SeverityFilter.ERROR_ONLY,
+                    onClick = { severity = SeverityFilter.ERROR_ONLY },
+                    label = { Text("ERROR") },
+                )
+            }
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                placeholder = { Text("Filtrar por etiqueta, error o mensaje…") },
+                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Outlined.Close, contentDescription = "Limpiar")
+                        }
+                    }
+                },
+            )
+        }
+
         when (val logs = state.logs) {
             LoadState.Loading -> if (rememberAfterDelay(150)) {
                 Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { LoadingIndicator() }
@@ -134,27 +268,40 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                 retryLabel = stringResource(UiR.string.ui_retry),
                 onRetry = system::loadLogs,
             )
-            is LoadState.Ok -> if (logs.value.isEmpty()) {
-                EmptyState(icon = Icons.Outlined.Terminal, title = stringResource(Res.string.settings_logs_empty))
-            } else {
-                val listState = rememberLazyListState()
-                LaunchedEffect(logs.value.size) { listState.scrollToItem(logs.value.lastIndex) }
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    items(logs.value) { line ->
-                        Text(
-                            line,
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = NijiyomeFonts.jetBrainsMono),
-                            color = when {
-                                " E/" in line -> MaterialTheme.colorScheme.error
-                                " W/" in line -> MaterialTheme.colorScheme.tertiary
-                                else -> MaterialTheme.colorScheme.onSurface
-                            },
-                        )
+            is LoadState.Ok -> {
+                val q = query.trim().lowercase()
+                val filtered = remember(logs.value, severity, q) {
+                    logs.value.filter { line ->
+                        val sevOk = when (severity) {
+                            SeverityFilter.ALL -> true
+                            SeverityFilter.WARN_UP -> " W/" in line || " E/" in line
+                            SeverityFilter.ERROR_ONLY -> " E/" in line
+                        }
+                        sevOk && (q.isEmpty() || q in line.lowercase())
+                    }
+                }
+                if (filtered.isEmpty()) {
+                    EmptyState(icon = Icons.Outlined.Terminal, title = stringResource(Res.string.settings_logs_empty))
+                } else {
+                    val listState = rememberLazyListState()
+                    LaunchedEffect(filtered.size) { listState.scrollToItem(filtered.lastIndex) }
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        items(filtered) { line ->
+                            Text(
+                                line,
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = NijiyomeFonts.jetBrainsMono),
+                                color = when {
+                                    " E/" in line -> MaterialTheme.colorScheme.error
+                                    " W/" in line -> MaterialTheme.colorScheme.tertiary
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                },
+                            )
+                        }
                     }
                 }
             }

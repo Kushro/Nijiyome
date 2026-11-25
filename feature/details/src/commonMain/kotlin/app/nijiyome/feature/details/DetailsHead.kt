@@ -81,7 +81,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
+import app.nijiyome.designsystem.components.HorizontalScrollStrip
 import app.nijiyome.designsystem.components.LocalAppSnackbar
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.model.ListsRepository
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
@@ -528,11 +530,20 @@ internal fun HeadActions(
     }
     val group = Modifier.semantics { isTraversalGroup = true }
     when (style) {
-        HeadActionStyle.CHIPS -> Row(
-            modifier.then(group).fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = edge),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) { content() }
+        HeadActionStyle.CHIPS -> {
+            val scroll = rememberScrollState()
+            HorizontalScrollStrip(scrollState = scroll, showChevrons = edge >= 16.dp, modifier = modifier.then(group)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalFadingEdge(scroll)
+                        .horizontalScroll(scroll)
+                        .padding(horizontal = edge),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) { content() }
+            }
+        }
         HeadActionStyle.PLAIN_ICONS -> Row(
             modifier.then(group).fillMaxWidth().padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,

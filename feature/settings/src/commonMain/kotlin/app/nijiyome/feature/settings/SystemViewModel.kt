@@ -4,9 +4,12 @@ package app.nijiyome.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.nijiyome.model.AppError
+import app.nijiyome.model.DeviceLogSource
 import app.nijiyome.model.HistoryRepository
 import app.nijiyome.model.LoadState
+import app.nijiyome.model.LogPushTrigger
 import app.nijiyome.model.LogRepository
+import app.nijiyome.model.RemoteLogsRepository
 import app.nijiyome.model.UpdateInfo
 import app.nijiyome.model.UpdateRepository
 import app.nijiyome.ui.state.runCatchingApp
@@ -36,10 +39,20 @@ sealed interface UpdateCheckState {
     data class Failed(val cause: AppError) : UpdateCheckState
 }
 
+/** Which source the log viewer shows: local app, a specific linked device, or all merged chronologically. */
+sealed interface LogSourceFilter {
+    data object Local : LogSourceFilter
+    data class Device(val id: String, val name: String) : LogSourceFilter
+    data object All : LogSourceFilter
+}
+
 data class SystemUiState(
     val update: UpdateCheckState = UpdateCheckState.Idle,
-    /** Last lines of the app log; Loading until "Abrir registros" asks for them. */
+    /** Last lines of the selected log source; Loading until "Abrir registros" asks for them. */
     val logs: LoadState<List<String>> = LoadState.Loading,
+    val logDevices: List<DeviceLogSource> = emptyList(),
+    val logSource: LogSourceFilter = LogSourceFilter.Local,
+    val pushingLogs: Boolean = false,
     val exportingHistory: Boolean = false,
     val clearingHistory: Boolean = false,
 )
@@ -49,6 +62,7 @@ sealed interface SystemEvent {
     data class HistoryExported(val json: String) : SystemEvent
     data object HistoryCleared : SystemEvent
     data object LogsCleared : SystemEvent
+    data class LogsPushed(val count: Int) : SystemEvent
     data class Failed(val cause: AppError) : SystemEvent
 }
 
@@ -56,6 +70,8 @@ class SystemViewModel(
     private val logs: LogRepository? = null,
     private val updates: UpdateRepository? = null,
     private val history: HistoryRepository? = null,
+    private val remoteLogs: RemoteLogsRepository? = null,
+    private val logPush: LogPushTrigger? = null,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(SystemUiState())
@@ -68,7 +84,8 @@ class SystemViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SystemUiState())
 
     val hasUpdates: Boolean get() = updates != null
-    val hasLogs: Boolean get() = logs != null
+    val hasLogs: Boolean get() = logs != null || remoteLogs != null
+    val canPushLogs: Boolean get() = logPush != null
 
     fun checkUpdates() {
         val repo = updates ?: return
@@ -87,28 +104,86 @@ class SystemViewModel(
         }
     }
 
+    fun selectLogSource(source: LogSourceFilter) {
+        if (local.value.logSource == source) return
+        local.update { it.copy(logSource = source) }
+        loadLogs()
+    }
+
     fun loadLogs() {
-        val repo = logs ?: run {
-            local.update { it.copy(logs = LoadState.Ok(emptyList())) }
-            return
-        }
+        val source = local.value.logSource
         local.update { it.copy(logs = LoadState.Loading) }
         viewModelScope.launch {
-            val result = runCatchingApp { repo.recentLines(MAX_LOG_LINES) }
-            local.update { s -> s.copy(logs = result.fold(onSuccess = { LoadState.Ok(it) }, onFailure = { LoadState.Err(it.toAppError()) })) }
+            val devices = runCatching { remoteLogs?.listDevices().orEmpty() }.getOrDefault(emptyList())
+            val effectiveSource = if (source is LogSourceFilter.Device && devices.none { it.id == source.id }) {
+                LogSourceFilter.Local
+            } else {
+                source
+            }
+            val result = runCatchingApp {
+                when (effectiveSource) {
+                    LogSourceFilter.Local -> logs?.recentLines(MAX_LOG_LINES).orEmpty()
+                    is LogSourceFilter.Device -> remoteLogs?.recentLines(effectiveSource.id, MAX_LOG_LINES).orEmpty()
+                    LogSourceFilter.All -> {
+                        val localLines = logs?.recentLines(MAX_LOG_LINES).orEmpty().map { "[PC] $it" }
+                        val remoteLines = remoteLogs?.recentLines(null, MAX_LOG_LINES).orEmpty()
+                        (localLines + remoteLines).sortedBy { line ->
+                            val start = line.indexOf("] ")
+                            if (start > 0 && line.length > start + 24) line.substring(start + 2, start + 26) else line
+                        }.takeLast(MAX_LOG_LINES)
+                    }
+                }
+            }
+            local.update { s ->
+                s.copy(
+                    logDevices = devices,
+                    logSource = effectiveSource,
+                    logs = result.fold(onSuccess = { LoadState.Ok(it) }, onFailure = { LoadState.Err(it.toAppError()) }),
+                )
+            }
         }
     }
 
-    fun logFile(): File? = logs?.logFile()
+    fun logFile(): File? = when (val src = local.value.logSource) {
+        LogSourceFilter.Local -> logs?.logFile()
+        is LogSourceFilter.Device -> remoteLogs?.logFile(src.id) ?: logs?.logFile()
+        LogSourceFilter.All -> logs?.logFile()
+    }
+
+    fun logsFolder(): File? = remoteLogs?.logsDir() ?: logs?.logFile()?.parentFile
 
     fun clearLogs() {
-        val repo = logs ?: return
+        val src = local.value.logSource
         viewModelScope.launch {
-            runCatchingApp { repo.clear() }.fold(
+            runCatchingApp {
+                when (src) {
+                    LogSourceFilter.Local -> logs?.clear()
+                    is LogSourceFilter.Device -> remoteLogs?.clear(src.id)
+                    LogSourceFilter.All -> {
+                        logs?.clear()
+                        remoteLogs?.clear(null)
+                    }
+                }
+            }.fold(
                 onSuccess = {
-                    local.update { it.copy(logs = LoadState.Ok(emptyList())) }
+                    val devices = runCatching { remoteLogs?.listDevices().orEmpty() }.getOrDefault(emptyList())
+                    local.update { it.copy(logs = LoadState.Ok(emptyList()), logDevices = devices) }
                     _events.trySend(SystemEvent.LogsCleared)
                 },
+                onFailure = { _events.trySend(SystemEvent.Failed(it.toAppError())) },
+            )
+        }
+    }
+
+    fun pushLogsToPc() {
+        val trigger = logPush ?: return
+        if (local.value.pushingLogs) return
+        local.update { it.copy(pushingLogs = true) }
+        viewModelScope.launch {
+            val result = runCatchingApp { trigger.pushNow().getOrThrow() }
+            local.update { it.copy(pushingLogs = false) }
+            result.fold(
+                onSuccess = { count -> _events.trySend(SystemEvent.LogsPushed(count)) },
                 onFailure = { _events.trySend(SystemEvent.Failed(it.toAppError())) },
             )
         }

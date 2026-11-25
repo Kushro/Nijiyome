@@ -124,6 +124,7 @@ private fun SwitchItem(title: String, hint: String?, checked: Boolean, onChange:
         headlineContent = { Text(title) },
         supportingContent = if (hint != null) ({ Text(hint) }) else null,
         trailingContent = { Switch(checked = checked, onCheckedChange = onChange) },
+        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clickable { onChange(!checked) },
     )
 }

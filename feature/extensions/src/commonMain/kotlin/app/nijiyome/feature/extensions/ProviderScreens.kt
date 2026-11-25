@@ -106,6 +106,7 @@ fun ProviderScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         topBar = {
             TopAppBar(
                 title = {
@@ -134,7 +135,7 @@ fun ProviderScreen(
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize().widthIn(max = 960.dp),
+                modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
@@ -257,6 +258,7 @@ fun ProviderItemScreen(
     }
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         topBar = {
             TopAppBar(
                 title = {

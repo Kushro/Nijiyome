@@ -177,6 +177,10 @@ class LinkServer private constructor(
 
     fun activeSessions(): Int = manager.activeCount()
 
+    fun activeSessionSnapshots(): List<SessionSnapshot> = manager.activeSnapshots()
+
+    fun stopSession(id: String) = manager.close(id)
+
     /** Devices connected now: with a live session, or seen within [ONLINE_WINDOW_SECS] (the events long-poll keeps it fresh). */
     fun onlineDeviceIds(): List<String> = onlineIds(manager.deviceIds(), devices.list(), now())
 

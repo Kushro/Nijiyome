@@ -300,7 +300,10 @@ fun DetailsScreen(
                     viewModel.dismissPicker()
                     onOpenSettings(SettingsSection.PLAYER)
                 },
-                onDownload = { source -> actions.onDownloadSource(source, request.episode) },
+                onDownload = { source ->
+                    viewModel.dismissPicker()
+                    actions.onDownloadSource(source, request.episode)
+                },
                 rememberedPick = panel?.rememberedPick,
             )
         }
@@ -418,9 +421,8 @@ internal fun DetailsContent(
             if (state.adultGate) {
                 AdultGate(actions)
             } else {
-                // BUG-063: wide windows reserve the floating toolbar's measured height (plus its margins and the navigation bar), so
-                // the last card is never under it. Phones have no floating toolbar: the action sits in the pinned top bar.
-                val bottom = if (wide) toolbarHeight + 32.dp + navBottom else navBottom + 24.dp
+                // Phones have the watch CTA in the pinned top bar; wide windows already have the sticky right sidebar.
+                val bottom = navBottom + 24.dp
                 DetailsBody(media, state, actions, listState, bottom, wide, maxWidth, selectedTab, tabsPinned) { tab = it.ordinal }
             }
         }
@@ -496,37 +498,6 @@ internal fun DetailsContent(
                 colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f)),
             ) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
-            }
-        }
-        if (wide && loaded != null && !state.adultGate) {
-            // Floating toolbar (prototype `.ftb`, wide windows only): the main actions stay at hand while the episode list scrolls.
-            // BUG-078 / BUG-056: it shows up only once the header (with its own "Continuar" button) left the screen.
-            AnimatedVisibility(
-                visible = pastHeader,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it },
-                modifier = Modifier.align(Alignment.BottomCenter),
-            ) {
-                NijiyomeFloatingToolbar(
-                    modifier = Modifier
-                        .navigationBarsPadding()
-                        .padding(16.dp)
-                        .onSizeChanged { toolbarHeight = with(density) { it.height.toDp() } },
-                ) {
-                    TextButton(onClick = actions.onWatch, enabled = state.playable) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null)
-                        Text(watchLabel(state), modifier = Modifier.padding(start = 6.dp), maxLines = 1)
-                    }
-                    if (state.sendAvailable) {
-                        IconButton(onClick = actions.onSendToDevice) {
-                            Icon(Icons.Outlined.Cast, contentDescription = stringResource(Res.string.details_send_device))
-                        }
-                    } else if (state.phones.isNotEmpty()) {
-                        SendToPhoneButton(state, actions)
-                    }
-                    DownloadMenuButton(state, actions, icon = Icons.Outlined.Download)
-                    if (rememberListsAvailable()) ListButton(media = loaded, compact = true)
-                }
             }
         }
     }

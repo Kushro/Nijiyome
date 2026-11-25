@@ -12,7 +12,7 @@ import app.nijiyome.model.SecretStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
@@ -33,7 +33,7 @@ class DesktopResetAndUpdateTest {
 
     @AfterTest
     fun tearDown() {
-        scope.cancel()
+        runBlocking { scope.coroutineContext[kotlinx.coroutines.Job]?.cancelAndJoin() }
         root.deleteRecursively()
     }
 

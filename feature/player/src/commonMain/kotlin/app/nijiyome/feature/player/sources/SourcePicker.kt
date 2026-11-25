@@ -3,7 +3,9 @@
 
 package app.nijiyome.feature.player.sources
 
+import app.nijiyome.designsystem.components.HorizontalScrollStrip
 import app.nijiyome.designsystem.components.TrackModal
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.feature.player.resources.Res
 import app.nijiyome.feature.player.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -294,7 +296,12 @@ private fun PickerLoading() {
 
 @Composable
 private fun FilterBar(filters: SourceFilters, options: FilterOptions, onChange: (SourceFilters) -> Unit) {
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    val scroll = rememberScrollState()
+    HorizontalScrollStrip(scrollState = scroll, showChevrons = true) {
+        Row(
+            Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
         options.sources.forEach { src ->
             FilterChip(selected = src in filters.sources, onClick = { onChange(filters.copy(sources = filters.sources.toggled(src))) }, label = { Text(src.label()) })
         }
@@ -335,6 +342,7 @@ private fun FilterBar(filters: SourceFilters, options: FilterOptions, onChange: 
                 onClick = { onChange(filters.copy(deviceCompatible = !filters.deviceCompatible)) },
                 label = { Text(stringResource(Res.string.src_filter_device)) },
             )
+        }
         }
     }
 }

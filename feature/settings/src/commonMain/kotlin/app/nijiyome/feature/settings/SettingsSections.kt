@@ -30,11 +30,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.ClosedCaption
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.Computer
@@ -53,6 +56,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -66,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -81,9 +86,11 @@ import app.nijiyome.designsystem.components.PillTone
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
 import app.nijiyome.designsystem.components.SkeletonBox
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.designsystem.components.rememberAfterDelay
 import app.nijiyome.designsystem.generated.PaletteInfo
 import app.nijiyome.designsystem.generated.NijiyomeTokens
+import app.nijiyome.designsystem.theme.LocalNijiyomeAmoled
 import app.nijiyome.designsystem.theme.NijiyomeFonts
 import app.nijiyome.feature.extensions.SourcesSettingsExtras
 import app.nijiyome.feature.player.PlayerSettingsExtras
@@ -113,10 +120,17 @@ import app.nijiyome.ui.resources.*
 // ==================================================================== Apariencia
 
 @Composable
-internal fun AppearanceSection(state: SettingsUiState, vm: SettingsViewModel) {
+internal fun AppearanceSection(state: SettingsUiState, vm: SettingsViewModel, showRailStyle: Boolean = true) {
     val s = state.settings
+    val swatchList = rememberLazyListState()
+    AppearanceLivePreview(s)
     SettingRow(stringResource(Res.string.settings_palette), stringResource(Res.string.settings_palette_hint), stack = true, divider = false) {
-        LazyRow(contentPadding = PaddingValues(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyRow(
+            state = swatchList,
+            modifier = Modifier.fillMaxWidth().horizontalFadingEdge(swatchList),
+            contentPadding = PaddingValues(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             items(NijiyomeTokens.paletteInfo, key = { it.id }, contentType = { "palette" }) { info ->
                 PaletteSwatch(
                     info,
@@ -140,10 +154,22 @@ internal fun AppearanceSection(state: SettingsUiState, vm: SettingsViewModel) {
             onSelect = vm::setThemeMode,
         )
     }
-    SwitchRow(stringResource(Res.string.settings_amoled), s.amoled, vm::setAmoled, hint = stringResource(Res.string.settings_amoled_hint))
-    SettingRow(stringResource(Res.string.settings_contrast), stack = true) {
+    val amoledApplicable = s.themeMode != ThemeMode.LIGHT
+    SwitchRow(
+        label = stringResource(Res.string.settings_amoled),
+        checked = s.amoled && amoledApplicable,
+        onChange = vm::setAmoled,
+        hint = if (amoledApplicable) stringResource(Res.string.settings_amoled_hint) else "Disponible solo en modo Oscuro o Sistema",
+        enabled = amoledApplicable,
+    )
+    val contrastEnabled = !(s.dynamicColor && dynamicColorSupported)
+    SettingRow(
+        label = stringResource(Res.string.settings_contrast),
+        hint = if (contrastEnabled) null else "Desactiva colores dinámicos para ajustar el contraste",
+        stack = true,
+    ) {
         Segmented(
-            options = ContrastPref.entries.map { SegmentedOption(it, stringResource(it.labelRes())) },
+            options = ContrastPref.entries.map { SegmentedOption(it, stringResource(it.labelRes()), enabled = contrastEnabled) },
             selected = s.contrast,
             onSelect = vm::setContrast,
         )
@@ -159,14 +185,88 @@ internal fun AppearanceSection(state: SettingsUiState, vm: SettingsViewModel) {
             onSelect = vm::setLanguage,
         )
     }
-    SwitchRow(
-        stringResource(Res.string.settings_reduce_motion),
-        s.reduceMotion,
-        vm::setReduceMotion,
-        hint = stringResource(Res.string.settings_reduce_motion_hint),
-    )
-    // 2026-11 UI refresh: Diseño y estilo (presets + every option).
-    LookGroup(s.look, onChange = vm::setLook, onPreset = vm::applyLookPreset)
+    // 2026-11 UI refresh: Diseño y estilo (presets + every option; Motion unifies reduceMotion).
+    LookGroup(s.look, onChange = vm::setLook, onPreset = vm::applyLookPreset, showRailStyle = showRailStyle)
+}
+
+/** Live mini-preview card (inspired by LiMusic Forge PREVIA) reacting instantly to palette, AMOLED, contrast & density. */
+@Composable
+private fun AppearanceLivePreview(s: app.nijiyome.model.AppSettings) {
+    val scheme = MaterialTheme.colorScheme
+    val amoled = LocalNijiyomeAmoled.current
+    Surface(
+        color = scheme.background,
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(1.dp, scheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "PREVIA",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp),
+                    color = scheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                Pill(
+                    text = if (amoled) "OLED #000" else when (s.themeMode) {
+                        ThemeMode.LIGHT -> "Claro"
+                        ThemeMode.DARK -> "Oscuro"
+                        ThemeMode.SYSTEM -> "Sistema"
+                    },
+                    tone = PillTone.NEUTRAL,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Mini rail + content mockup
+                Column(
+                    Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(scheme.surfaceContainer)
+                        .border(if (amoled) 1.dp else 0.dp, if (amoled) scheme.outlineVariant else Color.Transparent, RoundedCornerShape(8.dp))
+                        .padding(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(scheme.primary))
+                    Box(Modifier.size(width = 16.dp, height = 4.dp).clip(CircleShape).background(scheme.outlineVariant))
+                    Box(Modifier.size(width = 16.dp, height = 4.dp).clip(CircleShape).background(scheme.outlineVariant))
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(color = scheme.primary, contentColor = scheme.onPrimary, shape = CircleShape) {
+                            Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(12.dp))
+                                Text("Continuar · Ep 4", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                        Surface(
+                            color = scheme.surfaceContainerHigh,
+                            contentColor = scheme.onSurface,
+                            shape = CircleShape,
+                            border = if (amoled) BorderStroke(1.dp, scheme.outlineVariant) else null,
+                        ) {
+                            Text("1080p", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        repeat(3) {
+                            Surface(
+                                color = scheme.surfaceContainer,
+                                shape = RoundedCornerShape(8.dp),
+                                border = if (amoled) BorderStroke(1.dp, scheme.outlineVariant) else null,
+                                modifier = Modifier.weight(1f).height(26.dp),
+                            ) {
+                                Box(Modifier.padding(6.dp), contentAlignment = Alignment.BottomStart) {
+                                    Box(Modifier.fillMaxWidth(0.65f).height(4.dp).clip(CircleShape).background(scheme.onSurfaceVariant.copy(alpha = 0.35f)))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 private fun ContrastPref.labelRes(): StringResource = when (this) {
@@ -177,17 +277,19 @@ private fun ContrastPref.labelRes(): StringResource = when (this) {
 
 @Composable
 private fun PaletteSwatch(info: PaletteInfo, selected: Boolean, onClick: () -> Unit) {
+    val checkTint = if (info.seed.luminance() > 0.45f) Color(0xFF0A0A0D) else Color.White
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
                 .size(48.dp)
                 .clip(CircleShape)
+                .then(if (selected) Modifier.border(BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary), CircleShape).padding(3.dp) else Modifier)
+                .clip(CircleShape)
                 .background(info.seed)
-                .then(if (selected) Modifier.border(BorderStroke(3.dp, MaterialTheme.colorScheme.primary), CircleShape) else Modifier)
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+            if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = checkTint, modifier = Modifier.size(20.dp))
         }
         Text(info.label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp))
     }
@@ -236,6 +338,24 @@ internal fun PlayerSection(state: SettingsUiState, vm: SettingsViewModel, onOpen
             onChange = vm::setMpvTlsVerify,
             hint = stringResource(Res.string.settings_mpv_tls_verify_hint),
         )
+    }
+    // v1.2.0: touch player chrome style (Android only)
+    if (mpvTlsSettingShown) {
+        SettingRow(
+            label = "Estilo del reproductor",
+            hint = "Cine (gradientes y píldoras) o Minimalista (iconos limpios y barra fina)",
+            stack = true,
+        ) {
+            Segmented(
+                options = listOf(
+                    SegmentedOption(app.nijiyome.model.PlayerChromeStyle.CINEMA, "Cine"),
+                    SegmentedOption(app.nijiyome.model.PlayerChromeStyle.MINIMAL, "Minimalista"),
+                ),
+                selected = s.playerChromeStyle,
+                onSelect = vm::setPlayerChromeStyle,
+                fillWidth = true,
+            )
+        }
     }
     SettingRow(stringResource(Res.string.settings_source_mode), stringResource(Res.string.settings_source_mode_hint), stack = true) {
         Segmented(
@@ -464,9 +584,21 @@ internal fun MetadataSection(state: SettingsUiState, vm: SettingsViewModel) {
             small = true,
         )
     }
-    // parity wave A (15 §3.1): worker o's rows (title language, 18+ content, clear recent searches); :feature:search, Android only.
     // parity wave A (15 §3.1): worker o's rows (title language, 18+ content, clear recent searches).
     DiscoverSettingsExtras(settings = state.settings, onUpdate = vm::updateSettings)
+    // Expose notification toggles cleanly so users can control airing reminders & AniList alerts.
+    SwitchRow(
+        label = "Recordatorios de emisión",
+        checked = state.settings.airingReminders,
+        onChange = vm::setAiringReminders,
+        hint = "Avisar cuando se estrene un episodio de una serie que sigues",
+    )
+    SwitchRow(
+        label = "Notificaciones de AniList",
+        checked = state.settings.socialNotifications,
+        onChange = vm::setSocialNotifications,
+        hint = "Consultar periódicamente avisos de actividad y menciones",
+    )
 }
 
 @Composable
@@ -482,6 +614,9 @@ private fun providerName(id: String): String = when (id) {
     "anilist" -> "AniList"
     "anizip" -> "ani.zip"
     "kitsu" -> "Kitsu"
+    "mal" -> "MyAnimeList"
+    "shikimori" -> "Shikimori"
+    "tenrai" -> "Tenrai"
     else -> id
 }
 

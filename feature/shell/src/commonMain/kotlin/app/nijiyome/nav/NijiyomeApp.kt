@@ -26,6 +26,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -63,6 +66,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
@@ -78,7 +82,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -129,7 +137,12 @@ import app.nijiyome.feature.player.PlayerScreen
 import app.nijiyome.feature.search.ImageSearchScreen
 import app.nijiyome.feature.search.SearchScreen
 import app.nijiyome.feature.settings.OnboardingScreen
+import app.nijiyome.feature.settings.SettingsModalDialog
 import app.nijiyome.feature.settings.SettingsScreen
+import app.nijiyome.model.ListsRepository
+import app.nijiyome.model.NetworkSettingsController
+import app.nijiyome.ui.state.LocalScreenInsets
+import kotlinx.coroutines.launch
 import app.nijiyome.feature.social.ActivityThreadScreen
 import app.nijiyome.feature.social.NotificationsScreen
 import app.nijiyome.feature.social.ProfileScreen
@@ -329,26 +342,49 @@ private fun AppShell(
     // rail stays whatever the window size, so no destination is ever out of reach; a short window gets the scrolling rail below.
     val wide = (windowWidth >= WIDE_MIN_WIDTH_DP && windowHeight >= RAIL_MIN_HEIGHT_DP) || !available.offers(Route.You)
     val destinations = remember(wide, available) { topLevelRoutes(wide).filter(available::offers) }
-    // 2026-11 UI refresh: Diseño y estilo › Menú lateral applies to the rail only (phones keep the labelled bottom bar). A window too
-    // short for every labelled item gets the icons-only rail too, so the last destinations never fall off the screen.
-    // Hito 6 (desktop, Tatakai Next Ctrl+B): the shortcut shows the other style until pressed again.
+    // 2026-11 UI refresh: Diseño y estilo › Menú lateral applies to the rail only (phones keep the labelled bottom bar).
+    // Ctrl+B always toggles between labeled and slim modes; both modes scroll vertically when needed so no destination ever clips.
     val slimStyle = (LocalLook.current.railStyle == RailStyle.SLIM) != (shortcuts?.navToggled == true)
-    val slimRail = wide && (slimStyle || windowHeight < destinations.size * RAIL_ITEM_DP + 96)
     val selectedTop = backStack.asReversed()
         .firstNotNullOfOrNull { key -> (key as? Route)?.topLevel(wide)?.takeIf { it in destinations } }
     // parity wave B (16 §3.12): the manga / novel readers hide the nav like the player.
     val onPlayer = current is Route.Player || current is Route.MangaReader || current is Route.NovelReader
-    // Tablet landscape (824 dp tall, 13 destinations): the icons-only rail did not fit either, Perfil / Ajustes ended under the
-    // taskbar and the stock rail cannot scroll. The icons-only rail is drawn here instead ([ScrollableSlimRail]): it scrolls and
-    // keeps clear of the system bars.
-    val scrollRail = !onPlayer && slimRail
+    val useCustomRail = !onPlayer && wide
     val suiteType = when {
-        onPlayer || scrollRail -> NavigationSuiteType.None
-        wide -> NavigationSuiteType.WideNavigationRailCollapsed
+        onPlayer || useCustomRail -> NavigationSuiteType.None
         else -> NavigationSuiteType.ShortNavigationBarCompact
     }
 
-    if (shortcuts != null) ShellShortcutHandler(shortcuts, backStack, destinations, onPlayer)
+    val koin = getKoin()
+    val settingsRepo = koinInject<SettingsRepository>()
+    val settings by settingsRepo.settings.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    var paletteOpen by remember { mutableStateOf(false) }
+    var settingsModalOpen by remember { mutableStateOf(false) }
+    var settingsModalSection by remember { mutableStateOf<SettingsSection?>(null) }
+
+    val allowedSettingsSections = remember(koin) {
+        val hasLists = koin.getOrNull<ListsRepository>() != null
+        val hasNetwork = koin.getOrNull<NetworkSettingsController>() != null
+        SettingsSection.entries.filterTo(linkedSetOf()) { s ->
+            (hasLists || s != SettingsSection.ACCOUNTS) && (hasNetwork || s != SettingsSection.NETWORK)
+        }
+    }
+
+    if (shortcuts != null) {
+        LaunchedEffect(backStack.size) { shortcuts.canGoBack = backStack.size > 1 }
+        ShellShortcutHandler(
+            shortcuts = shortcuts,
+            backStack = backStack,
+            destinations = destinations,
+            onPlayer = onPlayer,
+            onOpenPalette = { paletteOpen = true },
+            onOpenSettings = { sec ->
+                settingsModalSection = sec
+                settingsModalOpen = true
+            },
+        )
+    }
 
     val torrentStatus by rememberTorrentStatus().collectAsStateWithLifecycle()
     val activeDownloads = torrentStatus.activeDownloads
@@ -356,8 +392,6 @@ private fun AppShell(
     val showOffline = !online && !onPlayer
 
     // parity wave A (15 §3.4, checklist system.update-startup-notice): one snackbar per newer release, "Ver" opens Acerca de.
-    // Worker q's UpdateRepository publishes it (the contract stub never does); AppSettings.updateCheck is honoured inside the repository.
-    val koin = getKoin()
     val latestFlow = remember(koin) { koin.getOrNull<UpdateRepository>()?.latest ?: MutableStateFlow<UpdateInfo?>(null) }
     val latestUpdate by latestFlow.collectAsStateWithLifecycle()
     val updateMessage = latestUpdate?.let { stringResource(Res.string.app_update_available, it.version) }
@@ -368,99 +402,174 @@ private fun AppShell(
         }
     }
 
-    NavigationSuiteScaffold(
-        navigationItems = {
-            val badgeDescription = pluralStringResource(Res.plurals.app_active_downloads, activeDownloads, activeDownloads)
-            destinations.forEach { route ->
-                val selected = route == selectedTop
-                // Badge = active downloads: on Library (compact, Torrents is a Library tab) / on Torrents (rail).
-                val badged = activeDownloads > 0 &&
-                    ((!wide && route == Route.Library) || (wide && route is Route.Torrents))
-                NavigationSuiteItem(
-                    selected = selected,
-                    onClick = { backStack.navigateTop(route) },
-                    icon = {
-                        val label = route.label()
-                        Icon(route.icon(selected), contentDescription = if (slimRail) label else null)
-                    },
-                    label = if (slimRail) null else ({ Text(route.label()) }),
-                    navigationSuiteType = suiteType,
-                    badge = if (badged) {
-                        {
-                            Badge(Modifier.semantics { contentDescription = badgeDescription }) {
-                                Text(if (activeDownloads > 99) "99+" else activeDownloads.toString())
+    // Provide accurate screen insets to all child Scaffolds (0dp bottom on compact bar since NavigationSuiteScaffold consumes it).
+    val childInsets = if (suiteType == NavigationSuiteType.ShortNavigationBarCompact) {
+        WindowInsets.statusBars
+    } else {
+        WindowInsets.statusBars.union(WindowInsets.navigationBars)
+    }
+
+    CompositionLocalProvider(LocalScreenInsets provides childInsets) {
+        NavigationSuiteScaffold(
+            navigationItems = {
+                val badgeDescription = pluralStringResource(Res.plurals.app_active_downloads, activeDownloads, activeDownloads)
+                destinations.forEach { route ->
+                    val selected = route == selectedTop
+                    // Badge = active downloads: on Library (compact, Torrents is a Library tab) / on Torrents (rail).
+                    val badged = activeDownloads > 0 &&
+                        ((!wide && route == Route.Library) || (wide && route is Route.Torrents))
+                    NavigationSuiteItem(
+                        selected = selected,
+                        onClick = { backStack.navigateTop(route) },
+                        icon = { Icon(route.icon(selected), contentDescription = null) },
+                        label = { Text(route.label(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        navigationSuiteType = suiteType,
+                        badge = if (badged) {
+                            {
+                                Badge(Modifier.semantics { contentDescription = badgeDescription }) {
+                                    Text(if (activeDownloads > 99) "99+" else activeDownloads.toString())
+                                }
                             }
-                        }
-                    } else {
-                        null
-                    },
-                )
-            }
-        },
-        navigationSuiteType = suiteType,
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        // The rail does not consume the bottom system inset (the bar does): the banner and snackbar add it themselves there.
-        val bottomInsets = if (suiteType == NavigationSuiteType.ShortNavigationBarCompact) WindowInsets(0) else WindowInsets.navigationBars
-        Row(Modifier.fillMaxSize()) {
-            if (scrollRail) {
-                ScrollableSlimRail(destinations, selectedTop, activeDownloads) { backStack.navigateTop(it) }
-            }
-            Box(Modifier.weight(1f).fillMaxHeight()) {
-                Column(Modifier.fillMaxSize()) {
-                    Box(Modifier.weight(1f).fillMaxWidth()) {
-                        AppNavDisplay(backStack, wide, available, snackbar, shortcuts)
-                    }
-                    AnimatedVisibility(visible = showOffline, enter = expandVertically(), exit = shrinkVertically()) {
-                        OfflineBanner(Modifier.windowInsetsPadding(bottomInsets))
-                    }
+                        } else {
+                            null
+                        },
+                    )
                 }
-                AppSnackbarHost(
-                    snackbar,
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .windowInsetsPadding(bottomInsets)
-                        .padding(bottom = if (showOffline) OFFLINE_BANNER_HEIGHT else 0.dp),
-                )
+            },
+            navigationSuiteType = suiteType,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            // The rail does not consume the bottom system inset (the bar does): the banner and snackbar add it themselves there.
+            val bottomInsets = if (suiteType == NavigationSuiteType.ShortNavigationBarCompact) WindowInsets(0) else WindowInsets.navigationBars
+            Row(Modifier.fillMaxSize()) {
+                if (useCustomRail) {
+                    ScrollableRail(
+                        destinations = destinations,
+                        selected = selectedTop,
+                        activeDownloads = activeDownloads,
+                        slim = slimStyle,
+                        onSelect = { backStack.navigateTop(it) },
+                    )
+                }
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    Column(Modifier.fillMaxSize()) {
+                        Box(Modifier.weight(1f).fillMaxWidth()) {
+                            AppNavDisplay(backStack, wide, available, snackbar, shortcuts)
+                        }
+                        AnimatedVisibility(visible = showOffline, enter = expandVertically(), exit = shrinkVertically()) {
+                            OfflineBanner(Modifier.windowInsetsPadding(bottomInsets))
+                        }
+                    }
+                    AppSnackbarHost(
+                        snackbar,
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .windowInsetsPadding(bottomInsets)
+                            .padding(bottom = if (showOffline) OFFLINE_BANNER_HEIGHT else 0.dp),
+                    )
+                }
             }
+        }
+
+        if (paletteOpen) {
+            NijiyomeCommandPalette(
+                settings = settings,
+                allowedSections = allowedSettingsSections,
+                onDismiss = { paletteOpen = false },
+                onNavigate = { route ->
+                    if (available.offers(route)) {
+                        if (route in destinations) backStack.navigateTop(route) else backStack.add(route)
+                    }
+                },
+                onOpenSettings = { sec ->
+                    if (wide && shortcuts != null) {
+                        settingsModalSection = sec
+                        settingsModalOpen = true
+                    } else {
+                        val r = if (sec != null) Route.SettingsSection(sec) else Route.Settings
+                        if (backStack.lastOrNull() != r) backStack.add(r)
+                    }
+                },
+                onSearchCatalog = { q -> backStack.add(Route.SearchFor(query = q)) },
+                onToggleAmoled = { scope.launch { settingsRepo.update { it.copy(amoled = !it.amoled) } } },
+                onCycleThemeMode = {
+                    scope.launch {
+                        settingsRepo.update { cur ->
+                            val next = when (cur.themeMode) {
+                                ThemeMode.SYSTEM -> ThemeMode.DARK
+                                ThemeMode.DARK -> ThemeMode.LIGHT
+                                ThemeMode.LIGHT -> ThemeMode.SYSTEM
+                            }
+                            cur.copy(themeMode = next)
+                        }
+                    }
+                },
+                onToggleRail = if (shortcuts != null && wide) ({ shortcuts.navToggled = !shortcuts.navToggled }) else null,
+            )
+        }
+
+        if (settingsModalOpen) {
+            SettingsModalDialog(
+                initialSection = settingsModalSection,
+                onDismiss = { settingsModalOpen = false },
+                onOpenExtensions = { backStack.navigateTop(Route.Extensions) },
+                onOpenLink = { if (available.offers(Route.Linked)) backStack.add(Route.Linked) },
+                onOpenLinked = { if (available.offers(Route.Linked)) backStack.add(Route.Linked) },
+                onOpenDebrid = { backStack.add(Route.Torrents(TorrentSection.DEBRID)) },
+            )
         }
     }
 }
 
-/** Icons-only rail that scrolls when the destinations do not fit the window height (see `scrollRail`). */
+/** Scrollable navigation rail supporting both labeled and slim (icons-only) styles with a crisp AMOLED hairline divider. */
 @Composable
-private fun ScrollableSlimRail(destinations: List<Route>, selected: Route?, activeDownloads: Int, onSelect: (Route) -> Unit) {
+private fun ScrollableRail(
+    destinations: List<Route>,
+    selected: Route?,
+    activeDownloads: Int,
+    slim: Boolean,
+    onSelect: (Route) -> Unit,
+) {
     val badgeDescription = pluralStringResource(Res.plurals.app_active_downloads, activeDownloads, activeDownloads)
-    Column(
-        Modifier
-            .fillMaxHeight()
-            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start))
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        destinations.forEach { route ->
-            val isSelected = route == selected
-            val label = route.label()
-            WideNavigationRailItem(
-                selected = isSelected,
-                onClick = { onSelect(route) },
-                icon = {
-                    if (activeDownloads > 0 && route is Route.Torrents) {
-                        BadgedBox(badge = {
-                            Badge(Modifier.semantics { contentDescription = badgeDescription }) {
-                                Text(if (activeDownloads > 99) "99+" else activeDownloads.toString())
+    Row(Modifier.fillMaxHeight()) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxHeight(),
+        ) {
+            Column(
+                Modifier
+                    .fillMaxHeight()
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start))
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = if (slim) 4.dp else 6.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                destinations.forEach { route ->
+                    val isSelected = route == selected
+                    val label = route.label()
+                    WideNavigationRailItem(
+                        selected = isSelected,
+                        onClick = { onSelect(route) },
+                        icon = {
+                            if (activeDownloads > 0 && route is Route.Torrents) {
+                                BadgedBox(badge = {
+                                    Badge(Modifier.semantics { contentDescription = badgeDescription }) {
+                                        Text(if (activeDownloads > 99) "99+" else activeDownloads.toString())
+                                    }
+                                }) { Icon(route.icon(isSelected), contentDescription = if (slim) label else null) }
+                            } else {
+                                Icon(route.icon(isSelected), contentDescription = if (slim) label else null)
                             }
-                        }) { Icon(route.icon(isSelected), contentDescription = label) }
-                    } else {
-                        Icon(route.icon(isSelected), contentDescription = label)
-                    }
-                },
-                label = null,
-                railExpanded = false,
-            )
+                        },
+                        label = if (slim) null else ({ Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) }),
+                        railExpanded = false,
+                    )
+                }
+            }
         }
+        VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
@@ -540,7 +649,7 @@ private fun AppNavDisplay(
     fun back() {
         if (backStack.size > 1) backStack.removeLastOrNull()
     }
-    fun openTorrent(torrentId: String) = push(Route.Torrents(TorrentSection.OVERVIEW, torrentId))
+    fun openTorrent(torrentId: String) = push(Route.Torrents(TorrentSection.FILES, torrentId))
     fun openSettings(section: SettingsSection) = push(Route.SettingsSection(section))
     fun openGenre(genre: String) = push(Route.SearchFor(genre = genre))
     // parity wave B (16 §3.12): manga details share Route.Details with kind MANGA (screen of s); novels have their own route.
@@ -738,6 +847,7 @@ private fun AppNavDisplay(
                     onOpenProfile = { push(Route.Profile()) },
                     onOpenNotifications = { push(Route.Notifications) },
                     onOpenForYou = { push(Route.ForYou) },
+                    onOpenTorrents = { push(Route.Torrents()) },
                 )
             }
             entry<Route.Settings> {
@@ -762,10 +872,10 @@ private fun AppNavDisplay(
             }
             entry<Route.Extensions> {
                 ExtensionsScreen(
-                    onBack = ::back,
+                    onBack = if (wide) null else ::back,
                     onOpenProvider = { ext, source -> push(Route.Provider(ext, source)) },
-                    // desktop: no Linked device screen (not a Link client), so the extension servers are opened from here
-                    onOpenServers = if (!available.offers(Route.Linked) && available.offers(Route.ExtensionServers)) {
+                    // Expose Extension Servers on both Android and Desktop whenever available.
+                    onOpenServers = if (available.offers(Route.ExtensionServers)) {
                         { push(Route.ExtensionServers) }
                     } else {
                         null
@@ -899,16 +1009,35 @@ private fun AppNavDisplay(
  * readers, which keep their own keys.
  */
 @Composable
-private fun ShellShortcutHandler(shortcuts: ShellShortcuts, backStack: NavBackStack<NavKey>, destinations: List<Route>, onPlayer: Boolean) {
+private fun ShellShortcutHandler(
+    shortcuts: ShellShortcuts,
+    backStack: NavBackStack<NavKey>,
+    destinations: List<Route>,
+    onPlayer: Boolean,
+    onOpenPalette: () -> Unit,
+    onOpenSettings: (SettingsSection?) -> Unit,
+) {
     val currentDestinations by rememberUpdatedState(destinations)
     val currentOnPlayer by rememberUpdatedState(onPlayer)
+    val currentPalette by rememberUpdatedState(onOpenPalette)
+    val currentSettings by rememberUpdatedState(onOpenSettings)
     DisposableEffect(shortcuts, backStack) {
+        shortcuts.openPaletteHandler = { currentPalette() }
+        shortcuts.openSettingsHandler = { sec -> currentSettings(sec) }
+        shortcuts.goBackHandler = {
+            if (!shortcuts.back() && backStack.size > 1) backStack.removeLastOrNull()
+        }
         shortcuts.handler = { shortcut ->
             when (shortcut) {
                 ShellShortcut.FocusSearch -> {
-                    backStack.navigateTop(Route.Search)
-                    shortcuts.focusSearchPending = true
+                    currentPalette()
                     true
+                }
+                ShellShortcut.OpenSettings -> {
+                    if (currentOnPlayer) false else {
+                        currentSettings(null)
+                        true
+                    }
                 }
                 ShellShortcut.ToggleNav -> {
                     shortcuts.navToggled = !shortcuts.navToggled

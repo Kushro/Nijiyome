@@ -51,6 +51,13 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.2.0" date="2026-11-25">
+      <description>
+        <p>UX/UI overhaul across Desktop and Android: true-black AMOLED (#000000 with subtle hairlines), searchable bilingual Settings with Desktop Master-Detail and Ctrl+P modal, Global Command Palette (Ctrl+K), horizontal scroll fading edges, Home and Anime Details polish, and unified navigation shell.</p>
+        <p>Desktop window dragging: native OS window move/resize via _NET_WM_MOVERESIZE (X11/XWayland) and WM_NCLBUTTONDOWN (Windows) plus optional native title bar toggle to eliminate compositor artifacts.</p>
+        <p>Player, Link Monitor and Diagnostics: audio track switching in Media3 and libmpv, structured error logs with mTLS shipping to PC, double torrent selection fix, redesigned Android touch player (Cinema and Minimalist styles, continuous multi-layer buffer seekbar, tactile scrub bubble, vertical gesture bars, landscape side sheets, quick aspect ratio cycling), expanded back-buffer and configurable Link RAM rewind cache (512 MB–4 GB) for instant rewinds without re-processing Anime4K or LSFG, live Desktop Link Monitor with active title bar indicator, and an overhauled system tray menu with Link, torrent, RAM and cache telemetry.</p>
+      </description>
+    </release>
     <release version="1.1.4" date="2026-11-24">
       <description>
         <p>Desktop: frameless window with a custom title bar, status chips (Link port and offline indicator), drag-to-move, double-click maximize and border resizing on Linux and Windows.</p>

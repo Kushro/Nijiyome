@@ -38,7 +38,7 @@ import app.nijiyome.ui.platform.DesktopPictures
 // carries a pending note.
 
 @Composable
-internal actual fun PlayerVideoSurface(session: PlayerSession, modifier: Modifier) {
+internal actual fun PlayerVideoSurface(session: PlayerSession, modifier: Modifier, aspectMode: app.nijiyome.model.AspectMode) {
     // The libmpv frame, drawn by Compose (MediaMP); it draws nothing for a session of another engine, so the box stays black.
     Box(modifier.background(Color.Black)) { MpvVideoSurface(session, Modifier.fillMaxSize()) }
 }

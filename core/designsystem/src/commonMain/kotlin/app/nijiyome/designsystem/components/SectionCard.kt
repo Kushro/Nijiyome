@@ -1,5 +1,6 @@
 package app.nijiyome.designsystem.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,18 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.theme.LocalNijiyomeAmoled
 
-/** Grouped surface with an optional title (Settings sections, Details info). Adapted from Tatami's SectionCard. */
+/** Grouped surface with an optional title (Settings sections, Details info). Crisp 1dp hairline border in AMOLED. */
 @Composable
 fun SectionCard(
     modifier: Modifier = Modifier,
     title: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val amoled = LocalNijiyomeAmoled.current
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainer,
+        border = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
     ) {
         Column(Modifier.padding(16.dp)) {
             if (title != null) {

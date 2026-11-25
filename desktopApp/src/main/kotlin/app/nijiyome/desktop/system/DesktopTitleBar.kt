@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.desktop.system
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,7 +26,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -89,6 +93,12 @@ fun DesktopTitleBar(
     spanish: Boolean,
     windows: Boolean,
     onClose: () -> Unit,
+    canGoBack: Boolean = false,
+    onGoBack: (() -> Unit)? = null,
+    onOpenCommandPalette: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
+    activeLinkSessions: List<app.nijiyome.model.LinkActiveSession> = emptyList(),
+    onOpenLinkMonitor: (() -> Unit)? = null,
 ) {
     if (appWindow.fullscreen || windowState.placement == WindowPlacement.Fullscreen) return
     val pip = appWindow.pictureInPicture
@@ -147,6 +157,7 @@ fun DesktopTitleBar(
                                 var dragOrigin = startScreen
                                 var dragging = false
                                 var wasMaximized = windowState.placement == WindowPlacement.Maximized
+                                var lastMoveMs = 0L
 
                                 while (true) {
                                     val event = awaitPointerEvent()
@@ -170,10 +181,20 @@ fun DesktopTitleBar(
                                             dragOrigin = cur
                                             window.setLocation(startWinX, startWinY)
                                         }
+                                        // Delegate drag to the OS window manager (_NET_WM_MOVERESIZE / WM_NCLBUTTONDOWN) to
+                                        // avoid OpenGL/XWayland compositor smearing and enable native edge snapping.
+                                        if (NativeWindowDrag.startMove(window, cur.x, cur.y)) {
+                                            change.consume()
+                                            return@awaitEachGesture
+                                        }
                                     }
                                     if (dragging) {
                                         change.consume()
-                                        window.setLocation(startWinX + (cur.x - dragOrigin.x), startWinY + (cur.y - dragOrigin.y))
+                                        val nowMs = System.currentTimeMillis()
+                                        if (nowMs - lastMoveMs >= 16L) {
+                                            lastMoveMs = nowMs
+                                            window.setLocation(startWinX + (cur.x - dragOrigin.x), startWinY + (cur.y - dragOrigin.y))
+                                        }
                                     }
                                 }
                             }
@@ -182,6 +203,14 @@ fun DesktopTitleBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    if (!pip && onGoBack != null) {
+                        TitleBarIconButton(
+                            icon = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+                            contentDescription = if (spanish) "Atrás" else "Back",
+                            enabled = canGoBack,
+                            onClick = onGoBack,
+                        )
+                    }
                     Text(
                         text = "Nijiyome",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -189,12 +218,31 @@ fun DesktopTitleBar(
                         maxLines = 1,
                     )
                     if (!pip && linkPort != null && linkPort > 0) {
-                        LinkPortChip(port = linkPort)
+                        LinkPortChip(
+                            port = linkPort,
+                            activeSessions = activeLinkSessions,
+                            spanish = spanish,
+                            onClick = onOpenLinkMonitor,
+                        )
                     }
                     if (!pip && !online) {
                         OfflineChip(label = if (spanish) "Sin conexión" else "Offline")
                     }
                     Spacer(Modifier.weight(1f))
+                    if (!pip && onOpenCommandPalette != null) {
+                        CommandPalettePill(
+                            label = if (spanish) "Buscar o comando…" else "Search or command…",
+                            onClick = onOpenCommandPalette,
+                        )
+                    }
+                    if (!pip && onOpenSettings != null) {
+                        TitleBarIconButton(
+                            icon = Icons.Outlined.Settings,
+                            contentDescription = if (spanish) "Configuración (Ctrl+P)" else "Settings (Ctrl+P)",
+                            enabled = true,
+                            onClick = onOpenSettings,
+                        )
+                    }
                 }
 
                 if (!pip) {
@@ -240,28 +288,111 @@ fun DesktopTitleBar(
                     }
                 }
             }
-            HorizontalDivider(thickness = 1.dp, color = scheme.outlineVariant.copy(alpha = 0.45f))
+            HorizontalDivider(thickness = 1.dp, color = scheme.outlineVariant)
         }
     }
 }
 
 @Composable
-private fun LinkPortChip(port: Int) {
+private fun TitleBarIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .background(if (hovered && enabled) scheme.onSurface.copy(alpha = 0.10f) else Color.Transparent, RoundedCornerShape(6.dp))
+            .hoverable(interaction)
+            .clickable(enabled = enabled, interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
+            .semantics { this.contentDescription = contentDescription },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (enabled) scheme.onSurface else scheme.onSurface.copy(alpha = 0.34f),
+            modifier = Modifier.size(16.dp),
+        )
+    }
+}
+
+@Composable
+private fun CommandPalettePill(label: String, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(999.dp),
-        color = scheme.primaryContainer,
-        contentColor = scheme.onPrimaryContainer,
+        color = scheme.surfaceContainerHigh,
+        contentColor = scheme.onSurfaceVariant,
+        border = BorderStroke(1.dp, scheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(13.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = scheme.surfaceContainerHighest,
+                contentColor = scheme.onSurfaceVariant,
+            ) {
+                Text(
+                    "Ctrl+K",
+                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LinkPortChip(
+    port: Int,
+    activeSessions: List<app.nijiyome.model.LinkActiveSession> = emptyList(),
+    spanish: Boolean = true,
+    onClick: (() -> Unit)? = null,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val active = activeSessions.firstOrNull()
+    val label = if (active != null) {
+        val pipe = listOfNotNull(active.upscaleLabel?.substringBefore(" ·"), active.frameGenLabel).joinToString(" + ")
+        val detail = pipe.ifBlank { active.title?.take(18) ?: if (spanish) "Activo" else "Active" }
+        val extra = if (activeSessions.size > 1) " (+${activeSessions.size - 1})" else ""
+        "${active.deviceName} · $detail$extra"
+    } else {
+        "Link :$port"
+    }
+    Surface(
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
+        shape = RoundedCornerShape(999.dp),
+        color = if (active != null) scheme.primary else scheme.primaryContainer,
+        contentColor = if (active != null) scheme.onPrimary else scheme.onPrimaryContainer,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Box(Modifier.size(6.dp).background(scheme.primary, CircleShape))
+            Box(
+                Modifier
+                    .size(6.dp)
+                    .background(if (active != null) scheme.onPrimary else scheme.primary, CircleShape),
+            )
             Text(
-                text = "Link :$port",
-                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium),
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = if (active != null) FontFamily.Default else FontFamily.Monospace,
+                    fontWeight = FontWeight.Medium,
+                ),
                 maxLines = 1,
             )
         }
@@ -347,15 +478,15 @@ fun DesktopResizableFrame(
     }
 }
 
-private enum class ResizeEdge(val left: Boolean, val right: Boolean, val top: Boolean, val bottom: Boolean, val cursor: Int) {
-    N(false, false, true, false, Cursor.N_RESIZE_CURSOR),
-    S(false, false, false, true, Cursor.S_RESIZE_CURSOR),
-    W(true, false, false, false, Cursor.W_RESIZE_CURSOR),
-    E(false, true, false, false, Cursor.E_RESIZE_CURSOR),
-    NW(true, false, true, false, Cursor.NW_RESIZE_CURSOR),
-    NE(false, true, true, false, Cursor.NE_RESIZE_CURSOR),
-    SW(true, false, false, true, Cursor.SW_RESIZE_CURSOR),
-    SE(false, true, false, true, Cursor.SE_RESIZE_CURSOR),
+private enum class ResizeEdge(val left: Boolean, val right: Boolean, val top: Boolean, val bottom: Boolean, val cursor: Int, val x11Dir: Long) {
+    N(false, false, true, false, Cursor.N_RESIZE_CURSOR, NativeWindowDrag.DIR_TOP),
+    S(false, false, false, true, Cursor.S_RESIZE_CURSOR, NativeWindowDrag.DIR_BOTTOM),
+    W(true, false, false, false, Cursor.W_RESIZE_CURSOR, NativeWindowDrag.DIR_LEFT),
+    E(false, true, false, false, Cursor.E_RESIZE_CURSOR, NativeWindowDrag.DIR_RIGHT),
+    NW(true, false, true, false, Cursor.NW_RESIZE_CURSOR, NativeWindowDrag.DIR_TOP_LEFT),
+    NE(false, true, true, false, Cursor.NE_RESIZE_CURSOR, NativeWindowDrag.DIR_TOP_RIGHT),
+    SW(true, false, false, true, Cursor.SW_RESIZE_CURSOR, NativeWindowDrag.DIR_BOTTOM_LEFT),
+    SE(false, true, false, true, Cursor.SE_RESIZE_CURSOR, NativeWindowDrag.DIR_BOTTOM_RIGHT),
 }
 
 @Composable
@@ -376,12 +507,19 @@ private fun BoxScope.ResizeHandle(
                     val down = awaitFirstDown(requireUnconsumed = false)
                     down.consume()
                     val startMouse = currentPointerLocation() ?: return@awaitEachGesture
+                    if (NativeWindowDrag.startResize(window, startMouse.x, startMouse.y, edge.x11Dir)) {
+                        return@awaitEachGesture
+                    }
                     val startBounds = Rectangle(window.bounds)
+                    var lastResizeMs = 0L
                     while (true) {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull() ?: break
                         if (!change.pressed || !event.buttons.isPrimaryPressed) break
                         change.consume()
+                        val nowMs = System.currentTimeMillis()
+                        if (nowMs - lastResizeMs < 16L) continue
+                        lastResizeMs = nowMs
                         val cur = currentPointerLocation() ?: continue
                         val minW = window.minimumSize.width.coerceAtLeast(160)
                         val minH = window.minimumSize.height.coerceAtLeast(120)

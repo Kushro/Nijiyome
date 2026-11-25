@@ -70,8 +70,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.nijiyome.designsystem.components.EmptyState
 import app.nijiyome.designsystem.components.ErrorState
+import app.nijiyome.designsystem.components.Segmented
+import app.nijiyome.designsystem.components.SegmentedOption
 import app.nijiyome.designsystem.components.rememberAfterDelay
 import app.nijiyome.designsystem.theme.NijiyomeFonts
+import app.nijiyome.model.PlayerChromeStyle
 import app.nijiyome.model.SubtitleStyle
 import app.nijiyome.player.CueTimeline
 import app.nijiyome.player.PlaybackState
@@ -239,6 +242,7 @@ private fun CheckRow(text: String, selected: Boolean, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         trailingContent = { if (selected) Icon(Icons.Rounded.Check, contentDescription = null) },
+        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clickable(onClick = onClick),
     )
 }
@@ -258,9 +262,10 @@ internal fun SubtitlesSheetContent(
     onDone: () -> Unit,
     onOpenStyle: () -> Unit = {},
 ) {
-    Column(Modifier.verticalScroll(rememberScrollState())) {
+    val transparentRow = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent)
+    Column {
         if (!ps.fullAss && ps.subtitles.any { it.ass }) {
-            ListItem(headlineContent = { Text(stringResource(Res.string.player_ass_simplified), style = MaterialTheme.typography.bodySmall) })
+            ListItem(headlineContent = { Text(stringResource(Res.string.player_ass_simplified), style = MaterialTheme.typography.bodySmall) }, colors = transparentRow)
         }
         val custom = state.customSubtitle
         CheckRow(stringResource(Res.string.player_subtitles_off), !ps.subtitlesEnabled && custom == null) { vm.selectSubtitle(null); onDone() }
@@ -270,6 +275,7 @@ internal fun SubtitlesSheetContent(
             ListItem(
                 headlineContent = { Text(stringResource(Res.string.player_sub_load)) },
                 leadingContent = { Icon(Icons.Rounded.UploadFile, contentDescription = null) },
+                colors = transparentRow,
                 modifier = Modifier.clickable { onLoadFile() },
             )
         }
@@ -277,6 +283,7 @@ internal fun SubtitlesSheetContent(
             headlineContent = { Text(stringResource(Res.string.sub_style_entry)) },
             supportingContent = { Text(stringResource(Res.string.sub_style_entry_hint)) },
             leadingContent = { Icon(Icons.Rounded.FormatSize, contentDescription = null) },
+            colors = transparentRow,
             modifier = Modifier.clickable { onOpenStyle() },
         )
         HorizontalDivider()
@@ -325,6 +332,7 @@ internal fun SubtitlesSheetContent(
                 },
                 leadingContent = { Icon(Icons.Rounded.Translate, contentDescription = null) },
                 trailingContent = { Switch(checked = state.translation.enabled, onCheckedChange = vm::setTranslationEnabled) },
+                colors = transparentRow,
             )
             if (state.translation.enabled) {
                 TextButton(onClick = { vm.pretranslate(); onDone() }, modifier = Modifier.padding(horizontal = 8.dp)) {
@@ -335,10 +343,27 @@ internal fun SubtitlesSheetContent(
     }
 }
 
-/** "More" sheet: sleep timer, loop, stable volume. */
+/** "More" sheet: player chrome style (touch), sleep timer, loop, stable volume. */
 @Composable
 internal fun MoreSheetContent(vm: PlayerViewModel, state: PlayerUiState) {
-    Column(Modifier.verticalScroll(rememberScrollState())) {
+    val transparentRow = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent)
+    Column {
+        if (playerCapabilities.touchFirst) {
+            SheetTitle("Estilo de controles")
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                Segmented(
+                    options = listOf(
+                        SegmentedOption(PlayerChromeStyle.CINEMA, "Cine"),
+                        SegmentedOption(PlayerChromeStyle.MINIMAL, "Minimalista"),
+                    ),
+                    selected = state.settings.playerChromeStyle,
+                    onSelect = vm::setPlayerChromeStyle,
+                    fillWidth = true,
+                    small = true,
+                )
+            }
+            HorizontalDivider(Modifier.padding(top = 8.dp))
+        }
         SheetTitle(stringResource(Res.string.player_sleep))
         val sleep = state.sleep
         SleepOption.entries.forEach { o ->
@@ -357,6 +382,7 @@ internal fun MoreSheetContent(vm: PlayerViewModel, state: PlayerUiState) {
                 },
                 leadingContent = { Icon(Icons.Rounded.Bedtime, contentDescription = null) },
                 trailingContent = { if (selected) Icon(Icons.Rounded.Check, contentDescription = null) },
+                colors = transparentRow,
                 modifier = Modifier.clickable { vm.setSleepTimer(o) },
             )
         }
@@ -365,11 +391,13 @@ internal fun MoreSheetContent(vm: PlayerViewModel, state: PlayerUiState) {
             headlineContent = { Text(stringResource(Res.string.player_loop)) },
             supportingContent = { Text(stringResource(Res.string.player_loop_hint)) },
             trailingContent = { Switch(checked = state.loop, onCheckedChange = vm::setLoop) },
+            colors = transparentRow,
         )
         ListItem(
             headlineContent = { Text(stringResource(Res.string.player_stable_volume)) },
             supportingContent = { Text(stringResource(Res.string.player_stable_volume_hint)) },
             trailingContent = { Switch(checked = state.settings.stableVolume, onCheckedChange = vm::setStableVolume) },
+            colors = transparentRow,
         )
     }
 }
@@ -408,6 +436,7 @@ internal fun EpisodesSheetContent(vm: PlayerViewModel, state: PlayerUiState, cur
                         },
                         supportingContent = if (e.number == current) ({ Text(stringResource(Res.string.player_episode_current)) }) else null,
                         trailingContent = { if (e.number == current) Icon(Icons.Rounded.PlayArrow, contentDescription = null) },
+                        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable(enabled = e.number != current) { onPick(e.number) },
                     )
                 }

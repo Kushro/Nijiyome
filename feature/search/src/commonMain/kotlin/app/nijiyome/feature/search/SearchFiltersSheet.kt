@@ -1,5 +1,6 @@
 package app.nijiyome.feature.search
 
+import app.nijiyome.designsystem.components.AdaptiveSheet
 import app.nijiyome.designsystem.components.TrackModal
 import app.nijiyome.feature.search.resources.Res
 import app.nijiyome.feature.search.resources.*
@@ -88,16 +89,12 @@ internal fun SearchFiltersSheet(
     var allTags by remember { mutableStateOf(false) }
     val thisYear = remember { Year.now().value }
     val years = remember(thisYear) { ((thisYear + 1) downTo thisYear - YEARS + 2).toList() }
-    ModalBottomSheet(
+    AdaptiveSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
-        TrackModal()
         Column(
             Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

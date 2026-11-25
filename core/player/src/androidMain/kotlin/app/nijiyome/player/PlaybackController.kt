@@ -81,6 +81,7 @@ class PlaybackController(
         .setLoadControl(
             DefaultLoadControl.Builder()
                 .setBufferDurationsMs(MIN_BUFFER_MS, MAX_BUFFER_MS, BUFFER_FOR_PLAYBACK_MS, BUFFER_AFTER_REBUFFER_MS)
+                .setBackBuffer(BACK_BUFFER_MS, /* retainBackBufferFromKeyframe = */ true)
                 .setPrioritizeTimeOverSizeThresholds(true)
                 .build(),
         )
@@ -303,10 +304,22 @@ class PlaybackController(
     }
 
     override fun selectAudio(id: Int) {
-        val group = player.currentTracks.groups.getOrNull(id)?.takeIf { it.type == C.TRACK_TYPE_AUDIO } ?: return
+        if (id == AUDIO_TRACK_OFF) {
+            player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
+                .build()
+            publish()
+            return
+        }
+        val groupIndex = id ushr AUDIO_GROUP_SHIFT
+        val trackIndex = id and AUDIO_TRACK_MASK
+        val group = player.currentTracks.groups.getOrNull(groupIndex)?.takeIf { it.type == C.TRACK_TYPE_AUDIO }
+            ?: player.currentTracks.groups.getOrNull(id)?.takeIf { it.type == C.TRACK_TYPE_AUDIO }
+            ?: return
+        val safeTrack = trackIndex.coerceIn(0, (group.length - 1).coerceAtLeast(0))
         player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
             .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-            .setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, 0))
+            .setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, safeTrack))
             .build()
         publish()
     }
@@ -456,10 +469,32 @@ class PlaybackController(
             val ordinal = if (external == null) embedded++ else null
             SubtitleOption(i, f.label ?: f.language ?: "#${i + 1}", f.language, g.isSelected, ass, external, f.codecs ?: f.sampleMimeType, ordinal)
         }
-        val audioOptions = tracks.groups.withIndex().filter { it.value.type == C.TRACK_TYPE_AUDIO }.map { (i, g) ->
-            val f = g.getTrackFormat(0)
-            val channels = f.channelCount.takeIf { it > 0 }?.let { " · ${it}ch" }.orEmpty()
-            AudioOption(i, (f.label ?: f.language ?: "#${i + 1}") + channels, f.language, g.isSelected)
+        // v1.2.0: enumerate every supported track inside every C.TRACK_TYPE_AUDIO group (multi-track HLS/DASH/MKV groups previously
+        // only exposed track 0 and hid all remaining audio tracks).
+        val audioOptions = buildList {
+            var ordinal = 1
+            tracks.groups.forEachIndexed { groupIndex, g ->
+                if (g.type != C.TRACK_TYPE_AUDIO) return@forEachIndexed
+                for (trackIndex in 0 until g.length) {
+                    if (!g.isTrackSupported(trackIndex)) continue
+                    val f = g.getTrackFormat(trackIndex)
+                    val encodedId = (groupIndex shl AUDIO_GROUP_SHIFT) or (trackIndex and AUDIO_TRACK_MASK)
+                    val title = f.label?.takeIf { it.isNotBlank() }
+                        ?: f.language?.takeIf { it.isNotBlank() }
+                        ?: "#$ordinal"
+                    add(
+                        AudioOption(
+                            id = encodedId,
+                            label = title,
+                            language = f.language,
+                            selected = g.isTrackSelected(trackIndex),
+                            codec = f.codecs ?: f.sampleMimeType,
+                            channels = f.channelCount.takeIf { it > 0 },
+                        ),
+                    )
+                    ordinal++
+                }
+            }
         }
         val cur = _state.value
         _state.value = cur.copy(
@@ -493,10 +528,13 @@ class PlaybackController(
 
         /** Link playlists may stay unchanged this many target durations (2 s each: one minute) before Media3 gives up. */
         const val REMOTE_PLAYLIST_STUCK_COEFFICIENT = 30.0
+        private const val AUDIO_GROUP_SHIFT = 16
+        private const val AUDIO_TRACK_MASK = 0xFFFF
 
         // 11 §5.3: 30-60 s buffer, prioritise time over size (torrent loopback streams start slowly and stall on missing pieces).
-        const val MIN_BUFFER_MS = 30_000
-        const val MAX_BUFFER_MS = 60_000
+        const val MIN_BUFFER_MS = 45_000
+        const val MAX_BUFFER_MS = 90_000
+        const val BACK_BUFFER_MS = 60_000
         const val BUFFER_FOR_PLAYBACK_MS = 2_500
         const val BUFFER_AFTER_REBUFFER_MS = 5_000
         const val TORRENT_CONNECT_TIMEOUT_S = 30L

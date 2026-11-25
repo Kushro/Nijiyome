@@ -142,6 +142,7 @@ fun ProfileScreen(
     val user = (state.user as? LoadState.Ok)?.value
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         topBar = {
             TopAppBar(
                 title = { Text(user?.name ?: stringResource(Res.string.social_profile_title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -413,6 +414,7 @@ fun ActivityThreadScreen(
     NoticesEffect(vm.notices, onReplied = { draft = "" })
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.social_activity_title)) },
@@ -450,7 +452,7 @@ fun ActivityThreadScreen(
                 LoadState.Loading -> DelayedLoading(Modifier.fillMaxSize())
                 is LoadState.Err -> SocialError(s.cause, onRetry = vm::load, onOpenAccounts = null, modifier = Modifier.fillMaxSize())
                 is LoadState.Ok -> LazyColumn(
-                    modifier = Modifier.fillMaxSize().widthIn(max = 840.dp),
+                    modifier = Modifier.widthIn(max = 840.dp).fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -515,6 +517,7 @@ fun NotificationsScreen(
     }
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.social_notifications_title)) },
@@ -533,7 +536,7 @@ fun NotificationsScreen(
                     paged.initialLoading || (paged.page == 0 && paged.error == null) -> DelayedLoading(Modifier.fillMaxSize())
                     paged.initialError != null -> SocialError(paged.initialError!!, onRetry = vm.pager::retry, onOpenAccounts = onOpenAccounts, modifier = Modifier.fillMaxSize())
                     else -> LazyColumn(
-                        modifier = Modifier.fillMaxSize().widthIn(max = 840.dp),
+                        modifier = Modifier.widthIn(max = 840.dp).fillMaxSize(),
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {

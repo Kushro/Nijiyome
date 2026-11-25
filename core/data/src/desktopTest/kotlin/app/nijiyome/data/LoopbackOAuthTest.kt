@@ -11,7 +11,7 @@ import app.nijiyome.model.SecretStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -89,7 +89,7 @@ class LoopbackOAuthTest {
 
     @AfterTest
     fun tearDown() {
-        scope.cancel()
+        runBlocking { scope.coroutineContext[kotlinx.coroutines.Job]?.cancelAndJoin() }
         auth.close()
         db.close()
         dir.deleteRecursively()
@@ -227,10 +227,13 @@ class LoopbackOAuthTest {
             assertEquals(DesktopOAuthLauncher.Failure.PORT_BUSY, busy.lastFailure)
             assertEquals(port, busy.port)
         }
-        val noBrowser = DesktopOAuthLauncher(PendingOAuthRedirect(), LoopbackOAuthServer(port = port)) { false }
+        val noBrowserPort = freePort()
+        val noBrowserServer = LoopbackOAuthServer(port = noBrowserPort)
+        val noBrowser = DesktopOAuthLauncher(PendingOAuthRedirect(), noBrowserServer) { false }
         assertFalse(noBrowser.open(url))
         assertEquals(DesktopOAuthLauncher.Failure.NO_BROWSER, noBrowser.lastFailure)
-        assertFalse(portInUse(port), "the listener closed when the browser could not open")
+        assertFalse(noBrowserServer.isListening, "the listener closed when the browser could not open")
+        assertFalse(portInUse(noBrowserPort), "the listener closed when the browser could not open")
         assertFalse(noBrowser.open("https://example.org/authorize?state=x"))
         assertEquals(DesktopOAuthLauncher.Failure.NOT_OURS, noBrowser.lastFailure)
     }

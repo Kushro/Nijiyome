@@ -57,7 +57,11 @@ internal const val EXTERNAL_DEFAULT_USER_AGENT = MpvEngineDefaults.DEFAULT_USER_
 
 /** The embedded engine's cache and network values (MpvEngineDefaults), used when the app owns the config. */
 private val APP_CACHE_OPTIONS = listOf(
-    "--cache=yes", "--demuxer-max-bytes=150MiB", "--demuxer-max-back-bytes=50MiB", "--demuxer-readahead-secs=60", "--network-timeout=90",
+    "--cache=yes",
+    "--demuxer-max-bytes=${MpvEngineDefaults.DESKTOP_DEMUXER_MAX_MB}MiB",
+    "--demuxer-max-back-bytes=${MpvEngineDefaults.DESKTOP_DEMUXER_BACK_MB}MiB",
+    "--demuxer-readahead-secs=${MpvEngineDefaults.DESKTOP_READAHEAD_SECS}",
+    "--network-timeout=${MpvEngineDefaults.NETWORK_TIMEOUT_S}",
 )
 
 /** Vulkan presentation so the lsfg-vk layer sees a swapchain; no display-resample (lsfg paces the frames). Always last. */

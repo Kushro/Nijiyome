@@ -77,6 +77,12 @@ interface LinkServerController {
      * The outcome lands in [LinkServerState.extPasswordResult].
      */
     fun setExtensionPassword(password: String?)
+
+    /** v1.2.0: RAM cache budget per active Link session in MiB (512..4096) for instant rewinds with Anime4K / LSFG. */
+    fun setCacheLimitMb(mb: Int) {}
+
+    /** v1.2.0: stops an active Link streaming session from the PC Link monitor. */
+    fun stopSession(sessionId: String) {}
 }
 
 /** Limits shared by the server and Settings (ports above the privileged range; the viewer password's length). */
@@ -152,11 +158,43 @@ data class LinkServerState(
     /** True on Windows: Settings offers "Permitir en red privada"; elsewhere it shows a hint with the ports. */
     val firewallButton: Boolean = false,
     val firewall: FirewallResult? = null,
+    // ---- v1.2.0: live active sessions & cache telemetry ----
+    /** Active Link transcode/upscale/FG sessions currently streaming from this PC to paired devices. */
+    val activeSessions: List<LinkActiveSession> = emptyList(),
+    /** Total RAM currently held by cached HLS segments across active Link sessions. */
+    val totalCacheBytes: Long = 0L,
+    /** Configured RAM cache budget per Link session in MiB (default 1024). */
+    val cacheLimitMb: Int = 1024,
 ) {
     companion object {
         const val EXT_LOG_LIMIT = 100
     }
 }
+
+/** v1.2.0: Live telemetry snapshot of one paired device streaming/upscaling through this PC's Link server. */
+data class LinkActiveSession(
+    val sessionId: String,
+    val deviceId: String,
+    val deviceName: String,
+    val title: String?,
+    val episode: Int?,
+    val sourceKind: String,
+    val profileId: String,
+    val profileLabel: String,
+    val upscaleLabel: String?,
+    val frameGenLabel: String?,
+    val encoder: String,
+    val positionSecs: Double,
+    val durationSecs: Double?,
+    val paused: Boolean,
+    val cachedBytes: Long,
+    val cachedSegments: Int,
+    val cachedFromSecs: Double?,
+    val cachedToSecs: Double?,
+    val leadSecs: Double,
+    val throttled: Boolean,
+    val segIntervalMs: Long?,
+)
 
 /**
  * One line of the extension server's log (no tokens, cookies or media URLs): [event] is `request`, `pairing`, `source_failed`...,

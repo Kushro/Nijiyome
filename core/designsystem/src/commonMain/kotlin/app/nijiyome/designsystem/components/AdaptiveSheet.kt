@@ -1,5 +1,7 @@
 package app.nijiyome.designsystem.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -21,9 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.shape.RoundedCornerShape
+import app.nijiyome.designsystem.theme.LocalNijiyomeAmoled
 
 /** Width (dp) from which the sheet becomes a side sheet (window size class Medium+). */
 const val SIDE_SHEET_MIN_WIDTH_DP = 600
@@ -41,10 +45,17 @@ fun AdaptiveSheet(
 ) {
     // v1.1: an open sheet turns the desktop window's app-wide keys off (no tracker on Android).
     TrackModal()
+    val amoled = LocalNijiyomeAmoled.current
+    val sheetColor = if (amoled) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
     val wide = sheetHostWidthDp() >= SIDE_SHEET_MIN_WIDTH_DP
     if (!wide) {
-        ModalBottomSheet(onDismissRequest = onDismissRequest, modifier = modifier) {
-            Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp), content = content)
+        ModalBottomSheet(
+            onDismissRequest = onDismissRequest,
+            modifier = modifier,
+            containerColor = sheetColor,
+            scrimColor = Color.Black.copy(alpha = 0.64f),
+        ) {
+            Column(Modifier.padding(bottom = 16.dp), content = content)
         }
     } else {
         // BUG-079: over an immersive screen (the player in landscape) the side sheet keeps the status bar hidden too.
@@ -54,6 +65,7 @@ fun AdaptiveSheet(
             Box(
                 Modifier
                     .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.56f))
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismissRequest),
             ) {
                 Surface(
@@ -65,7 +77,8 @@ fun AdaptiveSheet(
                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {}),
                     // BUG-079: it touches the right edge of the screen, so only the inner corners are rounded.
                     shape = RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    color = sheetColor,
+                    border = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
                     tonalElevation = 1.dp,
                 ) {
                     Column(

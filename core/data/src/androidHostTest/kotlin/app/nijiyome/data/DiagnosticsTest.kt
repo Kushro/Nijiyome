@@ -37,7 +37,9 @@ class DiagnosticsTest {
     @Test
     fun formatHasDateLevelAndTag() {
         val line = AppLogStore.format(0L, LogLevel.ERROR, "player", "boom", IllegalStateException("bad"))
-        assertEquals("1970-01-01T00:00:00.000Z E/player: boom (IllegalStateException: bad)", line)
+        assertTrue(line.startsWith("1970-01-01T00:00:00.000Z E/player: boom (IllegalStateException: bad)"), line)
+        assertTrue(" | trace: " in line, line)
+        assertTrue("DiagnosticsTest.formatHasDateLevelAndTag" in line, line)
     }
 
     @Test

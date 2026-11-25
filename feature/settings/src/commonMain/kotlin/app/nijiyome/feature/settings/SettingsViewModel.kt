@@ -9,6 +9,7 @@ import app.nijiyome.model.SelectiveAppReset
 import app.nijiyome.model.AppSettings
 import app.nijiyome.model.LookPrefs
 import app.nijiyome.model.LookPreset
+import app.nijiyome.model.Motion
 import app.nijiyome.model.ContrastPref
 import app.nijiyome.model.HistoryRepository
 import app.nijiyome.model.LinkRepository
@@ -18,6 +19,7 @@ import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.MetadataCacheStats
 import app.nijiyome.model.MetadataRepository
+import app.nijiyome.model.PlayerChromeStyle
 import app.nijiyome.model.PlayerEngine
 import app.nijiyome.model.PlayerQualityPrefs
 import app.nijiyome.model.ProcessingLocation
@@ -141,7 +143,8 @@ class SettingsViewModel(
 
     // ---------------------------------------------------------------- appearance
 
-    fun setPalette(id: String) = update { it.copy(paletteId = id) }
+    /** Picking a curated palette automatically disables dynamic wallpaper colors so the choice takes effect immediately. */
+    fun setPalette(id: String) = update { it.copy(paletteId = id, dynamicColor = false) }
 
     fun setAmoled(value: Boolean) = update(announce = true) { it.copy(amoled = value) }
 
@@ -153,19 +156,33 @@ class SettingsViewModel(
 
     fun setLanguage(value: AppLanguage) = update { it.copy(language = value) }
 
-    fun setReduceMotion(value: Boolean) = update(announce = true) { it.copy(reduceMotion = value) }
+    fun setReduceMotion(value: Boolean) = update(announce = true) {
+        val nextMotion = if (value) Motion.OFF else if (it.look.motion == Motion.OFF) Motion.EXPRESSIVE else it.look.motion
+        it.copy(reduceMotion = value, look = it.look.copy(motion = nextMotion))
+    }
 
-    /** 2026-11 UI refresh: one Diseño y estilo field (the preset stays as it was; the screen shows "Personalizado" when nothing matches). */
-    fun setLook(transform: (LookPrefs) -> LookPrefs) = update { it.copy(look = transform(it.look).sanitized()) }
+    /** 2026-11 UI refresh: one Diseño y estilo field (keeps reduceMotion in sync with look.motion == OFF). */
+    fun setLook(transform: (LookPrefs) -> LookPrefs) = update {
+        val next = transform(it.look).sanitized()
+        it.copy(look = next, reduceMotion = next.motion == Motion.OFF)
+    }
 
     /** Every field of [preset]; the header composition is not part of any preset and stays as chosen. */
     fun applyLookPreset(preset: LookPreset) = update(announce = true) {
-        it.copy(look = LookPrefs.of(preset).copy(headerLayout = it.look.headerLayout))
+        val next = LookPrefs.of(preset).copy(headerLayout = it.look.headerLayout)
+        it.copy(look = next, reduceMotion = next.motion == Motion.OFF)
     }
+
+    fun setAiringReminders(value: Boolean) = update(announce = true) { it.copy(airingReminders = value) }
+
+    fun setSocialNotifications(value: Boolean) = update(announce = true) { it.copy(socialNotifications = value) }
 
     // ---------------------------------------------------------------- player
 
     fun setPlayerEngine(value: PlayerEngine) = update(announce = true) { it.copy(playerEngine = value) }
+
+    /** v1.2.0: touch player chrome style on Android (Cinema vs Minimal). */
+    fun setPlayerChromeStyle(value: PlayerChromeStyle) = update(announce = true) { it.copy(playerChromeStyle = value) }
 
     /** v1.1: libmpv verifies HTTPS certificates against the system's CAs (Android; off by default). */
     fun setMpvTlsVerify(on: Boolean) = update(announce = true) { it.copy(mpvTlsVerify = on) }

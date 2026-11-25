@@ -6,8 +6,11 @@ package app.nijiyome.feature.you
 import app.nijiyome.feature.you.resources.Res
 import app.nijiyome.feature.you.resources.*
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.HorizontalDivider
+import app.nijiyome.designsystem.theme.LocalNijiyomeAmoled
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,6 +108,8 @@ fun YouScreen(
     onOpenNotifications: () -> Unit = {},
     /** 2026-11 UI refresh: "Para ti" from the phone's "more" page (wide windows have it in the rail). */
     onOpenForYou: (() -> Unit)? = null,
+    /** Direct entry to the full Torrent client (Add torrent / Debrid / History) so mobile Torrents is never trapped. */
+    onOpenTorrents: (() -> Unit)? = null,
 ) {
     val viewModel: YouViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -137,6 +142,7 @@ fun YouScreen(
         onOpenProfile = onOpenProfile,
         onOpenNotifications = onOpenNotifications,
         onOpenForYou = onOpenForYou,
+        onOpenTorrents = onOpenTorrents,
         modifier = modifier,
     )
 }
@@ -159,6 +165,8 @@ internal fun YouContent(
     onOpenNotifications: () -> Unit = {},
     /** 2026-11 UI refresh: "Para ti" from the phone's "more" page (wide windows have it in the rail). */
     onOpenForYou: (() -> Unit)? = null,
+    /** Direct entry to the full Torrent client (Add torrent / Debrid / History) so mobile Torrents is never trapped. */
+    onOpenTorrents: (() -> Unit)? = null,
 ) {
     Scaffold(modifier = modifier, contentWindowInsets = screenInsets) { padding ->
         Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()), contentAlignment = Alignment.TopCenter) {
@@ -172,7 +180,7 @@ internal fun YouContent(
                     modifier = Modifier.fillMaxSize(),
                 )
                 is LoadState.Ok -> LazyColumn(
-                    modifier = Modifier.fillMaxSize().widthIn(max = 720.dp),
+                    modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
@@ -200,6 +208,7 @@ internal fun YouContent(
                             onOpenProfile = onOpenProfile,
                             onOpenNotifications = onOpenNotifications,
                             onOpenForYou = onOpenForYou,
+                            onOpenTorrents = onOpenTorrents,
                         )
                     }
                 }
@@ -301,108 +310,117 @@ private fun YouList(
     onOpenNotifications: () -> Unit = {},
     /** 2026-11 UI refresh: "Para ti" from the phone's "more" page (wide windows have it in the rail). */
     onOpenForYou: (() -> Unit)? = null,
+    /** Direct entry to the full Torrent client (Add torrent / Debrid / History) so mobile Torrents is never trapped. */
+    onOpenTorrents: (() -> Unit)? = null,
 ) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large) {
-        Column(Modifier.padding(vertical = 8.dp)) {
-            if (onOpenForYou != null) {
+    val amoled = LocalNijiyomeAmoled.current
+    val cardBorder = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large, border = cardBorder) {
+            Column(Modifier.padding(vertical = 6.dp)) {
+                if (onOpenForYou != null) {
+                    YouRow(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = stringResource(UiR.string.ui_nav_for_you),
+                        subtitle = stringResource(UiR.string.ui_for_you_summary),
+                        onClick = onOpenForYou,
+                    )
+                }
                 YouRow(
-                    icon = Icons.Outlined.AutoAwesome,
-                    title = stringResource(UiR.string.ui_nav_for_you),
-                    subtitle = stringResource(UiR.string.ui_for_you_summary),
-                    onClick = onOpenForYou,
+                    icon = Icons.Outlined.MenuBook,
+                    title = stringResource(UiR.string.nav_manga),
+                    subtitle = stringResource(Res.string.you_manga_summary),
+                    onClick = onOpenManga,
+                )
+                YouRow(
+                    icon = Icons.Outlined.AutoStories,
+                    title = stringResource(UiR.string.nav_novels),
+                    subtitle = stringResource(Res.string.you_novels_summary),
+                    onClick = onOpenNovels,
+                )
+                HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                YouRow(
+                    icon = Icons.Outlined.AccountCircle,
+                    title = stringResource(Res.string.you_profile),
+                    subtitle = stringResource(Res.string.you_profile_summary),
+                    onClick = onOpenProfile,
+                )
+                YouRow(
+                    icon = Icons.Outlined.Notifications,
+                    title = stringResource(Res.string.you_notifications),
+                    subtitle = stringResource(Res.string.you_notifications_summary),
+                    onClick = onOpenNotifications,
                 )
             }
-            // parity wave A (15 §3.3, worker q): AniList / MAL lists and accounts (Settings › Listas y cuentas).
-            YouRow(
-                icon = Icons.Outlined.Bookmarks,
-                title = stringResource(Res.string.you_accounts),
-                subtitle = if (overview.accounts.isEmpty()) {
-                    stringResource(Res.string.you_accounts_none)
-                } else {
-                    val anilist = stringResource(ListProvider.ANILIST.labelRes())
-                    val mal = stringResource(ListProvider.MAL.labelRes())
-                    overview.accounts.joinToString(" · ") { "${if (it.provider == ListProvider.ANILIST) anilist else mal} · ${it.username}" }
-                },
-                onClick = onOpenAccounts,
-            )
-            // parity wave B (16 §3.12, contract): AniList profile and notifications (t), Manga and Novelas (s). The subtitles are
-            // static here; t / s may enrich them (unread count, "x leyendo") in their own commits without changing the callbacks.
-            YouRow(
-                icon = Icons.Outlined.AccountCircle,
-                title = stringResource(Res.string.you_profile),
-                subtitle = stringResource(Res.string.you_profile_summary),
-                onClick = onOpenProfile,
-            )
-            YouRow(
-                icon = Icons.Outlined.Notifications,
-                title = stringResource(Res.string.you_notifications),
-                subtitle = stringResource(Res.string.you_notifications_summary),
-                onClick = onOpenNotifications,
-            )
-            YouRow(
-                icon = Icons.Outlined.MenuBook,
-                title = stringResource(UiR.string.nav_manga),
-                subtitle = stringResource(Res.string.you_manga_summary),
-                onClick = onOpenManga,
-            )
-            YouRow(
-                icon = Icons.Outlined.AutoStories,
-                title = stringResource(UiR.string.nav_novels),
-                subtitle = stringResource(Res.string.you_novels_summary),
-                onClick = onOpenNovels,
-            )
-            YouRow(
-                icon = Icons.Outlined.History,
-                title = stringResource(Res.string.you_history),
-                subtitle = if (overview.historyCount == 0) {
-                    stringResource(Res.string.you_history_empty)
-                } else {
-                    pluralStringResource(Res.plurals.you_history_count, overview.historyCount, overview.historyCount)
-                },
-                onClick = onOpenHistory,
-            )
-            YouRow(
-                icon = Icons.Outlined.Download,
-                title = stringResource(Res.string.you_downloads),
-                subtitle = when {
-                    overview.activeDownloads > 0 ->
-                        pluralStringResource(Res.plurals.you_downloads_active, overview.activeDownloads, overview.activeDownloads)
-                    overview.torrentCount > 0 ->
-                        pluralStringResource(Res.plurals.you_downloads_total, overview.torrentCount, overview.torrentCount)
-                    else -> stringResource(Res.string.you_downloads_none)
-                },
-                badge = overview.activeDownloads.takeIf { it > 0 }?.toString(),
-                onClick = onOpenDownloads,
-            )
-            YouRow(
-                icon = Icons.Outlined.Extension,
-                title = stringResource(Res.string.you_extensions),
-                subtitle = if (overview.extensionsCount == 0) {
-                    stringResource(Res.string.you_extensions_none)
-                } else {
-                    pluralStringResource(Res.plurals.you_extensions_count, overview.extensionsCount, overview.extensionsCount)
-                },
-                onClick = onOpenExtensions,
-            )
-            YouRow(
-                icon = Icons.Outlined.Computer,
-                title = stringResource(Res.string.you_linked),
-                subtitle = when (val linked = overview.linked) {
-                    LinkedSummary.None -> stringResource(Res.string.you_linked_none)
-                    LinkedSummary.Problem -> stringResource(Res.string.you_linked_problem)
-                    is LinkedSummary.Paired -> stringResource(
-                        if (linked.reachable) Res.string.you_linked_connected else Res.string.you_linked_unreachable,
-                        linked.name,
+        }
+        Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large, border = cardBorder) {
+            Column(Modifier.padding(vertical = 6.dp)) {
+                YouRow(
+                    icon = Icons.Outlined.History,
+                    title = stringResource(Res.string.you_history),
+                    subtitle = if (overview.historyCount == 0) {
+                        stringResource(Res.string.you_history_empty)
+                    } else {
+                        pluralStringResource(Res.plurals.you_history_count, overview.historyCount, overview.historyCount)
+                    },
+                    onClick = onOpenHistory,
+                )
+                YouRow(
+                    icon = Icons.Outlined.Download,
+                    title = stringResource(Res.string.you_downloads),
+                    subtitle = when {
+                        overview.activeDownloads > 0 ->
+                            pluralStringResource(Res.plurals.you_downloads_active, overview.activeDownloads, overview.activeDownloads)
+                        overview.torrentCount > 0 ->
+                            pluralStringResource(Res.plurals.you_downloads_total, overview.torrentCount, overview.torrentCount)
+                        else -> stringResource(Res.string.you_downloads_none)
+                    },
+                    badge = overview.activeDownloads.takeIf { it > 0 }?.toString(),
+                    onClick = onOpenDownloads,
+                )
+                if (onOpenTorrents != null) {
+                    YouRow(
+                        icon = Icons.Outlined.Bookmarks,
+                        title = stringResource(UiR.string.nav_torrents),
+                        subtitle = "Cliente BitTorrent, añadir magnet y Debrid",
+                        onClick = onOpenTorrents,
                     )
-                },
-                onClick = onOpenLinked,
-            )
-            YouRow(
-                icon = Icons.Outlined.Settings,
-                title = stringResource(Res.string.you_settings),
-                subtitle = stringResource(Res.string.you_settings_summary),
-                onClick = onOpenSettings,
-            )
+                }
+            }
+        }
+        Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large, border = cardBorder) {
+            Column(Modifier.padding(vertical = 6.dp)) {
+                YouRow(
+                    icon = Icons.Outlined.Extension,
+                    title = stringResource(Res.string.you_extensions),
+                    subtitle = if (overview.extensionsCount == 0) {
+                        stringResource(Res.string.you_extensions_none)
+                    } else {
+                        pluralStringResource(Res.plurals.you_extensions_count, overview.extensionsCount, overview.extensionsCount)
+                    },
+                    onClick = onOpenExtensions,
+                )
+                YouRow(
+                    icon = Icons.Outlined.Computer,
+                    title = stringResource(Res.string.you_linked),
+                    subtitle = when (val linked = overview.linked) {
+                        LinkedSummary.None -> stringResource(Res.string.you_linked_none)
+                        LinkedSummary.Problem -> stringResource(Res.string.you_linked_problem)
+                        is LinkedSummary.Paired -> stringResource(
+                            if (linked.reachable) Res.string.you_linked_connected else Res.string.you_linked_unreachable,
+                            linked.name,
+                        )
+                    },
+                    onClick = onOpenLinked,
+                )
+                YouRow(
+                    icon = Icons.Outlined.Settings,
+                    title = stringResource(Res.string.you_settings),
+                    subtitle = stringResource(Res.string.you_settings_summary),
+                    onClick = onOpenSettings,
+                )
+            }
         }
     }
 }

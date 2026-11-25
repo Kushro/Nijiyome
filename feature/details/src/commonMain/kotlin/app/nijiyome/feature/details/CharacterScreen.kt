@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.nijiyome.designsystem.components.InfoChip
 import app.nijiyome.designsystem.components.LocalAppSnackbar
 import app.nijiyome.designsystem.components.SectionCard
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.model.Character
 import app.nijiyome.model.Media
 import app.nijiyome.model.StaffRef
@@ -188,8 +189,9 @@ private fun CharacterBody(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
+            val scroll = rememberScrollState()
             Row(
-                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 character.appearances.forEach { appearance ->

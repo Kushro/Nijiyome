@@ -145,6 +145,12 @@ class SourceFlow(
         if (cur != null && list.none { it.key == cur.key }) list = list + cur
         sources = list
         current = cur?.let { c -> list.indexOfFirst { it.key == c.key } }
+        // v1.2.0: if the confirmed pick arrived in a later progressive emission while in MANUAL, start resolving it automatically
+        // instead of forcing the user to select the same source a second time.
+        if (phase == FlowPhase.MANUAL && pickConfirmed) {
+            val pickedIdx = list.indexOfFirst { it.picked }
+            if (pickedIdx >= 0) enter(pickedIdx)
+        }
     }
 
     /** The user picked [key] (picker, "Use the best web source"): marks it as the pick and resolves it, whatever the mode. */

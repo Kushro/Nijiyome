@@ -123,6 +123,8 @@ class DesktopLinkHost(
     private val torrentEngine: () -> TorrentRepository? = { null },
     /** The [Media] a torrent request names (titles help pick the episode file of a batch); null = a bare one. */
     private val mediaOf: suspend (TorrentRequest) -> Media? = { null },
+    /** Centralized store for logs shipped by paired mobile devices (`POST /v1/logs`). */
+    private val deviceLogs: DeviceLogsStore? = null,
 ) : LinkHost {
     @Volatile private var scan: Library.Scan? = null
 
@@ -176,7 +178,8 @@ class DesktopLinkHost(
         val media = runCatching { mediaOf(req) }.getOrNull() ?: bareMedia(req)
         val played = engine.play(req.uri, media, req.episode).getOrElse { e -> api(torrentError(e)) }
         addReader(played.torrentId)
-        return OpenedTorrent(played.stream.url, played.torrentId)
+        val label = media.title.takeIf { it.isNotBlank() } ?: played.fileName.takeIf { it.isNotBlank() }
+        return OpenedTorrent(played.stream.url, played.torrentId, label)
     }
 
     override suspend fun reuseTorrent(torrentId: String): Boolean {
@@ -200,6 +203,9 @@ class DesktopLinkHost(
         @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
         kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) { runCatching { engine.playbackEnded(torrentId, completed = false) } }
     }
+
+    override fun receiveLogs(deviceId: String, deviceName: String, lines: List<String>, appVersion: String?, platform: String?): Int =
+        deviceLogs?.append(deviceId, deviceName, lines, appVersion, platform) ?: 0
 
     private fun addReader(id: String) = synchronized(readers) { readers[id.lowercase()] = (readers[id.lowercase()] ?: 0) + 1 }
 

@@ -361,10 +361,10 @@ internal class DesktopMpvEngine(
         refreshTracks()
     }
 
-    /** mpv `aid`. */
+    /** mpv `aid` (`AUDIO_TRACK_OFF` disables audio with `aid=no`). */
     fun selectAudio(id: Int) {
         if (released) return
-        handle.setPropertyString("aid", id.toString())
+        handle.setPropertyString("aid", if (id == app.nijiyome.player.AUDIO_TRACK_OFF) "no" else id.toString())
         refreshTracks()
     }
 
@@ -519,6 +519,7 @@ internal class DesktopMpvEngine(
                 codec = handle.getPropertyString("track-list/$i/codec"),
                 selected = handle.getPropertyBooleanOrNull("track-list/$i/selected") == true,
                 external = handle.getPropertyBooleanOrNull("track-list/$i/external") == true,
+                channels = if (type == "audio") handle.getPropertyLongOrNull("track-list/$i/demux-channel-count")?.toInt()?.takeIf { it > 0 } else null,
             )
             when (type) {
                 "sub" -> subs += track
@@ -543,9 +544,9 @@ internal class DesktopMpvEngine(
     }
 
     companion object {
-        const val DEMUXER_MAX_MB = MpvEngineDefaults.DEMUXER_MAX_MB
-        const val DEMUXER_BACK_MB = MpvEngineDefaults.DEMUXER_BACK_MB
-        const val READAHEAD_SECS = MpvEngineDefaults.READAHEAD_SECS
+        const val DEMUXER_MAX_MB = MpvEngineDefaults.DESKTOP_DEMUXER_MAX_MB
+        const val DEMUXER_BACK_MB = MpvEngineDefaults.DESKTOP_DEMUXER_BACK_MB
+        const val READAHEAD_SECS = MpvEngineDefaults.DESKTOP_READAHEAD_SECS
         const val NETWORK_TIMEOUT_S = MpvEngineDefaults.NETWORK_TIMEOUT_S
         private const val AWAITING_ENTRY = Long.MIN_VALUE
 

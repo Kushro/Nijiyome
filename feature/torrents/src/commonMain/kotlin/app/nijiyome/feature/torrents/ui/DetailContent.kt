@@ -60,6 +60,7 @@ import app.nijiyome.model.torrent.TorrentState
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.ui.labels.labelRes
+import app.nijiyome.ui.state.screenInsets
 import kotlinx.coroutines.launch
 
 /** The four per-torrent sections in tab order. */
@@ -95,17 +96,18 @@ internal fun DetailContent(
 
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = screenInsets,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(UiR.string.nav_torrents)) },
-                navigationIcon = {
-                    if (showBack) {
+            if (showBack) {
+                TopAppBar(
+                    title = { Text(stringResource(UiR.string.nav_torrents)) },
+                    navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
                         }
-                    }
-                },
-            )
+                    },
+                )
+            }
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {

@@ -621,14 +621,20 @@ class DetailsViewModel(
             val panel = s.panel?.let { p -> if (p.episode == request.episode) p.copy(rememberedPick = source.key) else p }
             s.copy(picker = null, selectedKey = source.key, panel = panel)
         }
-        chosenInPanel = request.episode to source.key
+        chosenInPanel = Triple(request.episode, source.key, source.candidate.torrent?.infoHash)
         val mediaId = HistoryEntry.animeIdOf(ref.anilistId, ref.malId)
         val store = stats
         if (mediaId != null && store != null) {
             viewModelScope.launch { runCatchingApp { store.setPickedSource(mediaId, request.episode, source.key) } }
         }
         if (request.playOnPick) {
-            emitPlayer(request.episode, sourceKey = source.key, preferLocal = false, sourceConfirmed = true)
+            emitPlayer(
+                request.episode,
+                sourceKey = source.key,
+                sourceInfoHash = source.candidate.torrent?.infoHash,
+                preferLocal = false,
+                sourceConfirmed = true,
+            )
         } else {
             _events.trySend(DetailsEvent.SourceChosen(source.candidate.extName, source.candidate.label))
         }
@@ -642,8 +648,15 @@ class DetailsViewModel(
         // "Al día": the next episode has not aired, nothing to open (the button is disabled; this guards the other entry points)
         if (!s.playable) return
         val episode = s.continueEpisode
+        val chosen = sourceKeyFor(episode)
         // the saved position only when the history episode is the one shown (the list progress may point past it)
-        emitPlayer(episode, sourceKey = sourceKeyFor(episode), resume = s.resumeEntry != null)
+        emitPlayer(
+            episode,
+            sourceKey = chosen,
+            sourceInfoHash = sourceInfoHashFor(episode),
+            resume = s.resumeEntry != null,
+            sourceConfirmed = chosen != null,
+        )
     }
 
     /** True when the manual watched toggle is available (a lists layer is bound). */
@@ -690,18 +703,24 @@ class DetailsViewModel(
         }
     }
 
-    /** An episode row: straight to the player (the player resolves and fails over; Manual mode asks there). */
-    fun onEpisodeClick(episode: Int) = emitPlayer(episode, sourceKey = sourceKeyFor(episode))
+    /** An episode row: straight to the player (confirmed when just picked in the panel, so Manual does not ask twice). */
+    fun onEpisodeClick(episode: Int) {
+        val chosen = sourceKeyFor(episode)
+        emitPlayer(episode, sourceKey = chosen, sourceInfoHash = sourceInfoHashFor(episode), sourceConfirmed = chosen != null)
+    }
 
     /**
      * A source the user chose in this screen's picker (not yet played). The panel's default (the remembered pick, loaded once) is not
      * passed on: the player reads the remembered pick itself, so a source changed inside the player is not overridden by a stale panel
      * (BUG-018: A-11 went back to Latino after picking anizone in the player). One-shot: cleared once the player opens.
      */
-    private var chosenInPanel: Pair<Int, String>? = null
+    private var chosenInPanel: Triple<Int, String, String?>? = null
 
     private fun sourceKeyFor(episode: Int): String? =
         chosenInPanel?.takeIf { it.first == episode && _state.value.selectedKey == it.second }?.second
+
+    private fun sourceInfoHashFor(episode: Int): String? =
+        chosenInPanel?.takeIf { it.first == episode && _state.value.selectedKey == it.second }?.third
 
     // ---- downloads (the composable wraps every call in rememberDownloadGate().launch { ... }) ----
 
@@ -1093,6 +1112,7 @@ class DetailsViewModel(
     private fun emitPlayer(
         episode: Int,
         sourceKey: String?,
+        sourceInfoHash: String? = null,
         remoteSessionId: String? = null,
         preferLocal: Boolean = true,
         resume: Boolean = true,
@@ -1115,6 +1135,7 @@ class DetailsViewModel(
                         remoteSessionId = remoteSessionId,
                         sourceKey = sourceKey,
                         sourceConfirmed = sourceConfirmed && sourceKey != null,
+                        sourceInfoHash = sourceInfoHash,
                         localUri = localUri,
                     ),
                 ),

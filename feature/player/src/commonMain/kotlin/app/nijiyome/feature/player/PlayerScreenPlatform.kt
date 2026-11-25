@@ -4,6 +4,7 @@ package app.nijiyome.feature.player
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import app.nijiyome.model.AspectMode
 import app.nijiyome.model.SettingsSection
 import app.nijiyome.player.PlayerSession
 
@@ -12,7 +13,7 @@ import app.nijiyome.player.PlayerSession
 
 /** The video of the running [session]. Android: Media3's `ContentFrame` or the libmpv surface (with the phone frame generation). */
 @Composable
-internal expect fun PlayerVideoSurface(session: PlayerSession, modifier: Modifier)
+internal expect fun PlayerVideoSurface(session: PlayerSession, modifier: Modifier, aspectMode: AspectMode = AspectMode.FIT)
 
 /**
  * The pointer gestures over the video. Android: tap toggles the controls, double tap seeks, drags scrub / change the brightness and

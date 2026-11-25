@@ -408,7 +408,7 @@
     <string name="settings_linksrv_firewall_cancelled">No se dio el permiso de administrador: no cambió nada.</string>
     <string name="settings_linksrv_firewall_failed">No se pudo agregar la regla del firewall.</string>
     <string name="settings_linksrv_firewall_other">Firewall</string>
-    <string name="settings_linksrv_firewall_other_hint">Nijiyome no modifica tu firewall. Si usás uno (ufw, firewalld o el firewall de tu escritorio), permití los puertos TCP %1$s entrantes en tu red privada para que los teléfonos lleguen a este equipo, por ejemplo: sudo ufw allow %2$s/tcp</string>
+    <string name="settings_linksrv_firewall_other_hint">Nijiyome no modifica tu firewall. Si usas uno (ufw, firewalld o el firewall de tu escritorio), permite los puertos TCP %1$s entrantes en tu red privada para que los teléfonos lleguen a este equipo, por ejemplo: sudo ufw allow %2$s/tcp</string>
     <string name="settings_linksrv_ext_link">Enlace de emparejamiento</string>
     <string name="settings_linksrv_ext_copy_link">Copiar enlace</string>
     <string name="settings_linksrv_ext_password">Contraseña de visor</string>

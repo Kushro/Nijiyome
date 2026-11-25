@@ -109,6 +109,9 @@ data class AppSettings(
     // --- 0.4.0 player quality (worker B); persisted by SettingsCodec as `frame_gen_json` ---
     /** Frame generation on the phone (:core:framegen): switch, multiplier, profile, refresh matching, audio offset. */
     val frameGen: FrameGenSettings = FrameGenSettings(),
+    // --- v1.2.0: touch player chrome style (Android) ---
+    /** Touch player visual style (Android): Cinema (gradients + slim morphing seekbar + glass pills) or Minimal (bare vector controls). */
+    val playerChromeStyle: PlayerChromeStyle = PlayerChromeStyle.CINEMA,
 ) {
     companion object {
         const val DEFAULT_PALETTE_ID = "nijiyome-violet"
@@ -126,6 +129,9 @@ data class AppSettings(
 // --- android wave (12 §3.3) ---
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+/** Touch player visual chrome style on Android (v1.2.0). */
+enum class PlayerChromeStyle { CINEMA, MINIMAL }
 
 /** Settings › Apariencia › Idioma: system / en / es only (decision 4 of 06). */
 enum class AppLanguage(val tag: String?) { SYSTEM(null), EN("en"), ES("es") }
@@ -152,6 +158,8 @@ enum class SettingsSection(val id: String) {
     /** Parity wave A (worker q): AniList / MAL accounts (the app's only identity), lists sync, import / export. */
     ACCOUNTS("accounts"),
     LINK("link"),
+    /** Desktop outbound proxy (HTTP/SOCKS5), FlareSolverr and loopback media proxy. */
+    NETWORK("network"),
     TORRENTS("torrents"),
 
     /** Parity wave B (worker r): web downloads (`DownloadsSettingsSection` of :feature:downloads). */

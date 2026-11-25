@@ -30,19 +30,29 @@ fun pickMismatches(c: SourceCandidate, extEnabled: Boolean, prefs: SourcePrefs):
     val dubs = c.dubs.mapNotNull { LanguageCodes.normalize(it) }
     val wantSub = LanguageCodes.normalize(prefs.subLang)
     val wantDub = LanguageCodes.normalize(prefs.dubLang)
-    // Watchable in the user's languages = subtitles in the subtitle language, or audio in the dub language. A source with no language
-    // facts at all cannot prove it fits, so a remembered one of those does not override the ranking either.
-    val languageOk = (wantSub != null && wantSub in subs) || (wantDub != null && wantDub in dubs) || (wantSub == null && wantDub == null)
+    // Watchable in the user's languages = subtitles in the subtitle language, or audio in the dub language. Untagged torrents (both
+    // subs and dubs empty, e.g. Nyaa/SubsPlease releases without metadata) stay compatible instead of being silently discarded.
+    val untaggedTorrent = c.kind == app.nijiyome.model.SourceKind.TORRENT && subs.isEmpty() && dubs.isEmpty()
+    val languageOk = untaggedTorrent || (wantSub != null && wantSub in subs) || (wantDub != null && wantDub in dubs) || (wantSub == null && wantDub == null)
     if (!languageOk) out += PickMismatch.LANGUAGE
     return out
 }
 
 /**
- * [requestedKey] (this session) or else [storedPick] (remembered) becomes the only `picked` row, but a remembered pick that no longer
- * fits [prefs] is ignored ([PickResult.storedDiscarded]). The order never changes. Without [prefs] it behaves like [applyPick].
+ * [requestedKey] (this session, with [requestedInfoHash] fallback for torrents) or else [storedPick] (remembered) becomes the only
+ * `picked` row, but a remembered pick that no longer fits [prefs] is ignored ([PickResult.storedDiscarded]). The order never changes.
  */
-fun resolvePick(sources: List<RankedSource>, requestedKey: String?, storedPick: String?, prefs: SourcePrefs?): PickResult {
+fun resolvePick(
+    sources: List<RankedSource>,
+    requestedKey: String?,
+    storedPick: String?,
+    prefs: SourcePrefs?,
+    requestedInfoHash: String? = null,
+): PickResult {
     val requested = requestedKey?.takeIf { k -> sources.any { it.key == k } }
+        ?: requestedInfoHash?.takeIf { it.isNotBlank() }?.let { hash ->
+            sources.firstOrNull { it.candidate.torrent?.infoHash?.equals(hash, ignoreCase = true) == true }?.key
+        }
     if (requested != null) return PickResult(sources.map { it.copy(picked = it.key == requested) }, storedDiscarded = false)
     val stored = storedPick?.let { k -> sources.firstOrNull { it.key == k } }
     if (stored != null) {

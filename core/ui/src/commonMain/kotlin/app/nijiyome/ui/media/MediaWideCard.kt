@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -83,8 +83,8 @@ fun MediaWideCard(
             .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = spoken },
     ) {
-        Row(Modifier.height(posterWidth / COVER_ASPECT_RATIO)) {
-            MediaCover(url = media.cover, modifier = Modifier.width(posterWidth), shape = MaterialTheme.shapes.medium)
+        Row(Modifier.heightIn(min = posterWidth / COVER_ASPECT_RATIO)) {
+            MediaCover(url = media.cover, modifier = Modifier.width(posterWidth), shape = MaterialTheme.shapes.small)
             Column(
                 Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),

@@ -111,6 +111,9 @@ class LoopbackOAuthServer(
     @Volatile
     private var socket: ServerSocket? = null
 
+    @Volatile
+    private var acceptThread: Thread? = null
+
     /** Binds the port and starts waiting. Fails (nothing started) when the port is taken. */
     fun start(provider: ListProvider, expectedState: String, onRedirect: (String) -> Unit): Result<Unit> {
         stop()
@@ -127,6 +130,7 @@ class LoopbackOAuthServer(
         socket = server
         val thread = Thread({ serve(server, provider, expectedState, onRedirect) }, "oauth-loopback")
         thread.isDaemon = true
+        acceptThread = thread
         thread.start()
         return Result.success(Unit)
     }
@@ -135,6 +139,11 @@ class LoopbackOAuthServer(
     fun stop() {
         socket?.let { runCatching { it.close() } }
         socket = null
+        val t = acceptThread
+        acceptThread = null
+        if (t != null && t !== Thread.currentThread()) {
+            runCatching { t.join(500) }
+        }
     }
 
     val isListening: Boolean get() = socket?.isClosed == false

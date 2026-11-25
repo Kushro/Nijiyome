@@ -724,7 +724,13 @@ class PlayerViewModel(
         var noticeSent = false
         fun prepare(ranked: List<RankedSource>): List<RankedSource> {
             // Bug sources.remembered-vs-prefs: this session's pick always wins; the remembered one only while it fits the preferences.
-            val pick = resolvePick(rankForThisDevice(playableSources(ranked, skipTorrents)), args.sourceKey, stored, settings.sourcePrefs)
+            val pick = resolvePick(
+                sources = rankForThisDevice(playableSources(ranked, skipTorrents)),
+                requestedKey = args.sourceKey,
+                storedPick = stored,
+                prefs = settings.sourcePrefs,
+                requestedInfoHash = args.sourceInfoHash,
+            )
             if (pick.storedDiscarded && !noticeSent && ranked.any { it.key == stored }) {
                 noticeSent = true
                 mediaId?.let { id -> detached.launch { runCatching { stats?.clearPickedSource(id, args.episode) } } }
@@ -735,6 +741,9 @@ class PlayerViewModel(
         }
         // BUG-011 / BUG-019: sources arrive progressively. Manual shows the picker with the first answers and fills it in; Auto starts
         // when everything answered, or after AUTO_START_MS with what is there (later answers still join the list for the picker).
+        // v1.2.0: when the user already confirmed a specific source (sourceConfirmed + sourceKey/infoHash), wait until that source
+        // arrives (or candidatesFlow finishes) instead of prematurely dropping into MANUAL and popping a second picker.
+        val awaitingConfirmedPick = args.sourceConfirmed && (args.sourceKey != null || args.sourceInfoHash != null)
         var latest: List<RankedSource> = emptyList()
         // 1.1 review #4: the list as the repository ranked it (no debrid re-score yet): every re-rank starts from it, so a row's debrid
         // bonus is added once, however many partial lists and timers ran before.
@@ -746,18 +755,23 @@ class PlayerViewModel(
                 val checkedHashes = HashSet<String>()
                 val timer = if (manual) null else launch {
                     delay(AUTO_START_MS)
-                    if (flow == null && latestRaw.isNotEmpty()) startFlow(withDebrid(latestRaw))
+                    if (flow == null && latestRaw.isNotEmpty() && (!awaitingConfirmedPick || latestRaw.any { it.picked })) {
+                        startFlow(withDebrid(latestRaw))
+                    }
                 }
                 extensions.candidatesFlow(m, args.episode).collect { partial ->
                     latestRaw = prepare(partial)
                     latest = orderDebrid(reapplyDebrid(latestRaw, debridMarks))
                     val f = flow
+                    val confirmedArrived = !awaitingConfirmedPick || latest.any { it.picked }
                     when {
                         f != null -> {
+                            val wasManual = f.phase == FlowPhase.MANUAL
                             f.updateSources(latest)
-                            publishFlow()
+                            if (wasManual && f.phase == FlowPhase.RESOLVING) advance() else publishFlow()
                         }
-                        manual && latest.isNotEmpty() -> startFlow(latest)
+                        awaitingConfirmedPick && confirmedArrived && latest.isNotEmpty() -> startFlow(latest)
+                        manual && !awaitingConfirmedPick && latest.isNotEmpty() -> startFlow(latest)
                         else -> _state.update { it.copy(sources = latest, canPickSource = latest.isNotEmpty()) }
                     }
                     // Check debrid cache progressively as torrent batches arrive so badges appear without waiting for slow extensions.
@@ -828,7 +842,11 @@ class PlayerViewModel(
             _state.update { it.copy(phase = PlayerPhase.NO_SOURCES, sourcesAsked = asked) }
             return
         }
-        flow = SourceFlow(sources, settings.sourcePrefs.mode, pickConfirmed = args.sourceConfirmed && args.sourceKey != null)
+        flow = SourceFlow(
+            sources,
+            settings.sourcePrefs.mode,
+            pickConfirmed = args.sourceConfirmed && (args.sourceKey != null || args.sourceInfoHash != null),
+        )
         advance()
     }
 
@@ -2032,6 +2050,12 @@ class PlayerViewModel(
         session?.setStableVolume(enabled)
         val repo = settingsRepository ?: return
         viewModelScope.launch { runCatching { repo.update { it.copy(stableVolume = enabled) } } }
+    }
+
+    /** v1.2.0: switch between Cinema and Minimal touch player chrome styles live. */
+    fun setPlayerChromeStyle(style: app.nijiyome.model.PlayerChromeStyle) {
+        val repo = settingsRepository ?: return
+        viewModelScope.launch { runCatching { repo.update { it.copy(playerChromeStyle = style) } } }
     }
 
     /**

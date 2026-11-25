@@ -13,10 +13,15 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 
-/** The app-wide keys of Tatakai Next's desktop (`tk-ui/src/shortcuts.rs`). */
+import app.nijiyome.model.SettingsSection
+
+/** The app-wide keys of Tatakai Next's desktop (`tk-ui/src/shortcuts.rs`), plus Ctrl+P for Settings modal. */
 sealed interface ShellShortcut {
-    /** Ctrl+K: Search, with the query field focused. */
+    /** Ctrl+K: Command Palette (settings, commands, routes & catalog search). */
     data object FocusSearch : ShellShortcut
+
+    /** Ctrl+P / Ctrl+,: Settings modal overlay. */
+    data object OpenSettings : ShellShortcut
 
     /** Ctrl+B: the rail with labels / icons only. */
     data object ToggleNav : ShellShortcut
@@ -29,7 +34,7 @@ sealed interface ShellShortcut {
 }
 
 /**
- * The shortcut of a key press: Ctrl+K and Ctrl+B (no Alt / Meta), and without modifiers Esc and 1..9 (top row or keypad).
+ * The shortcut of a key press: Ctrl+K, Ctrl+P / Ctrl+,, Ctrl+B (no Alt / Meta), and without modifiers Esc and 1..9 (top row or keypad).
  * Anything else is null.
  */
 fun shellShortcut(key: Key, ctrl: Boolean, alt: Boolean, meta: Boolean): ShellShortcut? {
@@ -37,6 +42,7 @@ fun shellShortcut(key: Key, ctrl: Boolean, alt: Boolean, meta: Boolean): ShellSh
     if (ctrl) {
         return when (key) {
             Key.K -> ShellShortcut.FocusSearch
+            Key.P, Key.Comma -> ShellShortcut.OpenSettings
             Key.B -> ShellShortcut.ToggleNav
             else -> null
         }
@@ -73,6 +79,26 @@ class ShellShortcuts(
 
     /** Ctrl+B: the rail shows the other style (labelled / icons only) until pressed again. */
     internal var navToggled: Boolean by mutableStateOf(false)
+
+    /** True when the navigation back stack has a previous screen (drives DesktopTitleBar's Back button). */
+    var canGoBack: Boolean by mutableStateOf(false)
+        internal set
+
+    internal var goBackHandler: (() -> Unit)? = null
+    internal var openPaletteHandler: (() -> Unit)? = null
+    internal var openSettingsHandler: ((SettingsSection?) -> Unit)? = null
+
+    fun navigateBack() {
+        goBackHandler?.invoke()
+    }
+
+    fun openCommandPalette() {
+        openPaletteHandler?.invoke()
+    }
+
+    fun openSettingsModal(section: SettingsSection? = null) {
+        openSettingsHandler?.invoke(section)
+    }
 
     // Text input sessions open right now (a focused text field). A field does not consume the key press of a digit (its text comes
     // separately), so 1..9 are left alone while one is open (Tatakai Next: never while typing).

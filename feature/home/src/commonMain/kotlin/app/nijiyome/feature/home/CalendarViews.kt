@@ -84,6 +84,7 @@ import app.nijiyome.ui.look.lookFadeSpec
 import app.nijiyome.ui.media.LocalTitleLanguage
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.displayTitle
+import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.userMessage
 import java.time.Instant
 import java.time.LocalDate
@@ -123,6 +124,7 @@ fun CalendarScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifie
     )
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = screenInsets,
         topBar = {
             DiscoverTopBar(stringResource(Res.string.home_calendar_title), onBack) {
                 IconButton(onClick = vm::goToday) { Icon(Icons.Outlined.Today, contentDescription = stringResource(Res.string.home_cal_today)) }
@@ -315,22 +317,27 @@ private fun WeekStrip(days: List<CalendarDay>, selected: LocalDate, onSelect: (L
                 },
             ) {
                 Column(Modifier.padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    val onSel = MaterialTheme.colorScheme.onPrimaryContainer
                     Text(
                         day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()).take(3),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isSel) onSel.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                     )
                     Text(
                         day.date.dayOfMonth.toString(),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = if (day.date == today) FontWeight.Bold else FontWeight.Normal,
-                        color = if (day.date == today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        fontWeight = if (day.date == today || isSel) FontWeight.Bold else FontWeight.Normal,
+                        color = when {
+                            isSel -> onSel
+                            day.date == today -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurface
+                        },
                     )
                     Text(
                         if (count > 0) count.toString() else "·",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isSel) onSel.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -436,24 +443,41 @@ private fun MonthGrid(days: List<CalendarDay>, selected: LocalDate, wide: Boolea
                             .padding(4.dp),
                     ) {
                         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                            val onSel = MaterialTheme.colorScheme.onPrimaryContainer
                             Text(
                                 day.date.dayOfMonth.toString(),
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (inMonth) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+                                color = when {
+                                    isSel -> onSel
+                                    inMonth -> MaterialTheme.colorScheme.onSurface
+                                    else -> MaterialTheme.colorScheme.outline
+                                },
                             )
                             if (wide) {
                                 Row(horizontalArrangement = Arrangement.spacedBy((-10).dp), modifier = Modifier.padding(top = 4.dp)) {
                                     day.episodes.take(3).forEach { ep -> MediaCover(url = ep.media.cover, modifier = Modifier.width(26.dp)) }
                                 }
-                                if (count > 3) Text("+${count - 3}", style = MaterialTheme.typography.labelSmall)
+                                if (count > 3) Text(
+                                    "+${count - 3}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isSel) onSel else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             } else if (count > 0) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.padding(top = 4.dp)) {
                                     day.episodes.take(3).forEach { ep ->
-                                        val color = if (ctx.state.isTracked(ep.media.ref)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                                        val color = when {
+                                            isSel -> onSel
+                                            ctx.state.isTracked(ep.media.ref) -> MaterialTheme.colorScheme.primary
+                                            else -> MaterialTheme.colorScheme.outline
+                                        }
                                         Box(Modifier.size(5.dp).clip(CircleShape).background(color))
                                     }
                                 }
-                                Text(count.toString(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    count.toString(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isSel) onSel.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }

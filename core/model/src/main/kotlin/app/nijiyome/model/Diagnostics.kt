@@ -3,6 +3,7 @@ package app.nijiyome.model
 
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
+import java.util.concurrent.CopyOnWriteArrayList
 
 // Parity wave A contract (docs/redesign/15-parity-wave-a-contract-android.md §3.4): app log ("Abrir registros") and the new-version
 // notice (desktop worker f, Android worker q). Signatures FINAL; bodies: worker q (:core:data, `dataModule`).
@@ -22,11 +23,35 @@ object AppLog {
     @Volatile
     var sink: LogSink = LogSink { _, _, _, _ -> }
 
+    private val observers = CopyOnWriteArrayList<(LogLevel, String) -> Unit>()
+
+    fun addObserver(observer: (LogLevel, String) -> Unit) {
+        observers += observer
+    }
+
+    fun removeObserver(observer: (LogLevel, String) -> Unit) {
+        observers -= observer
+    }
+
+    fun notifyObservers(level: LogLevel, formattedLine: String) {
+        for (obs in observers) runCatching { obs(level, formattedLine) }
+    }
+
     fun i(tag: String, message: String) = sink.log(LogLevel.INFO, tag, message, null)
 
     fun w(tag: String, message: String, throwable: Throwable? = null) = sink.log(LogLevel.WARN, tag, message, throwable)
 
     fun e(tag: String, message: String, throwable: Throwable? = null) = sink.log(LogLevel.ERROR, tag, message, throwable)
+
+    /** Error log with structured key-value context (e.g. engine, mediaId, episode) to speed up bug diagnosis. */
+    fun e(tag: String, message: String, throwable: Throwable? = null, context: Map<String, String>) {
+        val ctx = if (context.isEmpty()) "" else " [" + context.entries.joinToString(" ") { "${it.key}=${it.value}" } + "]"
+        sink.log(LogLevel.ERROR, tag, "$message$ctx", throwable)
+    }
+
+    /** Fatal / uncaught exception log. */
+    fun fatal(tag: String, message: String, throwable: Throwable? = null) =
+        sink.log(LogLevel.ERROR, tag, "[FATAL] $message", throwable)
 }
 
 /** The app log file (rotating, app-private). Implemented by worker q; also the [LogSink] installed into [AppLog]. */
@@ -38,6 +63,33 @@ interface LogRepository {
     fun logFile(): File?
 
     suspend fun clear()
+}
+
+/** A linked device whose logs have been shipped to this PC via Nijiyome Link (`POST /v1/logs`). */
+data class DeviceLogSource(val id: String, val name: String, val lastUpdatedMs: Long?)
+
+/**
+ * Desktop-only centralized store of logs received from linked mobile devices over Nijiyome Link mTLS.
+ * Allows inspecting per-device or merged logs from Settings › Acerca de › Abrir registros.
+ */
+interface RemoteLogsRepository {
+    suspend fun listDevices(): List<DeviceLogSource>
+
+    /** Newest last. When [deviceId] is null, merges recent lines across all linked devices chronologically. */
+    suspend fun recentLines(deviceId: String? = null, max: Int = 500): List<String>
+
+    fun logFile(deviceId: String): File?
+
+    fun logsDir(): File?
+
+    /** Clears one device's logs, or all linked device logs when [deviceId] is null. */
+    suspend fun clear(deviceId: String? = null)
+}
+
+/** Mobile-side trigger to push local app logs to the paired PC via Nijiyome Link (`POST /v1/logs`). */
+interface LogPushTrigger {
+    /** Returns the number of newly shipped log lines accepted by the PC. */
+    suspend fun pushNow(): Result<Int>
 }
 
 /** A release newer than the installed one. */

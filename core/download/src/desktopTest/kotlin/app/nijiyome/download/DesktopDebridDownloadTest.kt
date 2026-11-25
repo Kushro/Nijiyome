@@ -182,7 +182,15 @@ class DesktopDebridDownloadTest {
         assertTrue(ranges.any { it.startsWith("2:bytes=") && !it.startsWith("2:bytes=0-") }, ranges.toString())
         assertEquals("TorBox", done.sourceLabel)
         // 1.1 review #11: a finished debrid download keeps no CDN link in downloads.json
-        withTimeout(10_000) { while (store.walkTopDown().filter { it.isFile }.any { "/dl/" in it.readText() }) delay(20) }
+        withTimeout(10_000) {
+            while (true) {
+                val files = store.walkTopDown().filter { it.isFile }.toList()
+                val settled = files.none { it.name.endsWith(".tmp") } &&
+                    files.none { file -> runCatching { "/dl/" in file.readText() }.getOrDefault(true) }
+                if (settled) break
+                delay(20)
+            }
+        }
     }
 
     @Test
