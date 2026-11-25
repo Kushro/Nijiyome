@@ -415,6 +415,13 @@ class SearchViewModel(
         _state.update { it.copy(history = emptyList()) }
     }
 
+    /** Undo of removing one or all recent searches: puts [entries] back as they were. */
+    fun restoreHistory(entries: List<String>) {
+        val next = entries.take(SEARCH_HISTORY_SIZE)
+        historyStore.save(next)
+        _state.update { it.copy(history = next) }
+    }
+
     /** The store may have been cleared from Settings while this screen was in the back stack. */
     fun reloadHistory() {
         val stored = historyStore.load()

@@ -9,6 +9,7 @@ import app.nijiyome.model.Episode
 import app.nijiyome.model.FeedKind
 import app.nijiyome.model.FeedPage
 import app.nijiyome.model.ImageMatch
+import app.nijiyome.model.ListStatus
 import app.nijiyome.model.Media
 import app.nijiyome.model.MediaKind
 import app.nijiyome.model.MediaRef
@@ -428,5 +429,94 @@ class SearchViewModelTest {
         vm.retry()
         advanceUntilIdle()
         assertEquals(listOf(5), assertIs<SearchResults.Ok>(vm.state.value.results).items.map { it.ref.anilistId })
+    }
+
+    // --- Sparkles Explorar (lane S3) ---
+
+    @Test
+    fun `the backup providers answering raises the rate-limit notice and AniList answering again clears it`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        var aniListUp = false
+        val repo = FakeMetadata(
+            onAdvanced = { _, p -> if (aniListUp) FeedPage(listOf(media(5)), p, false) else throw limited },
+            onSearch = { _, p -> FeedPage(listOf(media(1)), p, false) },
+        )
+        val vm = SearchViewModel(repo, debounceMillis = 10)
+        vm.onQueryChange("Frieren")
+        advanceUntilIdle()
+        assertEquals(AppError.RateLimited("anilist"), vm.state.value.degraded)
+
+        aniListUp = true
+        vm.retry()
+        advanceUntilIdle()
+        assertNull(vm.state.value.degraded)
+    }
+
+    @Test
+    fun `a genre chip browses that genre with an empty query`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val repo = FakeMetadata(onAdvanced = { _, p -> FeedPage(listOf(media(1)), p, false) })
+        val vm = SearchViewModel(repo, debounceMillis = 10)
+        vm.selectFeed(FeedKind.POPULAR)
+        advanceUntilIdle()
+        vm.browseGenre("Romance")
+        advanceUntilIdle()
+
+        val s = vm.state.value
+        assertEquals("", s.query)
+        assertNull(s.feed)
+        assertEquals(listOf("Romance"), s.filters.genres)
+        assertEquals(listOf("Romance"), repo.advanced.last().first.genres)
+    }
+
+    @Test
+    fun `scopes switch between anime, characters and an empty extension catalogue`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val repo = FakeMetadata(onAdvanced = { _, p -> FeedPage(listOf(media(1)), p, false) })
+        val vm = SearchViewModel(repo, debounceMillis = 10)
+        vm.onQueryChange("frieren")
+        advanceUntilIdle()
+
+        vm.selectScope(ExploreScope.CHARACTERS)
+        advanceUntilIdle()
+        assertEquals(ExploreScope.CHARACTERS, vm.state.value.scope)
+        assertEquals(listOf("frieren#1"), repo.characterQueries)
+
+        // No extension with a catalogue: the scope stays on and nothing is searched.
+        vm.selectScope(ExploreScope.EXTENSIONS)
+        advanceUntilIdle()
+        assertEquals(ExploreScope.EXTENSIONS, vm.state.value.scope)
+        assertEquals(SearchResults.Idle, vm.state.value.results)
+
+        vm.selectScope(ExploreScope.ANIME)
+        advanceUntilIdle()
+        assertEquals(ExploreScope.ANIME, vm.state.value.scope)
+        assertIs<SearchResults.Ok>(vm.state.value.results)
+    }
+
+    @Test
+    fun `the Mi lista facet keeps only the picked statuses, or the titles off the list`() {
+        val state = SearchUiState(
+            results = SearchResults.Ok(listOf(media(1), media(2), media(3)), page = 1, hasNext = false),
+            listStatuses = mapOf("a1" to ListStatus.WATCHING, "a2" to ListStatus.COMPLETED),
+        )
+        assertEquals(listOf(1, 2, 3), state.shown.map { it.ref.anilistId })
+        assertEquals(listOf(1), state.copy(myList = setOf("WATCHING")).shown.map { it.ref.anilistId })
+        assertEquals(listOf(3), state.copy(myList = setOf(MY_LIST_OUT)).shown.map { it.ref.anilistId })
+        assertEquals(ListStatus.COMPLETED, state.listStatusOf(MediaRef(anilistId = 2)))
+        assertEquals(1, state.copy(myList = setOf("WATCHING")).narrowingCount)
+    }
+
+    @Test
+    fun `undoing a removed recent search puts the list back`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val store = InMemorySearchHistoryStore(listOf("a1", "b2", "c3"))
+        val vm = SearchViewModel(FakeMetadata(onAdvanced = { _, p -> FeedPage(emptyList(), p, false) }), historyStore = store)
+        val before = vm.state.value.history
+        vm.removeHistory("b2")
+        assertEquals(listOf("a1", "c3"), vm.state.value.history)
+        vm.restoreHistory(before)
+        assertEquals(listOf("a1", "b2", "c3"), vm.state.value.history)
+        assertEquals(listOf("a1", "b2", "c3"), store.load())
     }
 }

@@ -43,3 +43,6 @@ class ContentImageReader(context: Context) : ImageBytesReader {
 }
 
 internal actual val imageDropAndLinks: Boolean = false
+
+/** Phones and tablets: no keyboard hint under Explorar's title (Ctrl+F still works with a hardware keyboard). */
+internal actual val exploreKeyboardHints: Boolean = false

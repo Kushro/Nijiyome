@@ -2,3 +2,5 @@
 package app.nijiyome.feature.search
 
 internal actual val imageDropAndLinks: Boolean = true
+
+internal actual val exploreKeyboardHints: Boolean = true

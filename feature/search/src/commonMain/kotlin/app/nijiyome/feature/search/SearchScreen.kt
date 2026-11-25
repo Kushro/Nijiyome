@@ -1,142 +1,95 @@
 package app.nijiyome.feature.search
 
-import app.nijiyome.feature.search.resources.Res
-import app.nijiyome.feature.search.resources.*
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.pluralStringResource
-import org.jetbrains.compose.resources.stringResource
-import app.nijiyome.ui.platform.PlatformBackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.outlined.DeleteSweep
-import androidx.compose.material.icons.outlined.Explore
-import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.ImageSearch
-import androidx.compose.material.icons.outlined.NoAdultContent
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.SearchOff
-import androidx.compose.material.icons.outlined.Sync
-import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.nijiyome.designsystem.components.EmptyState
-import app.nijiyome.designsystem.components.ErrorState
-import app.nijiyome.designsystem.components.LoadingState
+import app.nijiyome.designsystem.components.AdaptiveSheet
 import app.nijiyome.designsystem.components.LocalAppSnackbar
-import app.nijiyome.designsystem.components.Pill
 import app.nijiyome.designsystem.components.PillTone
-import app.nijiyome.designsystem.components.Segmented
-import app.nijiyome.designsystem.components.SegmentedOption
-import app.nijiyome.designsystem.components.rememberAfterDelay
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.feature.details.CharacterScreen
+import app.nijiyome.feature.search.resources.Res
+import app.nijiyome.feature.search.resources.*
 import app.nijiyome.metadata.TrendWindow
-import app.nijiyome.model.CharacterRef
-import app.nijiyome.model.ExtensionHomeItem
+import app.nijiyome.model.ExploreStructure
 import app.nijiyome.model.FeedKind
-import app.nijiyome.model.MatureContentMode
+import app.nijiyome.model.ListStatus
 import app.nijiyome.model.Media
 import app.nijiyome.model.MediaSort
-import app.nijiyome.model.TitleLanguage
-import app.nijiyome.ui.resources.Res as UiR
-import app.nijiyome.ui.resources.*
-import app.nijiyome.ui.media.MediaCover
-import app.nijiyome.ui.media.alternativeTitle
+import app.nijiyome.ui.look.slot
+import app.nijiyome.ui.look.structures
 import app.nijiyome.ui.media.displayTitle
-import app.nijiyome.ui.media.mediaKey
-import app.nijiyome.ui.state.screenInsets
-import app.nijiyome.ui.state.userMessage
-import java.util.Locale
+import app.nijiyome.ui.patterns.ListStatusPicker
+import app.nijiyome.ui.patterns.label
+import app.nijiyome.ui.patterns.toListStatus
+import app.nijiyome.ui.platform.PlatformBackHandler
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Search (prototype S.search + classic `SearchPage`): recent searches, Explore feeds, type chips (Anime / Characters), source chips
- * (metadata or one extension with its own catalogue), server-side filters bottom sheet, results counter with infinite scroll, image
- * search entry. On medium/expanded windows the app shell shows Search as the list pane and Details as the detail pane
- * (ListDetailSceneStrategy), which is the list-detail layout of 07 §1.
+ * Sparkles Explorar (`Route.Search` / `Route.SearchFor`, lane S3): Buscar and Para ti in one screen, in the structure the user picked
+ * (`structures.explore`): Facetas (search with facet chips, results first) or Lienzo (discovery canvas first, search on top). Both share
+ * this view model, state and actions: text search with recents, "Qué buscar" scopes (anime, characters, manga and novels that open
+ * their homes, extension catalogues), every filter of the old sheet as facets, the feeds of Home "Ver todo", Top with its time window,
+ * studio browsing, image search, and Para ti / Atlas from `:feature:home` through the slots below.
  */
 @Composable
 fun SearchScreen(
     onMediaClick: (Media) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = koinViewModel(),
-    // --- android wave contract (docs/redesign/12 §3.14): new callbacks appended, wired by :app (worker b) ---
     /** Pre-filled query / feed / genre from Route.SearchFor (null = plain Search). */
     initialQuery: String? = null,
     initialFeed: FeedKind? = null,
     initialGenre: String? = null,
-    // --- parity wave A (docs/redesign/15 §3.1, worker o): appended, wired by :app ---
     /** Studio / producer browse from Details (`Route.SearchFor(studio)`): fed into `MediaSearchQuery.studio`. */
     initialStudio: String? = null,
-    /** Image-search entry (camera / gallery icon of the search bar) -> Route.ImageSearch(). */
+    /** Image-search entry of the search field -> Route.ImageSearch(). */
     onOpenImageSearch: () -> Unit = {},
-    // --- parity wave B (docs/redesign/16 §3.5, worker s): type chips Manga / Novela, wired by :app to Route.Manga(query) / Route.Novels(query) ---
+    /** "Qué buscar" Manga / Novelas open those homes with the typed query (Route.Manga(query) / Route.Novels(query)). */
     onOpenMangaSearch: (query: String) -> Unit = {},
     onOpenNovelSearch: (query: String) -> Unit = {},
-    // --- Hito 6 (desktop, Tatakai Next Ctrl+K): while true the query field takes the focus, then [onQueryFocused] is called ---
+    /** Desktop: while true the query field takes the focus, then [onQueryFocused] is called. */
     focusQuery: Boolean = false,
     onQueryFocused: () -> Unit = {},
+    // --- Sparkles (lane S3), all with defaults; the integrator wires them in feature/shell ---
+    /** Opens Explorar on a tab: [ExploreTab.FOR_YOU] for `Route.ForYou`. */
+    initialTab: ExploreTab = ExploreTab.SEARCH,
+    /** Para ti page (`:feature:home` `ForYouPanel`); null hides the Buscar / Para ti switch. */
+    forYouPanel: (@Composable (onGenre: (String) -> Unit, modifier: Modifier) -> Unit)? = null,
+    /** Lienzo's Para ti section (`:feature:home` `ForYouPreview`). */
+    forYouPreview: (@Composable (onSeeAll: () -> Unit, onGenre: (String) -> Unit, modifier: Modifier) -> Unit)? = null,
+    /** Lienzo's atlas section (`:feature:home` `TasteAtlas`). */
+    tasteAtlas: (@Composable (modifier: Modifier) -> Unit)? = null,
+    /** "Abrir Fuentes" when no extension has a catalogue or one fails (Route.Extensions). */
+    onOpenExtensions: () -> Unit = {},
 ) {
     LaunchedEffect(initialQuery, initialFeed, initialGenre, initialStudio) {
         viewModel.applyInitial(initialQuery, initialFeed, initialGenre, initialStudio)
@@ -144,8 +97,14 @@ fun SearchScreen(
     // Recent searches may have been cleared from Settings › Metadatos while this screen sat in the back stack.
     LaunchedEffect(Unit) { viewModel.reloadHistory() }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // A character hit opens its page in place (the contract gives Search no character route callback); back returns to the list.
+    var tab by rememberSaveable(initialTab) { mutableStateOf(if (forYouPanel == null) ExploreTab.SEARCH else initialTab) }
+    // A character hit opens its page in place (SRCH-08); back or Esc returns to the list.
     var openCharacter by rememberSaveable { mutableStateOf<Int?>(null) }
+    var filtersOpen by rememberSaveable { mutableStateOf(false) }
+    var statusFor by remember { mutableStateOf<Media?>(null) }
+    val queryFocus = remember { FocusRequester() }
+    val currentState by rememberUpdatedState(state)
+
     val characterId = openCharacter
     if (characterId != null) {
         PlatformBackHandler { openCharacter = null }
@@ -157,123 +116,79 @@ fun SearchScreen(
         )
         return
     }
-    SearchContent(
-        state = state,
-        actions = SearchActions(
-            onQueryChange = viewModel::onQueryChange,
-            onSubmit = viewModel::submit,
-            onClear = viewModel::clear,
-            onRetry = viewModel::retry,
-            onLoadMore = viewModel::loadMore,
-            onMediaClick = onMediaClick,
-            onCharacterClick = { openCharacter = it.id },
-            onExtensionItemClick = viewModel::openExtensionItem,
-            onUseHistory = viewModel::useHistory,
-            onRemoveHistory = viewModel::removeHistory,
-            onClearHistory = viewModel::clearHistory,
-            onFiltersChange = viewModel::setFilters,
-            onApplySheet = viewModel::applySheet,
-            onOpenSheet = viewModel::ensureTags,
-            onSelectFeed = viewModel::selectFeed,
-            onClearFeed = viewModel::clearFeed,
-            onTrendWindow = viewModel::setTrendWindow,
-            onClearStudio = viewModel::clearStudio,
-            onType = viewModel::setType,
-            onExtension = viewModel::selectExtension,
-            onOpenImageSearch = onOpenImageSearch,
-            onOpenMangaSearch = onOpenMangaSearch,
-            onOpenNovelSearch = onOpenNovelSearch,
-        ),
-        modifier = modifier,
-        focusQuery = focusQuery,
-        onQueryFocused = onQueryFocused,
-    )
-}
 
-internal data class SearchActions(
-    val onQueryChange: (String) -> Unit = {},
-    val onSubmit: () -> Unit = {},
-    val onClear: () -> Unit = {},
-    val onRetry: () -> Unit = {},
-    val onLoadMore: () -> Unit = {},
-    val onMediaClick: (Media) -> Unit = {},
-    val onCharacterClick: (CharacterRef) -> Unit = {},
-    val onExtensionItemClick: (ExtensionHomeItem) -> Unit = {},
-    val onUseHistory: (String) -> Unit = {},
-    val onRemoveHistory: (String) -> Unit = {},
-    val onClearHistory: () -> Unit = {},
-    val onFiltersChange: (SearchFilters) -> Unit = {},
-    val onApplySheet: (SearchFilters, Boolean) -> Unit = { _, _ -> },
-    val onOpenSheet: () -> Unit = {},
-    val onSelectFeed: (FeedKind) -> Unit = {},
-    val onClearFeed: () -> Unit = {},
-    val onTrendWindow: (TrendWindow) -> Unit = {},
-    val onClearStudio: () -> Unit = {},
-    val onType: (SearchType) -> Unit = {},
-    val onExtension: (String?) -> Unit = {},
-    val onOpenImageSearch: () -> Unit = {},
-    val onOpenMangaSearch: (String) -> Unit = {},
-    val onOpenNovelSearch: (String) -> Unit = {},
-)
-
-@Composable
-internal fun SearchContent(
-    state: SearchUiState,
-    actions: SearchActions,
-    modifier: Modifier = Modifier,
-    focusQuery: Boolean = false,
-    onQueryFocused: () -> Unit = {},
-) {
-    var filtersOpen by rememberSaveable { mutableStateOf(false) }
-    Scaffold(
-        modifier = modifier,
-        contentWindowInsets = screenInsets,
-        topBar = {
-            SearchTopBar(state, actions, focusQuery = focusQuery, onQueryFocused = onQueryFocused, onOpenFilters = {
-                actions.onOpenSheet()
-                filtersOpen = true
-            })
-        },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            when (val results = state.results) {
-                SearchResults.Idle -> IdleContent(state, actions)
-                SearchResults.Loading -> DelayedLoading()
-                SearchResults.Empty -> EmptyState(
-                    icon = Icons.Outlined.SearchOff,
-                    title = stringResource(Res.string.search_empty_title),
-                    message = if (state.query.isBlank()) {
-                        stringResource(Res.string.search_empty_filtered)
-                    } else {
-                        stringResource(Res.string.search_empty_message, state.query.trim())
-                    },
-                    actionLabel = if (state.filters.isEmpty) null else stringResource(Res.string.search_reset),
-                    onAction = { actions.onFiltersChange(SearchFilters()) },
-                    modifier = Modifier.align(Alignment.Center),
-                )
-                is SearchResults.Err -> ErrorState(
-                    message = results.cause.userMessage(),
-                    retryLabel = stringResource(UiR.string.ui_retry),
-                    onRetry = actions.onRetry,
-                    modifier = Modifier.align(Alignment.Center),
-                    title = stringResource(UiR.string.ui_error_title),
-                )
-                is SearchResults.Ok -> when {
-                    results.characters.isNotEmpty() -> CharacterResults(results, actions)
-                    results.extensionItems.isNotEmpty() -> ExtensionResults(results.extensionItems, actions)
-                    state.shown.isEmpty() -> EmptyState(
-                        icon = Icons.Outlined.SearchOff,
-                        title = stringResource(Res.string.search_empty_title),
-                        message = stringResource(Res.string.search_empty_filtered),
-                        actionLabel = stringResource(Res.string.search_reset),
-                        onAction = { actions.onFiltersChange(SearchFilters()) },
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                    else -> ResultsList(state.shown, results, state.titleLanguage, state.matureContent, actions)
-                }
-            }
+    // Ctrl+K of the shell lands here with a query or asks for the focus; Ctrl+F focuses the field from anywhere in Explorar.
+    LaunchedEffect(focusQuery, tab) {
+        if (focusQuery && tab == ExploreTab.SEARCH) {
+            runCatching { queryFocus.requestFocus() }
+            onQueryFocused()
         }
     }
+
+    val listChanges = rememberListChanges(viewModel)
+    val actions = ExploreActions(
+        onQueryChange = viewModel::onQueryChange,
+        onSubmit = viewModel::submit,
+        onClear = viewModel::clear,
+        onRetry = viewModel::retry,
+        onLoadMore = viewModel::loadMore,
+        onMediaClick = onMediaClick,
+        onCharacterClick = { openCharacter = it.id },
+        onExtensionItemClick = viewModel::openExtensionItem,
+        onUseHistory = viewModel::useHistory,
+        onRemoveHistory = viewModel::removeHistory,
+        onClearHistory = viewModel::clearHistory,
+        onFiltersChange = viewModel::setFilters,
+        onEnsureTags = viewModel::ensureTags,
+        onOpenAllFilters = {
+            viewModel.ensureTags()
+            filtersOpen = true
+        },
+        onSelectFeed = viewModel::selectFeed,
+        onClearFeed = viewModel::clearFeed,
+        onTrendWindow = viewModel::setTrendWindow,
+        onClearStudio = viewModel::clearStudio,
+        onScope = { scope ->
+            when (scope) {
+                ExploreScope.MANGA -> onOpenMangaSearch(currentState.query.trim())
+                ExploreScope.NOVELS -> onOpenNovelSearch(currentState.query.trim())
+                else -> viewModel.selectScope(scope)
+            }
+        },
+        onExtension = viewModel::selectExtension,
+        onSetAdult = viewModel::setAdult,
+        onMyList = viewModel::setMyList,
+        onResetAll = viewModel::resetAllFilters,
+        onBrowseGenre = viewModel::browseGenre,
+        onOpenImageSearch = onOpenImageSearch,
+        onOpenExtensions = onOpenExtensions,
+        onEditStatus = if (viewModel.canEditList) ({ media -> statusFor = media }) else null,
+        onQuickAdd = if (viewModel.canEditList) ({ media -> listChanges(media, ListStatus.PLANNING) }) else null,
+        onEnsureTrendingRow = viewModel::ensureTrendingRow,
+        onRetryTrendingRow = viewModel::loadTrendingRow,
+    )
+    val slots = ExploreSlots(forYouPanel, forYouPreview, tasteAtlas)
+    val frame = ExploreFrame(
+        tab = tab,
+        onTab = { tab = it },
+        queryFocus = queryFocus,
+        onRestoreHistory = viewModel::restoreHistory,
+        withMyList = viewModel.canEditList,
+    )
+    val keys = Modifier.onPreviewKeyEvent { e ->
+        val focusKey = e.type == KeyEventType.KeyDown && e.key == Key.F && (e.isCtrlPressed || e.isMetaPressed)
+        if (focusKey) {
+            tab = ExploreTab.SEARCH
+            runCatching { queryFocus.requestFocus() }
+        }
+        focusKey
+    }
+
+    when (structures.explore) {
+        ExploreStructure.FACETS -> ExploreFacetsLayout(state, actions, slots, frame, modifier.then(keys))
+        ExploreStructure.CANVAS -> ExploreCanvasLayout(state, actions, slots, frame, modifier.then(keys))
+    }
+
     if (filtersOpen) {
         SearchFiltersSheet(
             current = state.filters,
@@ -283,455 +198,75 @@ internal fun SearchContent(
             tagsLoading = state.tagsLoading,
             onApply = { filters, adult ->
                 filtersOpen = false
-                actions.onApplySheet(filters, adult)
+                viewModel.applySheet(filters, adult)
             },
             onDismiss = { filtersOpen = false },
         )
     }
-}
-
-@Composable
-private fun SearchTopBar(
-    state: SearchUiState,
-    actions: SearchActions,
-    focusQuery: Boolean,
-    onQueryFocused: () -> Unit,
-    onOpenFilters: () -> Unit,
-) {
-    val focusManager = LocalFocusManager.current
-    val queryFocus = remember { FocusRequester() }
-    LaunchedEffect(focusQuery) {
-        if (focusQuery) {
-            runCatching { queryFocus.requestFocus() }
-            onQueryFocused()
-        }
-    }
-    // Scaffold's contentWindowInsets only pad the content; the top bar takes the status bar itself.
-    Column(Modifier.fillMaxWidth().statusBarsPadding()) {
-        Text(
-            stringResource(Res.string.search_title),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
-        )
-        TextField(
-            value = state.query,
-            onValueChange = actions.onQueryChange,
-            singleLine = true,
-            placeholder = {
-                Text(stringResource(if (state.type == SearchType.CHARACTERS) Res.string.search_hint_characters else Res.string.search_hint))
+    statusFor?.let { media ->
+        ListStatusSheet(
+            media = media,
+            current = state.listStatusOf(media.ref),
+            onPick = { status ->
+                statusFor = null
+                listChanges(media, status)
             },
-            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-            trailingIcon = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (state.query.isNotEmpty()) {
-                        IconButton(onClick = actions.onClear) {
-                            Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.search_clear))
-                        }
-                    }
-                    IconButton(onClick = actions.onOpenImageSearch) {
-                        Icon(Icons.Outlined.ImageSearch, contentDescription = stringResource(Res.string.search_image_open))
-                    }
-                    if (state.type == SearchType.ANIME && state.extensionId == null) {
-                        FiltersButton(state.filters.activeCount, onOpenFilters)
-                    }
-                }
-            },
-            shape = CircleShape,
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
-                disabledIndicatorColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
-            ),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = {
-                actions.onSubmit()
-                focusManager.clearFocus()
-            }),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .focusRequester(queryFocus),
+            onDismiss = { statusFor = null },
         )
-        ChipsRow(state, actions)
-        val feed = state.feed
-        if (feed == FeedKind.TRENDING && state.query.isBlank() && state.type == SearchType.ANIME && state.extensionId == null) {
-            Segmented(
-                options = TrendWindow.entries.map { SegmentedOption(it, stringResource(it.labelRes())) },
-                selected = state.trendWindow,
-                onSelect = actions.onTrendWindow,
-                small = true,
-                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp),
-            )
-        }
     }
 }
 
-/** LoadingIndicator only after 150 ms, so fast answers do not flash (02 §5). */
+/**
+ * Changes a result's list status and offers Undo (back to the status it had), or says it failed. The messages are resolved here so
+ * the view model's callback can use them.
+ */
 @Composable
-private fun DelayedLoading() {
-    if (rememberAfterDelay()) LoadingState()
-}
-
-@Composable
-private fun FiltersButton(active: Int, onClick: () -> Unit) {
-    val label = if (active > 0) stringResource(Res.string.search_filters_active, active) else stringResource(Res.string.search_filters)
-    IconButton(onClick = onClick) {
-        BadgedBox(badge = { if (active > 0) Badge { Text(active.toString()) } }) {
-            Icon(Icons.Outlined.Tune, contentDescription = label)
-        }
-    }
-}
-
-/** Type chips · source chips · active feed / studio / filter chips (removable), in one horizontally scrolling row. */
-@Composable
-private fun ChipsRow(state: SearchUiState, actions: SearchActions) {
+private fun rememberListChanges(viewModel: SearchViewModel): (Media, ListStatus?) -> Unit {
     val snackbar = LocalAppSnackbar.current
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        SearchType.entries.forEach { type ->
-            FilterChip(
-                selected = type == state.type,
-                onClick = { actions.onType(type) },
-                label = { Text(stringResource(type.labelRes())) },
-                leadingIcon = if (type == SearchType.CHARACTERS) {
-                    { Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(18.dp)) }
+    val undo = stringResource(Res.string.rd_s3_undo)
+    val failed = stringResource(Res.string.rd_s3_status_failed)
+    val setTemplate = stringResource(Res.string.rd_s3_status_set, TITLE_SLOT, STATUS_SLOT)
+    val removedTemplate = stringResource(Res.string.rd_s3_status_removed, TITLE_SLOT)
+    val labels = ListStatus.entries.associateWith { it.slot().label() }
+    val language = viewModel.state.value.titleLanguage
+    return { media, status ->
+        viewModel.setListStatus(media, status) { previous, ok ->
+            if (!ok) {
+                snackbar.show(failed)
+            } else {
+                val title = media.displayTitle(language)
+                val message = if (status == null) {
+                    removedTemplate.replace(TITLE_SLOT, title)
                 } else {
-                    null
-                },
-            )
-        }
-        // parity wave B (16 §3.5, worker s): Manga / Novela open their own homes with the typed query (checklist manga.route / novel.route).
-        FilterChip(
-            selected = false,
-            onClick = { actions.onOpenMangaSearch(state.query.trim()) },
-            label = { Text(stringResource(UiR.string.nav_manga)) },
-            leadingIcon = { Icon(Icons.Filled.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp)) },
-        )
-        FilterChip(
-            selected = false,
-            onClick = { actions.onOpenNovelSearch(state.query.trim()) },
-            label = { Text(stringResource(UiR.string.nav_novels)) },
-            leadingIcon = { Icon(Icons.Filled.AutoStories, contentDescription = null, modifier = Modifier.size(18.dp)) },
-        )
-        if (state.type == SearchType.ANIME) {
-            Box(Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant))
-            FilterChip(
-                selected = state.extensionId == null,
-                onClick = { actions.onExtension(null) },
-                label = { Text(stringResource(Res.string.search_source_metadata)) },
-                leadingIcon = { Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(18.dp)) },
-            )
-            state.extensions.forEach { chip ->
-                val ext = chip.extension
-                if (chip.searchable) {
-                    FilterChip(
-                        selected = state.extensionId == ext.id,
-                        onClick = { actions.onExtension(if (state.extensionId == ext.id) null else ext.id) },
-                        label = { Text(ext.name) },
-                        leadingIcon = { Icon(Icons.Outlined.Extension, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                    )
-                } else {
-                    // No own catalogue (no custom sources): disabled with its reason (stateDescription + a snackbar on tap).
-                    val reason = stringResource(Res.string.search_extension_not_searchable, ext.name)
-                    Box {
-                        FilterChip(
-                            selected = false,
-                            onClick = {},
-                            enabled = false,
-                            label = { Text(ext.name) },
-                            leadingIcon = { Icon(Icons.Outlined.Extension, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                            modifier = Modifier.semantics { stateDescription = reason },
-                        )
-                        Box(Modifier.matchParentSize().clickable { snackbar.show(reason) })
-                    }
+                    setTemplate.replace(TITLE_SLOT, title).replace(STATUS_SLOT, labels[status].orEmpty())
                 }
+                snackbar.show(message, undo) { viewModel.setListStatus(media, previous) }
             }
         }
-        if (state.type != SearchType.ANIME || state.extensionId != null) return@Row
-        val feed = state.feed
-        if (feed != null && state.query.isBlank()) {
-            RemovableChip(stringResource(feed.labelRes()), actions.onClearFeed)
-        }
-        state.studio?.let { studio ->
-            RemovableChip(stringResource(Res.string.search_studio_chip, studio), actions.onClearStudio)
-        }
-        val f = state.filters
-        f.genres.forEach { g -> RemovableChip(g) { actions.onFiltersChange(f.copy(genres = f.genres - g)) } }
-        f.tags.forEach { t -> RemovableChip("#$t") { actions.onFiltersChange(f.copy(tags = f.tags - t)) } }
-        f.formats.forEach { fm -> RemovableChip(formatLabel(fm)) { actions.onFiltersChange(f.copy(formats = f.formats - fm)) } }
-        f.year?.let { RemovableChip(it.toString()) { actions.onFiltersChange(f.copy(year = null)) } }
-        f.season?.let { RemovableChip(seasonLabel(it)) { actions.onFiltersChange(f.copy(season = null)) } }
-        f.status?.let { RemovableChip(statusLabel(it) ?: it) { actions.onFiltersChange(f.copy(status = null)) } }
-        if (f.yearFrom != null || f.yearTo != null) {
-            RemovableChip(rangeLabel(Res.string.search_years_range, f.yearFrom, f.yearTo)) {
-                actions.onFiltersChange(f.copy(yearFrom = null, yearTo = null))
-            }
-        }
-        if (f.episodesFrom != null || f.episodesTo != null) {
-            RemovableChip(rangeLabel(Res.string.search_episodes_range, f.episodesFrom, f.episodesTo)) {
-                actions.onFiltersChange(f.copy(episodesFrom = null, episodesTo = null))
-            }
-        }
-        if (f.scoreFrom != null || f.scoreTo != null) {
-            RemovableChip(rangeLabel(Res.string.search_score_range, f.scoreFrom, f.scoreTo)) {
-                actions.onFiltersChange(f.copy(scoreFrom = null, scoreTo = null))
-            }
-        }
-        f.sort?.let { RemovableChip(stringResource(it.labelRes())) { actions.onFiltersChange(f.copy(sort = null)) } }
-        if (state.adult) Pill(stringResource(Res.string.search_adult_on), tone = PillTone.WARN)
     }
 }
 
-@Composable
-private fun rangeLabel(res: StringResource, from: Int?, to: Int?): String =
-    stringResource(res, from?.toString() ?: "…", to?.toString() ?: "…")
+private const val TITLE_SLOT = "\u0001"
+private const val STATUS_SLOT = "\u0002"
 
+/** The list status picker of a result (pattern `stp`): six statuses, and "Quitar de mi lista" when it is on the list. */
 @Composable
-private fun RemovableChip(label: String, onRemove: () -> Unit) {
-    val description = stringResource(Res.string.search_remove_filter, label)
-    FilterChip(
-        selected = true,
-        onClick = onRemove,
-        label = { Text(label) },
-        trailingIcon = { Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
-        modifier = Modifier.semantics { contentDescription = description },
-    )
-}
-
-/** Explore feeds of the classic Trending / Collections pages, then the recent searches (remove one or all). */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun IdleContent(state: SearchUiState, actions: SearchActions) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        EmptyState(
-            icon = if (state.type == SearchType.CHARACTERS) Icons.Outlined.Person else Icons.Outlined.Search,
-            title = stringResource(if (state.type == SearchType.CHARACTERS) Res.string.search_idle_characters_title else Res.string.search_idle_title),
-            message = stringResource(
-                when {
-                    state.type == SearchType.CHARACTERS -> Res.string.search_idle_characters_message
-                    state.extensionId != null -> Res.string.search_idle_extension_message
-                    else -> Res.string.search_idle_message
-                },
-            ),
-        )
-        if (state.type == SearchType.ANIME && state.extensionId == null) {
+private fun ListStatusSheet(media: Media, current: ListStatus?, onPick: (ListStatus?) -> Unit, onDismiss: () -> Unit) {
+    AdaptiveSheet(onDismissRequest = onDismiss, modifier = Modifier.decor(DecorRegion.SHEET)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                stringResource(Res.string.search_explore),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                stringResource(Res.string.rd_s3_status_sheet_title),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.semantics { heading() },
             )
-            FlowRow(
-                Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                EXPLORE_FEEDS.forEach { feed ->
-                    AssistChip(
-                        onClick = { actions.onSelectFeed(feed) },
-                        label = { Text(stringResource(feed.labelRes())) },
-                        leadingIcon = { Icon(Icons.Outlined.Explore, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                    )
-                }
-            }
-        }
-        if (state.history.isNotEmpty()) {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(Res.string.search_history),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = actions.onClearHistory) {
-                    Icon(Icons.Outlined.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(stringResource(Res.string.search_history_clear), modifier = Modifier.padding(start = 4.dp))
-                }
-            }
-            state.history.forEach { entry ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { actions.onUseHistory(entry) }
-                        .padding(start = 16.dp, end = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(Icons.Outlined.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(entry, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { actions.onRemoveHistory(entry) }) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.search_history_remove, entry))
-                    }
-                }
+            Text(media.displayTitle(app.nijiyome.ui.media.LocalTitleLanguage.current), style = MaterialTheme.typography.bodyMedium)
+            ListStatusPicker(selected = current?.slot(), onSelect = { onPick(it.toListStatus()) })
+            if (current != null) {
+                TextButton(onClick = { onPick(null) }) { Text(stringResource(Res.string.rd_s3_status_remove)) }
             }
         }
     }
 }
-
-@Composable
-private fun ResultsCount(count: Int) {
-    Text(
-        pluralStringResource(Res.plurals.search_results, count, count),
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
-}
-
-/** Infinite scroll: reaching the footer loads the next page once per page; after a failure the button retries by hand. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun LoadMoreFooter(results: SearchResults.Ok, onLoadMore: () -> Unit) {
-    LaunchedEffect(results.page) { onLoadMore() }
-    Box(Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
-        if (results.loadingMore) {
-            LoadingIndicator(Modifier.size(40.dp))
-        } else {
-            OutlinedButton(onClick = onLoadMore) { Text(stringResource(Res.string.search_load_more)) }
-        }
-    }
-}
-
-@Composable
-private fun ResultsList(
-    shown: List<Media>,
-    results: SearchResults.Ok,
-    language: TitleLanguage,
-    matureContent: MatureContentMode,
-    actions: SearchActions,
-) {
-    // matureContent BLUR: keys of the adult results already uncovered on this screen (first tap reveals, the next one opens).
-    val revealed = remember { mutableStateListOf<String>() }
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item(key = "count", contentType = "count") { ResultsCount(shown.size) }
-        items(shown, key = { mediaKey(it) }, contentType = { "media" }) { media ->
-            val key = mediaKey(media)
-            val blurred = searchCoverBlurred(matureContent, media, key, revealed.toSet())
-            ResultRow(
-                media,
-                language,
-                blurred = blurred,
-                onClick = { if (blurred) revealed += key else actions.onMediaClick(media) },
-            )
-        }
-        if (results.hasNext) {
-            item(key = "load-more", contentType = "load-more") { LoadMoreFooter(results, actions.onLoadMore) }
-        }
-    }
-}
-
-@Composable
-private fun CharacterResults(results: SearchResults.Ok, actions: SearchActions) {
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item(key = "count", contentType = "count") { ResultsCount(results.characters.size) }
-        items(results.characters, key = { "c-${it.id}" }, contentType = { "character" }) { c ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { actions.onCharacterClick(c) }
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                MediaCover(url = c.image, modifier = Modifier.width(48.dp), shape = CircleShape, aspectRatio = 1f)
-                Text(c.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        if (results.hasNext) {
-            item(key = "load-more", contentType = "load-more") { LoadMoreFooter(results, actions.onLoadMore) }
-        }
-    }
-}
-
-/** Cards of `custom/search`: tapping one looks its title up in the metadata provider (like the Home extension rows). */
-@Composable
-private fun ExtensionResults(items: List<ExtensionHomeItem>, actions: SearchActions) {
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item(key = "count", contentType = "count") { ResultsCount(items.size) }
-        items(items, key = { "x-${it.id}-${it.title}" }, contentType = { "ext" }) { item ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { actions.onExtensionItemClick(item) }
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                MediaCover(url = item.poster, modifier = Modifier.width(56.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(item.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        stringResource(Res.string.search_extension_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** Prototype `.result`: cover, title (preferred language), "alt · year · season", score, status and 18+ pills. */
-@Composable
-private fun ResultRow(media: Media, language: TitleLanguage, blurred: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.width(56.dp), contentAlignment = Alignment.Center) {
-            MediaCover(url = media.cover, modifier = Modifier.fillMaxWidth().then(if (blurred) Modifier.blur(16.dp) else Modifier))
-            if (blurred) Icon(Icons.Outlined.NoAdultContent, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            val title = media.displayTitle(language)
-            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            val alt = media.alternativeTitle(title)
-            val sub = listOfNotNull(alt, media.year?.toString(), media.season?.let { seasonLabel(it) }).joinToString(" · ")
-            if (sub.isNotEmpty()) {
-                Text(
-                    sub,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
-                media.score?.let { Pill(String.format(Locale.ROOT, "%.1f", it / 10.0), tone = PillTone.PRIMARY) }
-                media.status?.let { status ->
-                    statusLabel(status)?.let { Pill(it, tone = statusTone(status)) }
-                }
-                if (media.isProbablyAdult()) Pill(stringResource(Res.string.search_adult_badge), tone = PillTone.ERR)
-            }
-            if (blurred) {
-                Text(
-                    stringResource(Res.string.search_mature_tap),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-private val EXPLORE_FEEDS = listOf(
-    FeedKind.TRENDING, FeedKind.POPULAR, FeedKind.TOP_RATED, FeedKind.AIRING, FeedKind.SEASONAL, FeedKind.UPCOMING,
-    FeedKind.RECENTLY_COMPLETED,
-)
 
 internal fun SearchType.labelRes(): StringResource = when (this) {
     SearchType.ANIME -> Res.string.search_type_anime
