@@ -252,7 +252,7 @@ internal fun TorrentSettingsBody(
         // --- Segundo plano ---
         SectionCard(title = stringResource(Res.string.torrent_settings_background)) {
             val backgroundHint = when {
-                !settings.backgroundAck -> Res.string.torrent_settings_background_locked
+                !settings.backgroundAck -> Res.string.rd_s8_tor_background_locked
                 desktopTorrentUi -> Res.string.torrent_desktop_background_hint
                 else -> Res.string.torrent_android_background_hint
             }

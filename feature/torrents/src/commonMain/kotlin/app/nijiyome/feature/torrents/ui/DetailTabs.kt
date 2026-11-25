@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -119,9 +120,14 @@ private fun OverviewBody(s: TorrentStats, item: TorrentLibraryItem?, onPersist: 
             Banner(s.error ?: stringResource(Res.string.torrent_overview_error), error = true)
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                WavyProgress(progress = s.progress.toFloat(), modifier = Modifier.size(96.dp), circular = true)
-                Text(percentText(s.progress), style = monoStyle(MaterialTheme.typography.titleMedium))
+            // Sparkles: the big figure over the direction's progress track (the pieces map of the artifact, in segments).
+            Column(Modifier.width(120.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(percentText(s.progress), style = monoStyle(MaterialTheme.typography.headlineMedium))
+                app.nijiyome.designsystem.direction.ProgressTrack(
+                    progress = s.progress.toFloat().coerceIn(0f, 1f),
+                    modifier = Modifier.fillMaxWidth(),
+                    segments = s.pieces.takeIf { it in 2..48 },
+                )
             }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(Res.string.torrent_overview_progress), style = MaterialTheme.typography.labelLarge)
@@ -386,7 +392,7 @@ private fun FileRow(file: TorrentFile, onClick: () -> Unit) {
                         Text(stringResource(Res.string.torrent_files_skipped), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                WavyProgress(progress = file.progress.toFloat(), modifier = Modifier.fillMaxWidth(), thin = true)
+                app.nijiyome.designsystem.direction.ProgressTrack(progress = file.progress.toFloat().coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth())
             }
         },
         trailingContent = if (file.streams > 0) {
