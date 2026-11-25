@@ -61,7 +61,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
+import app.nijiyome.designsystem.direction.BrandMark
 import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.LocalDirection
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.nav.ShellCommandField
 import app.nijiyome.nav.ShellMediumSelector
@@ -220,6 +222,8 @@ fun DesktopTitleBar(
                             onClick = onGoBack,
                         )
                     }
+                    // The direction's logo beside the name (Sumi's kitsune tile); the others keep the name alone.
+                    if (LocalDirection.current.decor.hasBrandMark) BrandMark(Modifier.size(26.dp))
                     Text(
                         text = "Nijiyome",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),

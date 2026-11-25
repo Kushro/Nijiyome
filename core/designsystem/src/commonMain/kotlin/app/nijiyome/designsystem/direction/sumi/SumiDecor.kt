@@ -196,6 +196,14 @@ internal object SumiDecor : DirectionDecor {
         }
     }
 
+    override val hasBrandMark: Boolean get() = true
+
+    /** The kitsune and the 虹 seal on its paper tile, as the artifact's title bar shows it. */
+    @Composable
+    override fun BrandMark(modifier: Modifier) {
+        SumiMark(modifier, tile = true)
+    }
+
     /** The kitsune inside the ensō, in the ink of the tone. Link draws two ensō, apart and the second faded when unlinked. */
     @Composable
     override fun EmptyArt(kind: EmptyKind, modifier: Modifier) {
