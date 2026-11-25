@@ -3,6 +3,10 @@ package app.nijiyome.feature.downloads
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.nijiyome.feature.downloads.transfers.BackgroundState
+import app.nijiyome.feature.downloads.transfers.TransferItem
+import app.nijiyome.feature.downloads.transfers.TransferLimits
+import app.nijiyome.feature.downloads.transfers.TransfersLogic
 import app.nijiyome.model.AutoDownloadPreview
 import app.nijiyome.model.AutoDownloadRule
 import app.nijiyome.model.ChapterDownload
@@ -16,9 +20,14 @@ import app.nijiyome.model.DownloadsTab
 import app.nijiyome.model.LocalLibraryItem
 import app.nijiyome.model.Media
 import app.nijiyome.model.MediaRef
+import app.nijiyome.model.SettingsRepository
 import app.nijiyome.model.torrent.TorrentLibraryItem
 import app.nijiyome.model.torrent.TorrentRepository
+import app.nijiyome.model.torrent.TorrentServiceStatus
+import app.nijiyome.model.torrent.TorrentSessionEntry
+import app.nijiyome.model.torrent.TorrentSettings
 import app.nijiyome.model.torrent.TorrentState
+import app.nijiyome.model.torrent.TorrentStats
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,13 +42,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** What the six tabs draw, already filtered by the search field. */
+/** What Transferencias draws, already filtered by the search field. */
 data class DownloadsUiState(
+    /** The section the route asked for (`Route.Downloads(tab)`); Transferencias maps it to its queue, shelves, history or local library. */
     val tab: DownloadsTab = DownloadsTab.ACTIVE,
     val query: String = "",
     val active: List<DownloadItem> = emptyList(),
     val activeTorrents: List<TorrentLibraryItem> = emptyList(),
-    /** Completed web episodes grouped by title (Anime tab). */
+    /** Completed web episodes grouped by title (Descargado › Anime). */
     val anime: List<TitleGroup> = emptyList(),
     val completedTorrents: List<TorrentLibraryItem> = emptyList(),
     val manga: List<ChapterDownload> = emptyList(),
@@ -52,6 +62,19 @@ data class DownloadsUiState(
     val eta: Map<String, Long> = emptyMap(),
     val loaded: Boolean = false,
     val busy: Boolean = false,
+    // Sparkles (lane S8, Transferencias): one queue over every kind, the stored torrents, the torrent history and the torrent state.
+    /** Everything in flight (web, debrid, torrents, chapters), by state; each kind keeps its repository order. */
+    val queue: List<TransferItem> = emptyList(),
+    /** Complete torrents (seeding or stopped), after the queue in the master list. */
+    val stored: List<TransferItem> = emptyList(),
+    val torrentSessions: List<TorrentSessionEntry> = emptyList(),
+    val torrentIds: Set<String> = emptySet(),
+    val torrentsAvailable: Boolean = false,
+    val torrentStatus: TorrentServiceStatus = TorrentServiceStatus(),
+    val background: BackgroundState = BackgroundState(),
+    val limits: TransferLimits = TransferLimits(),
+    /** Desktop: folders the local library keeps watching. */
+    val folders: List<String> = emptyList(),
 )
 
 data class TitleGroup(val ref: MediaRef, val title: String, val poster: String?, val episodes: List<DownloadItem>) {
@@ -65,6 +88,9 @@ sealed interface DownloadsEvent {
     data class Imported(val added: Int) : DownloadsEvent
     data class Preview(val preview: AutoDownloadPreview?) : DownloadsEvent
     data class Failed(val cause: Throwable) : DownloadsEvent
+
+    /** A torrent of the history was added again (or is still in the library): open its detail. */
+    data class OpenTorrent(val id: String) : DownloadsEvent
 }
 
 /** Pure filters / grouping of the Downloads page (JVM-tested). */
@@ -109,15 +135,16 @@ internal object DownloadsLogic {
 }
 
 /**
- * Parity wave B (docs/redesign/16-parity-wave-b-contract-android.md §3.2, worker r, checklist downloads.page): one state for the six tabs
- * (`DownloadsTab`): web downloads from [downloads], torrents from [torrents] (library of :core:torrent, finished by q), chapters from
- * every [chapters] source (manga / novels of s), the local library, search, ETA, auto-download rules.
+ * Transferencias (Sparkles lane S8, before: parity wave B Downloads page of worker r): web downloads from [downloads], torrents from
+ * [torrents] (library, status, session history), chapters from every [chapters] source, the local library, search, ETA, auto-download
+ * rules, and the background / speed settings of [settings]. One state for both structures of the screen.
  */
 class DownloadsViewModel(
     private val downloads: DownloadRepository,
     private val torrents: TorrentRepository? = null,
     private val chapters: List<ChapterDownloadSource> = emptyList(),
     private val clock: () -> Long = System::currentTimeMillis,
+    private val settings: SettingsRepository? = null,
 ) : ViewModel() {
     val items: StateFlow<List<DownloadItem>> = downloads.items
 
@@ -127,6 +154,9 @@ class DownloadsViewModel(
     val events: SharedFlow<DownloadsEvent> = _events
 
     private data class Local(val tab: DownloadsTab = DownloadsTab.ACTIVE, val query: String = "", val used: Long? = null, val busy: Boolean = false)
+
+    /** Keys removed with an undo still pending: hidden from every list until [commitRemoval] or [restore]. */
+    private val hidden = MutableStateFlow<Set<String>>(emptySet())
 
     private val chapterFlow: Flow<List<ChapterDownload>> =
         if (chapters.isEmpty()) {
@@ -151,8 +181,30 @@ class DownloadsViewModel(
         val torrents: List<TorrentLibraryItem>,
     )
 
-    val state: StateFlow<DownloadsUiState> = combine(local, sources, chapterFlow) { l, s, ch ->
+    private data class Extra(
+        val sessions: List<TorrentSessionEntry> = emptyList(),
+        val status: TorrentServiceStatus = TorrentServiceStatus(),
+        val torrent: TorrentSettings? = null,
+        val webKib: Int = 0,
+        val folders: List<String> = emptyList(),
+    )
+
+    private val extra: Flow<Extra> = combine(
+        torrents?.sessionHistory()?.catch { emit(emptyList()) } ?: flowOf(emptyList()),
+        torrents?.status ?: flowOf(TorrentServiceStatus()),
+        settings?.settings?.map { it.torrent } ?: flowOf(null),
+        settings?.settings?.map { it.downloads.speedLimitKib } ?: flowOf(0),
+        downloads.libraryFolders.catch { emit(emptyList()) },
+    ) { sessions, status, torrent, webKib, folders -> Extra(sessions, status, torrent, webKib, folders) }
+
+    val state: StateFlow<DownloadsUiState> = combine(local, sources, chapterFlow, extra, hidden) { l, all, allChapters, x, gone ->
         val q = l.query
+        val s = if (gone.isEmpty()) {
+            all
+        } else {
+            all.copy(web = all.web.filterNot { "w:" + it.id in gone }, library = all.library.filterNot { "l:" + it.id in gone })
+        }
+        val ch = if (gone.isEmpty()) allChapters else allChapters.filterNot { "c:" + it.id in gone }
         DownloadsUiState(
             tab = l.tab,
             query = q,
@@ -169,6 +221,20 @@ class DownloadsViewModel(
             eta = etaOf(s.web),
             loaded = true,
             busy = l.busy,
+            queue = TransfersLogic.queue(s.web, s.torrents, ch).filter { TransfersLogic.search(it, q) },
+            stored = TransfersLogic.storedTorrents(s.torrents).filter { TransfersLogic.search(it, q) },
+            torrentSessions = x.sessions.filter { DownloadsLogic.matches(q, it.name, it.series) },
+            torrentIds = s.torrents.map { it.id }.toSet(),
+            torrentsAvailable = torrents != null,
+            torrentStatus = x.status,
+            background = x.torrent?.let { BackgroundState(acknowledged = it.backgroundAck, enabled = it.backgroundDownloads) } ?: BackgroundState(),
+            limits = TransferLimits(
+                downKib = x.torrent?.downloadLimitKib ?: 0,
+                upKib = x.torrent?.uploadLimitKib ?: 0,
+                webKib = x.webKib,
+                schedule = x.torrent?.schedule,
+            ),
+            folders = x.folders,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DownloadsUiState())
 
@@ -253,6 +319,121 @@ class DownloadsViewModel(
 
     fun matchLocal(id: String, media: Media?, episode: Int?) = launch { downloads.matchLocal(id, media, episode) }
     fun removeLocal(id: String, deleteFile: Boolean) = launch { downloads.removeLocal(id, deleteFile) }
+
+    // ------------------------------------------------------------------ Transferencias (lane S8)
+
+    /** Live figures of one torrent row (speed, peers, ETA); null without the torrent engine. */
+    fun torrentStats(id: String): Flow<TorrentStats>? = torrents?.stats(id)?.catch { }
+
+    fun pauseItems(items: Collection<TransferItem>) = launch {
+        items.forEach { item ->
+            // chapter sources have no pause
+            if (item.torrent != null) {
+                torrents?.pause(item.id)
+            } else if (item.web != null) {
+                downloads.pause(item.id)
+            }
+        }
+    }
+
+    /** Resume a paused one, retry a failed one. */
+    fun resumeItems(items: Collection<TransferItem>) = launch {
+        items.forEach { item ->
+            val chapter = item.chapter
+            if (item.torrent != null) {
+                torrents?.resume(item.id)
+            } else if (item.web != null) {
+                if (item.canRetry) downloads.retry(item.id) else downloads.resume(item.id)
+            } else if (chapter != null && item.canRetry) {
+                chapters.firstOrNull { it.kind == chapter.kind }?.retry(chapter.id)
+            }
+        }
+    }
+
+    /** Removes now (after the confirmation): web downloads and their files, torrents with or without their data, chapters. */
+    fun removeItems(items: Collection<TransferItem>, deleteFiles: Boolean) = launch {
+        items.forEach { item ->
+            val chapter = item.chapter
+            if (item.torrent != null) {
+                torrents?.remove(item.id, deleteFiles)
+            } else if (item.web != null) {
+                downloads.remove(item.id)
+            } else if (chapter != null) {
+                chapters.firstOrNull { it.kind == chapter.kind }?.remove(chapter.id)
+            }
+        }
+        refreshUsage()
+    }
+
+    fun setKeep(items: Collection<TransferItem>, keep: Boolean) = launch {
+        items.filter { it.torrent != null }.forEach { torrents?.setPersist(it.id, keep) }
+    }
+
+    /** Hides [keys] (`w:` web, `l:` local, `c:` chapter) until the undo runs out ([commitRemoval]) or is used ([restore]). */
+    fun hide(keys: Collection<String>) = hidden.update { it + keys }
+
+    fun restore(keys: Collection<String>) = hidden.update { it - keys.toSet() }
+
+    /** The removal behind an undo: web episodes, chapters (by [chapterKind]) and local library entries (keeping or deleting the file). */
+    fun commitRemoval(keys: Collection<String>, deleteLocalFile: Boolean = false, chapterKind: ChapterKind? = null) = launch {
+        try {
+            keys.forEach { key ->
+                val id = key.substringAfter(':')
+                when (key.substringBefore(':')) {
+                    "w" -> downloads.remove(id)
+                    "l" -> downloads.removeLocal(id, deleteLocalFile)
+                    "c" -> chapters.firstOrNull { it.kind == chapterKind }?.remove(id)
+                    else -> Unit
+                }
+            }
+        } finally {
+            hidden.update { it - keys.toSet() }
+            refreshUsage()
+        }
+    }
+
+    /** "Entendido, activar": stores the acknowledgement and turns background downloads on. */
+    fun acknowledgeBackground() = launch {
+        val repo = settings ?: return@launch
+        repo.acknowledgeBackgroundDownloads()
+        repo.setTorrentSettings(repo.settings.value.torrent.copy(backgroundAck = true, backgroundDownloads = true))
+    }
+
+    fun setBackground(enabled: Boolean) = launch {
+        val repo = settings ?: return@launch
+        repo.setTorrentSettings(repo.settings.value.torrent.copy(backgroundDownloads = enabled))
+    }
+
+    /** Quick limits of the torrents: download, upload and the schedule (`TorrentSettings`, sanitized by the repository). */
+    fun setTorrentLimits(transform: (TorrentSettings) -> TorrentSettings) = launch {
+        val repo = settings ?: return@launch
+        repo.setTorrentSettings(transform(repo.settings.value.torrent))
+    }
+
+    /** Desktop: total speed of the web downloads (`DownloadSettings.speedLimitKib`, 0 = unlimited). */
+    fun setWebSpeedLimit(kib: Int) = launch {
+        settings?.update { it.copy(downloads = it.downloads.copy(speedLimitKib = kib).sanitized()) }
+    }
+
+    /** Empties both histories; the torrents of the library and the downloaded files stay. */
+    fun clearAllHistory() = launch {
+        downloads.clearHistory()
+        torrents?.clearSessionHistory()
+    }
+
+    /** "Volver a añadir": a torrent that left the library is added again (streamed, not kept) by its info-hash, then opened. */
+    fun reopenTorrent(entry: TorrentSessionEntry) = launch {
+        val repo = torrents ?: return@launch
+        if (entry.id in state.value.torrentIds) {
+            _events.tryEmit(DownloadsEvent.OpenTorrent(entry.id))
+        } else {
+            val id = repo.addManual(entry.id, media = null, alignment = null, persist = false).getOrThrow()
+            _events.tryEmit(DownloadsEvent.OpenTorrent(id))
+        }
+    }
+
+    /** Desktop: stop watching a folder of the local library (its videos stay). */
+    fun forgetFolder(folder: String) = launch { downloads.forgetLibraryFolder(folder) }
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch {

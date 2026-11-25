@@ -39,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Key
@@ -200,9 +201,19 @@ internal fun AddTorrentSheet(vm: AddTorrentViewModel, onDismiss: () -> Unit, onA
                     maxLines = 4,
                     modifier = Modifier.focusOnOpen().fillMaxWidth(),
                 )
-                OutlinedButton(onClick = { picker() }) {
-                    Icon(Icons.Outlined.AttachFile, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-                    Text(stringResource(Res.string.torrent_add_pick_file), modifier = Modifier.padding(start = 8.dp))
+                // Sparkles (TOR-23): pick a .torrent or paste a magnet / info-hash from the clipboard.
+                val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { picker() }) {
+                        Icon(Icons.Outlined.AttachFile, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Text(stringResource(Res.string.torrent_add_pick_file), modifier = Modifier.padding(start = 8.dp))
+                    }
+                    OutlinedButton(onClick = {
+                        runCatching { clipboard.getText()?.text }.getOrNull()?.trim()?.takeIf { it.isNotEmpty() }?.let { vm.setSource(it) }
+                    }) {
+                        Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Text(stringResource(Res.string.rd_s8_tor_add_from_clipboard), modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
                 if (desktopTorrentUi) {
                     Text(
@@ -791,7 +802,7 @@ internal fun DebridPrefsRows(settings: DebridSettings, onChange: (DebridSettings
     )
     SwitchRow(
         title = stringResource(Res.string.torrent_debrid_download_cached),
-        hint = stringResource(Res.string.torrent_debrid_download_cached_hint),
+        hint = stringResource(Res.string.rd_s8_tor_debrid_cached_hint),
         checked = settings.downloadCached,
         onChange = { on -> onChange(settings.copy(downloadCached = on)) },
         enabled = settings.enabled,
@@ -810,7 +821,7 @@ internal fun ParityTorrentSettings(settings: TorrentSettings, onChange: ((Torren
     SectionCard(title = stringResource(Res.string.torrent_debrid_settings_title)) {
         DebridPrefsRows(settings.debrid, onChange = { next -> onChange { it.copy(debrid = next) } })
         Text(
-            stringResource(Res.string.torrent_debrid_settings_services),
+            stringResource(Res.string.rd_s8_tor_debrid_services),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),

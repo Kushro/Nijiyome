@@ -283,7 +283,7 @@ private fun LibraryCard(
                     }
                 }
                 Spacer(Modifier.height(2.dp))
-                WavyProgress(progress = item.progress.toFloat(), modifier = Modifier.fillMaxWidth(), thin = true)
+                app.nijiyome.designsystem.direction.ProgressTrack(progress = item.progress.toFloat().coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth())
                 Text(
                     text = stringResource(if (item.persist) Res.string.torrent_library_kept else Res.string.torrent_library_not_kept),
                     style = MaterialTheme.typography.labelSmall,
@@ -590,7 +590,13 @@ internal fun DeleteDialog(count: Int, onConfirm: (deleteFiles: Boolean) -> Unit,
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(deleteFiles) }) { Text(stringResource(Res.string.torrent_library_delete)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_close)) } },
+        // Sparkles (TOR-06): "Cancel" and a destructive confirm, instead of "Close".
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(deleteFiles) },
+                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) { Text(stringResource(Res.string.torrent_library_delete)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
     )
 }

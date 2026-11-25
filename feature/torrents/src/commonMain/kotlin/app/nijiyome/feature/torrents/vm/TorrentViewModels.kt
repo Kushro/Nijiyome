@@ -319,8 +319,8 @@ class TorrentDownloadsViewModel(
 
     fun resume(id: String) = act { repository.resume(id) }
 
-    fun remove(id: String) = act {
-        repository.remove(id, deleteFiles = true)
+    fun remove(id: String, deleteFiles: Boolean = true) = act {
+        repository.remove(id, deleteFiles)
         _messages.tryEmit(TorrentMessage.Removed(1))
     }
 

@@ -361,32 +361,6 @@ fun TorrentDetailScreen(
     DetailContent(viewModel, initialSection, onBack, onPlay, modifier)
 }
 
-/** Downloads (11 §3.4): the "Entiendo" warning screen while !backgroundAck (+ POST_NOTIFICATIONS), then switch + chips + list. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TorrentDownloadsScreen(
-    onBack: () -> Unit,
-    onOpenTorrent: (torrentId: String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Scaffold(
-        modifier = modifier,
-        contentWindowInsets = screenInsets,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(UiR.string.torrent_section_downloads)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        DownloadsSection(onNotNow = onBack, onOpenTorrent = onOpenTorrent, modifier = Modifier.padding(padding).fillMaxSize())
-    }
-}
-
 /**
  * Settings › Torrents subpage body (11 §3.5): Velocidad, Red, Almacenamiento (SAF tree picker, free space, after-watch), Segundo plano.
  * Immediate save per field through SettingsRepository.setTorrentSettings; inline validation in supportingText. Hosted by worker b's
