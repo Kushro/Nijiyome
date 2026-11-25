@@ -1,0 +1,8364 @@
+[
+ {
+  "id": "SHELL-01",
+  "area": "Shell",
+  "name": "Raíz de la app y primer arranque",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Aplicar tema (paleta, AMOLED, contraste, color dinámico, modo)",
+   "Reducir movimiento global",
+   "Idioma de títulos global",
+   "Mostrar asistente si no terminó",
+   "Restaurar pila de navegación"
+  ],
+  "newHome": {
+   "screen": "bienvenida",
+   "place": "Primer arranque antes del shell; tema y locales globales sin cambios"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-02",
+  "area": "Shell",
+  "name": "Barra inferior (teléfono)",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Inicio",
+   "Buscar",
+   "Calendario",
+   "Biblioteca con insignia de torrents",
+   "Tú",
+   "Ocultar en reproductor y lectores"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Barra inferior: Inicio, Explorar, Calendario, Biblioteca, Tú"
+  },
+  "change": "reubicado",
+  "pattern": "Buscar → Explorar; insignia de torrents → Transferencias en Tú",
+  "risk": "La insignia de descargas activas debe moverse al acceso de Transferencias dentro de Tú",
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-03",
+  "area": "Shell",
+  "name": "Riel de navegación (ancho)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "13 destinos",
+   "Insignia de torrents activos",
+   "Etiquetado o delgado (Ctrl+B)",
+   "Saltar con 1..9",
+   "Desplazar riel si no cabe",
+   "Ocultar en reproductor y lectores"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Riel en dos grupos: principal (6) y utilidades (5) más Perfil"
+  },
+  "change": "mejorado",
+  "pattern": "13 ítems planos → principal y utilidades; Para ti, Descargas y Torrents fusionados",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-04",
+  "area": "Shell",
+  "name": "Paneles lista y detalle, y Atrás",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Dos paneles desde 840 dp",
+   "Atrás del sistema y predictivo",
+   "Esc y flecha de la barra de título",
+   "Cambio de destino reinicia pila",
+   "Transiciones sin animación con movimiento reducido"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Igual; las rutas nuevas (Explorar, Transferencias, Fuentes) son paneles de lista"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-05",
+  "area": "Shell",
+  "name": "Aviso sin conexión",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Banner sin conexión con contenido en caché",
+   "Chip Sin conexión en la barra de título"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Pie del contenido y chip en la barra superior"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-06",
+  "area": "Shell",
+  "name": "Snackbars y aviso de versión",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Snackbar global con acción",
+   "Aviso de nueva versión con Ver",
+   "Deshacer, Reintentar, Enviar, Descargas"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Snackbar global; Ver lleva a Ajustes › Acerca de"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-07",
+  "area": "Shell",
+  "name": "No disponible en este dispositivo",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Snackbar al abrir una ruta no ofrecida"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Igual"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-08",
+  "area": "Shell",
+  "name": "Paleta de comandos (Ctrl+K)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Campo de búsqueda con borrar",
+   "Navegar con flechas, Enter, Esc",
+   "Abrir Ajustes",
+   "Alternar AMOLED",
+   "Cambiar tema",
+   "Alternar riel compacto",
+   "Abrir registros de errores",
+   "Ir a cada destino",
+   "Abrir cada ajuste del catálogo",
+   "Buscar en el catálogo de anime"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Ctrl+K global; en Android como búsqueda; ajustes con salto exacto a la fila"
+  },
+  "change": "mejorado",
+  "pattern": "solo escritorio y en español fijo → ambas plataformas, localizada, salto exacto",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-09",
+  "area": "Shell",
+  "name": "Ajustes en superposición",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Abrir con Ctrl+P o Ctrl+,",
+   "Abrir desde engrane, bandeja y paleta",
+   "Salir a Fuentes, Link y Debrid",
+   "Bloqueado sobre reproductor y lectores"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Superposición de Ajustes con Ctrl+,"
+  },
+  "change": "mejorado",
+  "pattern": "Ctrl+P → Ctrl+,",
+  "risk": "Decidir si Ctrl+P sigue como alias para no romper la costumbre",
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-10",
+  "area": "Shell",
+  "name": "Atajos de teclado (escritorio)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Ctrl+K paleta",
+   "Ctrl+P y Ctrl+, Ajustes",
+   "Ctrl+B riel",
+   "Esc atrás por capas",
+   "1..9 destino del riel"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Atajos globales; lista de atajos visible en la paleta"
+  },
+  "change": "mejorado",
+  "pattern": "sin lista de atajos → lista en la paleta",
+  "risk": "Los números 1..9 deben remapearse al nuevo orden del riel (11 destinos)",
+  "source": "inventario-A"
+ },
+ {
+  "id": "SHELL-11",
+  "area": "Shell",
+  "name": "Enlaces entrantes y toques de notificación",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "nijiyome://extensionserver",
+   "nijiyome://oauth",
+   "nijiyome://user",
+   "Compartir imagen",
+   "Magnet y .torrent",
+   "Toque en notificación de torrent",
+   "Toque en notificación de descarga",
+   "Toque en descarga de capítulo",
+   "Toque en aviso de emisión",
+   "Resumen de AniList",
+   "Aviso de Link"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Mismos enlaces; destinos renombrados (Transferencias, Fuentes › Servidores en tu PC, Explorar, Link)"
+  },
+  "change": "reubicado",
+  "pattern": "Torrents y Descargas → Transferencias; Buscar por imagen → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-01",
+  "area": "Inicio",
+  "name": "Inicio: contenedor y diseños",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Diseño Destacado, Carrusel o Solo filas",
+   "Densidad compacta",
+   "Tamaño y estilo de tarjeta",
+   "Reintentar por fila",
+   "Esqueletos con demora"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Inicio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-02",
+  "area": "Inicio",
+  "name": "Saludo, campana y chips rápidos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Saludo según la hora",
+   "Campana con insignia de AniList",
+   "Chip Calendario",
+   "Chip Para ti",
+   "Chip Manga",
+   "Chip Novelas"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Campana → panel de notificaciones global; chips rápidos en teléfono"
+  },
+  "change": "reubicado",
+  "pattern": "campana de Inicio → panel global; Para ti → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-03",
+  "area": "Inicio",
+  "name": "Acceso de búsqueda",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Píldora Buscar anime"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Píldora abre Explorar o la búsqueda de Ctrl+K"
+  },
+  "change": "reubicado",
+  "pattern": "Buscar → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-04",
+  "area": "Inicio",
+  "name": "Destacado",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Deslizar título",
+   "Saltar a título N",
+   "Ver o Continuar ep. N",
+   "Agregar a Planeado",
+   "Abrir ficha",
+   "Campana",
+   "Reproducción automática"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Héroe de Inicio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-05",
+  "area": "Inicio",
+  "name": "Carrusel",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir ficha desde la diapositiva",
+   "Ver ep. 1",
+   "Detalles",
+   "Deslizar y reproducción automática"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Héroe de Inicio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-06",
+  "area": "Inicio",
+  "name": "Aviso de proveedor limitado (Inicio)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reintentar proveedor principal",
+   "Cuenta regresiva"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Bajo el saludo"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-07",
+  "area": "Inicio",
+  "name": "Continuar viendo",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver todo",
+   "Abrir ficha",
+   "Pulsación larga",
+   "Reanudar episodio"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Fila Continuar de Inicio; Ver todo → Biblioteca › Continuar"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-08",
+  "area": "Inicio",
+  "name": "Descargando",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver descargas activas con progreso"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Fila de Inicio que abre Transferencias"
+  },
+  "change": "mejorado",
+  "pattern": "fila sin acción → abre Transferencias",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-09",
+  "area": "Inicio",
+  "name": "Seguidos y últimos episodios",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver todo → Calendario",
+   "Abrir ficha"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Filas de Inicio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-10",
+  "area": "Inicio",
+  "name": "Top 10",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Hoy, Semana, Mes",
+   "Abrir ficha"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Fila de Inicio; Top completo en Explorar"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-11",
+  "area": "Inicio",
+  "name": "Para ti y Porque viste",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver todo → Para ti",
+   "Abrir ficha"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Filas de Inicio; Ver todo → Explorar › Para ti"
+  },
+  "change": "reubicado",
+  "pattern": "Para ti → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-12",
+  "area": "Inicio",
+  "name": "Chips de género",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir género",
+   "Flechas de desplazamiento"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Chips en Inicio que abren Explorar filtrado"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-13",
+  "area": "Inicio",
+  "name": "Filas de feeds",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver todo → Buscar con feed",
+   "Abrir ficha"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Filas de Inicio; Ver todo → Explorar con feed"
+  },
+  "change": "reubicado",
+  "pattern": "Buscar → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-14",
+  "area": "Inicio",
+  "name": "Próximos estrenos y Más favoritos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir ficha"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Filas de Inicio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-15",
+  "area": "Inicio",
+  "name": "Filas de extensiones",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver todo → página del proveedor",
+   "Abrir ítem del proveedor",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Filas de Inicio; Ver todo → Explorar › catálogos de extensiones"
+  },
+  "change": "reubicado",
+  "pattern": "página de proveedor → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-16",
+  "area": "Inicio",
+  "name": "Filas de género infinitas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver todo → género",
+   "Abrir ficha",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Filas de Inicio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-17",
+  "area": "Inicio",
+  "name": "Inicio vacío",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Texto de conexión o fuentes de metadatos"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Estado vacío con botón a Ajustes › Metadatos y descubrir"
+  },
+  "change": "mejorado",
+  "pattern": "texto sin acción → botón a Ajustes",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "HOME-18",
+  "area": "Inicio",
+  "name": "Filtro de contenido maduro",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Mostrar, Desenfocar o Advertir",
+   "Revelar al tocar",
+   "Diálogo Abrir o Cancelar"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Igual en todas las tarjetas"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "CAL-01",
+  "area": "Calendario",
+  "name": "Calendario de emisión",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Hoy",
+   "Semana, Agenda, Mes, Día",
+   "Anterior y Siguiente",
+   "Solo los que sigo",
+   "Elegir día",
+   "Abrir ficha",
+   "Seguir o dejar de seguir",
+   "Recordatorio por serie",
+   "Dejar de seguir en la lista"
+  ],
+  "newHome": {
+   "screen": "calendario",
+   "place": "Calendario"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "FYOU-01",
+  "area": "Explorar",
+  "name": "Para ti (recomendaciones)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Lista o Atlas",
+   "Chips de gustos",
+   "Abrir ficha",
+   "No me interesa con Deshacer"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › Para ti"
+  },
+  "change": "fusionado",
+  "pattern": "pantalla propia → sección de Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "FYOU-02",
+  "area": "Explorar",
+  "name": "Para ti › Atlas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Tocar un punto abre la ficha",
+   "Leyenda de grupos"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › Atlas"
+  },
+  "change": "fusionado",
+  "pattern": "pestaña de Para ti → sección de Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-01",
+  "area": "Explorar",
+  "name": "Buscar: barra y consulta",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Buscar en vivo",
+   "Borrar",
+   "Buscar por imagen",
+   "Filtros con contador"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar, campo superior"
+  },
+  "change": "fusionado",
+  "pattern": "Buscar → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-02",
+  "area": "Explorar",
+  "name": "Fila de chips de búsqueda",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Anime o Personajes",
+   "Manga (navega)",
+   "Novelas (navega)",
+   "Metadatos",
+   "Catálogo de cada extensión",
+   "Quitar feed, estudio y filtros",
+   "Aviso 18+"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar: tipo, fuente y filtros activos separados"
+  },
+  "change": "mejorado",
+  "pattern": "una fila mezclada → grupos separados; Manga y Novelas como destinos",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-03",
+  "area": "Explorar",
+  "name": "Ventana de tendencia",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Hoy, Semana, Mes, Siempre"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › Top"
+  },
+  "change": "fusionado",
+  "pattern": "segmentado en Buscar → Top en Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-04",
+  "area": "Explorar",
+  "name": "Búsqueda en reposo",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Chips Explorar (7 feeds)",
+   "Búsquedas recientes",
+   "Quitar reciente",
+   "Borrar todo"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar en reposo"
+  },
+  "change": "fusionado",
+  "pattern": "Buscar → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-05",
+  "area": "Explorar",
+  "name": "Resultados de anime",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir ficha",
+   "Desplazamiento infinito",
+   "Cargar más",
+   "Restablecer filtros"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar, resultados"
+  },
+  "change": "fusionado",
+  "pattern": "Buscar → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-06",
+  "area": "Explorar",
+  "name": "Resultados de personajes",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir personaje",
+   "Paginación"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › Personajes"
+  },
+  "change": "fusionado",
+  "pattern": "página en línea → personaje en Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-07",
+  "area": "Explorar",
+  "name": "Resultados de catálogo de extensión",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Tocar busca el título en metadatos"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › catálogos de extensiones"
+  },
+  "change": "fusionado",
+  "pattern": "Buscar → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-08",
+  "area": "Explorar",
+  "name": "Personaje en línea en Buscar",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver personaje",
+   "Esc o Atrás cierra"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › Personajes"
+  },
+  "change": "fusionado",
+  "pattern": "Buscar → Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-09",
+  "area": "Explorar",
+  "name": "Hoja de filtros",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ordenar por",
+   "Género",
+   "Formato",
+   "Estado",
+   "Año",
+   "Temporada",
+   "Rango de años",
+   "Episodios",
+   "Puntaje medio",
+   "Etiquetas con spoiler",
+   "Filtrar etiquetas",
+   "Etiquetas",
+   "Incluir 18+",
+   "Borrar",
+   "Aplicar filtros"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › Filtros"
+  },
+  "change": "fusionado",
+  "pattern": "hoja de Buscar → facetas de Explorar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "IMG-01",
+  "area": "Explorar",
+  "name": "Búsqueda por imagen",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir imagen",
+   "Soltar imagen o enlace",
+   "Enlace de imagen",
+   "Similitud mínima",
+   "Abrir coincidencia",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › Por imagen; también al soltar una imagen en cualquier parte"
+  },
+  "change": "fusionado",
+  "pattern": "pantalla propia → Explorar y capa de soltar",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SRCH-10",
+  "area": "Ajustes",
+  "name": "Extras de Descubrir",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Idioma de títulos",
+   "Mostrar 18+",
+   "Contenido maduro",
+   "Proveedores de metadatos",
+   "Borrar búsquedas recientes"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Metadatos y descubrir"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-01",
+  "area": "Ficha",
+  "name": "Ficha: contenedor y estados",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Tema por color del título",
+   "Cargando y error con Reintentar",
+   "Aviso de proveedor limitado",
+   "Discord en escritorio"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-01a",
+  "area": "Ficha",
+  "name": "Filtro 18+ de la ficha",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Mostrar y recordar por título"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-02",
+  "area": "Ficha",
+  "name": "Fichas anidadas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir relacionado dentro de la ficha",
+   "Atrás vuelve al anterior"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-03",
+  "area": "Ficha",
+  "name": "Barra superior",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Atrás flotante y fija",
+   "Título fijo",
+   "Ep. N",
+   "Pestañas fijas"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-04",
+  "area": "Ficha",
+  "name": "Cabecera",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Seleccionar título",
+   "Copiar título",
+   "AniList y MAL",
+   "Más o menos sinopsis",
+   "Revelar portada"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha, cabecera"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-05",
+  "area": "Ficha",
+  "name": "Diseños de cabecera y datos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Línea, Datos, Siguiente, Datos y siguiente",
+   "Estado, próximo ep., episodios, año, puntaje"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha, cabecera"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-06",
+  "area": "Ficha",
+  "name": "Botón Ver dividido",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver o continuar con fuente recordada",
+   "Abrir selector de fuente"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha; la flecha abre Fuentes del episodio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-07",
+  "area": "Ficha",
+  "name": "Acciones de cabecera",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Lista",
+   "Favorito",
+   "Seguir",
+   "Tráiler",
+   "Más"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Fila de acciones visible: selector de estado de 6 opciones, Favorito, Seguir, Tráiler, Descargar, Compartir, Enviar"
+  },
+  "change": "mejorado",
+  "pattern": "menú de lista → selector de estado visible",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-08",
+  "area": "Ficha",
+  "name": "Menú y editor de lista",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver LIB-06 y LIB-07"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Selector de estado y editor de entrada en la ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-09",
+  "area": "Ficha",
+  "name": "Menú Más",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Enviar a dispositivo",
+   "Descargar episodio N",
+   "Descargar temporada",
+   "Sin fuente torrent",
+   "Compartir"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Fila de acciones visible bajo el título"
+  },
+  "change": "reubicado",
+  "pattern": "menú escondido → acciones visibles",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-10",
+  "area": "Ficha",
+  "name": "Tarjeta Siguiente",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver dividido",
+   "Línea de fuente"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha, cabecera"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-11",
+  "area": "Ficha",
+  "name": "Línea de fuente",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Cambiar fuente",
+   "Abrir o gestionar extensiones",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "fuentes-episodio",
+   "place": "Ficha; abre Fuentes del episodio; extensiones → Fuentes"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-12",
+  "area": "Ficha",
+  "name": "Panel de fuente (columna lateral)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Selección automática o manual",
+   "Fuente elegida",
+   "Descargar fuente torrent",
+   "Abrir extensiones",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "fuentes-episodio",
+   "place": "Columna lateral de la ficha; ajuste → Ajustes › Fuentes de episodios"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-13",
+  "area": "Ficha",
+  "name": "Enviar a dispositivo",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Emparejar un PC",
+   "Enviar al PC",
+   "Volver a comprobar",
+   "Enviar a cada teléfono"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Acción visible Enviar a dispositivo"
+  },
+  "change": "reubicado",
+  "pattern": "menú Más y panel lateral → acción visible",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-14",
+  "area": "Ficha",
+  "name": "Pestañas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Episodios, Info, Personajes, Relacionados"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Episodios, Información, Personajes, Relacionados, Reseñas"
+  },
+  "change": "mejorado",
+  "pattern": "4 pestañas → 5 con Reseñas",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-15",
+  "area": "Ficha",
+  "name": "Pestaña Episodios",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Buscar episodio",
+   "Tarjetas, Lista, Compacto",
+   "Rangos de 100",
+   "Episodios anteriores",
+   "Reproducir episodio",
+   "Marcar visto o no visto",
+   "Descargar episodio"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha › Episodios con multiselección"
+  },
+  "change": "mejorado",
+  "pattern": "marcar distinto por vista → multiselección y acciones iguales en las 3 vistas",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-16",
+  "area": "Ficha",
+  "name": "Pestaña Info",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Géneros",
+   "Estudios",
+   "Etiquetas con spoiler",
+   "Ver todas las etiquetas",
+   "Tráiler",
+   "Enlaces oficiales"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha › Información"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-17",
+  "area": "Ficha",
+  "name": "Pestaña Personajes",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir personaje",
+   "Cargar más",
+   "Staff"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha › Personajes"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-18",
+  "area": "Ficha",
+  "name": "Relacionados y grafo",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Temporadas",
+   "Grafo o Lista",
+   "Abrir nodo",
+   "Grafo a pantalla completa",
+   "Mover y zoom",
+   "Acercar, alejar, ajustar",
+   "Cerrar",
+   "Relaciones",
+   "Recomendaciones"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha › Relacionados"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-19",
+  "area": "Ficha",
+  "name": "Mensajes de la ficha",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Usando fuente",
+   "Descarga agregada",
+   "Por Debrid",
+   "Respaldo P2P",
+   "Errores de envío, lista y favorito"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Snackbars de la ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DET-20",
+  "area": "Ficha",
+  "name": "Selector de fuente",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir y recordar fuente",
+   "Reintentar",
+   "Ajustes de reproductor",
+   "Descargar fuente torrent"
+  ],
+  "newHome": {
+   "screen": "fuentes-episodio",
+   "place": "Hoja Fuentes del episodio con facetas o comparador"
+  },
+  "change": "mejorado",
+  "pattern": "lista → facetas o comparador, manual o automática",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "CHAR-01",
+  "area": "Ficha",
+  "name": "Página de personaje",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Atrás",
+   "Favorito de personaje",
+   "Más o menos",
+   "Apariciones"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha › Personajes y Explorar › Personajes"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "LIB-01",
+  "area": "Biblioteca",
+  "name": "Biblioteca: cabecera y pestañas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Sincronizar ahora",
+   "Cambiar pestaña",
+   "Local o sincronizado"
+  ],
+  "newHome": {
+   "screen": "biblioteca",
+   "place": "Biblioteca con medio Anime, Manga, Novela; Continuar, Estados, Favoritos, Historial"
+  },
+  "change": "mejorado",
+  "pattern": "7 pestañas mezcladas → medio y 4 vistas; Torrents sale",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "LIB-02",
+  "area": "Biblioteca",
+  "name": "Continuar",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reanudar episodio",
+   "Explorar anime si está vacío"
+  ],
+  "newHome": {
+   "screen": "biblioteca",
+   "place": "Biblioteca › Continuar"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "LIB-03",
+  "area": "Biblioteca",
+  "name": "Historial",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir ficha",
+   "Explorar anime si está vacío"
+  ],
+  "newHome": {
+   "screen": "biblioteca",
+   "place": "Biblioteca › Historial; en Android también en Tú"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "LIB-04",
+  "area": "Biblioteca",
+  "name": "Listas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Estado de 6 opciones",
+   "Filtrar por título",
+   "Ordenar",
+   "Vincular AniList o MAL",
+   "Pendientes de sincronizar",
+   "Abrir ficha",
+   "Editar entrada"
+  ],
+  "newHome": {
+   "screen": "biblioteca",
+   "place": "Biblioteca › Estados de lista"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "LIB-05",
+  "area": "Biblioteca",
+  "name": "Favoritos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Personajes favoritos",
+   "Quitar personaje",
+   "Títulos",
+   "Editar entrada"
+  ],
+  "newHome": {
+   "screen": "biblioteca",
+   "place": "Biblioteca › Favoritos"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "LIB-06",
+  "area": "Biblioteca",
+  "name": "Editor de entrada",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Estado",
+   "Progreso menos y más",
+   "Puntaje",
+   "Favorito",
+   "Quitar de la lista"
+  ],
+  "newHome": {
+   "screen": "biblioteca",
+   "place": "Editor de entrada, desde Biblioteca y la ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "LIB-07",
+  "area": "Biblioteca",
+  "name": "Botón y menú de lista",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Estados",
+   "Editar",
+   "Favorito",
+   "Quitar"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Selector de estado de 6 opciones visible en la ficha"
+  },
+  "change": "mejorado",
+  "pattern": "menú desplegable → selector visible",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "LIB-08",
+  "area": "Biblioteca",
+  "name": "Pestañas Manga, Novelas y Torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Manga",
+   "Novelas",
+   "Torrents"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Manga y Novelas → medio de Biblioteca; Torrents → Transferencias"
+  },
+  "change": "reubicado",
+  "pattern": "pestañas → selector de medio; Torrents fuera de Biblioteca",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "YOU-01",
+  "area": "Perfil",
+  "name": "Página Tú",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Sincronizar ahora",
+   "Cuentas",
+   "Para ti",
+   "Manga",
+   "Novelas",
+   "Perfil",
+   "Notificaciones",
+   "Historial",
+   "Descargas",
+   "Torrents",
+   "Extensiones",
+   "Dispositivo vinculado",
+   "Ajustes"
+  ],
+  "newHome": {
+   "screen": "perfil",
+   "place": "Tú: Manga, Novelas, Transferencias, Fuentes, Link, Ajustes, Perfil, Notificaciones, Historial"
+  },
+  "change": "mejorado",
+  "pattern": "Descargas y Torrents → Transferencias; Para ti → Explorar",
+  "risk": "Para ti y la sincronización deben seguir a un toque desde Tú o Biblioteca",
+  "source": "inventario-A"
+ },
+ {
+  "id": "SOC-01",
+  "area": "Perfil",
+  "name": "Perfil de AniList",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Atrás",
+   "Actualizar",
+   "Abrir en AniList",
+   "Editar perfil",
+   "Seguir",
+   "Seguidores y seguidos",
+   "Pestañas de perfil",
+   "Publicar estado",
+   "Solo a quienes sigo",
+   "Abrir actividad",
+   "Abrir usuario",
+   "Abrir ficha",
+   "Me gusta",
+   "Respuestas",
+   "Cargar más"
+  ],
+  "newHome": {
+   "screen": "perfil",
+   "place": "Perfil"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SOC-02",
+  "area": "Perfil",
+  "name": "Hilo de actividad",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Me gusta",
+   "Responder",
+   "Abrir en AniList",
+   "Cargar respuestas"
+  ],
+  "newHome": {
+   "screen": "perfil",
+   "place": "Perfil › actividad"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SOC-03",
+  "area": "Perfil",
+  "name": "Notificaciones de AniList",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Actualizar",
+   "Deslizar para actualizar",
+   "Permitir notificaciones",
+   "Abrir notificación",
+   "Cargar más"
+  ],
+  "newHome": {
+   "screen": "perfil",
+   "place": "Panel de notificaciones global y Perfil"
+  },
+  "change": "reubicado",
+  "pattern": "pantalla → panel global",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "SOC-04",
+  "area": "Ficha",
+  "name": "Reseñas de AniList",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Escribir reseña",
+   "Leer más",
+   "Abrir en AniList",
+   "Cargar más"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha › Reseñas"
+  },
+  "change": "reubicado",
+  "pattern": "bajo Episodios → pestaña propia",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "UI-01",
+  "area": "Shell",
+  "name": "Aviso de proveedor limitado",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reintentar",
+   "Cuenta regresiva"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Inicio y ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "UI-02",
+  "area": "Shell",
+  "name": "Estado de error",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reintentar",
+   "Cuenta regresiva en 429"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Todas las pantallas"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "UI-03",
+  "area": "Shell",
+  "name": "Envoltura de carga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Carga con demora",
+   "Error con Reintentar"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Todas las pantallas"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "UI-04",
+  "area": "Shell",
+  "name": "Tarjetas de medio",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Póster y tarjeta ancha",
+   "Tamaños S a XL"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Estilos de tarjeta del rediseño"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "UI-05",
+  "area": "Shell",
+  "name": "Soltar archivos (escritorio)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Soltar archivos y enlaces",
+   "Resaltar al pasar"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Capa de soltar global: .kai, .torrent, magnet, video, subtítulo"
+  },
+  "change": "mejorado",
+  "pattern": "solo Buscar por imagen y Extensiones → cualquier parte con capa de acción",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "UI-06",
+  "area": "Shell",
+  "name": "Servicios de plataforma",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Esc",
+   "Conectividad",
+   "Permiso de notificaciones",
+   "Abrir enlace",
+   "Compartir",
+   "Selectores de archivo",
+   "Pantalla encendida",
+   "Pantalla completa y PiP"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Igual"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-01",
+  "area": "Escritorio",
+  "name": "Ventana principal",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Tamaño según escala",
+   "Cerrar a la bandeja",
+   "Actualizar no leídos al enfocar",
+   "--version"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Igual"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-02",
+  "area": "Escritorio",
+  "name": "Barra de título propia",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Atrás",
+   "Arrastrar",
+   "Doble clic maximiza",
+   "Chip de Link",
+   "Chip Sin conexión",
+   "Buscar o comando",
+   "Ajustes",
+   "Minimizar, maximizar, cerrar"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Barra superior con chip de Link, paleta y Ajustes"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-03",
+  "area": "Escritorio",
+  "name": "Bordes redimensionables",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Redimensionar por bordes y esquinas"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Igual"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-04",
+  "area": "Escritorio",
+  "name": "Bandeja del sistema",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Mostrar ventana",
+   "Estado de Link",
+   "Sesiones de Link",
+   "Torrents activos",
+   "Rendimiento y caché",
+   "Monitor",
+   "Ajustes",
+   "Salir"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Bandeja sin cambios; Torrents abre Transferencias"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-05",
+  "area": "Link",
+  "name": "Monitor de Link y sistema",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Ajustes de Link",
+   "Cerrar",
+   "Detener sesión",
+   "Abrir torrents",
+   "Sesiones, caché y memoria"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Monitor; también desde el chip y la bandeja"
+  },
+  "change": "fusionado",
+  "pattern": "diálogo suelto → sección de Link",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-06",
+  "area": "Escritorio",
+  "name": "Instancia única y argumentos",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "--minimized",
+   "Magnet y .torrent",
+   "OAuth",
+   "Perfil",
+   "Servidor de extensiones",
+   "Abrir video local"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Igual; destinos renombrados"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-07",
+  "area": "Escritorio",
+  "name": "Manejadores, inicio con sistema, reinicio",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Registrar magnet, .torrent y nijiyome:",
+   "Iniciar con el sistema",
+   "Reiniciar tras restablecer"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Sistema solo en escritorio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-08",
+  "area": "Escritorio",
+  "name": "Discord Rich Presence",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Viendo, Mirando ficha, Navegando"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Sistema solo en escritorio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-09",
+  "area": "Escritorio",
+  "name": "Notificaciones de escritorio",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Torrent terminado o fallido",
+   "Episodio descargado",
+   "Aviso de emisión",
+   "Resumen de AniList"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Notificaciones"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": "Hoy no se pueden tocar; el panel de notificaciones puede darles destino",
+  "source": "inventario-A"
+ },
+ {
+  "id": "DESK-10",
+  "area": "Link",
+  "name": "Abrir desde el teléfono (Continuar en PC)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Abrir reproductor en la posición del teléfono"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Igual"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "A-OCULTA-01",
+  "kind": "oculta",
+  "area": "Ficha",
+  "name": "Recordatorio por título (FollowShowRow)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Avisarme cuando salga un episodio"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Acción Seguir de la ficha con recordatorio por título"
+  },
+  "change": "nuevo-acceso",
+  "pattern": "código sin uso → interruptor en Seguir",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "A-OCULTA-02",
+  "kind": "oculta",
+  "area": "Ficha",
+  "name": "Menú de descarga de la ficha (DownloadMenuButton)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Descargar episodio",
+   "Descargar temporada"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Acción Descargar visible en la ficha"
+  },
+  "change": "nuevo-acceso",
+  "pattern": "código sin uso → acción visible",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "A-OCULTA-03",
+  "kind": "oculta",
+  "area": "Ficha",
+  "name": "Enviar al teléfono en escritorio (SendToPhoneButton)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Enviar a un teléfono emparejado"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Acción Enviar a dispositivo en la ficha"
+  },
+  "change": "nuevo-acceso",
+  "pattern": "solo panel lateral → acción visible",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "A-OCULTA-04",
+  "kind": "oculta",
+  "area": "Shell",
+  "name": "Enfocar búsqueda con atajo (focusSearchPending)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Ir al campo de búsqueda"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Ctrl+K busca títulos; Explorar enfoca el campo al entrar"
+  },
+  "change": "nuevo-acceso",
+  "pattern": "ruta muerta → paleta con títulos",
+  "risk": null,
+  "source": "inventario-A"
+ },
+ {
+  "id": "NOTA-A-transversal",
+  "kind": "nota",
+  "area": "Global",
+  "name": "Transversal del shell",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Enlaces profundos (oauth, user, extensionserver, magnet, .torrent, imagen, video)",
+   "Tres capas de contenido adulto",
+   "Ajustes de Apariencia que cambian estas pantallas (diseño de Inicio, saludo, héroe, tarjeta, densidad, movimiento, riel, estilo de página, cabecera, vista de episodios, vista de relaciones, vista de calendario, idioma de títulos)",
+   "Notificaciones: Android con destino, escritorio sin acción",
+   "Mensajes solo por snackbar"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Todas las pantallas"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": "Los ajustes de Apariencia listados deben seguir afectando las pantallas nuevas",
+  "source": "inventario-A"
+ },
+ {
+  "id": "PLY-01",
+  "area": "Reproductor",
+  "name": "Estados del reproductor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Elegir una fuente",
+   "Ir a Fuentes (sin fuentes)",
+   "Abrir dispositivo enlazado",
+   "Reintentar",
+   "Reintento al volver la red",
+   "Progreso de búsqueda de fuentes",
+   "Estado de metadatos del torrent"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Estado del reproductor antes de la sesión, con acción principal por caso"
+  },
+  "change": "mejorado",
+  "pattern": "copy de carga dispersa → un estado con acción clara",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-02",
+  "area": "Reproductor",
+  "name": "Error de reproducción",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reintentar",
+   "Elegir una fuente",
+   "Reproducir en el teléfono",
+   "Usar la mejor fuente web",
+   "Elegir el archivo del torrent",
+   "Ir a Fuentes",
+   "Lista de fuentes probadas"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Estado de error con una acción principal y secundarias en jerarquía"
+  },
+  "change": "mejorado",
+  "pattern": "6 botones sueltos → jerarquía principal y secundaria",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-03",
+  "area": "Reproductor",
+  "name": "Aviso de datos móviles",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver de todos modos",
+   "Elegir fuente web o cancelar",
+   "Ir a ajustes de torrents"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Diálogo antes de iniciar un torrent con datos móviles"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-04",
+  "area": "Reproductor",
+  "name": "Hoja de fuentes del episodio",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ir a ajustes de fuentes",
+   "Filtrar Todas, Web o Torrent",
+   "Solo en caché de debrid",
+   "Filtrar sub, dob, audio dual, multidob",
+   "Solo multisub",
+   "Filtrar por resolución",
+   "Piso de fiabilidad media o alta",
+   "Pistas de audio por idioma",
+   "Idiomas de subtítulos",
+   "Origen BD, REMUX, WEB, TV, DVD",
+   "Códec H.264, HEVC, AV1, VP9",
+   "10 bits, lote, SeaDex, compatible",
+   "Limpiar filtros",
+   "Reproducir una fuente",
+   "Descargar para después",
+   "Reintentar carga",
+   "Aviso de fuente recordada"
+  ],
+  "newHome": {
+   "screen": "fuentes-episodio",
+   "place": "Hoja con facetas o comparador, modo manual o automático"
+  },
+  "change": "mejorado",
+  "pattern": "dos capas de filtros → facetas visibles y comparador",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-05",
+  "area": "Reproductor",
+  "name": "Controles de escritorio",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Volver",
+   "Chip de estado de mejoras",
+   "Chip de fuente",
+   "Abrir en el cliente de torrents",
+   "Línea de estado del torrent",
+   "Descargar episodio",
+   "Captura de pantalla",
+   "Episodios",
+   "Mejoras",
+   "Atajos de teclado",
+   "Imagen en imagen",
+   "Pantalla completa",
+   "Episodio anterior",
+   "Retroceder 5 s",
+   "Reproducir o pausar",
+   "Avanzar 5 s",
+   "Episodio siguiente",
+   "Barra de progreso con capas y marcas",
+   "Burbuja de tiempo al pasar",
+   "Silenciar",
+   "Volumen",
+   "Chip Más",
+   "Chip Calidad",
+   "Chip Subtítulos",
+   "Chip Audio",
+   "Chip Velocidad",
+   "Clic pausa, doble clic pantalla completa, rueda salta"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra superior, transporte y fila de hojas: Pistas, Mejoras, Imagen, Velocidad y temporizador, Episodios, Más"
+  },
+  "change": "reubicado",
+  "pattern": "fila de chips que se desborda → hojas agrupadas",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-06",
+  "area": "Reproductor",
+  "name": "Menú Más opciones (ventana angosta)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Descargar episodio",
+   "Bloquear controles",
+   "Captura de pantalla",
+   "Episodios",
+   "Mejoras",
+   "Atajos de teclado"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Más en ventanas angostas"
+  },
+  "change": "fusionado",
+  "pattern": "menú desplegable → hoja Más",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-07",
+  "area": "Reproductor",
+  "name": "Contenedor de hojas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Título y cerrar",
+   "Cerrar al tocar fuera o deslizar",
+   "Panel lateral o hoja inferior"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Contenedor común de todas las hojas del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-08",
+  "area": "Reproductor",
+  "name": "Hoja de calidad",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Calidad automática",
+   "Elegir altura del stream",
+   "Cambiar a fuente de otra calidad (escritorio)"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Imagen › Calidad, con aviso cuando cambia la fuente"
+  },
+  "change": "mejorado",
+  "pattern": "lista de filas → control segmentado",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-09",
+  "area": "Reproductor",
+  "name": "Hoja de subtítulos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Desactivar subtítulos",
+   "Elegir pista",
+   "Cargar archivo",
+   "Abrir estilo",
+   "Retraso -0,1 s",
+   "Retraso +0,1 s",
+   "Restablecer retraso",
+   "Subtítulo secundario",
+   "Traducir subtítulos",
+   "Pretraducir la pista"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Pistas › Subtítulos"
+  },
+  "change": "fusionado",
+  "pattern": "hoja larga mezclada → hoja Pistas con secciones",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-10",
+  "area": "Reproductor",
+  "name": "Hoja de audio",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir pista de audio",
+   "Sin audio"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Pistas › Audio"
+  },
+  "change": "fusionado",
+  "pattern": "hoja aparte → Pistas junto a subtítulos",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-11",
+  "area": "Reproductor",
+  "name": "Hoja de velocidad",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir velocidad 0,5x a 2x"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Velocidad y temporizador"
+  },
+  "change": "mejorado",
+  "pattern": "6 a 7 filas → chips o paso a paso",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-12",
+  "area": "Reproductor",
+  "name": "Hoja Más",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Estilo de controles Cine o Minimalista",
+   "Temporizador de apagado",
+   "Repetir episodio",
+   "Volumen estable"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Temporizador en Velocidad y temporizador; repetir y volumen estable en Más"
+  },
+  "change": "reubicado",
+  "pattern": "Más mezclado → temporizador con la velocidad",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-13",
+  "area": "Reproductor",
+  "name": "Hoja de episodios",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Saltar a un episodio",
+   "Reintentar lista"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Episodios"
+  },
+  "change": "mejorado",
+  "pattern": "lista solo texto → filas con vistos y miniatura",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-14",
+  "area": "Reproductor",
+  "name": "Panel de atajos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver atajos con su tecla",
+   "Cerrar con ? o Esc"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Más › Atajos, con enlace al editor en Ajustes › Reproducción"
+  },
+  "change": "mejorado",
+  "pattern": "solo lectura → enlace al editor",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-15",
+  "area": "Reproductor",
+  "name": "Indicador flotante (HUD)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Brillo",
+   "Volumen o silencio",
+   "Salto",
+   "2x al mantener",
+   "Velocidad",
+   "Subtítulo activo",
+   "Audio activo",
+   "Retraso",
+   "Repetir",
+   "Preset de escalado"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Píldora superior del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-16",
+  "area": "Reproductor",
+  "name": "Avisos del reproductor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Deshacer bajada de calidad",
+   "Aviso de fuente fallida y cambio",
+   "Intro saltada",
+   "Captura guardada",
+   "Subtítulos cargados",
+   "Temporizador cumplido",
+   "Errores de traducción",
+   "Cambio de motor",
+   "Fallo de debrid",
+   "Avisos de Link"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Aviso flotante; los importantes también en el panel de notificaciones"
+  },
+  "change": "mejorado",
+  "pattern": "40 avisos de 5 s sin historial → aviso más historial",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-17",
+  "area": "Reproductor",
+  "name": "Carga y estado del torrent",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Indicador de carga",
+   "Pares y avance del torrent",
+   "Preparando en el PC",
+   "Renovar sesión de Link atascada"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Capa de carga del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-18",
+  "area": "Reproductor",
+  "name": "Saltar intro, final o resumen",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Saltar intro",
+   "Saltar final",
+   "Saltar resumen",
+   "Enter salta (escritorio)"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Botón flotante sobre la barra"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-19",
+  "area": "Reproductor",
+  "name": "Tarjeta de siguiente episodio",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reproducir ahora",
+   "Cancelar avance automático",
+   "Cuenta regresiva"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Tarjeta compacta al final del episodio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-20",
+  "area": "Reproductor",
+  "name": "Pantalla de fin de episodio",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Mostrar el video",
+   "Ver siguiente episodio",
+   "Cancelar cuenta regresiva",
+   "Ver de nuevo",
+   "Episodios",
+   "Volver a la ficha",
+   "Progreso marcado y sincronizado"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Pantalla de fin dentro del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-21",
+  "area": "Reproductor",
+  "name": "Capa de bloqueo",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Mostrar desbloquear al tocar",
+   "Desbloquear"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Capa de bloqueo del reproductor (Android)"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-22",
+  "area": "Reproductor",
+  "name": "Progreso de pretraducción",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reproducir ahora"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Tarjeta central durante la pretraducción"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-23",
+  "area": "Reproductor",
+  "name": "Píldoras de Link y procesado",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Cambiando perfil",
+   "Cancelar cambio de procesado"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Píldora superior del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-24",
+  "area": "Reproductor",
+  "name": "Gestos de puntero (escritorio)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Mostrar controles al mover",
+   "Clic pausa",
+   "Doble clic pantalla completa",
+   "Rueda salta 5 s"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Superficie del video en escritorio"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-25",
+  "area": "Reproductor",
+  "name": "Tarjeta de mpv externo",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Detener",
+   "Fuentes",
+   "Volver",
+   "Ver sin generación de fotogramas",
+   "Ajustes de generación de fotogramas",
+   "Pantalla de fin encima"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Estado Reproduciendo en mpv"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-26",
+  "area": "Reproductor",
+  "name": "Reproductor externo (Android)",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Detener",
+   "Volver",
+   "Abrir de nuevo",
+   "Elegir app para reproducir"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Estado Reproduciendo en otra app"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-27",
+  "area": "Reproductor",
+  "name": "Enviar al teléfono",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Enviar episodio y posición",
+   "Elegir teléfono si hay varios"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Más › Enviar a dispositivo, también en la barra superior"
+  },
+  "change": "reubicado",
+  "pattern": "botón flotante aparte → acción en barra y Más",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-28",
+  "area": "Reproductor",
+  "name": "Controles del sistema y control remoto",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "MPRIS reproducir, pausar, siguiente, anterior, posición",
+   "Mando desde el teléfono por Link",
+   "Discord Rich Presence"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Control remoto; MPRIS sin cambios"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-29",
+  "area": "Reproductor",
+  "name": "Capa de subtítulos en pantalla",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Subir sobre los controles",
+   "Secundario arriba"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Capa de video"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-30",
+  "area": "Reproductor",
+  "name": "Reproductor de escritorio no disponible",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Volver"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Estado vacío del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLY-31",
+  "area": "Reproductor",
+  "name": "Accesos a ajustes desde el reproductor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ajustes de fuentes",
+   "Ajustes de torrents",
+   "Importar Lossless.dll",
+   "Ajustes de generación de fotogramas",
+   "Dispositivo enlazado"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Saltos exactos a Reproducción, Mejoras de video, Torrents y descargas, Nijiyome Link"
+  },
+  "change": "reubicado",
+  "pattern": "Ajustes › Reproductor → categorías nuevas con salto exacto",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-01",
+  "area": "Reproductor",
+  "name": "Controles táctiles",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Mostrar u ocultar al tocar",
+   "Ocultar a los 4 s",
+   "Cuatro diseños Cine y Minimalista"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Capa de controles táctiles"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-02",
+  "area": "Reproductor",
+  "name": "Barra superior táctil",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Título",
+   "Abrir fuentes desde el sufijo",
+   "Chip de mejoras",
+   "Imagen en imagen",
+   "Pantalla completa",
+   "Más opciones",
+   "Descargar episodio",
+   "Bloquear controles",
+   "Captura de pantalla",
+   "Episodios",
+   "Mejoras",
+   "Atajos de teclado"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra superior; las acciones de menos uso pasan a la hoja Más"
+  },
+  "change": "reubicado",
+  "pattern": "6 a 8 iconos o menú → barra corta más hoja Más",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-03",
+  "area": "Reproductor",
+  "name": "Menú Más opciones táctil",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Descargar episodio",
+   "Bloquear controles",
+   "Captura de pantalla",
+   "Episodios",
+   "Mejoras",
+   "Cambiar fuente",
+   "Atajos de teclado"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Más"
+  },
+  "change": "fusionado",
+  "pattern": "menú desplegable → hoja Más",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-04",
+  "area": "Reproductor",
+  "name": "Chips de estado superiores",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Chip de mejoras",
+   "Chip de fuente",
+   "Abrir en el cliente de torrents"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra superior del reproductor, presente en todos los diseños"
+  },
+  "change": "mejorado",
+  "pattern": "faltaba en Minimalista ancho → siempre visible",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-05",
+  "area": "Reproductor",
+  "name": "Transporte central",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Episodio anterior",
+   "Retroceder 10 s",
+   "Reproducir o pausar",
+   "Avanzar 10 s",
+   "Episodio siguiente"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Transporte central"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-06",
+  "area": "Reproductor",
+  "name": "Tarjeta de carga",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Estado del torrent",
+   "Resolviendo fuente",
+   "Preparando en el PC"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Capa de carga"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-07",
+  "area": "Reproductor",
+  "name": "Barra de progreso táctil",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Tocar para saltar",
+   "Arrastrar con vista previa",
+   "Burbuja con tiempo y segmento",
+   "Alternar total y restante",
+   "Leyenda búfer, PC y OP/ED",
+   "Velocidad de descarga"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra de progreso del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-08",
+  "area": "Reproductor",
+  "name": "Píldoras inferiores (Cine)",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Audio",
+   "Subtítulos",
+   "Calidad",
+   "Velocidad",
+   "Ciclo de aspecto",
+   "Episodio siguiente",
+   "Más"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Fila inferior: Pistas, Imagen, Velocidad y temporizador, Episodios, Más"
+  },
+  "change": "reubicado",
+  "pattern": "píldoras que se desbordan → hojas agrupadas",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-09",
+  "area": "Reproductor",
+  "name": "Barra inferior (Minimalista)",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Audio",
+   "Subtítulos",
+   "Velocidad",
+   "Calidad",
+   "Ciclo de aspecto",
+   "Mejoras",
+   "Episodio siguiente",
+   "Más"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Fila inferior con objetivos de 48 dp"
+  },
+  "change": "mejorado",
+  "pattern": "objetivos de 30 dp → 48 dp",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-10",
+  "area": "Reproductor",
+  "name": "Gestos táctiles",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Tocar muestra controles",
+   "Doble toque -10 s y +10 s",
+   "Mantener para 2x",
+   "Brillo con arrastre izquierdo",
+   "Volumen con arrastre derecho",
+   "Arrastre horizontal para buscar"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Superficie del video, con ayuda de gestos en Más › Atajos"
+  },
+  "change": "mejorado",
+  "pattern": "gestos ocultos → ayuda visible",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-11",
+  "area": "Reproductor",
+  "name": "Indicador de brillo",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Barra de brillo con porcentaje"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Superficie del video"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-12",
+  "area": "Reproductor",
+  "name": "Indicador de volumen",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Barra de volumen con porcentaje",
+   "Estado silenciado"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Superficie del video"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-13",
+  "area": "Reproductor",
+  "name": "Arco de doble toque",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Segundos acumulados"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Superficie del video"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-14",
+  "area": "Reproductor",
+  "name": "Indicador de arrastre horizontal",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Tiempo destino",
+   "Diferencia",
+   "Mini barra"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Superficie del video"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-15",
+  "area": "Reproductor",
+  "name": "Indicador de aspecto",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Ajustar, Rellenar, Estirar"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Píldora superior"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-16",
+  "area": "Reproductor",
+  "name": "Indicador de 2x y teclas",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "2x al mantener",
+   "Salto por tecla"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Píldora superior"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-17",
+  "area": "Reproductor",
+  "name": "Bloqueo de controles",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Bloquear controles",
+   "Tocar muestra desbloquear",
+   "Desbloquear",
+   "Ignorar teclas",
+   "Desbloqueo al terminar"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra superior y capa de bloqueo"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-18",
+  "area": "Reproductor",
+  "name": "Imagen en imagen",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Entrar con botón o P",
+   "Entrar solo al salir (Android 12+)"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra superior del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-19",
+  "area": "Reproductor",
+  "name": "Pantalla completa y orientación",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Pantalla completa con horizontal forzada",
+   "Salir de pantalla completa",
+   "Pantalla encendida al reproducir",
+   "Pausar al salir"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra superior del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-20",
+  "area": "Reproductor",
+  "name": "Notificación de reproducción en segundo plano",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Reproducir o pausar",
+   "Saltar atrás y adelante",
+   "Botones de auriculares",
+   "Abrir la app"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Notificación del sistema; se activa en Ajustes › Reproducción"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-21",
+  "area": "Reproductor",
+  "name": "Lanzar reproductor externo",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Detener",
+   "Volver",
+   "Abrir de nuevo",
+   "Elegir app"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Estado Reproduciendo en otra app"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-22",
+  "area": "Reproductor",
+  "name": "Sin app externa",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Reproducir con Media3",
+   "Abrir Ajustes"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Estado de error del reproductor externo"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-23",
+  "area": "Reproductor",
+  "name": "Generación de fotogramas en el teléfono",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Usar al reproducir",
+   "Importar Lossless.dll en Ajustes",
+   "Multiplicador Auto a 5x",
+   "Perfil Ahorro, Equilibrado, Calidad",
+   "Estado y fps en vivo"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Mejoras › Generación de fotogramas"
+  },
+  "change": "reubicado",
+  "pattern": "tarjeta al fondo de un panel largo → sección propia en Mejoras",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-24",
+  "area": "Reproductor",
+  "name": "Línea de generación en estadísticas",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Fps de entrada y salida",
+   "Latencia",
+   "Motivo de pausa o fallo"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Capa de estadísticas"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-25",
+  "area": "Reproductor",
+  "name": "Aviso de fallo de generación",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Aviso de fallo con motivo"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Aviso flotante del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-26",
+  "area": "Reproductor",
+  "name": "Captura de pantalla",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Guardar fotograma en Imágenes",
+   "Aviso con la ruta"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra superior o hoja Más, tecla S"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLA-27",
+  "area": "Reproductor",
+  "name": "Estilo de controles",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Elegir Cine o Minimalista"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Sin hogar definido: hoy en la hoja Más"
+  },
+  "change": "pendiente",
+  "pattern": null,
+  "risk": "La arquitectura no dice si se mantienen los dos estilos de controles táctiles; si el chrome se unifica se pierde una preferencia guardada del usuario. Decidir: conservar el selector (Más o Ajustes › Reproducción) o retirarlo a propósito.",
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-01",
+  "area": "Reproductor",
+  "name": "Chip de estado de mejoras",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir hoja Mejoras",
+   "Tono activo, aviso o neutro",
+   "Estado teléfono, PC o mixto"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra superior, abre la hoja Mejoras"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-02",
+  "area": "Reproductor",
+  "name": "Hoja Mejoras",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Cerrar",
+   "Mostrar estadísticas"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Mejoras con secciones Procesar en y presets"
+  },
+  "change": "mejorado",
+  "pattern": "una columna de 7 tarjetas → secciones con anclas",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-03",
+  "area": "Reproductor",
+  "name": "Procesar en",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Teléfono, PC o mixto",
+   "Cancelar cambio",
+   "Importar Lossless.dll en Ajustes",
+   "Motivos de bloqueo"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Mejoras › Procesar en"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-04",
+  "area": "Reproductor",
+  "name": "Qué hace el PC",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Perfil",
+   "Escalado",
+   "Generación",
+   "Códec",
+   "Adelanto listo",
+   "Avisos del PC"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Mejoras › Procesar en › PC"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-05",
+  "area": "Reproductor",
+  "name": "Perfil de mejora de Link",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Elegir perfil del PC por grupo"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Mejoras › Procesar en › Perfil"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-06",
+  "area": "Reproductor",
+  "name": "Mejoras requieren MPV",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Cambiar a MPV"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Mejoras con motor Media3"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-07",
+  "area": "Reproductor",
+  "name": "Escalado en el dispositivo",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Preset de escalado",
+   "Calidad Rápida, Equilibrada, Alta",
+   "Usar como predeterminado",
+   "Deshacer bajada",
+   "Nitidez",
+   "Deband",
+   "Suavizado",
+   "Ajustes automáticos"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Mejoras › Presets"
+  },
+  "change": "mejorado",
+  "pattern": "rejilla plana de 12 chips → presets agrupados",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-08",
+  "area": "Reproductor",
+  "name": "Generación de fotogramas (teléfono)",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Usar al reproducir",
+   "Importar Lossless.dll",
+   "Multiplicador",
+   "Perfil"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Mejoras › Generación de fotogramas"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-09",
+  "area": "Reproductor",
+  "name": "Imagen y decodificador",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Aspecto",
+   "Zoom",
+   "Brillo",
+   "Contraste",
+   "Saturación",
+   "Gamma",
+   "Tono",
+   "Restablecer imagen",
+   "Decodificador Auto, HW, HW+, SW"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Imagen"
+  },
+  "change": "reubicado",
+  "pattern": "dentro de Mejoras → hoja Imagen propia",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-10",
+  "area": "Reproductor",
+  "name": "Capa de estadísticas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Pedido y en uso",
+   "Shaders",
+   "Decodificador",
+   "Fotogramas perdidos",
+   "Fps y pantalla",
+   "Generación y PC"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Capa sobre el video, interruptor en Mejoras"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-11",
+  "area": "Reproductor",
+  "name": "Avisos de calidad y motor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Deshacer bajada por fotogramas",
+   "Aviso de batería y temperatura",
+   "Cambio de motor"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Aviso flotante del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-12",
+  "area": "Reproductor",
+  "name": "Píldora de cambio de procesado",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Cancelar cambio",
+   "Resultado del cambio"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Píldora superior"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-13",
+  "area": "Reproductor",
+  "name": "Píldora de cambio de perfil",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Cambiando perfil",
+   "Resultado del cambio"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Píldora superior"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-14",
+  "area": "Reproductor",
+  "name": "Atajos Ctrl+1 a Ctrl+6",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Ctrl+1 a 6 elige preset",
+   "Indicador de preset"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Teclado; visibles en la hoja Mejoras y en Más › Atajos"
+  },
+  "change": "mejorado",
+  "pattern": "atajo oculto → mostrado junto al preset",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-15",
+  "area": "Reproductor",
+  "name": "mpv externo con lsfg-vk",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Ver sin generación",
+   "Ajustes de generación",
+   "Detener",
+   "Fuentes",
+   "Volver",
+   "Activar lsfg-vk",
+   "Multiplicador",
+   "Modo rendimiento",
+   "Ruta de la DLL"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Mejoras de video › Escritorio; tarjeta en el reproductor"
+  },
+  "change": "reubicado",
+  "pattern": "Ajustes › Reproductor → Mejoras de video",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-16",
+  "area": "Reproductor",
+  "name": "Subtítulos (detalle)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Desactivar",
+   "Elegir pista",
+   "Cargar archivo",
+   "Estilo",
+   "Mostrar antes",
+   "Mostrar después",
+   "Restablecer retraso",
+   "Subtítulo secundario",
+   "Traducir",
+   "Pretraducir"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Pistas › Subtítulos"
+  },
+  "change": "fusionado",
+  "pattern": "lista plana → sección de Pistas",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-17",
+  "area": "Reproductor",
+  "name": "Estilo rápido de subtítulos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Tamaño",
+   "Fondo",
+   "Transparencia del fondo",
+   "Posición vertical",
+   "Estilo ASS",
+   "Restablecer",
+   "Más opciones"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Pistas › Estilo"
+  },
+  "change": "reubicado",
+  "pattern": "hoja aparte → paso dentro de Pistas",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-18",
+  "area": "Reproductor",
+  "name": "Editor completo de estilo",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Estilos rápidos",
+   "Tamaño",
+   "Fuente incluida",
+   "Fuente importada",
+   "Fuente instalada",
+   "Importar fuentes",
+   "Negrita",
+   "Cursiva",
+   "Alineación",
+   "Color del texto",
+   "Color personalizado",
+   "Opacidad del texto",
+   "Contorno",
+   "Grosor",
+   "Color del contorno",
+   "Caja de fondo",
+   "Transparencia del fondo",
+   "Color del fondo",
+   "Distancia de sombra",
+   "Color de sombra",
+   "Posición vertical",
+   "Margen inferior",
+   "Margen lateral",
+   "Interlineado",
+   "Suavizado de bordes",
+   "Estilo ASS",
+   "Escalar ASS",
+   "Restablecer todo"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Subtítulos y audio › Estilo, también desde Pistas"
+  },
+  "change": "reubicado",
+  "pattern": "Ajustes › Reproductor → Subtítulos y audio",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-19",
+  "area": "Reproductor",
+  "name": "Elegir fuente instalada",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Buscar fuentes",
+   "Elegir familia",
+   "Cancelar"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Subtítulos y audio › Estilo › Fuente"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-20",
+  "area": "Reproductor",
+  "name": "Pretraducción",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reproducir ahora"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Tarjeta central del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-21",
+  "area": "Reproductor",
+  "name": "Atajos y avisos de subtítulos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "C cambia subtítulos",
+   "Z y X retraso",
+   "V cambia audio",
+   "Avisos de traducción"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Teclado y avisos del reproductor"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-22",
+  "area": "Reproductor",
+  "name": "Ajustes de reproducción",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Cuenta regresiva del siguiente",
+   "Volumen estable",
+   "Reproducción en segundo plano"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Reproducción"
+  },
+  "change": "reubicado",
+  "pattern": "Ajustes › Reproductor → Reproducción",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-23",
+  "area": "Reproductor",
+  "name": "Idioma del subtítulo secundario",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir idioma secundario"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Subtítulos y audio"
+  },
+  "change": "mejorado",
+  "pattern": "códigos ISO → nombres de idioma",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-24",
+  "area": "Reproductor",
+  "name": "Traducción de subtítulos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Motor de traducción",
+   "Modo en vivo o pretraducir",
+   "Idioma destino",
+   "URL del servidor",
+   "Modelo",
+   "Región",
+   "Guardar conexión",
+   "Estado de la clave",
+   "Quitar clave",
+   "Nueva clave",
+   "Guardar clave",
+   "Probar",
+   "Borrar caché"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Subtítulos y audio › Traducción"
+  },
+  "change": "reubicado",
+  "pattern": "Ajustes › Reproductor → Subtítulos y audio",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-25",
+  "area": "Reproductor",
+  "name": "Editor de atajos del reproductor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Cambiar tecla de una acción",
+   "Restablecer atajos",
+   "Capturar tecla",
+   "Guardar o cancelar"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Reproducción › Atajos"
+  },
+  "change": "reubicado",
+  "pattern": "Ajustes › Reproductor → Reproducción",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-26",
+  "area": "Reproductor",
+  "name": "Audio (detalle)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir pista de audio",
+   "Sin audio"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Pistas › Audio"
+  },
+  "change": "fusionado",
+  "pattern": "hoja aparte → Pistas",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-27",
+  "area": "Reproductor",
+  "name": "Volumen",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Silenciar",
+   "Volumen",
+   "M, flechas arriba y abajo"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Barra inferior de escritorio; volumen del sistema en Android"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "PLE-28",
+  "area": "Reproductor",
+  "name": "Subtítulos en sesiones de Link",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Conservar subtítulo al pasar al PC"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Comportamiento sin interfaz"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-01",
+  "area": "Manga",
+  "name": "Inicio de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Recargar",
+   "Buscar manga",
+   "Limpiar búsqueda",
+   "Filtros",
+   "Carrusel destacado",
+   "Ver ficha",
+   "Seguir leyendo",
+   "Capítulos nuevos de lo que lees",
+   "Filas Tendencia, Popular, Mejor valorado",
+   "Reintentar fila",
+   "Géneros",
+   "Ocultar zona 18+",
+   "Mostrar zona 18+"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Catálogo"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-02",
+  "area": "Manga",
+  "name": "Búsqueda y filtros de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Origen",
+   "Estado",
+   "Género",
+   "Año",
+   "Orden",
+   "Abrir resultado",
+   "Carga infinita",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Catálogo; también en Explorar"
+  },
+  "change": "mejorado",
+  "pattern": "desplegables largos → chips y rango de años",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-03",
+  "area": "Manga",
+  "name": "Confirmar zona 18+",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Tengo 18 años o más",
+   "Cancelar"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Catálogo › Zona 18+"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-04",
+  "area": "Manga",
+  "name": "Aviso de título para adultos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir",
+   "Cancelar",
+   "Tocar para mostrar portada"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Catálogo y Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-05",
+  "area": "Manga",
+  "name": "Biblioteca de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Todos",
+   "Filtrar por estado",
+   "Sincronizar con AniList",
+   "Seguir leyendo",
+   "Abrir ficha",
+   "Vincular AniList"
+  ],
+  "newHome": {
+   "screen": "biblioteca",
+   "place": "Biblioteca › medio Manga"
+  },
+  "change": "fusionado",
+  "pattern": "pestaña Manga → medio Manga de Biblioteca",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-06",
+  "area": "Manga",
+  "name": "Ficha de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Mostrar portada",
+   "Leer o continuar",
+   "Estado de lista",
+   "Progreso - y +",
+   "Expandir sinopsis",
+   "Géneros",
+   "Mostrar etiquetas con spoiler",
+   "Adaptación de anime",
+   "Series relacionadas",
+   "Recomendaciones"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-07",
+  "area": "Manga",
+  "name": "Estado de lectura",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Leyendo",
+   "Planeo leer",
+   "Completado",
+   "En pausa",
+   "Abandonado",
+   "Releyendo",
+   "Quitar de la lista"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Ficha › selector de estado de 6 opciones"
+  },
+  "change": "mejorado",
+  "pattern": "menú desplegable → selector visible",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-08",
+  "area": "Manga",
+  "name": "Capítulos de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Recargar",
+   "Borrar caché",
+   "Seleccionar capítulos",
+   "Elegir fuente",
+   "Fuentes e idiomas",
+   "Filtrar capítulos",
+   "Orden",
+   "Agrupar por volumen",
+   "Idioma",
+   "Abrir capítulo",
+   "Marcar leído",
+   "Ir a Fuentes",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Ficha › Capítulos"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-09",
+  "area": "Manga",
+  "name": "Selección de capítulos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Marcar capítulo",
+   "Seleccionar todo",
+   "Descargar"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Ficha › multiselección"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-10",
+  "area": "Manga",
+  "name": "Fuentes e idiomas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Idiomas preferidos",
+   "Automático",
+   "Elegir fuente",
+   "Preferir fuente para el título",
+   "Ir a Fuentes"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Ficha › hoja Fuentes e idiomas"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-11",
+  "area": "Manga",
+  "name": "Avisos de ficha de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ir a descargas",
+   "Abrir fuentes e idiomas",
+   "Sin capítulo",
+   "Error"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Manga › Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-12",
+  "area": "Manga",
+  "name": "Lector de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Toque izquierdo y derecho cambia página",
+   "Toque central muestra barras",
+   "Deslizar páginas",
+   "Desplazamiento vertical",
+   "Doble toque zoom",
+   "Pellizcar zoom",
+   "Arrastrar con zoom",
+   "Ctrl + rueda zoom",
+   "Teclas",
+   "Esc",
+   "Siguiente capítulo",
+   "Reintentar página",
+   "Cambiar fuente"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector de manga"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-13",
+  "area": "Manga",
+  "name": "Barra superior del lector",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Capítulos",
+   "Ajustes del lector",
+   "Más opciones",
+   "Pantalla completa",
+   "Cambiar fuente",
+   "Guardar imagen de página",
+   "Todos los ajustes del lector"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector › barra superior"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-14",
+  "area": "Manga",
+  "name": "Barra inferior del lector",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Deslizador de página",
+   "Capítulo anterior",
+   "Capítulo siguiente",
+   "Páginas",
+   "Desplazamiento automático"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector › barra inferior"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-15",
+  "area": "Manga",
+  "name": "Ajustes rápidos del lector",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Modo de lectura",
+   "Dirección",
+   "Doble página",
+   "Ajuste de página",
+   "Ancho máximo",
+   "Separación",
+   "Recortar bordes",
+   "Fondo",
+   "Brillo del sistema",
+   "Brillo",
+   "Cargar capítulo entero",
+   "Páginas a precargar",
+   "Desplazamiento infinito",
+   "Velocidad de desplazamiento",
+   "Pantalla completa al abrir",
+   "Tocar oculta controles",
+   "Mostrar progreso",
+   "Atajos de zoom",
+   "Todos los ajustes"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector › hoja Ajustes"
+  },
+  "change": "mejorado",
+  "pattern": "18 filas fijas → filas según el modo",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-16",
+  "area": "Manga",
+  "name": "Capítulos en el lector",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir capítulo"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector › hoja Capítulos"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-17",
+  "area": "Manga",
+  "name": "Cambiar fuente en el lector",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir otra fuente",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector › hoja Cambiar fuente"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-18",
+  "area": "Manga",
+  "name": "Tira de páginas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Saltar a página"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector › hoja Páginas"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-19",
+  "area": "Manga",
+  "name": "Avisos del lector",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Fuente sin capítulo",
+   "Último capítulo",
+   "Página guardada",
+   "Error"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-20",
+  "area": "Manga",
+  "name": "Ajustes del lector de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Idioma del título de manga",
+   "Las 18 filas del lector",
+   "Atajo por acción",
+   "Restablecer atajos"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Manga"
+  },
+  "change": "reubicado",
+  "pattern": "Ajustes › Lector → Lectores y narrador",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "MNG-21",
+  "area": "Manga",
+  "name": "Capturar tecla",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Grabar tecla",
+   "Guardar",
+   "Cancelar"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Atajos"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-01",
+  "area": "Novelas",
+  "name": "Inicio de novelas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Recargar",
+   "Buscar novelas",
+   "Limpiar búsqueda",
+   "Filtros",
+   "Destacado",
+   "Seguir leyendo",
+   "Novedades de lo que sigues",
+   "Filas Tendencia y Popular",
+   "Reintentar fila",
+   "Géneros"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Novelas › Catálogo"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-02",
+  "area": "Novelas",
+  "name": "Búsqueda y filtros de novelas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Género",
+   "Estado",
+   "Origen",
+   "Orden",
+   "Abrir resultado",
+   "Carga infinita",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Novelas › Catálogo; también en Explorar"
+  },
+  "change": "mejorado",
+  "pattern": "desplegables → chips",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-03",
+  "area": "Novelas",
+  "name": "Biblioteca de novelas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Todos",
+   "Filtrar por estado",
+   "Sincronizar con AniList",
+   "Seguir leyendo",
+   "Abrir ficha",
+   "Vincular AniList"
+  ],
+  "newHome": {
+   "screen": "biblioteca",
+   "place": "Biblioteca › medio Novela"
+  },
+  "change": "fusionado",
+  "pattern": "pestaña Novelas → medio Novela de Biblioteca",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-04",
+  "area": "Novelas",
+  "name": "Ficha de novela",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Leer o continuar",
+   "Estado de lista",
+   "Progreso - y +",
+   "Expandir sinopsis",
+   "Ver todos los traductores",
+   "Géneros"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Novelas › Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-05",
+  "area": "Novelas",
+  "name": "Estado de lectura (novela)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Leyendo",
+   "Planeo leer",
+   "Completado",
+   "En pausa",
+   "Abandonado",
+   "Releyendo",
+   "Quitar de la lista"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Novelas › Ficha › selector de estado de 6 opciones"
+  },
+  "change": "mejorado",
+  "pattern": "menú desplegable → selector visible",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-06",
+  "area": "Novelas",
+  "name": "Capítulos de novela",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Revisar todas las fuentes",
+   "Recargar",
+   "Seleccionar capítulos",
+   "Elegir fuente",
+   "Filtrar capítulos",
+   "Orden",
+   "Traductor",
+   "Idioma",
+   "Abrir capítulo",
+   "Marcar leído",
+   "Ir a Fuentes",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Novelas › Ficha › Capítulos"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-07",
+  "area": "Novelas",
+  "name": "Selección de capítulos (novela)",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Marcar capítulo",
+   "Seleccionar todo",
+   "Descargar"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Novelas › Ficha › multiselección"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-08",
+  "area": "Novelas",
+  "name": "Avisos de ficha de novela",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ir a descargas",
+   "Sin capítulo",
+   "Error"
+  ],
+  "newHome": {
+   "screen": "manga",
+   "place": "Novelas › Ficha"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-09",
+  "area": "Novelas",
+  "name": "Lector de novelas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Tocar muestra barras",
+   "Tocar párrafo al narrar",
+   "Desplazamiento continuo",
+   "Siguiente capítulo",
+   "Reintentar",
+   "Esc"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector de novela"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-10",
+  "area": "Novelas",
+  "name": "Barra superior del lector de novela",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver",
+   "Capítulos",
+   "Texto y diseño",
+   "Pantalla completa"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector de novela › barra superior"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-11",
+  "area": "Novelas",
+  "name": "Barra inferior y narración",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Capítulo anterior",
+   "Leer en voz alta",
+   "Pausar",
+   "Reanudar",
+   "Detener",
+   "Velocidad de narración",
+   "Capítulo siguiente"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector de novela › barra inferior con narrador"
+  },
+  "change": "mejorado",
+  "pattern": "errores sin enlace → acceso a voz y motor desde el lector",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-12",
+  "area": "Novelas",
+  "name": "Texto y diseño",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Fuente",
+   "Importar fuente",
+   "Tamaño",
+   "Interlineado",
+   "Espacio entre párrafos",
+   "Ancho",
+   "Colores",
+   "Justificar",
+   "Vista previa",
+   "Desplazamiento continuo",
+   "Barra de progreso",
+   "Pantalla completa",
+   "Pantalla encendida",
+   "Todos los ajustes"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector de novela › hoja Texto y diseño"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-13",
+  "area": "Novelas",
+  "name": "Capítulos en el lector de novela",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir capítulo"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector de novela › hoja Capítulos"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-14",
+  "area": "Novelas",
+  "name": "Aviso del lector de novela",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Último capítulo"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector de novela"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-15",
+  "area": "Novelas",
+  "name": "Ajustes del lector de novela",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Fuente",
+   "Fuente instalada",
+   "Importar TTF u OTF",
+   "Quitar fuente importada",
+   "Tamaño",
+   "Interlineado",
+   "Espacio entre párrafos",
+   "Ancho máximo",
+   "Colores",
+   "Justificar",
+   "Vista previa",
+   "Desplazamiento continuo",
+   "Barra de progreso",
+   "Pantalla completa al abrir",
+   "Pantalla encendida"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Novela"
+  },
+  "change": "reubicado",
+  "pattern": "debajo de todo el manga → sección propia",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-16",
+  "area": "Novelas",
+  "name": "Fuente instalada (novela)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Buscar familia",
+   "Elegir familia",
+   "Usar",
+   "Cancelar"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Novela › Fuente"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-17",
+  "area": "Novelas",
+  "name": "Narrador",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Motor",
+   "Estado del motor",
+   "Voz",
+   "Id de voz",
+   "Velocidad",
+   "Tono",
+   "Resaltar párrafo",
+   "URL del servidor",
+   "Modelo",
+   "Guardar servidor y modelo",
+   "Clave de API",
+   "Quitar clave",
+   "Probar voz",
+   "Detener prueba"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Narrador, con acceso desde el lector"
+  },
+  "change": "mejorado",
+  "pattern": "solo en Ajustes → también desde el lector",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOV-18",
+  "area": "Novelas",
+  "name": "Voz local KittenTTS",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Descargar modelo",
+   "Quitar modelo"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Narrador"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "B-X-01",
+  "area": "Reproductor",
+  "name": "Atajos de teclado del reproductor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Espacio reproduce o pausa",
+   "Flechas saltan",
+   "F pantalla completa",
+   "M silencio",
+   "P imagen en imagen",
+   "J y K episodio",
+   "Flechas volumen",
+   "S captura",
+   "C subtítulos",
+   "? atajos",
+   ". y , velocidad",
+   "V audio",
+   "Z y X retraso",
+   "Enter saltar intro",
+   "L repetir",
+   "Ctrl+1 a 6 presets",
+   "Esc en cadena"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Teclado; lista en Más › Atajos, editor en Ajustes › Reproducción"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "B-X-02",
+  "area": "Reproductor",
+  "name": "Gestos y puntero del reproductor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Toque o clic",
+   "Doble toque o doble clic",
+   "Mantener 2x",
+   "Brillo",
+   "Volumen",
+   "Arrastre horizontal",
+   "Rueda",
+   "Pasar sobre la barra"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Superficie del video"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "B-OCULTA-01",
+  "kind": "oculta",
+  "area": "Manga",
+  "name": "Fuente de manga preferida global",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir fuente de manga preferida para todos los títulos"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Manga › Fuente preferida"
+  },
+  "change": "nuevo-acceso",
+  "pattern": "solo en código → fila en Ajustes",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "B-OCULTA-02",
+  "kind": "oculta",
+  "area": "Reproductor",
+  "name": "Control de mpv externo desde la app",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Pausar y reanudar mpv externo",
+   "Saltar en la barra"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Tarjeta Reproduciendo en mpv"
+  },
+  "change": "nuevo-acceso",
+  "pattern": "IPC sin interfaz → controles en la tarjeta",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "B-OCULTA-03",
+  "kind": "oculta",
+  "area": "Reproductor",
+  "name": "Aspecto 16:9 y 4:3 en táctil",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Elegir 16:9 o 4:3"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Hoja Imagen › Aspecto"
+  },
+  "change": "nuevo-acceso",
+  "pattern": "fuera del ciclo táctil → opciones en Imagen",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOTA-B-touch-vs-desktop",
+  "kind": "nota",
+  "area": "Reproductor",
+  "name": "Cuándo aplica la interfaz táctil",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Táctil en todo Android, puntero en todo escritorio",
+   "Cuatro diseños Cine y Minimalista por ancho"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Regla de plataforma del reproductor"
+  },
+  "change": "igual",
+  "pattern": "fijo por plataforma, no por dispositivo de entrada",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOTA-B-android-cross",
+  "kind": "nota",
+  "area": "Reproductor",
+  "name": "Transversal Android del reproductor",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Mapa de gestos",
+   "Teclas del hardware y del control",
+   "Teclas reservadas",
+   "Botones multimedia vía sesión"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Superficie del video y teclado"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOTA-B-enh-ref",
+  "kind": "nota",
+  "area": "Reproductor",
+  "name": "Referencia de mejoras y subtítulos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "12 presets de shaders",
+   "Niveles y bajadas automáticas",
+   "lsfg-vk y mpv-anime-build",
+   "Decodificación por hardware",
+   "Opciones de estilo de subtítulos",
+   "Proveedores de traducción"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Mejoras de video y Subtítulos y audio; hoja Mejoras"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOTA-B-lectores-cross",
+  "kind": "nota",
+  "area": "Manga",
+  "name": "Transversal de lectores",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "12 atajos del lector de manga",
+   "Mapa de gestos por modo",
+   "Novela solo con Esc"
+  ],
+  "newHome": {
+   "screen": "lector",
+   "place": "Lector de manga y novela"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOTA-B-X-03",
+  "kind": "nota",
+  "area": "Reproductor",
+  "name": "Conteos del inventario B",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "124 superficies, 574 filas de acción"
+  },
+  "change": "igual",
+  "pattern": "referencia de conteo",
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOTA-B-X-04",
+  "kind": "nota",
+  "area": "Reproductor",
+  "name": "Problemas principales de UX",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Textos en español fijos en el reproductor",
+   "Elecciones simples en listas largas",
+   "Diseños táctiles con acciones distintas",
+   "Avisos sin historial",
+   "Hojas sobrecargadas",
+   "Dos modelos de guardado",
+   "Conceptos de teléfono en escritorio",
+   "mpv externo solo lectura",
+   "Lectores inconsistentes",
+   "Orden que reinicia filtros"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Guía del rediseño"
+  },
+  "change": "mejorado",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-B"
+ },
+ {
+  "id": "NOTA-B-X-05",
+  "kind": "nota",
+  "area": "Reproductor",
+  "name": "Preguntas abiertas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Atrás cierra hoja antes de salir",
+   "Botones de la notificación Media3",
+   "Bajadas por batería en escritorio",
+   "Límites de zoom",
+   "Archivos del selector de subtítulos",
+   "Rueda en lector paginado",
+   "Gestos del carrusel y hojas"
+  ],
+  "newHome": {
+   "screen": "reproductor",
+   "place": "Sin verificar en la app"
+  },
+  "change": "pendiente",
+  "pattern": null,
+  "risk": "Comportamientos que el inventario no pudo confirmar sin la app; el dueño debe verificarlos en dispositivo antes de fijar el diseño de hojas, zoom y rueda en el lector.",
+  "source": "inventario-B"
+ },
+ {
+  "id": "SET-00",
+  "area": "Ajustes",
+  "name": "Contenedor de Ajustes",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Lista de secciones con icono y título",
+   "Panel maestro-detalle en ventana ancha",
+   "Hub por tarjetas en teléfono",
+   "Resumen en vivo por sección",
+   "Abrir sección por enlace directo",
+   "Avisos: guardado, sincronizado, caché borrada, error",
+   "Reiniciar la app tras restablecer"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes: 14 categorías con resumen en vivo"
+  },
+  "change": "mejorado",
+  "pattern": "11 secciones con resúmenes en español fijo → 14 categorías localizadas",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-01",
+  "area": "Ajustes",
+  "name": "Buscar ajustes",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Campo Buscar ajuste con borrar",
+   "Resultados con sección y subtítulo",
+   "Puntaje por prefijo y palabra",
+   "Estado sin coincidencias con ejemplos",
+   "Abrir la sección del resultado"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Buscador de Ajustes y paleta Ctrl+K con salto exacto a la fila"
+  },
+  "change": "mejorado",
+  "pattern": "lleva a la sección → salta y resalta la fila exacta",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-02",
+  "area": "Ajustes",
+  "name": "Ajustes en superposición",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Abrir con Ctrl+P o Ctrl+,",
+   "Abrir desde el engranaje de la barra de título",
+   "Abrir desde la bandeja",
+   "Abrir desde la paleta",
+   "Abrir en Link desde el monitor",
+   "Cerrar con Esc o ×"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Superposición global con Ctrl+, (Ctrl+P hoy)"
+  },
+  "change": "mejorado",
+  "pattern": "Ctrl+P → Ctrl+,",
+  "risk": "Ctrl+P deja de ser el atajo principal: conviene mantenerlo como alias",
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-03",
+  "area": "Ajustes",
+  "name": "Entradas de Ajustes en la paleta",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Abrir Configuración",
+   "Alternar negro AMOLED",
+   "Cambiar tema",
+   "Alternar barra lateral compacta",
+   "Abrir registros de error",
+   "Ir a Descargas, Torrents, Extensiones",
+   "Cada ajuste del catálogo como entrada"
+  ],
+  "newHome": {
+   "screen": "inicio",
+   "place": "Paleta Ctrl+K global; también búsqueda en Android"
+  },
+  "change": "mejorado",
+  "pattern": "solo escritorio y en español fijo → global, localizada y con salto exacto",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-04",
+  "area": "Ajustes",
+  "name": "Aviso de ajuste encontrado",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Franja con el ajuste buscado",
+   "Ocultar aviso"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Resaltado de la fila destino al saltar desde la búsqueda"
+  },
+  "change": "mejorado",
+  "pattern": "franja en la cabecera → desplazamiento y destello en la fila",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-APP",
+  "area": "Ajustes",
+  "name": "Apariencia",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Vista previa en vivo",
+   "Paleta (20 temas)",
+   "Color dinámico (Android 12+)",
+   "Modo: Sistema, Claro, Oscuro",
+   "Negro AMOLED",
+   "Contraste: Estándar, Medio, Alto",
+   "Idioma: Sistema, Inglés, Español",
+   "Preset de aspecto: Nijiyome, Cine editorial, Denso, Calmo",
+   "Inicio: Destacado, Carrusel, Solo filas",
+   "Estilo de página: Estándar, Editorial",
+   "Cabecera de la ficha (4 diseños visuales)",
+   "Tarjetas: Clásica, Detallada, Solo póster",
+   "Tamaño de tarjeta: Chico a Extra grande",
+   "Densidad: Cómoda, Compacta",
+   "Animaciones: Expresivas, Sutiles, Apagadas",
+   "Episodios: Tarjetas, Lista, Compacta",
+   "Relacionados: Grafo, Lista",
+   "Calendario: Semana, Agenda, Mes, Hoy",
+   "Menú lateral: Con nombres, Solo iconos (ancho)",
+   "Rotar el banner",
+   "Segundos por título (4 a 30 s)",
+   "Mostrar el saludo"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Apariencia, con subgrupos Inicio, Ficha, Listas y Navegación"
+  },
+  "change": "mejorado",
+  "pattern": "11 segmentados seguidos en texto → subgrupos con vistas previas visuales",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-PLY",
+  "area": "Ajustes",
+  "name": "Reproductor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Motor: Media3, libmpv, Externo",
+   "Reproductor externo: Preguntar, mpv-android, VLC (Android)",
+   "Ruta de mpv y estado (escritorio)",
+   "Modo mejorado mpv-anime-build y descarga (escritorio)",
+   "Interfaz uosc (escritorio)",
+   "Preset de escalado por defecto (Anime4K, FSR, FSRCNNX, CAS, NVScaler)",
+   "Calidad de escalado: Rápida, Equilibrada, Alta",
+   "Deband",
+   "Ajustes automáticos",
+   "Decodificador: Auto, HW, HW+, SW",
+   "Estado del decodificador VAAPI (escritorio)",
+   "Suavizado (interpolación)",
+   "Verificar certificados libmpv (Android)",
+   "Estilo del reproductor: Cine, Minimalista (Android)",
+   "Selección de fuente: Automática, Manual",
+   "Tipo preferido: Cualquiera, Webstream, Torrent",
+   "Calidad mínima: 480p, 720p, 1080p",
+   "Subtítulos preferidos: ES, EN, PT",
+   "Audio preferido: JA, ES, EN",
+   "Siguiente episodio automático",
+   "Saltar intro con AniSkip",
+   "Navegador oculto para extensiones: ruta y Probar (escritorio)",
+   "Estilo de subtítulos: resumen y Editar",
+   "Ir a Extensiones",
+   "Generación de cuadros en el teléfono: estado, importar Lossless.dll, usar al reproducir, multiplicador, perfil, cambiar tasa de refresco, GPU no probadas, estadísticas (Android)",
+   "Generación de cuadros lsfg-vk: interruptor, multiplicador, modo rendimiento, archivo de shader (escritorio)"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Repartido en Reproducción, Mejoras de video, Subtítulos y audio y Fuentes de episodios"
+  },
+  "change": "reubicado",
+  "pattern": "una sección de unas 30 filas → cuatro categorías con subtítulos; códigos ISO → nombres de idioma",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-MET",
+  "area": "Ajustes",
+  "name": "Metadatos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Prioridad de proveedores (subir y bajar)",
+   "Tamaño de la caché de metadatos",
+   "Borrar caché (escritorio)",
+   "Conservar detalles: 6 h, 24 h, 3 d, 7 d",
+   "Recordatorios de emisión",
+   "Notificaciones de AniList"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Metadatos y descubrir; los dos avisos pasan a Ajustes › Notificaciones"
+  },
+  "change": "reubicado",
+  "pattern": "flechas para ordenar → lista arrastrable con interruptor; avisos fuera de Metadatos",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-ACC",
+  "area": "Ajustes",
+  "name": "Listas y cuentas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Vincular y desvincular AniList y MyAnimeList",
+   "Estado de sesión y sesión vencida",
+   "Elegir modo de sincronización: Combinar, Importar, Exportar",
+   "Estado de sincronización y pendientes",
+   "Sincronizar listas ahora",
+   "Conflictos: Conservar los míos, Usar los del servicio",
+   "Actualizar progreso automáticamente",
+   "Agregar a Viendo al empezar",
+   "Enviar cambios a las cuentas",
+   "Exportar lista JSON",
+   "Exportar CSV (escritorio)",
+   "Importar lista (JSON, MAL XML, AniList, Tatakai)",
+   "Confirmar desvinculación"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Listas y cuentas; estado de sincronización también en Biblioteca"
+  },
+  "change": "mejorado",
+  "pattern": "un panel largo → tarjetas por cuenta y sincronización visible en Biblioteca",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-LNK",
+  "area": "Ajustes",
+  "name": "Link en el teléfono",
+  "platforms": [
+   "android"
+  ],
+  "functions": [
+   "Abrir Dispositivo vinculado",
+   "Procesar por defecto en: Teléfono, PC, Mixto",
+   "Sincronizar historial con la PC",
+   "Sincronizar ahora"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Nijiyome Link; emparejar y estado en la pantalla Link"
+  },
+  "change": "reubicado",
+  "pattern": "ajustes y pantalla separados → Link para operar, Ajustes para preferencias",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-LNKSRV",
+  "area": "Ajustes",
+  "name": "Link en esta PC (servidor)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Nijiyome Link en esta PC (interruptor y estado)",
+   "Probar otro puerto",
+   "Regenerar identidad ante error",
+   "Huella digital",
+   "Aviso sin FFmpeg",
+   "Sesiones activas con caché RAM y Detener",
+   "Emparejar un teléfono: QR, código, cuenta regresiva, copiar",
+   "Dispositivos emparejados: renombrar, revocar, modo de historial, usar como fuente",
+   "Capacidades de esta PC",
+   "Nombre que ven los teléfonos",
+   "Anunciar en la red (mDNS)",
+   "Carpeta de biblioteca",
+   "Puerto (47321)",
+   "Caché de reproducción en RAM: 512 MB a 4 GB",
+   "Firewall: permitir en red privada o puertos a abrir",
+   "Regenerar identidad",
+   "Servidor de extensiones en esta PC",
+   "Puerto del servidor de extensiones (8099)",
+   "Nuevo código para un teléfono",
+   "Contraseña de visor",
+   "Dispositivos del servidor de extensiones: revocar",
+   "Registro de solicitudes y errores"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Este PC, Dispositivos, Servidor de extensiones y Registros; preferencias en Ajustes › Nijiyome Link"
+  },
+  "change": "reubicado",
+  "pattern": "dos servidores en un panel → secciones separadas en Link; puertos y carpeta con selectores propios",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-NET",
+  "area": "Ajustes",
+  "name": "Red (escritorio)",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Proxy de salida",
+   "Tipo: SOCKS5, HTTP",
+   "Host y puerto",
+   "Usuario y contraseña",
+   "Probar y Guardar",
+   "Nota: torrents solo con SOCKS5",
+   "FlareSolverr: URL, Probar, Guardar",
+   "Proxy local de medios"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Sin categoría propia entre las 14; candidata: Sistema solo en escritorio o Fuentes de episodios"
+  },
+  "change": "pendiente",
+  "pattern": "guardado explícito → guardado coherente con estado sin guardar",
+  "risk": "La nueva lista de 14 categorías no nombra Red. El dueño debe decidir si va en Sistema (escritorio) o en Fuentes de episodios (FlareSolverr).",
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-TOR",
+  "area": "Ajustes",
+  "name": "Entrada de Torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ir a Ajustes de torrents",
+   "Ir a Debrid"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Torrents y descargas; Debrid en Fuentes › Debrid"
+  },
+  "change": "fusionado",
+  "pattern": "dos enlaces sueltos → categoría única con los controles reales",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-DL",
+  "area": "Ajustes",
+  "name": "Entrada de Descargas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Sección Descargas (ver DL-14 y DL-15)"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Torrents y descargas"
+  },
+  "change": "fusionado",
+  "pattern": "Torrents y Descargas separados → una categoría",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-RDR",
+  "area": "Ajustes",
+  "name": "Entrada de Lectores",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Lector de manga, novela y narrador (ver SET-RDR-MANGA, NOVEL y TTS)"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-DAT",
+  "area": "Ajustes",
+  "name": "Datos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Aviso de ubicación de datos",
+   "Abrir carpeta de datos (escritorio)",
+   "Barra de almacenamiento con leyenda",
+   "Reintentar medición",
+   "Telemetría: ninguna",
+   "Ícono en la bandeja (escritorio)",
+   "Cerrar a la bandeja (escritorio)",
+   "Iniciar con el sistema (escritorio)",
+   "Iniciar minimizado (escritorio)",
+   "Discord Rich Presence (escritorio)",
+   "Barra de título nativa (escritorio)",
+   "Abrir magnet y .torrent con Nijiyome (escritorio)",
+   "Aviso de llavero y secretos ilegibles",
+   "Borrar caché con confirmación",
+   "Exportar historial",
+   "Borrar historial (también en la PC)",
+   "Restablecer la app (RESET y conservar torrents en escritorio)"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Datos y almacenamiento; filas del sistema a Ajustes › Sistema solo en escritorio"
+  },
+  "change": "reubicado",
+  "pattern": "integración con el sistema bajo Datos → categoría Sistema propia",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-ABT",
+  "area": "Ajustes",
+  "name": "Acerca de",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Versión y componentes",
+   "Licencia AGPL",
+   "Buscar nuevas versiones (interruptor)",
+   "Buscar actualizaciones ahora",
+   "Licencias de terceros",
+   "Registros: actualizar, abrir carpeta, borrar, compartir",
+   "Filtrar registros por dispositivo",
+   "Enviar registros a la PC (Android)",
+   "Filtro por gravedad",
+   "Filtrar por texto"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Acerca de; registros también en Link › Registros"
+  },
+  "change": "mejorado",
+  "pattern": "registros solo en Acerca de → también en Link",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-ONB",
+  "area": "Bienvenida",
+  "name": "Asistente de primer arranque",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Pasos: Bienvenida, Apariencia, Reproducción, Descargas, Listas, Link, Permisos, Sistema, Listo",
+   "Barra de progreso y Omitir",
+   "Atrás, Empezar, Siguiente, Terminar",
+   "Idioma y modo",
+   "Motor, fuente, tipo, calidad, idiomas",
+   "Vincular cuentas y modo de sincronización",
+   "Permitir notificaciones (Android 13+)",
+   "Carpeta de descargas y qué hacer tras ver (escritorio)",
+   "Filas del sistema y buscar versiones (escritorio)"
+  ],
+  "newHome": {
+   "screen": "bienvenida",
+   "place": "Primer arranque"
+  },
+  "change": "mejorado",
+  "pattern": "solo modo y paso de Link sin acción → elegir paleta y emparejar desde el asistente",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-PLY-EXTRA",
+  "area": "Ajustes",
+  "name": "Extras del reproductor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Cuenta regresiva del siguiente episodio (3 a 30 s)",
+   "Volumen estable",
+   "Reproducción en segundo plano (Android)",
+   "Subtítulo secundario (12 idiomas)",
+   "Motor de traducción: Google, DeepL, DeepLX, Azure, compatible con OpenAI",
+   "Modo: En vivo, Pretraducir",
+   "Idioma de destino (14)",
+   "URL del servidor",
+   "Modelo",
+   "Región",
+   "Guardar conexión",
+   "Clave de API: guardar y quitar",
+   "Probar traducción",
+   "Caché de traducción y borrar",
+   "Atajos del teclado: cambiar tecla (13 en Android, 20 en escritorio)",
+   "Restaurar atajos",
+   "Diálogo para capturar tecla"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Reproducción (cuenta regresiva, volumen, segundo plano, atajos); Subtítulos y audio (secundario y traducción)"
+  },
+  "change": "reubicado",
+  "pattern": "bloques apilados → tarjeta de motor de traducción con estado; códigos → nombres de idioma",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-PLY-SUBS",
+  "area": "Ajustes",
+  "name": "Estilo de subtítulos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Vista previa en vivo",
+   "Estilos rápidos: Predeterminado, Contorno, Caja, Amarillo",
+   "Tamaño 50 a 250 %",
+   "Fuente: Outfit, Space Grotesk, Sistema, importadas",
+   "Elegir fuente instalada (escritorio)",
+   "Importar fuentes TTF u OTF",
+   "Borrar fuente importada",
+   "Negrita",
+   "Cursiva",
+   "Alineación",
+   "Color del texto y opacidad",
+   "Contorno y grosor",
+   "Color del contorno",
+   "Caja de fondo y transparencia",
+   "Color de fondo",
+   "Sombra: distancia y color",
+   "Posición vertical",
+   "Margen inferior",
+   "Margen lateral",
+   "Interlineado",
+   "Suavizado de bordes",
+   "Estilo ASS: Original, Aplicar el mío, Texto plano",
+   "Aplicar tamaño a ASS",
+   "Restablecer todo"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Subtítulos y audio; acceso rápido desde la hoja Pistas del reproductor"
+  },
+  "change": "mejorado",
+  "pattern": "estilos en texto → miniaturas visuales; vista previa fija y opacidad unificada",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-PLY-SRC",
+  "area": "Ajustes",
+  "name": "Fuentes embebidas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Fuentes embebidas",
+   "Tiempo de espera de la página (5 a 60 s)"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Fuentes de episodios"
+  },
+  "change": "reubicado",
+  "pattern": "en medio del reproductor y oculto sin Chromium → con las fuentes y desactivado con motivo",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-MET-DISC",
+  "area": "Ajustes",
+  "name": "Descubrir",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Idioma del título: Romaji, Inglés, Nativo",
+   "Mostrar contenido 18+",
+   "Contenido maduro: Mostrar, Difuminar, Avisar",
+   "Proveedores: AniList, ani.zip, Kitsu, MyAnimeList, Shikimori, Tenrai (activar y estado)",
+   "Borrar búsquedas recientes"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Metadatos y descubrir"
+  },
+  "change": "fusionado",
+  "pattern": "orden y activación separados → una lista ordenable con interruptores",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-RDR-MANGA",
+  "area": "Ajustes",
+  "name": "Lector de manga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Idioma del título de manga",
+   "Modo: Paginado, Vertical, Webtoon",
+   "Dirección: derecha a izquierda, izquierda a derecha",
+   "Doble página",
+   "Ajuste de página: Ancho, Alto, Pantalla, Natural",
+   "Ancho máximo",
+   "Separación entre páginas",
+   "Recortar bordes",
+   "Fondo: Negro, Gris, Blanco, Tema",
+   "Brillo del sistema",
+   "Brillo",
+   "Cargar el capítulo completo",
+   "Páginas a precargar",
+   "Desplazamiento infinito",
+   "Velocidad de autodesplazamiento",
+   "Pantalla completa al abrir",
+   "Tocar oculta los controles",
+   "Mostrar progreso de página",
+   "Atajos de zoom",
+   "Atajos del lector (12 acciones)",
+   "Restablecer atajos"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Manga; los mismos controles en la hoja del lector"
+  },
+  "change": "mejorado",
+  "pattern": "segmentos de texto → selectores visuales y filas según el modo",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-RDR-NOVEL",
+  "area": "Ajustes",
+  "name": "Lector de novelas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Fuente: Serif, Sans, Georgia, Lora, Dislexia, Mono (escritorio), Sistema, Importada",
+   "Fuente instalada (escritorio)",
+   "Importar TTF u OTF",
+   "Quitar fuente importada",
+   "Tamaño de texto",
+   "Interlineado",
+   "Espacio entre párrafos",
+   "Ancho máximo",
+   "Colores: Tema, Sepia, Blanco, Gris, Negro",
+   "Justificar texto",
+   "Vista previa",
+   "Desplazamiento continuo",
+   "Barra de progreso",
+   "Pantalla completa al abrir",
+   "Mantener la pantalla encendida"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Novela (Tipografía y Flujo de lectura)"
+  },
+  "change": "mejorado",
+  "pattern": "una sola tanda → subgrupos con vista previa fija y muestras de color",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "SET-RDR-TTS",
+  "area": "Ajustes",
+  "name": "Narrador",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Motor: Voz del sistema, KittenTTS (escritorio), OpenAI, ElevenLabs, Servidor local",
+   "Estado del motor",
+   "Descargar o quitar KittenTTS (escritorio)",
+   "Voz",
+   "Id de voz",
+   "Velocidad",
+   "Tono (escritorio)",
+   "Resaltar el párrafo leído",
+   "URL del servidor",
+   "Modelo",
+   "Clave de API: guardar y quitar",
+   "Probar voz y Detener"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Lectores y narrador › Narrador"
+  },
+  "change": "mejorado",
+  "pattern": "menú de voces plano → selector con búsqueda y prueba por voz",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-01",
+  "area": "Transferencias",
+  "name": "Cliente de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Agregar torrent (+)",
+   "Secciones: Biblioteca, Descargas, Historial, Debrid, Ajustes",
+   "Abrir magnet o .torrent entrante",
+   "Abrir el torrent recién agregado",
+   "Vista de dos paneles en ventana ancha"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents"
+  },
+  "change": "fusionado",
+  "pattern": "destino propio y pestaña en Biblioteca → parte de Transferencias; Debrid a Fuentes y Ajustes a Ajustes",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-02",
+  "area": "Transferencias",
+  "name": "Biblioteca de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir torrent",
+   "Reproducir",
+   "Mantener presionado para seleccionar",
+   "Menú de acciones",
+   "Configurar debrid desde el vacío",
+   "Reintentar",
+   "Estado, progreso y si se conserva"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents › Biblioteca"
+  },
+  "change": "reubicado",
+  "pattern": "pestaña en Biblioteca → Transferencias, con búsqueda y filtros de estado",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-03",
+  "area": "Transferencias",
+  "name": "Orden y vista de la biblioteca",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Ordenar por fecha, nombre, episodio, tamaño, progreso, estado",
+   "Dirección ascendente o descendente",
+   "Vista Tarjetas o Lista",
+   "Columnas de la lista"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents › Biblioteca, barra de herramientas"
+  },
+  "change": "mejorado",
+  "pattern": "menú de orden aparte → encabezados de columna ordenables y orden recordado",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-04",
+  "area": "Transferencias",
+  "name": "Menú de un torrent",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir en el cliente",
+   "Reproducir",
+   "Pausar o reanudar",
+   "Abrir carpeta (escritorio)",
+   "Conservar o no tras ver",
+   "Compartir o copiar magnet",
+   "Eliminar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Menú de la fila en Transferencias › Torrents"
+  },
+  "change": "mejorado",
+  "pattern": "menú plano → agrupado y con Eliminar separado",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-05",
+  "area": "Transferencias",
+  "name": "Selección múltiple de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Quitar selección",
+   "Contador",
+   "Seleccionar todo",
+   "Pausar",
+   "Reanudar",
+   "Conservar tras ver",
+   "Eliminar seleccionados"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Barra contextual en Transferencias › Torrents"
+  },
+  "change": "mejorado",
+  "pattern": "iconos sin texto → acciones con etiqueta, No conservar en lote y selección por rango",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-06",
+  "area": "Transferencias",
+  "name": "Eliminar torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Confirmar eliminación de uno o varios",
+   "Borrar también los archivos"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Diálogo en Transferencias"
+  },
+  "change": "mejorado",
+  "pattern": "Cerrar → Cancelar y botón destructivo",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-07",
+  "area": "Transferencias",
+  "name": "Elegir torrent",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir un torrent para ver una pestaña",
+   "Abrir la biblioteca si está vacía"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-08",
+  "area": "Transferencias",
+  "name": "Detalle de torrent",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Pausar o reanudar",
+   "Copiar info-hash",
+   "Compartir o copiar magnet",
+   "Abrir carpeta (escritorio)",
+   "Conservar o no tras ver",
+   "Quitar",
+   "Pestañas Resumen, Archivos, Pares, Rastreadores"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents › Detalle"
+  },
+  "change": "reubicado",
+  "pattern": "título genérico Torrents → nombre real en la barra",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-09",
+  "area": "Transferencias",
+  "name": "Resumen del torrent",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Copiar info-hash",
+   "Conservar tras ver",
+   "Seguir compartiendo al terminar",
+   "Progreso y tiempo restante",
+   "Transferencia, enjambre, protocolo"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents › Detalle › Resumen"
+  },
+  "change": "mejorado",
+  "pattern": "rejilla densa → jerarquía con interruptores arriba",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-10",
+  "area": "Transferencias",
+  "name": "Archivos del torrent",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Buscar archivos",
+   "Alinear episodios",
+   "Abrir acciones del archivo",
+   "Resumen de seleccionados"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents › Detalle › Archivos"
+  },
+  "change": "mejorado",
+  "pattern": "lista plana → árbol de carpetas con casillas",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-11",
+  "area": "Transferencias",
+  "name": "Acciones de un archivo",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reproducir este archivo",
+   "Descargar solo este",
+   "Guardar en Descargas"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents › Detalle › Archivos"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-12",
+  "area": "Transferencias",
+  "name": "Alinear episodios",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Primer episodio",
+   "Desfase",
+   "Vista previa en vivo",
+   "Usar los nombres",
+   "Guardar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Hoja en Transferencias › Torrents › Archivos"
+  },
+  "change": "mejorado",
+  "pattern": "campos de texto → selectores con pasos",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-13",
+  "area": "Transferencias",
+  "name": "Pares",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ordenar por bajada, subida, progreso",
+   "Ver qué significan las marcas"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents › Detalle › Pares"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-14",
+  "area": "Transferencias",
+  "name": "Leyenda de marcas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Explicación de D, U, I, P, E, X, H, S"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Información en línea en Pares"
+  },
+  "change": "mejorado",
+  "pattern": "hoja aparte → iconos con descripción",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-15",
+  "area": "Transferencias",
+  "name": "Rastreadores",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Volver a anunciar",
+   "Estado por rastreador"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Torrents › Detalle › Rastreadores"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-16",
+  "area": "Transferencias",
+  "name": "Descargas de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Descargas en segundo plano",
+   "Esperando Wi-Fi, batería baja, pausado por el sistema (Android)",
+   "Pausar o reanudar",
+   "Quitar descarga",
+   "Abrir torrent"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Activas (web y torrents juntos)"
+  },
+  "change": "fusionado",
+  "pattern": "tres listas para los mismos torrents → una lista de activas",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-17",
+  "area": "Transferencias",
+  "name": "Aviso de descargas en segundo plano",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Entiendo",
+   "Ahora no",
+   "Pedir permiso de notificaciones (Android 13+)"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Diálogo al primer Descargar, desde la ficha o Transferencias"
+  },
+  "change": "mejorado",
+  "pattern": "pared de texto que tapa la lista → aviso breve sin bloquear",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-18",
+  "area": "Transferencias",
+  "name": "Quitar descarga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Quitar descarga y archivos"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Diálogo en Transferencias › Activas"
+  },
+  "change": "mejorado",
+  "pattern": "sin opción de conservar → igual que Eliminar torrent",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-19",
+  "area": "Transferencias",
+  "name": "Historial de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Borrar historial",
+   "Abrir o volver a agregar",
+   "Reintentar",
+   "Origen: Reproducido, Descarga, Agregado, Magnet"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Historial (web y torrents)"
+  },
+  "change": "fusionado",
+  "pattern": "dos historiales → uno con filtro por tipo",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-20",
+  "area": "Transferencias",
+  "name": "Borrar historial de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Confirmar borrado de la lista"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Diálogo en Transferencias › Historial"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-21",
+  "area": "Transferencias",
+  "name": "Debrid",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Usar debrid",
+   "Preferir servicio con caché",
+   "Descargar por el servicio con caché",
+   "Orden de servicios"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Debrid"
+  },
+  "change": "reubicado",
+  "pattern": "sección dentro de Torrents → pestaña de Fuentes",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-22",
+  "area": "Transferencias",
+  "name": "Tarjeta de servicio debrid",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Clave de API",
+   "Probar y vincular",
+   "Probar la clave",
+   "Preferir",
+   "Desvincular",
+   "Cuenta y vigencia premium"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Debrid"
+  },
+  "change": "mejorado",
+  "pattern": "desvincular sin confirmar → con confirmación y enlace para obtener la clave",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-23",
+  "area": "Transferencias",
+  "name": "Agregar torrent",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Magnet o info-hash",
+   "Elegir archivo .torrent",
+   "Soltar .torrent (escritorio)",
+   "Vincular a una serie (buscar en AniList)",
+   "Primer episodio y desfase",
+   "Conservar y descargar",
+   "Agregar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Agregar; también capa global al soltar o pegar magnet"
+  },
+  "change": "mejorado",
+  "pattern": "soltar solo sobre la hoja → soltar en cualquier parte; pegar del portapapeles",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-24",
+  "area": "Transferencias",
+  "name": "Vista previa de archivos al agregar",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Todos",
+   "Ninguno",
+   "Solo videos",
+   "Casilla por archivo",
+   "Reintentar",
+   "Estado de metadatos"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Hoja Agregar torrent"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-25",
+  "area": "Transferencias",
+  "name": "Ajustes de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Límite de bajada",
+   "Límite de subida",
+   "Solo Wi-Fi (Android)",
+   "Subir con datos móviles (Android)",
+   "Puerto de escucha",
+   "Reenvío UPnP",
+   "Conexiones máximas",
+   "DHT",
+   "PEX",
+   "Descubrimiento local LSD",
+   "Almacenamiento: app o carpeta (Android)",
+   "Carpeta de descarga, usar la predeterminada, abrir (escritorio)",
+   "Uso de disco",
+   "Tras ver: conservar o borrar",
+   "Descargar en segundo plano",
+   "Pausar con batería baja (Android)"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Torrents y descargas; acceso desde Transferencias"
+  },
+  "change": "reubicado",
+  "pattern": "campo y deslizador duplicados en KiB/s → un control con unidades legibles; puerto con selector",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-26",
+  "area": "Transferencias",
+  "name": "Más ajustes de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Interruptores de debrid",
+   "Límites por horario: desde, hasta, bajada, subida",
+   "Rastreadores propios",
+   "Liberar espacio automáticamente y límite",
+   "Precargar el siguiente episodio"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Torrents y descargas; Debrid solo en Fuentes › Debrid"
+  },
+  "change": "fusionado",
+  "pattern": "horas en texto → selector de hora; debrid duplicado → un solo lugar",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "TOR-27",
+  "area": "Transferencias",
+  "name": "Avisos y errores de torrents",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Avisos: eliminado, guardado, error",
+   "Errores: falta, movido, sin espacio, sin archivo, segundo plano apagado, incompleto, fuente o archivo inválido"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Avisos globales"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": "Varios textos apuntan a Torrents › Descargas: hay que reescribirlos con las rutas nuevas",
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-01",
+  "area": "Transferencias",
+  "name": "Página de descargas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir carpeta (escritorio)",
+   "Revisar archivos",
+   "Buscar en descargas",
+   "Pestañas Activas, Anime, Manga, Novelas, Historial, Biblioteca local",
+   "Uso de almacenamiento",
+   "Pedir permiso de notificaciones"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias"
+  },
+  "change": "fusionado",
+  "pattern": "6 pestañas mezcladas → Activas, Descargado (por medio), Historial y Biblioteca local",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-02",
+  "area": "Transferencias",
+  "name": "Descargas activas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Pausar, reanudar o reintentar",
+   "Cancelar descarga",
+   "Abrir torrent",
+   "Pausar o reanudar torrent",
+   "Ver torrents pausados o completos"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Activas"
+  },
+  "change": "fusionado",
+  "pattern": "filas distintas web y torrent → una fila común y pausar todo",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-03",
+  "area": "Transferencias",
+  "name": "Cancelar descarga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Confirmar cancelación y borrado"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Diálogo en Transferencias › Activas"
+  },
+  "change": "mejorado",
+  "pattern": "Cancelar descarga y Cancelar → verbos distintos",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-04",
+  "area": "Transferencias",
+  "name": "Episodios descargados",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir ficha",
+   "Borrar todos los episodios",
+   "Reproducir sin conexión",
+   "Volver a descargar",
+   "Abrir carpeta (escritorio)",
+   "Borrar episodio",
+   "Torrents completos o pausados"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Descargado › Anime"
+  },
+  "change": "reubicado",
+  "pattern": "borrar sin confirmar → con deshacer",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-05",
+  "area": "Transferencias",
+  "name": "Auto-descarga",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Simular",
+   "Activar regla",
+   "Perfil: Mejor calidad, Equilibrado, Ahorro",
+   "Sugerencias de Viendo: Agregar",
+   "Revisar ahora"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Auto-descarga"
+  },
+  "change": "reubicado",
+  "pattern": "tarjeta sobre la pestaña Anime → sección propia con borrar regla y póster",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-06",
+  "area": "Transferencias",
+  "name": "Borrar episodios de un título",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Confirmar borrado"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Diálogo en Transferencias › Descargado"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-07",
+  "area": "Transferencias",
+  "name": "Capítulos descargados",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Abrir capítulo sin conexión",
+   "Reintentar",
+   "Borrar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Descargado › Manga y Novela"
+  },
+  "change": "reubicado",
+  "pattern": "sin borrar todo → igual que Anime",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-08",
+  "area": "Transferencias",
+  "name": "Historial de descargas web",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Borrar historial",
+   "Reproducir completada",
+   "Reintentar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Historial"
+  },
+  "change": "fusionado",
+  "pattern": "borrar sin confirmar → con confirmación como torrents",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-09",
+  "area": "Transferencias",
+  "name": "Biblioteca local",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Importar videos",
+   "Escanear carpeta",
+   "Reproducir",
+   "Abrir carpeta (escritorio)",
+   "Emparejar",
+   "Quitar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Biblioteca local"
+  },
+  "change": "reubicado",
+  "pattern": "lista plana → agrupada por serie con filtro sin emparejar",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-10",
+  "area": "Transferencias",
+  "name": "Emparejar video local",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Buscar título en AniList",
+   "Elegir resultado",
+   "Episodio",
+   "Guardar",
+   "Desemparejar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Diálogo en Biblioteca local"
+  },
+  "change": "mejorado",
+  "pattern": "sin Cancelar → Cancelar y Desemparejar separados",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-11",
+  "area": "Transferencias",
+  "name": "Quitar video local",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Conservar archivo",
+   "Borrar archivo",
+   "Cancelar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Diálogo en Biblioteca local"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-12",
+  "area": "Transferencias",
+  "name": "Descargar temporada en la ficha",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Descargar temporada",
+   "N de M descargados"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha › acción Descargar visible"
+  },
+  "change": "reubicado",
+  "pattern": "botón bajo la lista → acción en la fila de acciones",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-13",
+  "area": "Transferencias",
+  "name": "Hoja Descargar temporada",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Rango de episodios",
+   "Idioma de audio preferido",
+   "Servidor preferido",
+   "Recordar idioma y servidor",
+   "Descargar N"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Hoja desde Ficha › Descargar y multiselección de episodios"
+  },
+  "change": "mejorado",
+  "pattern": "código ISO y texto libre → selector de idioma y de servidor; rango con números",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-14",
+  "area": "Transferencias",
+  "name": "Ajustes de descargas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Carpeta de descarga: cambiar, usar la predeterminada, abrir",
+   "Descargas simultáneas 1 a 5",
+   "Velocidad (escritorio)",
+   "Solo Wi-Fi (Android)",
+   "Límite de almacenamiento",
+   "Buscar episodios nuevos",
+   "Calidad de descarga",
+   "Liberar episodios vistos",
+   "Servidor preferido",
+   "Idioma de audio preferido"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Torrents y descargas"
+  },
+  "change": "fusionado",
+  "pattern": "texto libre → selectores; junto a los ajustes de torrents",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-15",
+  "area": "Transferencias",
+  "name": "Carpetas vigiladas",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Agregar carpeta",
+   "Abrir carpeta",
+   "Dejar de vigilar"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias › Biblioteca local (y Ajustes › Torrents y descargas)"
+  },
+  "change": "reubicado",
+  "pattern": "al final de Ajustes → junto a la Biblioteca local",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "DL-16",
+  "area": "Transferencias",
+  "name": "Avisos y errores de descargas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Avisos: episodios en cola, archivos rotos, videos agregados, simulación",
+   "Errores: DASH, límite, sin fuente, carpeta no disponible"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Avisos globales y resultado persistente en Transferencias"
+  },
+  "change": "mejorado",
+  "pattern": "solo aviso pasajero → resultado visible de Revisar y Simular",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-01",
+  "area": "Fuentes",
+  "name": "Hub de extensiones",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Contador de instaladas",
+   "Actualizaciones disponibles",
+   "Desactivar o activar todas",
+   "Avisos de instalación y errores"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes con pestañas Instaladas, Repositorios, Stremio, Proveedores, Servidores en tu PC, Debrid"
+  },
+  "change": "mejorado",
+  "pattern": "una columna larga con 5 conceptos → pestañas con búsqueda",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-02",
+  "area": "Fuentes",
+  "name": "Instalar extensión",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Elegir archivo .kai",
+   "Instalar desde URL o ruta",
+   "Soltar .kai (escritorio)"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Instaladas › Instalar; soltar .kai en cualquier parte"
+  },
+  "change": "mejorado",
+  "pattern": "soltar solo en el panel → capa global",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-03",
+  "area": "Fuentes",
+  "name": "Instalar desde URL",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "URL o ruta",
+   "Instalar"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Instaladas › Instalar"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-04",
+  "area": "Fuentes",
+  "name": "Tarjeta de extensión",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Activar",
+   "Eliminar",
+   "Preferencias",
+   "Actualizar",
+   "Ver registro",
+   "Compatibilidad y permisos",
+   "Aviso de navegador oculto"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Instaladas"
+  },
+  "change": "mejorado",
+  "pattern": "6 zonas densas → jerarquía clara con detalle plegable",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-05",
+  "area": "Fuentes",
+  "name": "Preferencias de extensión",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Interruptores",
+   "Opciones",
+   "Texto con Guardar",
+   "Secreto con Quitar"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Instaladas › Preferencias"
+  },
+  "change": "mejorado",
+  "pattern": "guardado mixto invisible → estado sin guardar visible",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-06",
+  "area": "Fuentes",
+  "name": "Eliminar extensión",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Confirmar eliminación"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Diálogo en Fuentes"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-07",
+  "area": "Fuentes",
+  "name": "Instalar versión anterior",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Instalar de todos modos",
+   "Cancelar"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Diálogo en Fuentes"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-08",
+  "area": "Fuentes",
+  "name": "Actualizaciones de extensiones",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Buscar al iniciar",
+   "Buscar ahora",
+   "Actualizar todas",
+   "Actualizar una"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Instaladas, banner de actualizaciones"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-09",
+  "area": "Fuentes",
+  "name": "Desactivar todas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Desactivar todas con confirmación",
+   "Activar todas"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Menú de Fuentes"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-10",
+  "area": "Fuentes",
+  "name": "Proveedores",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Lista de catálogos con tipo Anime, Manga, Novela",
+   "Abrir proveedor"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Proveedores; catálogos también en Explorar, Manga y Novelas"
+  },
+  "change": "reubicado",
+  "pattern": "solo en Extensiones → también donde se navega cada medio",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-11",
+  "area": "Fuentes",
+  "name": "Repositorios",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Agregar repositorio",
+   "Actualizar",
+   "Quitar con confirmación",
+   "Instalar o actualizar extensión del repo"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Repositorios"
+  },
+  "change": "mejorado",
+  "pattern": "todo en línea → búsqueda y filtro",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-12",
+  "area": "Fuentes",
+  "name": "Complementos de Stremio",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Instalar por manifiesto",
+   "Activar",
+   "Actualizar",
+   "Restablecer coincidencias",
+   "Quitar con confirmación"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Stremio"
+  },
+  "change": "reubicado",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-13",
+  "area": "Fuentes",
+  "name": "Extensiones de tu PC",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Actualizar servidor",
+   "Estado por servidor",
+   "Actualizar desde el repo o desde la PC",
+   "Ir a servidores de extensiones (escritorio)"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Servidores en tu PC"
+  },
+  "change": "reubicado",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-14",
+  "area": "Fuentes",
+  "name": "Catálogo de proveedor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Buscar en el proveedor",
+   "Filas de inicio",
+   "Desplazamiento infinito"
+  ],
+  "newHome": {
+   "screen": "explorar",
+   "place": "Explorar › Catálogos de extensiones (anime); Manga y Novelas para sus catálogos"
+  },
+  "change": "reubicado",
+  "pattern": "pantalla desde Extensiones → dentro de Explorar",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-15",
+  "area": "Fuentes",
+  "name": "Título de proveedor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Empezar o continuar",
+   "Guardar",
+   "Marcar completado",
+   "Página de AniList",
+   "Filtrar episodios",
+   "Ordenar",
+   "Reanudar desde el historial"
+  ],
+  "newHome": {
+   "screen": "ficha",
+   "place": "Ficha (variante de proveedor)"
+  },
+  "change": "reubicado",
+  "pattern": "pantalla propia → ficha común",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "EXT-16",
+  "area": "Fuentes",
+  "name": "Filas de fuentes en Ajustes",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ver SET-PLY-SRC"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Fuentes de episodios"
+  },
+  "change": "reubicado",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-01",
+  "area": "Link",
+  "name": "Pantalla de dispositivo vinculado",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Introducción",
+   "Tarjeta de traspaso",
+   "Configurar extensiones de la PC",
+   "Estado sin emparejar, falla o emparejado"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-02",
+  "area": "Link",
+  "name": "Emparejar",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Escanear QR",
+   "Cancelar escaneo",
+   "Pegar código",
+   "Permiso de cámara"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Emparejar"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-03",
+  "area": "Link",
+  "name": "Pegar código",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Código de emparejamiento",
+   "Emparejar"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Emparejar"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-04",
+  "area": "Link",
+  "name": "PCs en tu red",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Buscar PCs por mDNS",
+   "Emparejar con huella y código"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Emparejar"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-05",
+  "area": "Link",
+  "name": "Estado del enlace",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "PC conectada o fuera de alcance",
+   "Huella CA y detalles",
+   "Última vez visto",
+   "Continuar en la PC",
+   "Reintentar",
+   "Olvidar PC"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Dispositivos; chip de Link en la barra superior"
+  },
+  "change": "mejorado",
+  "pattern": "solo en la pantalla → también en el chip global",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-06",
+  "area": "Link",
+  "name": "Perfil de mejora",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Capacidades de la PC",
+   "Elegir perfil de mejora (unos 15)",
+   "Motivo de perfiles no disponibles",
+   "Estado sostenido"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Perfil de mejora"
+  },
+  "change": "mejorado",
+  "pattern": "lista de 15 radios → selector de dos ejes Escalado × Cuadros",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-07",
+  "area": "Link",
+  "name": "Control remoto",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Anterior",
+   "Reproducir o pausar",
+   "Siguiente"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Control remoto"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-08",
+  "area": "Link",
+  "name": "Mejorar un stream",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "URL del stream",
+   "Iniciar sesión de mejora"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Sin lugar nombrado; candidato: Link › Perfil de mejora"
+  },
+  "change": "pendiente",
+  "pattern": null,
+  "risk": "La lista de Link no nombra esta función. El dueño debe decidir si va en Perfil de mejora o en la hoja Mejoras del reproductor (Procesar en).",
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-09",
+  "area": "Link",
+  "name": "Traspaso desde la PC",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reproducir aquí",
+   "Descartar"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link y panel de notificaciones"
+  },
+  "change": "mejorado",
+  "pattern": "solo en la pantalla Link → también como notificación",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-10",
+  "area": "Link",
+  "name": "Olvidar PC",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Confirmar olvido"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Diálogo en Link › Dispositivos"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-11",
+  "area": "Link",
+  "name": "Falla del enlace",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Reintentar",
+   "Olvidar PC"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-12",
+  "area": "Link",
+  "name": "Servidores de extensiones",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Revisar servidores",
+   "Aviso de error",
+   "Conectar",
+   "Lista de servidores",
+   "Información"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Servidores en tu PC (lado teléfono)"
+  },
+  "change": "reubicado",
+  "pattern": "pantalla aparte desde Link → pestaña de Fuentes",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-13",
+  "area": "Link",
+  "name": "Conectar a un servidor",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Escanear QR",
+   "Pegar enlace",
+   "Dirección y contraseña de visor",
+   "Conectar"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Servidores en tu PC › Conectar"
+  },
+  "change": "reubicado",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-14",
+  "area": "Link",
+  "name": "Pegar enlace de emparejamiento",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Enlace desde el portapapeles",
+   "Conectar"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Servidores en tu PC"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-15",
+  "area": "Link",
+  "name": "Servidores vinculados",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Activar",
+   "Quitar con confirmación",
+   "Estado del servidor"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Servidores en tu PC"
+  },
+  "change": "reubicado",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-16",
+  "area": "Link",
+  "name": "Por qué vincular",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ventajas",
+   "Desventajas",
+   "Extras"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Fuentes › Servidores en tu PC, sección plegable Más información"
+  },
+  "change": "mejorado",
+  "pattern": "texto fijo largo → plegable",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-17",
+  "area": "Link",
+  "name": "Confirmar enlace entrante",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Conectar",
+   "Cancelar"
+  ],
+  "newHome": {
+   "screen": "fuentes",
+   "place": "Diálogo al abrir un enlace nijiyome://"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-18",
+  "area": "Link",
+  "name": "Monitor de Link y sistema",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Estado del servidor",
+   "Abrir ajustes de Link",
+   "Sesiones con caché RAM, adelanto y Detener",
+   "Torrents activos y abrir Torrents",
+   "Presupuesto de caché por sesión",
+   "RAM de la app",
+   "Disco"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Monitor (y desde el chip de Link)"
+  },
+  "change": "reubicado",
+  "pattern": "diálogo solo por chip y bandeja → sección de Link; caché RAM en un solo control",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-19",
+  "area": "Link",
+  "name": "Chip de Link y bandeja",
+  "platforms": [
+   "desktop"
+  ],
+  "functions": [
+   "Chip con puerto y sesiones",
+   "Abrir monitor",
+   "Bandeja: Monitor, Torrents, Ajustes"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Chip de Link en la barra superior; bandeja sin cambios"
+  },
+  "change": "mejorado",
+  "pattern": "desaparece con la barra de título nativa → chip en la barra superior de la app",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "LNK-20",
+  "area": "Link",
+  "name": "Registros de dispositivos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Filtrar por dispositivo",
+   "Enviar a la PC (Android)"
+  ],
+  "newHome": {
+   "screen": "link",
+   "place": "Link › Registros"
+  },
+  "change": "reubicado",
+  "pattern": "escondido en Acerca de → sección de Link",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-sistema-de-diseno",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Sistema de diseño actual",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "20 paletas × claro, oscuro, AMOLED × 3 contrastes",
+   "Color dinámico Android",
+   "4 presets de aspecto con 11 opciones",
+   "Tema por portada en la ficha",
+   "Reproductor siempre oscuro AMOLED"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Ajustes › Apariencia"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": "No hay roles de color de éxito o advertencia ni tokens de breakpoints; glass existe sin UI a propósito",
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-entradas",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Puntos de entrada",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Ajustes: riel, engranaje, Ctrl+P, Ctrl+K, enlaces directos",
+   "Torrents: riel, Biblioteca, Tú, paleta, bandeja, monitor, notificaciones, magnet",
+   "Descargas, Extensiones y Link: riel o Tú",
+   "Monitor: chip y bandeja"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Transferencias, Fuentes, Link y Ajustes en el riel; Tú en Android"
+  },
+  "change": "fusionado",
+  "pattern": "accesos dispersos → riel de utilidades y hub Tú",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-plataformas",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Diferencias de plataforma",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Solo escritorio: Red, servidor de Link, monitor, sistema, mpv externo, lsfg-vk, VAAPI, NVScaler, navegador oculto, soltar .kai, vista de lista de torrents",
+   "Solo Android: Media3, reproductor externo, verificar certificados, estilo del reproductor, color dinámico, generación de cuadros en el teléfono, permiso de notificaciones, cliente Link, enviar registros, segundo plano",
+   "Solo ancho: estilo del menú lateral"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Se conservan por plataforma"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": "Ninguna diferencia puede perderse al unificar pantallas",
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-estados",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Vocabulario de estados",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Píldoras OK, Advertencia, Error, Neutro",
+   "Experimental o no probado",
+   "Llavero y secretos",
+   "Estados de Link"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Sistema de estados común en todas las pantallas"
+  },
+  "change": "mejorado",
+  "pattern": "colores prestados → roles de estado propios",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-guardado",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Modelo de guardado",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Proxy, FlareSolverr, nombre, carpeta y puertos de Link, contraseña de visor, preferencias de extensión, rutas, traducción, narrador y campos de torrents piden Guardar"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Todo Ajustes"
+  },
+  "change": "mejorado",
+  "pattern": "guardado mixto → guardado coherente con estado sin guardar visible",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-confirmaciones",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Confirmaciones destructivas",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Sin confirmar hoy: revocar dispositivo de extensiones, borrar registros, desvincular en el asistente, activar todas, borrar episodio o capítulo, borrar historial de descargas, desvincular debrid"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Confirmar o deshacer de forma uniforme"
+  },
+  "change": "mejorado",
+  "pattern": "mezcla → regla única (confirmar o deshacer)",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-texto-crudo",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Texto crudo donde va un selector",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Puertos",
+   "Carpeta de biblioteca",
+   "Rutas de mpv, shader y navegador",
+   "Host del proxy",
+   "URL de stream",
+   "Horas y KiB/s de torrents",
+   "Códigos ISO de idioma"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Selectores propios de puerto, carpeta, hora e idioma"
+  },
+  "change": "mejorado",
+  "pattern": "campo de texto → selector",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-espanol-fijo",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Español sin localizar",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Resúmenes y catálogo de Ajustes",
+   "Paleta de comandos",
+   "Avisos de AMOLED y contraste",
+   "Estilo del reproductor",
+   "Recordatorios y notificaciones de AniList",
+   "Sesiones y caché del servidor Link",
+   "Barra de título nativa",
+   "Registros",
+   "Monitor de Link"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Todo localizado en inglés y español"
+  },
+  "change": "mejorado",
+  "pattern": "literales → recursos",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-agrupacion",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Agrupación a corregir",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Sistema bajo Datos",
+   "Notificaciones repartidas",
+   "Reproductor sobrecargado",
+   "Torrents y Descargas repartidos",
+   "Dos servidores en Link",
+   "Controles duplicados: caché RAM, debrid, registros",
+   "Búsqueda que no llega a la fila"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "14 categorías, Transferencias y Link"
+  },
+  "change": "fusionado",
+  "pattern": "repartido → un hogar por función",
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-docs",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Referencias de documentos",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Referencias KDoc a docs/redesign que no existen"
+  ],
+  "newHome": {
+   "screen": "ajustes",
+   "place": "Sin superficie"
+  },
+  "change": "igual",
+  "pattern": null,
+  "risk": null,
+  "source": "inventario-C"
+ },
+ {
+  "id": "NOTA-C-sin-determinar",
+  "kind": "nota",
+  "area": "Transversal",
+  "name": "Sin determinar",
+  "platforms": [
+   "desktop",
+   "android"
+  ],
+  "functions": [
+   "Bindings opcionales por plataforma: Stremio, restablecer, actualizaciones, registros, generación de cuadros",
+   "Escáner QR de Android sin revisar",
+   "TorrentDownloadsScreen sin llamador",
+   "Si el cliente Link se usa en escritorio"
+  ],
+  "newHome": {
+   "screen": "transferencias",
+   "place": "Verificar con la app corriendo"
+  },
+  "change": "pendiente",
+  "pattern": null,
+  "risk": "El dueño debe confirmar qué secciones ocultas por binding existen en cada plataforma antes de dibujarlas; TorrentDownloadsScreen parece código muerto",
+  "source": "inventario-C"
+ }
+]

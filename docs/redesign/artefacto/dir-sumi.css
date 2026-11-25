@@ -1,0 +1,386 @@
+/* ==========================================================================
+   Dirección D4 · Sumi y hanko. Tokens (papel / sumi / oled × 6 paletas),
+   reestilo de las clases base, tarjetas hanko / enso / sumi-papel y anclajes.
+   Contraste verificado con la fórmula WCAG 2.x (≥4,5:1 texto, ≥3:1 formas).
+   ========================================================================== */
+
+/* ---------- tokens: sumi (oscuro por defecto) ---------- */
+.nj-app[data-dir="sumi"] {
+  --nj-font-ui: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --nj-font-display: "Yuji Boku", "Zen Kaku Gothic New", serif;
+  --nj-font-accent: "Yuji Boku", serif;
+  --nj-font-mono: "M PLUS 1 Code", "Roboto Mono", ui-monospace, monospace;
+  --nj-fs-xs: 11.5px; --nj-fs-s: 13px; --nj-fs-m: 14.5px; --nj-fs-l: 16.5px; --nj-fs-xl: 21px; --nj-fs-2xl: 30px; --nj-fs-3xl: 44px;
+  --nj-r-xs: 3px; --nj-r-s: 6px; --nj-r-m: 10px; --nj-r-l: 14px; --nj-r-xl: 22px; --nj-r-pill: 999px;
+  --nj-ease: cubic-bezier(.16, 1, .3, 1); --nj-ease-emph: cubic-bezier(.05, .7, .1, 1);
+  --nj-dur-1: 110ms; --nj-dur-2: 200ms; --nj-dur-3: 320ms; --nj-dur-4: 560ms;
+  --nj-gap: 16px; --nj-pad: 24px; --nj-rail-w: 88px; --nj-touch: 40px;
+
+  /* paleta por defecto: violeta Nijiyome (las demás redefinen estas siete) */
+  --sp-al: #5b34d1; --sp-onl: #ffffff; --sp-sl: #e2dbfb; --sp-osl: #29106e;
+  --sp-ad: #b8a3ff; --sp-ond: #1e1145; --sp-sd: #372b5e; --sp-osd: #e9e1ff;
+
+  --nj-bg: #131217; --nj-surface: #1a191f; --nj-surface-2: #212027; --nj-surface-3: #2b2a32;
+  --nj-line: #3b3a44; --nj-line-strong: #8c8a97;
+  --nj-text: #ece9f1; --nj-text-2: #c4c0cd; --nj-text-3: #a19dab;
+  --nj-accent: var(--sp-ad); --nj-on-accent: var(--sp-ond); --nj-accent-soft: var(--sp-sd); --nj-on-accent-soft: var(--sp-osd);
+  --nj-focus: var(--sp-ad); --nj-scrim: rgb(6 5 10 / .62);
+  --nj-ok: #7fd3a0; --nj-warn: #f0c46e; --nj-err: #ff9f92; --nj-info: #9cc8ff;
+  /* tintas de sello (shubun: sello claro, kanji en sumi) */
+  --nj-st-watching: #8fb2ff; --nj-st-planning: #e8c170; --nj-st-completed: #86cf9d;
+  --nj-st-paused: #b4b8c8; --nj-st-dropped: #ff9a85; --nj-st-rewatching: #6fd0cc;
+  --nj-shadow-1: 0 1px 2px rgb(0 0 0 / .32);
+  --nj-shadow-2: 0 4px 14px -4px rgb(0 0 0 / .45);
+  --nj-shadow-3: 0 18px 40px -14px rgb(0 0 0 / .6);
+  /* marca (kitsune): mosaico siempre en papel; ilustración libre según modo */
+  --k-paper: #eff0f1; --k-stroke: #18171c; --k-ink: #18171c; --k-skin: #f7f4ef; --k-red: #c63a26; --k-robe: #3e5c76; --k-rib: rgb(0 0 0 / .28); --k-seal-ink: #ffffff;
+  --sm-wash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M6 10C80 4 200 8 330 5C360 4 385 6 396 9L394 30L398 55L393 92C300 97 150 93 40 96C25 96 12 95 4 93L7 60L2 35Z' fill='%23ffffff' fill-opacity='.045'/%3E%3C/svg%3E");
+  --sm-brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'%3E%3Cpath d='M1 4.6C8 2.2 30 1.4 60 1.8C88 2.1 108 2.6 119 3.4C116 4.9 104 5.6 86 6C58 6.6 26 6.9 4 7.2C1.5 6.6 .5 5.6 1 4.6Z'/%3E%3C/svg%3E");
+  --sm-rule: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 6' preserveAspectRatio='none'%3E%3Cpath d='M0 3.4C40 1.6 120 1.2 200 1.8C280 2.3 350 2.6 400 3.6C350 4.6 260 4.4 180 4.6C110 4.8 50 4.9 0 4.4Z' fill='%23ffffff' fill-opacity='.2'/%3E%3C/svg%3E");
+  font-size: var(--nj-fs-m);
+  font-feature-settings: "palt" 0;
+}
+.nj-app[data-dir="sumi"][data-mode="oled"] {
+  --nj-bg: #000; --nj-surface: #0b0a0e; --nj-surface-2: #141318; --nj-surface-3: #1d1c22;
+  --nj-line: #2c2b32; --nj-line-strong: #85838f;
+  --nj-shadow-1: none; --nj-shadow-2: 0 0 0 1px var(--nj-line); --nj-shadow-3: 0 0 0 1px var(--nj-line-strong);
+}
+/* ---------- tokens: papel (claro, frío y neutro) ---------- */
+.nj-app[data-dir="sumi"][data-mode="light"] {
+  --nj-bg: #eeeff2; --nj-surface: #f7f8fa; --nj-surface-2: #e6e7ec; --nj-surface-3: #dcdde4;
+  --nj-line: #c6c7d0; --nj-line-strong: #6c6d7b;
+  --nj-text: #17161b; --nj-text-2: #44434d; --nj-text-3: #5b5a66;
+  --nj-accent: var(--sp-al); --nj-on-accent: var(--sp-onl); --nj-accent-soft: var(--sp-sl); --nj-on-accent-soft: var(--sp-osl);
+  --nj-focus: var(--sp-al); --nj-scrim: rgb(23 22 27 / .45);
+  --nj-ok: #1e7444; --nj-warn: #855900; --nj-err: #b3261e; --nj-info: #0b5cad;
+  /* hakubun: sello en tinta profunda, kanji en papel */
+  --nj-st-watching: #2c5bbf; --nj-st-planning: #855900; --nj-st-completed: #1f7444;
+  --nj-st-paused: #565a6c; --nj-st-dropped: #b5372a; --nj-st-rewatching: #00686d;
+  --nj-shadow-1: 0 1px 2px rgb(23 22 40 / .14);
+  --nj-shadow-2: 0 4px 14px -4px rgb(23 22 40 / .18);
+  --nj-shadow-3: 0 18px 40px -14px rgb(23 22 40 / .28);
+  --sm-wash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M6 10C80 4 200 8 330 5C360 4 385 6 396 9L394 30L398 55L393 92C300 97 150 93 40 96C25 96 12 95 4 93L7 60L2 35Z' fill='%2317161b' fill-opacity='.05'/%3E%3C/svg%3E");
+  --sm-rule: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 6' preserveAspectRatio='none'%3E%3Cpath d='M0 3.4C40 1.6 120 1.2 200 1.8C280 2.3 350 2.6 400 3.6C350 4.6 260 4.4 180 4.6C110 4.8 50 4.9 0 4.4Z' fill='%2317161b' fill-opacity='.26'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+/* ---------- paletas (6, curadas de las 20 actuales) ---------- */
+.nj-app[data-dir="sumi"][data-palette="sakura"] { --sp-al: #a82a5c; --sp-sl: #fadbe6; --sp-osl: #5a0f30; --sp-ad: #ff9fc0; --sp-ond: #3d0a20; --sp-sd: #5a2338; --sp-osd: #ffe0eb; }
+.nj-app[data-dir="sumi"][data-palette="matcha"] { --sp-al: #2f6b3f; --sp-sl: #d9ebdc; --sp-osl: #123d1e; --sp-ad: #8fd19e; --sp-ond: #0d2a16; --sp-sd: #24432c; --sp-osd: #d5f2da; }
+.nj-app[data-dir="sumi"][data-palette="oceano"] { --sp-al: #0b5f8f; --sp-sl: #d5e8f5; --sp-osl: #06344f; --sp-ad: #7cc6f0; --sp-ond: #062536; --sp-sd: #1c3e55; --sp-osd: #d4ecfb; }
+.nj-app[data-dir="sumi"][data-palette="luna"] { --sp-al: #a8231f; --sp-sl: #f7dbd8; --sp-osl: #5c0d0a; --sp-ad: #ff8f86; --sp-ond: #3d0605; --sp-sd: #55201d; --sp-osd: #ffdcd8; }
+.nj-app[data-dir="sumi"][data-palette="mono"] { --sp-al: #26252b; --sp-sl: #dcdbe0; --sp-osl: #1d1c22; --sp-ad: #e6e4ea; --sp-ond: #131217; --sp-sd: #34333a; --sp-osd: #ecebf0; }
+
+/* Android: objetivos de 48 dp */
+.nj-app[data-dir="sumi"][data-platform="android"] { --nj-touch: 48px; --nj-pad: 16px; --nj-gap: 12px; }
+
+/* ---------- superficies del navegador ---------- */
+.nj-app[data-dir="sumi"] ::selection { background: var(--nj-accent-soft); color: var(--nj-on-accent-soft); }
+.nj-app[data-dir="sumi"] :focus-visible { outline: 2px solid var(--nj-focus); outline-offset: 2px; border-radius: var(--nj-r-s); }
+.nj-app[data-dir="sumi"] { caret-color: var(--nj-accent); accent-color: var(--nj-accent); }
+.nj-app[data-dir="sumi"] ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--nj-text) 20%, transparent); border: 3px solid transparent; background-clip: padding-box; }
+.nj-app[data-dir="sumi"] .nj-kbd, .nj-app[data-dir="sumi"] [data-time] { font-variant-numeric: tabular-nums; }
+
+/* ---------- shell ---------- */
+.nj-app[data-dir="sumi"] .nj-topbar { border-bottom-color: var(--nj-line); }
+.nj-app[data-dir="sumi"] .nj-topbar .nj-brand { font-weight: 700; letter-spacing: .01em; gap: 9px; }
+.nj-app[data-dir="sumi"] .nj-cmd { border-radius: var(--nj-r-m); background: var(--nj-surface-2); border-color: var(--nj-line); }
+.nj-app[data-dir="sumi"] .nj-cmd:hover { border-color: var(--nj-line-strong); }
+.nj-app[data-dir="sumi"] .nj-linkchip { background: var(--nj-surface-2); color: var(--nj-text); box-shadow: inset 0 0 0 1px var(--nj-line); }
+/* el punto de conexión es un ensō pequeño, abierto arriba */
+.nj-app[data-dir="sumi"] .nj-linkchip::before { width: 9px; height: 9px; background: transparent; border: 2px solid var(--nj-ok); -webkit-mask: conic-gradient(from 10deg, transparent 0 34deg, #000 34deg); mask: conic-gradient(from 10deg, transparent 0 34deg, #000 34deg); }
+.nj-app[data-dir="sumi"] .nj-rail { border-right: 1px solid color-mix(in srgb, var(--nj-line) 60%, transparent); }
+.nj-app[data-dir="sumi"] .nj-rail-item .nj-pill { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="sumi"] .nj-rail-item[aria-current="page"] { color: var(--nj-text); font-weight: 700; }
+.nj-app[data-dir="sumi"] .nj-bottombar { border-top: 1px solid var(--nj-line); }
+.nj-app[data-dir="sumi"] .nj-bottombar .nj-rail-item { min-height: 56px; }
+
+.sm-mark { display: inline-grid; flex: none; }
+.sm-mark .sm-logo { width: 26px; height: 26px; display: block; }
+.nj-appbar .sm-mark .sm-logo { width: 32px; height: 32px; }
+
+/* ---------- tipografía ---------- */
+.nj-app[data-dir="sumi"] .nj-h1 { font-family: var(--nj-font-display); font-weight: 400; letter-spacing: 0; line-height: 1.12; font-synthesis: none; }
+.nj-app[data-dir="sumi"] .nj-h2 { font-family: var(--nj-font-ui); font-weight: 700; letter-spacing: -.005em; }
+.nj-app[data-dir="sumi"] .nj-h3 { font-weight: 700; }
+.nj-app[data-dir="sumi"] .nj-meta { line-height: 1.45; }
+
+/* ---------- controles ---------- */
+.nj-app[data-dir="sumi"] .nj-btn { border-radius: var(--nj-r-m); font-weight: 700; letter-spacing: .01em; }
+.nj-app[data-dir="sumi"] .nj-btn:hover { filter: brightness(1.06); }
+.nj-app[data-dir="sumi"] .nj-btn.is-outline { border-color: var(--nj-line-strong); }
+.nj-app[data-dir="sumi"] .nj-btn.is-outline:hover, .nj-app[data-dir="sumi"] .nj-btn.is-text:hover { background: color-mix(in srgb, var(--nj-text) 7%, transparent); filter: none; }
+.nj-app[data-dir="sumi"] .nj-btn:disabled, .nj-app[data-dir="sumi"] .nj-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; transform: none; }
+.nj-app[data-dir="sumi"] .nj-iconbtn.is-filled:hover { filter: brightness(1.08); }
+.nj-app[data-dir="sumi"] .nj-chip { border-radius: var(--nj-r-s); border-color: var(--nj-line); color: var(--nj-text-2); }
+.nj-app[data-dir="sumi"] .nj-chip:hover { border-color: var(--nj-line-strong); color: var(--nj-text); }
+.nj-app[data-dir="sumi"] .nj-chip[aria-pressed="true"] { background: var(--nj-accent-soft); color: var(--nj-on-accent-soft); border-color: transparent; }
+.nj-app[data-dir="sumi"][data-platform="android"] .nj-chip { position: relative; }
+.nj-app[data-dir="sumi"][data-platform="android"] .nj-chip::after { content: ""; position: absolute; inset: -8px 0; }
+.nj-app[data-dir="sumi"] .nj-seg { border-radius: var(--nj-r-m); border-color: var(--nj-line-strong); }
+.nj-app[data-dir="sumi"] .nj-seg button:hover { background: color-mix(in srgb, var(--nj-text) 6%, transparent); }
+.nj-app[data-dir="sumi"][data-platform="android"] .nj-seg button { min-height: 48px; }
+/* la pestaña activa se subraya con un trazo de pincel en el acento */
+.nj-app[data-dir="sumi"] .nj-tab[aria-selected="true"] { color: var(--nj-text); }
+.nj-app[data-dir="sumi"] .nj-tab[aria-selected="true"]::after { height: 5px; bottom: 0; border-radius: 0; background: var(--nj-accent); -webkit-mask: var(--sm-brush) center / 100% 100% no-repeat; mask: var(--sm-brush) center / 100% 100% no-repeat; }
+.nj-app[data-dir="sumi"] .nj-tab:hover { color: var(--nj-text); }
+.nj-app[data-dir="sumi"] .nj-field, .nj-app[data-dir="sumi"] .nj-search { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="sumi"] .nj-search { border: 1px solid var(--nj-line); }
+.nj-app[data-dir="sumi"] .nj-search:focus-within, .nj-app[data-dir="sumi"] .nj-field:focus-within { border-color: var(--nj-accent); }
+.nj-app[data-dir="sumi"] .nj-menu { border-radius: var(--nj-r-m); border: 1px solid var(--nj-line); background: var(--nj-surface); }
+.nj-app[data-dir="sumi"] .nj-sheet { background: var(--nj-surface); border-top: 1px solid var(--nj-line); }
+.nj-app[data-dir="sumi"] .nj-sheet::before { width: 36px; height: 5px; border-radius: 0; background: var(--nj-line-strong); -webkit-mask: var(--sm-brush) center / 100% 100% no-repeat; mask: var(--sm-brush) center / 100% 100% no-repeat; }
+.nj-app[data-dir="sumi"] .nj-sheet.is-side { border-top: 0; border-left: 1px solid var(--nj-line); }
+.nj-app[data-dir="sumi"] .nj-dialog { background: var(--nj-surface); border: 1px solid var(--nj-line); border-radius: var(--nj-r-l); }
+.nj-app[data-dir="sumi"] .nj-snackbar { border-radius: var(--nj-r-s); }
+.nj-app[data-dir="sumi"] .nj-badge { border-radius: var(--nj-r-xs); }
+.nj-app[data-dir="sumi"] .nj-progress { height: 4px; border-radius: 2px; }
+.nj-app[data-dir="sumi"] .nj-list-row { border-radius: var(--nj-r-s); }
+.nj-app[data-dir="sumi"] .nj-divider { height: 6px; background: var(--sm-rule) center / 100% 100% no-repeat; }
+/* filete de pincel bajo la appbar de Android y bajo los títulos de grupo */
+.nj-app[data-dir="sumi"][data-platform="android"] .nj-main .nj-appbar:not(.is-context) { background-image: var(--sm-rule); background-repeat: no-repeat; background-position: 16px 100%; background-size: calc(100% - 32px) 5px; }
+.nj-app[data-dir="sumi"] .nj-appbar .sm-mark .sm-logo { width: 30px; height: 30px; }
+.nj-app[data-dir="sumi"] .nj-b-group-title { background: var(--sm-rule) left bottom / 100% 5px no-repeat; margin-bottom: 4px; }
+
+/* iconos de categoría y de grupo con tratamiento de sello: en blanco (lista) o entintado (grupo) */
+.nj-app[data-dir="sumi"] :is(.nj-b-cat, .nj-b-hubgroup .nj-list-row) > .nj-ic:first-child { width: 36px; height: 36px; display: inline-grid; place-items: center; flex: none; border-radius: 4px; color: var(--nj-accent); font-size: 20px !important; transform: rotate(-3deg); box-shadow: inset 0 0 0 1.5px var(--nj-accent), inset 0 0 0 3.5px transparent, inset 0 0 0 4.5px color-mix(in srgb, var(--nj-accent) 35%, transparent); }
+.nj-app[data-dir="sumi"] :is(.nj-b-cat, .nj-b-hubgroup .nj-list-row):is([aria-current="true"], [aria-current="page"], .is-cur, [aria-selected="true"]) > .nj-ic:first-child { background: var(--nj-accent); color: var(--nj-on-accent); box-shadow: inset 0 0 0 3.5px var(--nj-accent), inset 0 0 0 4.5px color-mix(in srgb, var(--nj-on-accent) 45%, transparent); }
+.nj-app[data-dir="sumi"] .nj-b-group-title > .nj-ic:first-child { width: 28px; height: 28px; display: inline-grid; place-items: center; flex: none; border-radius: 3px; background: var(--nj-accent); color: var(--nj-on-accent); font-size: 17px !important; transform: rotate(-3deg); box-shadow: inset 0 0 0 2.5px var(--nj-accent), inset 0 0 0 3.5px color-mix(in srgb, var(--nj-on-accent) 45%, transparent); }
+
+/* selector de paleta: cada paleta es un sello con su kanji (紫 桜 茶 海 月 墨); el nombre va debajo */
+.nj-app[data-dir="sumi"] .nj-b-swatch i { --rot: -3deg; position: relative; border-radius: 5px; transform: rotate(-3deg); box-shadow: inset 0 0 0 2.5px var(--sw), inset 0 0 0 3.5px rgb(255 255 255 / .6); }
+.nj-app[data-dir="sumi"] .nj-b-swatch[aria-checked="true"] i { box-shadow: inset 0 0 0 2.5px var(--sw), inset 0 0 0 3.5px rgb(255 255 255 / .6), 0 0 0 3px var(--nj-bg), 0 0 0 5px var(--nj-text); }
+.nj-app[data-dir="sumi"] .nj-b-swatch:hover i { filter: brightness(1.08); }
+.sm-pal-k { font: 400 25px/1 "Yuji Boku", "Zen Kaku Gothic New", serif; color: #fff; }
+.nj-app[data-dir="sumi"] .nj-b-swatch i .nj-ic { position: absolute; right: -7px; bottom: -7px; font-size: 14px !important; box-shadow: 0 0 0 1.5px var(--nj-text); }
+/* selector de tema: un sello por modo (紙 papel, 墨 sumi, 夜 OLED, 自 sistema); el elegido va en rojo shu */
+.sm-theme-seal { position: absolute; top: 6px; right: 6px; z-index: 1; --sz: 24px; --st: var(--nj-surface-3); color: var(--nj-text-2); font-family: "Yuji Boku", "Zen Kaku Gothic New", serif; font-weight: 400; font-size: 16px; box-shadow: inset 0 0 0 1.5px var(--nj-line-strong); }
+.nj-b-theme[aria-checked="true"] .sm-theme-seal { --st: #c63a26; color: #fff; box-shadow: inset 0 0 0 2px #c63a26, inset 0 0 0 3px rgb(255 255 255 / .55); }
+
+/* chip de estado base (h.statusChip): el punto pasa a ser un sello cuadrado con su kanji */
+.nj-app[data-dir="sumi"] .nj-status { gap: 6px; padding: 2px 9px 2px 3px; border-radius: var(--nj-r-xs); background: color-mix(in srgb, var(--st) 16%, transparent); }
+.nj-app[data-dir="sumi"] .nj-status::before { width: 17px; height: 17px; border-radius: 2px; display: inline-grid; place-items: center; background: var(--st); color: var(--nj-bg); font: 700 11px/1 var(--nj-font-ui); }
+.nj-app[data-dir="sumi"] .nj-status[data-status="watching"]::before { content: "見"; }
+.nj-app[data-dir="sumi"] .nj-status[data-status="planning"]::before { content: "予"; }
+.nj-app[data-dir="sumi"] .nj-status[data-status="completed"]::before { content: "完"; }
+.nj-app[data-dir="sumi"] .nj-status[data-status="paused"]::before { content: "休"; }
+.nj-app[data-dir="sumi"] .nj-status[data-status="dropped"]::before { content: "止"; }
+.nj-app[data-dir="sumi"] .nj-status[data-status="rewatching"]::before { content: "再"; }
+
+/* ==========================================================================
+   Sello hanko (compartido por tarjetas y anclajes; funciona en cualquier dirección)
+   ========================================================================== */
+.sm-seal {
+  --sz: 26px; --rot: -4deg;
+  display: inline-grid; place-items: center; flex: none; width: var(--sz); height: var(--sz);
+  border-radius: 3px; background: var(--st, var(--nj-accent)); color: var(--nj-bg);
+  font-family: "Zen Kaku Gothic New", var(--nj-font-ui); font-weight: 700; font-size: calc(var(--sz) * .58); line-height: 1; letter-spacing: 0;
+  transform: rotate(var(--rot));
+  /* el marco interior del sello, en el color del kanji */
+  box-shadow: inset 0 0 0 2px var(--st, var(--nj-accent)), inset 0 0 0 3px color-mix(in srgb, var(--nj-bg) 55%, transparent);
+  user-select: none;
+}
+.sm-seal.is-round { border-radius: 50%; --rot: 0deg; }
+.sm-seal.is-brush { font-family: "Yuji Boku", "Zen Kaku Gothic New", serif; font-weight: 400; font-size: calc(var(--sz) * .64); }
+.sm-seal.is-s { --sz: 20px; }
+.sm-seal.is-l { --sz: 34px; }
+.sm-corner { position: absolute; top: 7px; right: 7px; box-shadow: inset 0 0 0 2px var(--st, var(--nj-accent)), inset 0 0 0 3px color-mix(in srgb, var(--nj-bg) 55%, transparent), 0 0 0 2px var(--nj-bg), 0 2px 6px rgb(0 0 0 / .35); }
+.sm-tag { display: inline-flex; align-items: center; gap: 6px; font-size: var(--nj-fs-xs); font-weight: 700; color: var(--nj-text-2); white-space: nowrap; }
+.sm-tag .sm-seal { --sz: 18px; box-shadow: none; }
+.sm-score { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; color: var(--nj-text-2); }
+.sm-score .nj-ic { color: var(--nj-st-planning); }
+
+/* línea de progreso (tinta) */
+.sm-line { display: block; height: 3px; border-radius: 3px; background: color-mix(in srgb, var(--nj-text) 15%, transparent); overflow: hidden; }
+.sm-line > i { display: block; height: 100%; width: calc(var(--v, 0) * 100%); background: var(--nj-accent); border-radius: inherit; }
+
+/* aro del ensō */
+.sm-ring { position: absolute; inset: 0; display: block; pointer-events: none; }
+.sm-ring svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.sm-ring-wash { fill: var(--nj-text); opacity: .16; }
+.sm-enso-arc { fill: none; stroke: var(--nj-accent); stroke-width: 3.6; stroke-linecap: round; stroke-dasharray: var(--p) 100; }
+.sm-enso-dry { fill: none; stroke: var(--nj-accent); stroke-width: 1.1; stroke-linecap: round; opacity: .55; stroke-dasharray: calc(var(--p) * .9) 100; }
+.sm-ringwrap { position: relative; display: inline-grid; place-items: center; flex: none; width: 60px; height: 60px; }
+.sm-ringwrap .sm-play { width: 42px; height: 42px; z-index: 1; }
+.sm-ringwrap.is-hero { width: 84px; height: 84px; }
+.sm-ringwrap.is-hero .sm-play { width: 58px; height: 58px; }
+.sm-ringwrap.is-hero .sm-play .nj-ic { font-size: 30px; }
+.sm-ringwrap.is-mini { width: 40px; height: 40px; }
+.sm-ringwrap.is-badge { position: absolute; left: 6px; bottom: 6px; width: 40px; height: 40px; border-radius: 50%; background: var(--nj-bg); box-shadow: 0 2px 8px rgb(0 0 0 / .35); }
+.sm-ringwrap.is-badge .sm-ring-wash { opacity: .22; }
+.sm-ring-ic { font-size: 18px; color: var(--nj-text); z-index: 1; }
+
+/* ==========================================================================
+   Tarjetas (sin prefijo de dirección: se mezclan con cualquiera)
+   ========================================================================== */
+.nj-card.sm-card { font-family: inherit; }
+.nj-card.sm-card .nj-card-title { font-weight: 700; letter-spacing: 0; }
+.nj-card.sm-card[data-size="s"] .nj-card-title { font-size: var(--nj-fs-xs); }
+.nj-card.sm-card[data-size="l"] .nj-card-title { font-size: var(--nj-fs-m); }
+.nj-card.sm-card .sm-txt { display: grid; gap: 4px; min-width: 0; text-align: left; }
+.nj-card.sm-card .sm-open { appearance: none; border: 0; margin: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; display: grid; align-items: center; gap: 12px; min-width: 0; border-radius: var(--nj-r-s); }
+.nj-card.sm-card .nj-card-art img { transition: transform var(--nj-dur-3) var(--nj-ease); }
+.nj-card.sm-card:focus-visible { outline: 2px solid var(--nj-focus); outline-offset: 3px; border-radius: var(--nj-r-s); }
+
+/* --- hanko --- */
+.nj-card[data-style="hanko"] .nj-card-art { border-radius: var(--nj-r-s); box-shadow: 0 0 0 1px color-mix(in srgb, var(--nj-text) 10%, transparent); }
+.nj-card[data-style="hanko"]:hover .nj-card-art { transform: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--nj-text) 22%, transparent), var(--nj-shadow-2); }
+.nj-card[data-style="hanko"]:hover .nj-card-art img { transform: scale(1.03); }
+.nj-card[data-style="hanko"] > .sm-line { margin-top: -2px; }
+.nj-card[data-style="hanko"][data-context="continue"] .sm-open { grid-template-columns: 64px minmax(0, 1fr); }
+.nj-card[data-style="hanko"][data-context="continue"][data-size="l"] .sm-open { grid-template-columns: 78px minmax(0, 1fr); }
+.nj-card[data-style="hanko"][data-context="continue"] { --w: 300px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 10px 8px 8px; border-radius: var(--nj-r-m); background: var(--nj-surface-2); box-shadow: inset 0 0 0 1px var(--nj-line); }
+.nj-card[data-style="hanko"][data-context="continue"][data-size="s"] { --w: 260px; }
+.nj-card[data-style="hanko"][data-context="continue"][data-size="l"] { --w: 360px; }
+.nj-card[data-style="hanko"][data-context="continue"] .sm-txt .sm-line { margin-top: 4px; }
+.nj-card[data-style="hanko"][data-context="continue"]:hover { box-shadow: inset 0 0 0 1px var(--nj-line-strong); }
+.nj-card[data-style="hanko"][data-context="continue"] .sm-play { width: 44px; height: 44px; }
+
+/* --- contextos compartidos: compacta, deseo, rejilla --- */
+.nj-card.sm-card[data-context="compact"] { --w: 100%; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 6px 8px; border-radius: var(--nj-r-s); }
+.nj-card.sm-card[data-context="compact"]:hover { background: color-mix(in srgb, var(--nj-text) 5%, transparent); }
+.nj-card.sm-card[data-context="compact"] .nj-card-art { border-radius: var(--nj-r-xs); box-shadow: none; }
+.nj-card.sm-card[data-context="compact"]:hover .nj-card-art { transform: none; }
+.nj-card.sm-card[data-context="compact"] .nj-card-title { -webkit-line-clamp: 1; }
+.nj-card.sm-card[data-context="wish"] .nj-card-sub { color: var(--nj-text); font-weight: 500; }
+
+/* --- hero (las tres) --- */
+.nj-card.sm-card[data-context="hero"] { --w: 560px; grid-template-columns: 168px minmax(0, 1fr); align-items: end; gap: 22px; cursor: default; }
+.nj-card.sm-card[data-context="hero"][data-size="s"] { --w: 420px; grid-template-columns: 120px minmax(0, 1fr); gap: 16px; }
+.nj-card.sm-card[data-context="hero"][data-size="l"] { --w: 760px; grid-template-columns: 220px minmax(0, 1fr); }
+.nj-card.sm-card[data-context="hero"]:hover .nj-card-art { transform: none; }
+.sm-hero-body { display: grid; gap: 10px; min-width: 0; padding-bottom: 4px; }
+.sm-hero-body > * { margin: 0; }
+.sm-hero-body .nj-meta { color: var(--nj-text-2); }
+.sm-hero-title { font-family: var(--nj-font-display); font-size: var(--nj-fs-2xl); line-height: 1.15; font-weight: 400; text-wrap: balance; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.nj-card.sm-card[data-context="hero"][data-size="s"] .sm-hero-title { font-size: var(--nj-fs-xl); }
+.nj-card.sm-card[data-context="hero"][data-size="l"] .sm-hero-title { font-size: var(--nj-fs-3xl); }
+.sm-hero-title::after { content: ""; display: block; width: 88px; height: 6px; margin-top: 10px; background: var(--nj-accent); -webkit-mask: var(--sm-brush, none) center / 100% 100% no-repeat; mask: var(--sm-brush, none) center / 100% 100% no-repeat; }
+.sm-hero-state { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.sm-hero-state .sm-tag { font-size: var(--nj-fs-s); }
+.sm-hero-state .sm-tag .sm-seal { --sz: 24px; }
+.sm-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.sm-hero-cta { display: grid; gap: 2px; margin-right: 6px; }
+.sm-hero-cta b { font-size: var(--nj-fs-l); }
+.sm-hero-body .sm-line { max-width: 280px; }
+
+/* --- ensō --- */
+.nj-card[data-style="enso"] .nj-card-art { border-radius: var(--nj-r-m); }
+.nj-card[data-style="enso"][data-context="continue"] { --w: 268px; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 0 4px; background: transparent; border-radius: var(--nj-r-m); }
+.nj-card[data-style="enso"][data-context="continue"][data-size="s"] { --w: 220px; }
+.nj-card[data-style="enso"][data-context="continue"][data-size="l"] { --w: 340px; }
+.nj-card[data-style="enso"][data-context="continue"] .sm-open { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.nj-card[data-style="enso"][data-context="continue"] .sm-open > .nj-card-art { aspect-ratio: 16 / 9; border-radius: var(--nj-r-m); }
+.nj-card[data-style="enso"][data-context="continue"] .sm-open > .nj-card-art img { object-position: 50% 22%; }
+.nj-card[data-style="enso"][data-context="continue"] .sm-txt { padding-right: 64px; min-height: 48px; align-content: center; }
+.nj-card[data-style="enso"][data-context="continue"] > .sm-ringwrap { position: absolute; right: -2px; bottom: -2px; }
+.nj-card[data-style="enso"][data-context="continue"] .nj-card-title { -webkit-line-clamp: 1; }
+.nj-card[data-style="enso"][data-context="continue"]:hover .nj-card-art { transform: none; }
+.nj-card[data-style="enso"][data-context="continue"]:hover .nj-card-art img { transform: scale(1.03); }
+
+/* --- sumi-papel --- */
+.nj-card[data-style="sumi-papel"] { gap: 6px; }
+.sm-mat { display: block; padding: 6px; border-radius: var(--nj-r-s); background: var(--nj-surface-2); box-shadow: inset 0 0 0 1px var(--nj-line); transition: box-shadow var(--nj-dur-2) var(--nj-ease); }
+.nj-card[data-style="sumi-papel"] .sm-mat .nj-card-art { border-radius: 2px; box-shadow: none; }
+.nj-card[data-style="sumi-papel"][data-size="s"] .sm-mat { padding: 4px; }
+.nj-card[data-style="sumi-papel"][data-size="l"] .sm-mat { padding: 9px; }
+.nj-card[data-style="sumi-papel"]:hover .nj-card-art { transform: none; box-shadow: none; }
+.nj-card[data-style="sumi-papel"]:hover .sm-mat { box-shadow: inset 0 0 0 1px var(--nj-line-strong), var(--nj-shadow-2); }
+.nj-card[data-style="sumi-papel"] > .nj-card-title { margin-top: 4px; font-size: var(--nj-fs-m); line-height: 1.25; }
+.nj-card[data-style="sumi-papel"][data-size="s"] > .nj-card-title { font-size: var(--nj-fs-s); }
+.nj-card[data-style="sumi-papel"][data-size="l"] > .nj-card-title { font-size: var(--nj-fs-l); }
+.nj-card[data-style="sumi-papel"] .sm-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 2px; font-size: var(--nj-fs-xs); }
+.nj-card[data-style="sumi-papel"][data-context="continue"] { --w: 310px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 0; background: transparent; }
+.nj-card[data-style="sumi-papel"][data-context="continue"] .sm-open { grid-template-columns: 70px minmax(0, 1fr); }
+.nj-card[data-style="sumi-papel"][data-context="continue"][data-size="s"] { --w: 260px; }
+.nj-card[data-style="sumi-papel"][data-context="continue"][data-size="s"] .sm-open { grid-template-columns: 56px minmax(0, 1fr); }
+.nj-card[data-style="sumi-papel"][data-context="continue"][data-size="l"] { --w: 380px; }
+.nj-card[data-style="sumi-papel"][data-context="continue"][data-size="l"] .sm-open { grid-template-columns: 86px minmax(0, 1fr); }
+.nj-card[data-style="sumi-papel"][data-context="continue"] .sm-mat { padding: 4px; }
+.nj-card[data-style="sumi-papel"][data-context="continue"] .nj-card-title { font-size: var(--nj-fs-m); }
+.nj-card[data-style="sumi-papel"][data-context="continue"] .sm-txt .sm-line { margin-top: 6px; }
+.nj-card[data-style="sumi-papel"] .sm-play.is-ink { background: transparent; color: var(--nj-accent); box-shadow: inset 0 0 0 1.5px var(--nj-accent); }
+.nj-card[data-style="sumi-papel"] .sm-play.is-ink:hover { background: var(--nj-accent-soft); color: var(--nj-on-accent-soft); }
+.nj-card[data-style="sumi-papel"][data-context="compact"] { grid-template-columns: 48px minmax(0, 1fr) auto; }
+.nj-card[data-style="sumi-papel"][data-context="compact"] .sm-mat { padding: 3px; }
+.nj-card[data-style="sumi-papel"][data-context="hero"] .sm-mat { padding: 10px; }
+
+/* Android: la tarjeta de continuar y su botón respetan 48 dp */
+.nj-app[data-platform="android"] .nj-card.sm-card .sm-play { min-width: 48px; min-height: 48px; }
+.nj-app[data-platform="android"] .sm-ringwrap:not(.is-badge):not(.is-mini) { width: 64px; height: 64px; }
+
+/* ==========================================================================
+   Anclajes (data-region)
+   ========================================================================== */
+/* Esta noche: una aguada de tinta con bordes de pincel marca la fila foco */
+.nj-app[data-dir="sumi"] [data-region="tonight"] { background: var(--sm-wash) center / 100% 100% no-repeat; padding-block: 14px 18px; }
+
+/* Hero: título en la display de pincel, con un trazo corto del acento debajo */
+.nj-app[data-dir="sumi"] [data-region="hero"] :is(.nj-h1, h1) { font-family: var(--nj-font-display); font-weight: 400; letter-spacing: 0; font-synthesis: none; }
+.nj-app[data-dir="sumi"] [data-region="hero"] :is(.nj-h1, h1)::after { content: ""; display: block; width: 104px; height: 7px; margin-top: 12px; background: var(--nj-accent); -webkit-mask: var(--sm-brush) center / 100% 100% no-repeat; mask: var(--sm-brush) center / 100% 100% no-repeat; }
+
+/* Selector de estado: fila de sellos. Elegido = sello entintado; resto = sello en blanco */
+.nj-app[data-dir="sumi"] .sm-picker { display: flex; flex-wrap: wrap; gap: 6px; border: 0; border-radius: 0; overflow: visible; }
+.nj-app[data-dir="sumi"] .sm-picker .sm-pick { display: inline-grid; justify-items: center; align-content: center; gap: 6px; min-width: 64px; min-height: 72px; padding: 8px 6px 6px; border: 1px solid transparent; border-radius: var(--nj-r-m); background: transparent; color: var(--nj-text-2); font-size: var(--nj-fs-xs); font-weight: 700; cursor: pointer; transition: background var(--nj-dur-2) var(--nj-ease), color var(--nj-dur-2) var(--nj-ease); }
+.nj-app[data-dir="sumi"] .sm-picker .nj-seg { display: flex; flex-wrap: wrap; gap: 6px; border: 0; border-radius: 0; overflow: visible; }
+.nj-app[data-dir="sumi"] .sm-picker .sm-pick + .sm-pick { border-left: 1px solid transparent; }
+.nj-app[data-dir="sumi"] .sm-picker .sm-pick::before { content: none !important; }
+.nj-app[data-dir="sumi"] .sm-picker .sm-pick > .nj-ic, .nj-app[data-dir="sumi"] .sm-picker .sm-pick > [class$="-dot"] { display: none; }
+.nj-app[data-dir="sumi"] .sm-picker .sm-pick.nj-chip { height: auto; }
+.nj-app[data-dir="sumi"] .sm-picker .sm-pick:hover { background: color-mix(in srgb, var(--nj-text) 6%, transparent); color: var(--nj-text); }
+.nj-app[data-dir="sumi"] .sm-pick .sm-pick-seal { --sz: 36px; font-family: "Yuji Boku", var(--nj-font-ui); font-weight: 400; font-size: 23px; background: transparent; color: var(--nj-text-2); box-shadow: inset 0 0 0 1.5px var(--nj-line-strong); --rot: 0deg; }
+.nj-app[data-dir="sumi"] .sm-pick:is([aria-checked="true"], [aria-pressed="true"], [aria-selected="true"]) { color: var(--nj-text); background: color-mix(in srgb, var(--st) 12%, transparent); border-color: color-mix(in srgb, var(--st) 45%, transparent); }
+.nj-app[data-dir="sumi"] .sm-pick:is([aria-checked="true"], [aria-pressed="true"], [aria-selected="true"]) .sm-pick-seal { --rot: -4deg; background: var(--st); color: var(--nj-bg); box-shadow: inset 0 0 0 2px var(--st), inset 0 0 0 3px color-mix(in srgb, var(--nj-bg) 55%, transparent); }
+
+/* Episodios: sello 済 (visto) estampado en la esquina */
+.sm-ep-seal { position: absolute; top: 4px; left: 4px; z-index: 2; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--nj-st-completed); color: var(--nj-bg); font: 700 13px/1 "Zen Kaku Gothic New", var(--nj-font-ui); transform: rotate(-8deg); --rot: -8deg; box-shadow: inset 0 0 0 1.5px var(--nj-st-completed), inset 0 0 0 2.5px color-mix(in srgb, var(--nj-bg) 55%, transparent), 0 0 0 2px var(--nj-bg); pointer-events: none; }
+.nj-app[data-dir="sumi"] [data-region="episodes"] .nj-ep[data-watched="true"] { --st: var(--nj-st-completed); }
+
+/* Emisión: horas tabulares; la emisión de ahora lleva un ensō */
+.nj-app[data-dir="sumi"] [data-region="airing"] .sm-now { background: var(--nj-accent-soft); color: var(--nj-on-accent-soft); border-radius: var(--nj-r-s); }
+.sm-now-enso { width: 20px; height: 20px; flex: none; fill: var(--nj-accent); vertical-align: middle; }
+.nj-app[data-dir="sumi"] [data-region="airing"] .sm-now .sm-now-enso { fill: currentColor; }
+
+/* Vacío: el kitsune dentro del ensō, en tinta del modo (blanca sobre sumi, negra sobre papel) */
+.sm-empty-ill { display: block; width: 112px; height: 112px; margin-block-end: 12px;
+  --k-stroke: var(--nj-text-2); --k-ink: #5a5764; --k-skin: #e6e2ec; --k-red: #c63a26; --k-robe: #56728c; --k-rib: rgb(0 0 0 / .25); --k-seal-ink: #ffffff; }
+.nj-app[data-mode="light"] .sm-empty-ill { --k-ink: #18171c; --k-stroke: #18171c; --k-skin: #ffffff; --k-robe: #3e5c76; }
+
+/* Link: dos ensō enlazados; separados y punteados si no hay conexión */
+.sm-link-glyph { width: 40px; height: 24px; flex: none; vertical-align: -5px; margin-right: 8px; overflow: visible; }
+.sm-lg-a { fill: var(--nj-accent); }
+.sm-lg-b { fill: var(--nj-ok); }
+.sm-link.is-off .sm-lg-b { fill: var(--nj-text-3); transform: translateX(6px); opacity: .7; }
+
+/* ==========================================================================
+   Movimiento: estampado del sello y trazo del ensō
+   ========================================================================== */
+@keyframes sm-stamp {
+  0% { transform: scale(1.15) rotate(var(--rot, -4deg)); filter: blur(1.8px); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: scale(1) rotate(var(--rot, -4deg)); filter: blur(0); opacity: 1; }
+}
+@keyframes sm-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sm-trace { from { stroke-dashoffset: var(--p); } to { stroke-dashoffset: 0; } }
+@keyframes sm-trace-dry { from { stroke-dashoffset: calc(var(--p) * .9); opacity: 0; } to { stroke-dashoffset: 0; opacity: .55; } }
+@keyframes sm-wash-in { from { opacity: 0; } to { opacity: .16; } }
+.is-stamping { animation: sm-stamp 420ms cubic-bezier(.16, 1, .3, 1) both; }
+.sm-ring.is-tracing .sm-enso-arc { animation: sm-trace 720ms cubic-bezier(.16, 1, .3, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.sm-ring.is-tracing .sm-enso-dry { animation: sm-trace-dry 820ms cubic-bezier(.16, 1, .3, 1) both; animation-delay: calc(var(--i, 0) * 70ms + 60ms); }
+.sm-ring.is-tracing .sm-ring-wash { animation: sm-wash-in 300ms linear both; animation-delay: calc(var(--i, 0) * 70ms); }
+
+/* Calmo: sin escala ni trazo; el sello confirma con un fundido de 140 ms */
+.nj-app[data-motion="calm"] .sm-seal.is-stamping, .nj-app[data-motion="calm"] .sm-ep-seal.is-stamping { animation: sm-fade 140ms linear both !important; }
+.nj-app[data-motion="calm"] .sm-ring .sm-enso-arc, .nj-app[data-motion="calm"] .sm-ring .sm-enso-dry, .nj-app[data-motion="calm"] .sm-ring .sm-ring-wash { animation: none !important; }
+/* Rendimiento: sin desenfoque (core ya quita filter), sin aguada animada, un solo aro trazado */
+.nj-app[data-motion="perf"] .sm-ring:not(.is-first) * { animation: none !important; }
+.nj-app[data-motion="perf"] .sm-ring .sm-ring-wash { animation: none !important; }
+.nj-app[data-motion="perf"] [data-region="tonight"] { background: color-mix(in srgb, var(--nj-text) 4%, transparent); }
+.nj-app[data-motion="perf"] .sm-corner, .nj-app[data-motion="perf"] .sm-ringwrap.is-badge { box-shadow: inset 0 0 0 2px var(--st, var(--nj-accent)), 0 0 0 2px var(--nj-bg); }
+.nj-app[data-motion="perf"] .sm-ringwrap.is-badge { box-shadow: 0 0 0 1px var(--nj-line); }
+.nj-app[data-motion="perf"] .nj-card.sm-card:hover .nj-card-art img { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .nj-app .sm-seal.is-stamping, .nj-app .sm-ep-seal.is-stamping { animation: sm-fade 140ms linear both !important; }
+  .nj-app .sm-ring * { animation: none !important; }
+  .nj-app .nj-card.sm-card:hover .nj-card-art img { transform: none; }
+}
