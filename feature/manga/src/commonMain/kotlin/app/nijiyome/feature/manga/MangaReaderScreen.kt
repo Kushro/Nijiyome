@@ -102,6 +102,20 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
+import androidx.compose.material.icons.outlined.DownloadDone
+import androidx.compose.material.icons.outlined.Keyboard
+import app.nijiyome.designsystem.motion.ControlsEdge
+import app.nijiyome.designsystem.motion.LoadingPlaceholder
+import app.nijiyome.designsystem.motion.PlayerControlsTransition
+import app.nijiyome.ui.patterns.isCompactWindow
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -168,6 +182,8 @@ fun MangaReaderScreen(
     var jumpTo by remember { mutableStateOf<Int?>(null) }
     var stepRequest by remember { mutableIntStateOf(0) }
     val focus = remember { FocusRequester() }
+    val compact = isCompactWindow()
+    var zonesShown by remember { mutableStateOf(false) }
 
     val noMatch = stringResource(Res.string.manga_reader_no_match)
     val noNext = stringResource(Res.string.manga_reader_last_chapter)
@@ -218,12 +234,9 @@ fun MangaReaderScreen(
         if (ui.prefetched.isNotEmpty()) warmPages(context, ui.prefetched.take(reader.prefetchPages.coerceAtLeast(3)), reader.cropBorders)
     }
 
-    val background = when (reader.background) {
-        "white" -> Color.White
-        "gray" -> Color(0xFF424242)
-        "theme" -> MaterialTheme.colorScheme.background
-        else -> Color.Black
-    }
+    val background = readerBackground(reader.background)
+    val chapterLine = ui.chapter?.let { c -> listOfNotNull(ChapterText.formatNumber(c.number)?.let { stringResource(Res.string.rd_s11_chapter_short, it) }, c.title).joinToString(" · ") }.orEmpty()
+    val chapterShort = ChapterText.formatNumber(ui.chapter?.number)?.let { stringResource(Res.string.rd_s11_chapter_short, it) }.orEmpty()
     val onBackground = if (reader.background == "white") Color.Black else if (reader.background == "theme") MaterialTheme.colorScheme.onBackground else Color.White
 
     fun toggleChrome() {
@@ -277,6 +290,8 @@ fun MangaReaderScreen(
             .onPreviewKeyEvent { e ->
                 if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 val key = readerKeyName(e) ?: return@onPreviewKeyEvent false
+                // With a panel open only Esc belongs to the reader (sliders and lists keep their arrows).
+                if (sheet != null && key != "ESCAPE") return@onPreviewKeyEvent false
                 // Desktop (Tatakai Next): Esc closes the sheet, then leaves fullscreen, then the reader. Android: Back does that.
                 if (key == "ESCAPE" && desktopReaderKeys) {
                     escape()
@@ -304,6 +319,10 @@ fun MangaReaderScreen(
                 ctrlWheel = reader.zoomShortcuts,
                 onTransform = { s, o -> scale = s; offset = o },
                 onTap = { fraction ->
+                    if (zonesShown) {
+                        zonesShown = false
+                        return@ZoomBox
+                    }
                     // Paged: left / right thirds turn the page (mirrored in RTL), the middle toggles the chrome.
                     if (reader.mode == ReaderMode.PAGED && scale == 1f) {
                         val rtl = reader.direction == ReaderDirection.RTL
@@ -366,129 +385,199 @@ fun MangaReaderScreen(
         // Progress indicator (always, small) when the chrome is hidden.
         if (reader.showProgress && !chrome && pages.isNotEmpty()) {
             Text(
-                "${ui.page + 1} / ${pages.size}",
+                if (reader.mode == ReaderMode.PAGED) "${ui.page + 1} / ${pages.size}" else chapterShort,
                 color = onBackground,
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(8.dp)
-                    .background(background.copy(alpha = 0.6f), MaterialTheme.shapes.small).padding(horizontal = 8.dp, vertical = 2.dp),
+                    .background(background.copy(alpha = 0.6f), MaterialTheme.shapes.small).padding(horizontal = 8.dp, vertical = 2.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
+        if (zonesShown && reader.mode == ReaderMode.PAGED) TapZonesOverlay(rtl = reader.direction == ReaderDirection.RTL)
 
-        AnimatedVisibility(visible = chrome, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.TopCenter)) {
-            TopChrome(
+        val capture: () -> Unit = {
+            pages.getOrNull(ui.page)?.let { page ->
+                scope.launch {
+                    val path = runCatching { capturePage(context, page, "${args.title}-${ChapterText.formatNumber(ui.chapter?.number) ?: "x"}-${ui.page + 1}") }.getOrNull()
+                    snackbar.showSnackbar(if (path != null) savedTo.format(path) else captureFailed)
+                }
+            }
+        }
+        val menu = mangaReaderMenu(
+            compact = compact,
+            fullscreen = fullscreen,
+            onSources = { sheet = ReaderSheet.SOURCES; vm.loadAlternatives() },
+            onCapture = capture,
+            onReload = vm::retry,
+            onFullscreen = { fullscreen = !fullscreen },
+            onAllSettings = { onOpenSettings(SettingsSection.READER) },
+        )
+        PlayerControlsTransition(visible = chrome, edge = ControlsEdge.TOP, modifier = Modifier.align(Alignment.TopCenter)) {
+            ReaderTopBar(
                 title = args.title,
-                chapterLine = ui.chapter?.let { c -> listOfNotNull(ChapterText.formatNumber(c.number)?.let { stringResource(Res.string.manga_chapter_n, it) }, c.title).joinToString(" · ") }.orEmpty(),
-                sourceName = ui.source?.extensionName,
+                subtitle = listOfNotNull(chapterLine.ifBlank { null }, ui.source?.extensionName).joinToString(" · "),
                 fullscreen = fullscreen,
+                compact = compact,
                 onBack = {
                     vm.saveProgress()
                     onBack()
                 },
-                onFullscreen = { fullscreen = !fullscreen },
-                onSettings = { sheet = ReaderSheet.SETTINGS },
                 onChapters = { sheet = ReaderSheet.CHAPTERS },
-                onSources = { sheet = ReaderSheet.SOURCES; vm.loadAlternatives() },
-                onCapture = {
-                    val page = pages.getOrNull(ui.page) ?: return@TopChrome
-                    scope.launch {
-                        val path = runCatching { capturePage(context, page, "${args.title}-${ChapterText.formatNumber(ui.chapter?.number) ?: "x"}-${ui.page + 1}") }.getOrNull()
-                        snackbar.showSnackbar(if (path != null) savedTo.format(path) else captureFailed)
-                    }
-                },
-                onOpenSettings = { onOpenSettings(SettingsSection.READER) },
+                onSettings = { sheet = ReaderSheet.SETTINGS },
+                onFullscreen = { fullscreen = !fullscreen },
+                menu = menu,
             )
         }
-        AnimatedVisibility(visible = chrome, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.BottomCenter)) {
-            BottomChrome(
-                ui = ui,
-                reader = reader,
-                compact = landscape,
+        PlayerControlsTransition(visible = chrome, edge = ControlsEdge.BOTTOM, modifier = Modifier.align(Alignment.BottomCenter)) {
+            ReaderBottomBar(
+                page = ui.page,
+                total = pages.size,
+                paged = reader.mode == ReaderMode.PAGED,
+                rtl = reader.mode == ReaderMode.PAGED && reader.direction == ReaderDirection.RTL,
+                compact = compact || landscape,
                 hasPrevious = vm.hasPrevious,
                 hasNext = vm.hasNext,
                 autoScroll = autoScroll,
-                onAutoScroll = { autoScroll = !autoScroll },
+                autoSpeed = reader.autoScrollSpeed,
+                onAutoScroll = {
+                    if (!autoScroll && reader.autoScrollSpeed <= 0) vm.updateReader { it.copy(autoScrollSpeed = DEFAULT_AUTO_SPEED) }
+                    autoScroll = !autoScroll
+                },
+                onAutoSpeed = { px ->
+                    vm.updateReader { it.copy(autoScrollSpeed = px) }
+                    autoScroll = true
+                },
                 onPrevious = vm::goPrevious,
                 onNext = vm::goNext,
                 onJump = { jumpTo = it },
-                onRail = { sheet = ReaderSheet.RAIL },
+                onPages = { sheet = ReaderSheet.RAIL },
             )
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 96.dp))
-    }
 
-    when (sheet) {
-        ReaderSheet.SETTINGS -> AdaptiveSheet(onDismissRequest = { sheet = null }) {
-            AdaptiveSheetScrollColumn {
-                Text(stringResource(Res.string.manga_reader_settings), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
-                ReaderSettingsRows(reader, onUpdate = vm::updateReader)
-                TextButton(onClick = { sheet = null; onOpenSettings(SettingsSection.READER) }, modifier = Modifier.padding(8.dp)) {
-                    Text(stringResource(Res.string.manga_reader_all_settings))
+        when (sheet) {
+            ReaderSheet.SETTINGS -> ReaderPanel(
+                title = stringResource(Res.string.manga_reader_settings),
+                subtitle = stringResource(Res.string.rd_s11_settings_mode_only),
+                compact = compact,
+                onDismiss = { sheet = null },
+            ) {
+                ReaderSettingsGroups(
+                    reader,
+                    onUpdate = vm::updateReader,
+                    modeOnly = true,
+                    onShowZones = {
+                        zonesShown = !zonesShown
+                        if (zonesShown && !compact) sheet = null
+                    },
+                    zonesShown = zonesShown,
+                )
+                TextButton(onClick = { sheet = null; onOpenSettings(SettingsSection.READER) }, modifier = Modifier.padding(vertical = 8.dp)) {
+                    Icon(Icons.Outlined.Keyboard, contentDescription = null)
+                    Text(stringResource(Res.string.rd_s11_all_reader_settings), modifier = Modifier.padding(start = 6.dp))
                 }
             }
-        }
-        ReaderSheet.CHAPTERS -> AdaptiveSheet(onDismissRequest = { sheet = null }) {
-            Text(stringResource(Res.string.manga_reader_chapters), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
-            val list = ChapterLists.sorted(ui.chapters, ChapterOrder.ASC)
-            if (list.isEmpty()) {
-                Text(stringResource(Res.string.manga_chapters_empty), modifier = Modifier.padding(16.dp))
-            } else {
-                val listState = rememberLazyListState(initialFirstVisibleItemIndex = list.indexOfFirst { it.id == ui.chapter?.id }.coerceAtLeast(0))
-                LazyColumn(state = listState, modifier = Modifier.heightIn(max = 480.dp)) {
-                    itemsIndexed(list, key = { _, c -> c.id }) { _, c ->
-                        ListItem(
-                            headlineContent = {
-                                Text(
-                                    (ChapterText.formatNumber(c.number)?.let { stringResource(Res.string.manga_chapter_n, it) } ?: c.id) + (c.title?.let { " · $it" } ?: ""),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = if (c.id == ui.chapter?.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                )
-                            },
-                            supportingContent = { Text(listOfNotNull(c.group, c.lang?.uppercase()).joinToString(" · ")) },
-                            modifier = Modifier.clickable { sheet = null; vm.open(c) },
-                        )
-                    }
-                }
-            }
-        }
-        ReaderSheet.SOURCES -> AdaptiveSheet(onDismissRequest = { sheet = null }) {
-            Text(stringResource(Res.string.manga_reader_switch_source), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
-            Text(stringResource(Res.string.manga_reader_switch_hint), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp))
-            when (val alts = ui.alternatives) {
-                null, LoadState.Loading -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                is LoadState.Err -> ErrorBlock(alts.cause, vm::loadAlternatives)
-                is LoadState.Ok -> if (alts.value.isEmpty()) {
-                    Text(stringResource(Res.string.manga_no_sources), modifier = Modifier.padding(16.dp))
+            ReaderSheet.CHAPTERS -> ReaderPanel(title = stringResource(Res.string.manga_reader_chapters), compact = compact, onDismiss = { sheet = null }, scroll = false) {
+                val list = ChapterLists.sorted(ui.chapters, ChapterOrder.ASC)
+                if (list.isEmpty()) {
+                    Text(stringResource(Res.string.manga_chapters_empty), modifier = Modifier.padding(16.dp))
                 } else {
-                    alts.value.forEach { s ->
-                        ListItem(
-                            headlineContent = { Text(s.extensionName, color = if (s.key == ui.source?.key) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
-                            supportingContent = { Text(s.problem?.let { sourceProblemLabel(it) } ?: listOfNotNull(s.chapterCount?.toString(), s.languages.joinToString("/").uppercase().ifBlank { null }, "${(s.reliability * 100).toInt()}%").joinToString(" · ")) },
-                            modifier = Modifier.clickable(enabled = s.key != ui.source?.key) { sheet = null; vm.switchSource(s) },
-                        )
+                    val listState = rememberLazyListState(initialFirstVisibleItemIndex = list.indexOfFirst { it.id == ui.chapter?.id }.coerceAtLeast(0))
+                    LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
+                        itemsIndexed(list, key = { _, c -> c.id }) { _, c ->
+                            val current = c.id == ui.chapter?.id
+                            ChapterSheetRow(
+                                title = (ChapterText.formatNumber(c.number)?.let { stringResource(Res.string.rd_s11_chapter_short, it) } ?: c.id) +
+                                    (c.title?.let { " · $it" } ?: "") + if (current) " · " + stringResource(Res.string.rd_s11_reading_now) else "",
+                                detail = listOfNotNull(c.group, c.lang?.uppercase()).joinToString(" · "),
+                                current = current,
+                                downloaded = c.downloaded,
+                                onClick = { sheet = null; vm.open(c) },
+                            )
+                        }
                     }
                 }
             }
-        }
-        ReaderSheet.RAIL -> AdaptiveSheet(onDismissRequest = { sheet = null }) {
-            Text(stringResource(Res.string.manga_reader_pages), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
-            val railState = rememberLazyListState(initialFirstVisibleItemIndex = (ui.page - 2).coerceAtLeast(0))
-            LazyRow(state = railState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                itemsIndexed(pages, key = { i, p -> "$i-${p.url}" }) { i, p ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp).clickable { sheet = null; jumpTo = i }) {
-                        AsyncImage(
-                            model = pageRequest(context, p, cropBorders = false),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.width(72.dp).height(104.dp).background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                .then(if (i == ui.page) Modifier.border(2.dp, MaterialTheme.colorScheme.primary) else Modifier),
-                        )
-                        Text("${i + 1}", style = MaterialTheme.typography.labelSmall)
+            ReaderSheet.SOURCES -> ReaderPanel(
+                title = stringResource(Res.string.manga_reader_switch_source),
+                subtitle = stringResource(Res.string.manga_reader_switch_hint),
+                compact = compact,
+                onDismiss = { sheet = null },
+            ) {
+                when (val alts = ui.alternatives) {
+                    null, LoadState.Loading -> LoadingPlaceholder(Modifier.fillMaxWidth().height(120.dp))
+                    is LoadState.Err -> ErrorBlock(alts.cause, vm::loadAlternatives)
+                    is LoadState.Ok -> if (alts.value.isEmpty()) {
+                        Text(stringResource(Res.string.manga_no_sources), modifier = Modifier.padding(16.dp))
+                    } else {
+                        alts.value.forEach { s ->
+                            val currentSource = s.key == ui.source?.key
+                            ChapterSheetRow(
+                                title = s.extensionName,
+                                detail = s.problem?.let { sourceProblemLabel(it) } ?: sourceFacts(s),
+                                current = currentSource,
+                                downloaded = false,
+                                enabled = !currentSource && s.problem == null,
+                                onClick = { sheet = null; vm.switchSource(s) },
+                            )
+                        }
                     }
                 }
             }
+            ReaderSheet.RAIL -> ReaderPanel(
+                title = stringResource(Res.string.manga_reader_pages),
+                subtitle = if (pages.isNotEmpty()) stringResource(Res.string.manga_reader_page_of, ui.page + 1, pages.size) else null,
+                compact = compact,
+                onDismiss = { sheet = null },
+                scroll = false,
+            ) {
+                val grid = rememberLazyGridState(initialFirstVisibleItemIndex = (ui.page - 2).coerceAtLeast(0))
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(84.dp),
+                    state = grid,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+                ) {
+                    gridItemsIndexed(pages, key = { i, p -> "$i-${p.url}" }) { i, p ->
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable(onClickLabel = stringResource(Res.string.manga_reader_page_n, i + 1)) { sheet = null; jumpTo = i },
+                        ) {
+                            AsyncImage(
+                                model = pageRequest(context, p, cropBorders = false),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxWidth().height(116.dp).background(MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.shapes.small)
+                                    .then(if (i == ui.page) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier),
+                            )
+                            Text("${i + 1}", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+            null -> Unit
         }
-        null -> Unit
+    }
+}
+
+/** One row of the reader's chapter or source sheet: current one marked, downloaded mark, 48 dp. */
+@Composable
+private fun ChapterSheetRow(title: String, detail: String, current: Boolean, downloaded: Boolean, onClick: () -> Unit, enabled: Boolean = true) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .background(if (current) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent, MaterialTheme.shapes.medium)
+            .clickable(enabled = enabled, onClick = onClick)
+            .semantics { if (current) selected = true }
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, color = if (enabled || current) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+            if (detail.isNotBlank()) Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        }
+        if (downloaded) Icon(Icons.Outlined.DownloadDone, contentDescription = stringResource(Res.string.manga_downloaded))
     }
 }
 
@@ -833,147 +922,6 @@ private fun EndCard(hasNext: Boolean, onNext: () -> Unit, color: Color, infinite
             if (!infinite) Button(onClick = onNext, modifier = Modifier.padding(top = 12.dp)) { Text(stringResource(Res.string.manga_reader_next_chapter)) }
         } else {
             Text(stringResource(Res.string.manga_reader_last_chapter), color = color, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
-        }
-    }
-}
-
-@Composable
-private fun TopChrome(
-    title: String,
-    chapterLine: String,
-    sourceName: String?,
-    fullscreen: Boolean,
-    onBack: () -> Unit,
-    onFullscreen: () -> Unit,
-    onSettings: () -> Unit,
-    onChapters: () -> Unit,
-    onSources: () -> Unit,
-    onCapture: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    var menu by remember { mutableStateOf(false) }
-    // Opaque, like the novel reader (BUG-124): the page does not show through the bar.
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.statusBarsPadding().padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(listOfNotNull(chapterLine.ifBlank { null }, sourceName).joinToString(" · "), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            IconButton(onClick = onChapters) { Icon(Icons.AutoMirrored.Outlined.List, contentDescription = stringResource(Res.string.manga_reader_chapters)) }
-            IconButton(onClick = onSettings) { Icon(Icons.Outlined.Settings, contentDescription = stringResource(Res.string.manga_reader_settings)) }
-            Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = stringResource(Res.string.manga_more_options)) }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(if (fullscreen) Res.string.manga_reader_exit_fullscreen else Res.string.manga_reader_fullscreen)) },
-                        leadingIcon = { Icon(if (fullscreen) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen, contentDescription = null) },
-                        onClick = { menu = false; onFullscreen() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.manga_reader_switch_source)) },
-                        leadingIcon = { Icon(Icons.Outlined.SwapHoriz, contentDescription = null) },
-                        onClick = { menu = false; onSources() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.manga_reader_capture)) },
-                        leadingIcon = { Icon(Icons.Outlined.CameraAlt, contentDescription = null) },
-                        onClick = { menu = false; onCapture() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.manga_reader_all_settings)) },
-                        leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
-                        onClick = { menu = false; onOpenSettings() },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BottomChrome(
-    ui: MangaReaderUi,
-    reader: ReaderSettings,
-    compact: Boolean,
-    hasPrevious: Boolean,
-    hasNext: Boolean,
-    autoScroll: Boolean,
-    onAutoScroll: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onJump: (Int) -> Unit,
-    onRail: () -> Unit,
-) {
-    val total = ui.pages.size
-    // BUG-112: right-to-left paged reading lays the slider row out RTL (the slider starts at the right, with the current page next to
-    // that start and the total at the far left) instead of mirroring only the slider with scaleX = -1.
-    val rtl = reader.mode == ReaderMode.PAGED && reader.direction == ReaderDirection.RTL
-    val outer = androidx.compose.ui.platform.LocalLayoutDirection.current
-    val sliderRow: @Composable (Modifier) -> Unit = { mod ->
-        var drag by remember(ui.page, total) { mutableFloatStateOf(ui.page.toFloat()) }
-        androidx.compose.runtime.CompositionLocalProvider(
-            androidx.compose.ui.platform.LocalLayoutDirection provides if (rtl) androidx.compose.ui.unit.LayoutDirection.Rtl else outer,
-        ) {
-            Row(mod, verticalAlignment = Alignment.CenterVertically) {
-                Text("${drag.toInt() + 1}", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(36.dp), textAlign = TextAlign.Center)
-                Slider(
-                    value = drag,
-                    onValueChange = { drag = it },
-                    onValueChangeFinished = { onJump(drag.toInt()) },
-                    valueRange = 0f..(total - 1).toFloat(),
-                    modifier = Modifier.weight(1f),
-                )
-                Text("$total", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(36.dp), textAlign = TextAlign.Center)
-            }
-        }
-    }
-    val previous: @Composable () -> Unit = {
-        IconButton(onClick = onPrevious, enabled = hasPrevious) { Icon(Icons.Outlined.SkipPrevious, contentDescription = stringResource(Res.string.manga_reader_previous_chapter)) }
-    }
-    val next: @Composable () -> Unit = {
-        IconButton(onClick = onNext, enabled = hasNext) { Icon(Icons.Outlined.SkipNext, contentDescription = stringResource(Res.string.manga_reader_next_chapter)) }
-    }
-    val tools: @Composable () -> Unit = {
-        IconButton(onClick = onRail) { Icon(Icons.Outlined.ViewCarousel, contentDescription = stringResource(Res.string.manga_reader_pages)) }
-        if (reader.mode != ReaderMode.PAGED && reader.autoScrollSpeed > 0) {
-            IconButton(onClick = onAutoScroll) {
-                Icon(if (autoScroll) Icons.Outlined.Pause else Icons.Outlined.PlayArrow, contentDescription = stringResource(Res.string.manga_reader_auto_scroll))
-            }
-        }
-    }
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-        if (compact) {
-            // BUG-127: landscape: one row (chapter buttons, pages, slider with "N … M"), half the height of the portrait bar.
-            Row(Modifier.navigationBarsPadding().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                previous()
-                tools()
-                when {
-                    total > 1 -> sliderRow(Modifier.weight(1f))
-                    total == 0 -> LinearProgressIndicator(Modifier.weight(1f).padding(8.dp))
-                    else -> Text(stringResource(Res.string.manga_reader_page_of, 1, 1), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
-                }
-                next()
-            }
-            return@Surface
-        }
-        Column(Modifier.navigationBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp)) {
-            if (total > 1) {
-                sliderRow(Modifier)
-            } else if (total == 0) {
-                LinearProgressIndicator(Modifier.fillMaxWidth().padding(8.dp))
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                previous()
-                tools()
-                Text(
-                    if (total > 0) stringResource(Res.string.manga_reader_page_of, ui.page + 1, total) else "",
-                    style = MaterialTheme.typography.labelLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f),
-                )
-                next()
-            }
         }
     }
 }
