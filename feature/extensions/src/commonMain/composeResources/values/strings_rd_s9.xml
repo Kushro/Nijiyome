@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign, lane S9 (Fuentes). -->
+<resources>
+    <string name="rd_s9_title">Sources</string>
+    <plurals name="rd_s9_meta_extensions">
+        <item quantity="one">%1$d extension</item>
+        <item quantity="other">%1$d extensions</item>
+    </plurals>
+    <plurals name="rd_s9_meta_partial">
+        <item quantity="one">%1$d partial</item>
+        <item quantity="other">%1$d partial</item>
+    </plurals>
+    <plurals name="rd_s9_meta_updates">
+        <item quantity="one">%1$d update</item>
+        <item quantity="other">%1$d updates</item>
+    </plurals>
+    <string name="rd_s9_updates_n">Updates · %1$d</string>
+    <string name="rd_s9_updates_check">Check for updates</string>
+    <string name="rd_s9_install_kai">Install .kai</string>
+    <string name="rd_s9_undo">Undo</string>
+    <string name="rd_s9_paste">Paste from clipboard</string>
+
+    <string name="rd_s9_tab_installed">Installed</string>
+    <string name="rd_s9_tab_repos">Repositories</string>
+    <string name="rd_s9_tab_stremio">Stremio</string>
+    <string name="rd_s9_tab_providers">Providers</string>
+    <string name="rd_s9_tab_servers">Servers on your PC</string>
+    <string name="rd_s9_tab_servers_phone">Your PC’s extensions</string>
+    <string name="rd_s9_tab_debrid">Debrid</string>
+
+    <string name="rd_s9_install_drop_here">Drop a .kai here</string>
+    <string name="rd_s9_install_package">Install a .kai package</string>
+    <string name="rd_s9_install_trust">Accepts a link to a .kai or to the manifest.json next to it. Install only extensions you trust.</string>
+    <string name="rd_s9_install_failed_title">Could not install</string>
+    <string name="rd_s9_install_pick_other">Choose another</string>
+    <string name="rd_s9_all_off_title">Every extension is turned off</string>
+    <string name="rd_s9_all_off_body">No sources are searched until you turn one on.</string>
+    <string name="rd_s9_empty_body">Install a .kai package to start watching, or add a repository and install from it.</string>
+    <string name="rd_s9_browse_repos">Add a repository</string>
+    <string name="rd_s9_kill_title_off">Turn off every extension</string>
+    <string name="rd_s9_kill_title_on">Turn on every extension</string>
+    <string name="rd_s9_kill_body">Nothing is uninstalled and the preferences stay.</string>
+    <string name="rd_s9_kill_action">Turn off all…</string>
+    <string name="rd_s9_update_available">%1$s available</string>
+    <string name="rd_s9_version_available">Version %1$s available</string>
+    <string name="rd_s9_remove_named">Remove %1$s</string>
+    <string name="rd_s9_remove_body">The extension and its data are deleted from this device.</string>
+    <string name="rd_s9_remove_action">Remove…</string>
+    <plurals name="rd_s9_prefs_unsaved">
+        <item quantity="one">%1$d change not saved yet</item>
+        <item quantity="other">%1$d changes not saved yet</item>
+    </plurals>
+    <string name="rd_s9_prefs_instant">Switches and options apply at once; text fields wait for Save.</string>
+    <string name="rd_s9_prefs_save">Save</string>
+    <string name="rd_s9_stremio_unavailable">Stremio addons are not available in this build.</string>
+
+    <string name="rd_s9_servers_hint_desktop">Extensions that other PCs lend you over the local network.</string>
+    <string name="rd_s9_servers_hint_phone">Your PC can lend its extensions to this phone. If it turns off, the local ones are used.</string>
+    <string name="rd_s9_servers_configure">Set up servers</string>
+    <string name="rd_s9_servers_open_link">Open Nijiyome Link</string>
+    <string name="rd_s9_servers_unavailable">Extension servers are not available in this build.</string>
+
+    <string name="rd_s9_debrid_intro_phone">With a debrid account, a torrent the service already has plays at once over HTTPS. The key is kept in the Android Keystore. The first linked service is the preferred one.</string>
+    <string name="rd_s9_debrid_intro_desktop">With a debrid account, a torrent the service already has plays at once over HTTPS. The key is stored encrypted, with its key in the system keychain. The first linked service is the preferred one.</string>
+    <string name="rd_s9_debrid_unavailable">Debrid is not available in this build.</string>
+    <string name="rd_s9_debrid_none_title">No debrid account</string>
+    <string name="rd_s9_debrid_none_body">Torrents go through P2P. Link an account to play at once what the service already has.</string>
+    <string name="rd_s9_debrid_use">Use debrid</string>
+    <string name="rd_s9_debrid_use_hint">Off: the cache is not checked and everything goes through P2P.</string>
+    <string name="rd_s9_debrid_prefer">Prefer cached sources</string>
+    <string name="rd_s9_debrid_prefer_hint">They move up in the source list and Automatic can pick them.</string>
+    <string name="rd_s9_debrid_download">Download through the service when cached</string>
+    <string name="rd_s9_debrid_download_hint">Downloads over HTTPS with the web download rules instead of P2P.</string>
+    <string name="rd_s9_debrid_recommended">Recommended</string>
+    <string name="rd_s9_debrid_experimental">Experimental · untested</string>
+    <string name="rd_s9_debrid_position">#%1$d</string>
+    <string name="rd_s9_debrid_linked">Linked</string>
+    <string name="rd_s9_debrid_not_linked">Not linked</string>
+    <string name="rd_s9_debrid_instant">Shows which sources are cached before playing.</string>
+    <string name="rd_s9_debrid_probe_phone">Does not check the cache: it is tried when playing and, if the service does not have it, it downloads on the phone.</string>
+    <string name="rd_s9_debrid_probe_desktop">Does not check the cache: it is tried when playing and, if the service does not have it, it downloads on this computer.</string>
+    <string name="rd_s9_debrid_account">Account %1$s</string>
+    <string name="rd_s9_debrid_until">Premium until %1$s</string>
+    <string name="rd_s9_debrid_expired">Premium expired on %1$s</string>
+    <string name="rd_s9_debrid_premium_unknown">Premium date unknown</string>
+    <string name="rd_s9_debrid_key_saved">Key saved</string>
+    <string name="rd_s9_debrid_linked_since">Linked %1$s</string>
+    <string name="rd_s9_debrid_check">Test the key</string>
+    <string name="rd_s9_debrid_checking">Testing…</string>
+    <string name="rd_s9_debrid_renew">Renew at %1$s</string>
+    <string name="rd_s9_debrid_unlink_ellipsis">Unlink…</string>
+    <string name="rd_s9_debrid_unlink">Unlink</string>
+    <string name="rd_s9_debrid_unlink_title">Unlink %1$s?</string>
+    <string name="rd_s9_debrid_unlink_body">The key is deleted from this device. To use it again you will have to paste it again.</string>
+    <string name="rd_s9_debrid_key">API key</string>
+    <string name="rd_s9_debrid_key_placeholder">Paste the %1$s key</string>
+    <string name="rd_s9_debrid_test_link">Test and link</string>
+    <string name="rd_s9_debrid_get_key">Get a key at %1$s</string>
+    <string name="rd_s9_debrid_order_note">The order of the linked accounts is the order of preference. To change it, unlink and link again, or use More debrid options.</string>
+    <string name="rd_s9_debrid_more">More debrid options</string>
+    <string name="rd_s9_debrid_linked_as">%1$s linked as %2$s</string>
+    <string name="rd_s9_debrid_check_ok">%1$s: the key works (%2$s)</string>
+    <string name="rd_s9_debrid_check_failed">%1$s: %2$s</string>
+    <string name="rd_s9_debrid_unlinked">%1$s unlinked</string>
+    <string name="rd_s9_debrid_err_invalid_key">The service did not accept this key.</string>
+    <string name="rd_s9_debrid_err_active_limit">The account has too many active downloads.</string>
+    <string name="rd_s9_debrid_err_monthly_limit">The account reached its monthly limit.</string>
+    <string name="rd_s9_debrid_err_plan">Your plan does not include this.</string>
+    <string name="rd_s9_debrid_err_too_large">The file is too large for your plan.</string>
+    <string name="rd_s9_debrid_err_rate_limited">Too many requests. Try again in a minute.</string>
+    <string name="rd_s9_debrid_err_not_cached">The service does not have it cached.</string>
+    <string name="rd_s9_debrid_err_offline">No connection to the service.</string>
+    <string name="rd_s9_debrid_err_bad_link">The service link is no longer valid.</string>
+    <string name="rd_s9_debrid_err_no_file">The torrent has no file that can be played.</string>
+    <string name="rd_s9_debrid_err_service">The service answered with an error.</string>
+
+    <string name="rd_s9_store_title">Store</string>
+    <string name="rd_s9_store_count">%1$d extensions from %2$d repositories</string>
+    <string name="rd_s9_store_search">Search extensions</string>
+    <string name="rd_s9_store_clear_search">Clear search</string>
+    <string name="rd_s9_store_filter_all">All</string>
+    <string name="rd_s9_store_filter_updates">With update · %1$d</string>
+    <string name="rd_s9_store_filter_installed">Installed</string>
+    <string name="rd_s9_store_filter_new">Not installed</string>
+    <string name="rd_s9_store_no_repos_title">The store is empty</string>
+    <string name="rd_s9_store_no_repos_body">Add a repository to see its extensions here, or install a .kai you already have.</string>
+    <string name="rd_s9_store_add_repo">Add a repository</string>
+    <string name="rd_s9_store_no_match_title">No extension matches</string>
+    <string name="rd_s9_store_no_match_body">Try another filter or clear the search.</string>
+    <string name="rd_s9_store_clear">Clear filters</string>
+    <string name="rd_s9_store_version_repo">v%1$s · %2$s</string>
+    <string name="rd_s9_store_no_description">No description.</string>
+    <string name="rd_s9_store_update_to">Update to %1$s</string>
+    <string name="rd_s9_store_open">Open</string>
+    <string name="rd_s9_store_yours">Your extensions</string>
+    <string name="rd_s9_store_yours_none">No extension installed yet.</string>
+    <string name="rd_s9_store_all_installed">See all %1$d</string>
+    <string name="rd_s9_store_manage">Manage</string>
+    <string name="rd_s9_store_confirm_install">Install %1$s</string>
+    <string name="rd_s9_store_confirm_update">Update %1$s</string>
+    <string name="rd_s9_store_permissions_note">Its permissions and the sites it connects to show on its card once installed. Install only extensions you trust.</string>
+</resources>

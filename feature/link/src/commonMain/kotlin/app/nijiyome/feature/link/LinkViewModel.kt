@@ -85,7 +85,28 @@ data class LinkUiState(
     val historyMode: LinkHistoryMode? = null,
     /** The PC asked for a history resync ("Use this device as the source") and it is running here. */
     val historyResyncing: Boolean = false,
+    // --- Sparkles S9 ---
+    /** Round trip of the last `GET /v1/player` poll in ms (the latency the Link map shows); null = not measured yet / unreachable. */
+    val latencyMs: Long? = null,
+    /** "Sincronizar ahora" of the history panel is running. */
+    val historySyncing: Boolean = false,
+    /** Epoch ms of the last history sync this screen saw succeed; null = none yet. */
+    val lastHistorySyncMs: Long? = null,
+    /** Why the last pairing attempt failed, in words the screen explains with a recovery (expired code, wrong code...). */
+    val pairProblem: PairProblem? = null,
 )
+
+/** Sparkles S9: pairing failures the Link screen explains with their recovery. */
+enum class PairProblem {
+    /** The PC's pairing window closed or its code expired: ask the PC for a new code. */
+    EXPIRED,
+    /** The code does not match the one the PC shows. */
+    WRONG_CODE,
+    /** Too many attempts: the PC paused pairing for a while. */
+    TOO_MANY,
+    /** The PC did not answer (off, other network, Link off). */
+    UNREACHABLE,
+}
 
 /** 2026-11 history per device: the notices the Linked screen shows under the PC card. */
 enum class HistoryNotice { RECEIVE_ONLY, PAUSED, RESYNCING }
@@ -121,6 +142,8 @@ class LinkViewModel(
     private val nowMs: () -> Long = System::currentTimeMillis,
     /** 2026-11 history per device: this phone's mode on the PC and the "resync running" flag (:core:link). */
     private val historyStatus: LinkHistoryStatus? = null,
+    /** Sparkles S9: a monotonic clock in ms for the latency of the remote poll (tests pass a fake one). */
+    private val monotonicMs: () -> Long = { System.nanoTime() / 1_000_000L },
 ) : ViewModel() {
 
     /** BUG-136: this phone's newest history row, and the pending PC hand-off with when it arrived. */
@@ -188,7 +211,23 @@ class LinkViewModel(
         val h = history ?: return
         if (historySynced) return
         historySynced = true
-        viewModelScope.launch { runCatchingApp { h.syncNow().getOrThrow() } }
+        viewModelScope.launch {
+            if (runCatchingApp { h.syncNow().getOrThrow() }.isSuccess) _state.update { it.copy(lastHistorySyncMs = nowMs()) }
+        }
+    }
+
+    /** Sparkles S9: "Sincronizar ahora" of the Link screen's history panel. */
+    val canSyncHistory: Boolean get() = history != null
+
+    fun syncHistoryNow() {
+        val h = history ?: return
+        if (_state.value.historySyncing) return
+        _state.update { it.copy(historySyncing = true) }
+        viewModelScope.launch {
+            val r = runCatchingApp { h.syncNow().getOrThrow() }
+            _state.update { it.copy(historySyncing = false, lastHistorySyncMs = if (r.isSuccess) nowMs() else it.lastHistorySyncMs) }
+            r.onFailure { _events.trySend(LinkEvent.Failed(it.toAppError())) }
+        }
     }
 
     // ------------------------------------------------------------------ parity wave B (16 §3.11)
@@ -197,8 +236,11 @@ class LinkViewModel(
     suspend fun pollRemote() {
         while (true) {
             if (_state.value.link is LinkState.Paired) {
+                val started = monotonicMs()
                 val r = runCatchingApp { link.remoteState().getOrThrow() }
-                _state.update { it.copy(remote = r.getOrNull()) }
+                val rtt = (monotonicMs() - started).coerceAtLeast(0L)
+                // Sparkles S9: the round trip is the latency the map shows; a failed poll clears it (no stale number).
+                _state.update { it.copy(remote = r.getOrNull(), latencyMs = if (r.isSuccess) rtt else null) }
             }
             delay(REMOTE_POLL_MS)
         }
@@ -245,10 +287,11 @@ class LinkViewModel(
     fun pairDiscovered(pc: DiscoveredPc, code: String) {
         val d = discovery ?: return
         if (_state.value.pairing) return
-        _state.update { it.copy(pairing = true, pairError = null) }
+        _state.update { it.copy(pairing = true, pairError = null, pairProblem = null) }
         viewModelScope.launch {
             val result = runCatchingApp { d.pairDiscovered(pc, code, deviceName).getOrThrow() }
-            _state.update { it.copy(pairing = false, pairError = result.exceptionOrNull()?.toAppError()) }
+            val e = result.exceptionOrNull()
+            _state.update { it.copy(pairing = false, pairError = e?.toAppError(), pairProblem = e?.let { x -> LinkLogic.pairProblem(x.linkErrorOrNull()) }) }
         }
     }
 
@@ -259,11 +302,12 @@ class LinkViewModel(
     fun pair(payload: String) {
         val text = payload.trim()
         if (text.isEmpty() || _state.value.pairing) return
-        _state.update { it.copy(pairing = true, pairError = null) }
+        _state.update { it.copy(pairing = true, pairError = null, pairProblem = null) }
         viewModelScope.launch {
             val result = runCatchingApp { link.pair(text, deviceName).getOrThrow() }
+            val e = result.exceptionOrNull()
             _state.update { s ->
-                s.copy(pairing = false, pairError = result.exceptionOrNull()?.toAppError())
+                s.copy(pairing = false, pairError = e?.toAppError(), pairProblem = e?.let { x -> LinkLogic.pairProblem(x.linkErrorOrNull()) })
             }
         }
     }
@@ -360,6 +404,26 @@ class LinkViewModel(
 
 /** Pure helpers of the Linked screen (JVM-tested). */
 internal object LinkLogic {
+    /** Sparkles S9: a pairing failure in words; null = the generic message of the error. Pure. */
+    fun pairProblem(error: LinkError?): PairProblem? = when (error) {
+        is LinkError.Api -> when (error.error) {
+            LinkApiError.PairingClosed -> PairProblem.EXPIRED
+            LinkApiError.PairingCodeInvalid -> PairProblem.WRONG_CODE
+            LinkApiError.PairingAttemptsExceeded -> PairProblem.TOO_MANY
+            else -> null
+        }
+        LinkError.Transport.Refused, LinkError.Transport.Timeout -> PairProblem.UNREACHABLE
+        else -> null
+    }
+
+    /** Sparkles S9: where a latency in ms falls (good under 40 ms, fair under 120 ms, else slow). Pure. */
+    fun latencyTone(ms: Long?): LatencyTone? = when {
+        ms == null -> null
+        ms < 40 -> LatencyTone.GOOD
+        ms < 120 -> LatencyTone.FAIR
+        else -> LatencyTone.SLOW
+    }
+
     /** 2026-11 history per device: what to say under the PC card (a resync first, then the mode when it is not `full`). Pure. */
     fun historyNotices(mode: LinkHistoryMode?, resyncing: Boolean): List<HistoryNotice> = buildList {
         if (resyncing) add(HistoryNotice.RESYNCING)
@@ -441,3 +505,6 @@ internal object LinkLogic {
     fun others(found: List<DiscoveredPc>, pairedHost: String?, pairedPort: Int?): List<DiscoveredPc> =
         found.filterNot { it.host == pairedHost && it.port == pairedPort }.distinctBy { it.instanceId ?: "${it.host}:${it.port}" }
 }
+
+/** Sparkles S9: how the map and the status card colour the latency. */
+enum class LatencyTone { GOOD, FAIR, SLOW }
