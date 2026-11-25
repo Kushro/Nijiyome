@@ -114,3 +114,14 @@ S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4
 - `DebridRepository` no tiene `prefer(service)` en la interfaz (solo en `DebridRepositoryImpl`): agregarlo para reordenar cuentas desde Fuentes.
 - `feature/link` debe pasar `RegionData(connected = …)` a `decor(DecorRegion.LINK, data)` cuando exista.
 - S10: los interruptores de Debrid viven ahora en Fuentes › Debrid; `LinkServerSection` puede quedar como enlace a `Route.Linked`.
+
+## Manga, Novelas y lectores (S11), agregado tras su informe
+
+- `MangaHomeScreen(onOpenNovels → Route.Novels, onOpenLibrary → Biblioteca en medio Manga)`;
+  `NovelHomeScreen(onOpenManga → Route.Manga, onOpenLibrary → Biblioteca en medio Novela)`. Sin ellos el selector de medio y el
+  enlace «Biblioteca» quedan ocultos.
+- `LivePreviewScaffold` (core/ui/patterns) hace scroll interno y llena la pantalla: falla dentro de una hoja o columna con scroll.
+  S11 usó un panel propio. Corregir el patrón (no debe imponer scroll ni alto) y revisar a quien lo use (S10, S6).
+- B-OCULTA-01 (fuente de manga preferida global): falta un campo en `MangaPrefs` / `MangaCatalog` (core).
+- Zonas de toque alternativas del lector (L, bordes, ninguna): faltaría un campo en `ReaderSettings`; hoy solo los tercios.
+- Posibles errores de compilación: dos imports de `itemsIndexed` en `MangaHomeScreen.kt`; lambdas con nombre en `FilterChipMenu`.
