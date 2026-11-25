@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Sparkles redesign, lane S1 (shell and navigation). -->
+<resources>
+    <!-- Destinations -->
+    <string name="rd_s1_nav_main">Main navigation</string>
+    <string name="rd_s1_nav_explore">Explore</string>
+    <string name="rd_s1_nav_transfers">Transfers</string>
+    <string name="rd_s1_nav_transfers_short">Transfers</string>
+    <string name="rd_s1_nav_sources">Sources</string>
+    <string name="rd_s1_nav_link">Link</string>
+    <string name="rd_s1_nav_image_search">Image search</string>
+    <string name="rd_s1_notifications">Notifications</string>
+
+    <!-- Top bar -->
+    <string name="rd_s1_medium_label">Medium</string>
+    <string name="rd_s1_medium_anime">Anime</string>
+    <string name="rd_s1_medium_manga">Manga</string>
+    <string name="rd_s1_medium_novel">Novel</string>
+    <string name="rd_s1_cmd_field">Search or run a command</string>
+
+    <!-- Desktop title bar -->
+    <string name="rd_s1_tb_back">Back</string>
+    <string name="rd_s1_tb_settings">Settings (Ctrl+,)</string>
+    <string name="rd_s1_tb_minimize">Minimize</string>
+    <string name="rd_s1_tb_maximize">Maximize</string>
+    <string name="rd_s1_tb_restore">Restore</string>
+    <string name="rd_s1_tb_close">Close</string>
+    <string name="rd_s1_tb_offline">Offline</string>
+    <string name="rd_s1_tb_link_active">Active</string>
+
+    <!-- Desktop tray menu. Placeholders are filled with String.format. -->
+    <string name="rd_s1_tray_show">Show Nijiyome</string>
+    <string name="rd_s1_tray_quit">Quit</string>
+    <string name="rd_s1_tray_streaming">Streaming</string>
+    <string name="rd_s1_tray_link_active">Link active: %1$s · %2$s%3$s</string>
+    <string name="rd_s1_tray_link_idle">Link :%1$s · Waiting (%2$s devices)</string>
+    <string name="rd_s1_tray_link_stopped">Link · Stopped</string>
+    <string name="rd_s1_tray_link_sessions">Link sessions (%1$s)</string>
+    <string name="rd_s1_tray_torrents_active">Torrents (%1$s): ↓ %2$s · ↑ %3$s</string>
+    <string name="rd_s1_tray_torrents_idle">Torrents: no active downloads</string>
+    <string name="rd_s1_tray_open_transfers">Open Transfers</string>
+    <string name="rd_s1_tray_performance">Performance and cache</string>
+    <string name="rd_s1_tray_app_ram">App RAM: ~%1$s / %2$s</string>
+    <string name="rd_s1_tray_link_cache">Link cache (RAM): %1$s / %2$s</string>
+    <string name="rd_s1_tray_disk_cache">Disk cache: %1$s · Torrents: %2$s</string>
+    <string name="rd_s1_tray_open_monitor">Open Link and system monitor</string>
+    <string name="rd_s1_tray_monitor">Link and status monitor</string>
+    <string name="rd_s1_tray_settings">Settings</string>
+
+    <!-- Command palette -->
+    <string name="rd_s1_pal_title">Command palette</string>
+    <string name="rd_s1_pal_placeholder">Search a screen, command, setting or title</string>
+    <string name="rd_s1_pal_clear">Clear search</string>
+    <string name="rd_s1_pal_group_go">Go to</string>
+    <string name="rd_s1_pal_group_commands">Commands</string>
+    <string name="rd_s1_pal_group_settings">Settings</string>
+    <string name="rd_s1_pal_group_shortcuts">Keyboard shortcuts</string>
+    <string name="rd_s1_pal_group_catalog">Catalog</string>
+    <string name="rd_s1_pal_empty">Nothing matches. Try another word.</string>
+    <string name="rd_s1_pal_hint_move">Move</string>
+    <string name="rd_s1_pal_hint_open">Open</string>
+    <string name="rd_s1_pal_hint_close">Close</string>
+    <string name="rd_s1_pal_catalog">Search “%1$s” in the anime catalog</string>
+    <string name="rd_s1_pal_catalog_sub">Open Explore with this search</string>
+
+    <string name="rd_s1_pal_sub_home">Tonight, continue watching and your rows</string>
+    <string name="rd_s1_pal_sub_explore">Search titles, genres, studios and by image</string>
+    <string name="rd_s1_pal_sub_calendar">Airing this week and your schedule</string>
+    <string name="rd_s1_pal_sub_library">Your lists, history and favourites</string>
+    <string name="rd_s1_pal_sub_manga">Manga catalog and reading</string>
+    <string name="rd_s1_pal_sub_novels">Light novels and narrator</string>
+    <string name="rd_s1_pal_sub_transfers">Downloads, torrents and Debrid</string>
+    <string name="rd_s1_pal_sub_sources">Extensions, repositories and servers</string>
+    <string name="rd_s1_pal_sub_link">Phone and PC working together</string>
+    <string name="rd_s1_pal_sub_settings">Every setting by category</string>
+    <string name="rd_s1_pal_sub_profile">AniList activity and stats</string>
+    <string name="rd_s1_pal_sub_foryou">Recommendations and Atlas</string>
+    <string name="rd_s1_pal_sub_notifications">Episodes, followers and likes on AniList</string>
+    <string name="rd_s1_pal_sub_image">Find an anime from a screenshot</string>
+
+    <string name="rd_s1_cmd_settings">Open Settings</string>
+    <string name="rd_s1_cmd_settings_sub">Over the current screen</string>
+    <string name="rd_s1_cmd_amoled_on">Turn on pure black (OLED)</string>
+    <string name="rd_s1_cmd_amoled_off">Turn off pure black (OLED)</string>
+    <string name="rd_s1_cmd_amoled_sub">Black background for OLED screens</string>
+    <string name="rd_s1_cmd_theme">Change theme</string>
+    <string name="rd_s1_cmd_theme_sub">Now: %1$s · next: %2$s</string>
+    <string name="rd_s1_theme_system">System</string>
+    <string name="rd_s1_theme_light">Light</string>
+    <string name="rd_s1_theme_dark">Dark</string>
+    <string name="rd_s1_cmd_rail">Show or hide rail labels</string>
+    <string name="rd_s1_cmd_rail_sub">Labelled or icons only</string>
+    <string name="rd_s1_cmd_logs">Open error logs</string>
+    <string name="rd_s1_cmd_logs_sub">This PC and linked devices</string>
+    <string name="rd_s1_cmd_style">Choose the app style</string>
+    <string name="rd_s1_cmd_style_sub">Direction, palette, cards and motion</string>
+    <string name="rd_s1_cmd_nav_rail">Navigation: rail</string>
+    <string name="rd_s1_cmd_nav_rail_sub">Every destination in sight</string>
+    <string name="rd_s1_cmd_nav_medium">Navigation: by medium</string>
+    <string name="rd_s1_cmd_nav_medium_sub">Anime, Manga and Novel selector on top</string>
+    <string name="rd_s1_cmd_nav_command">Navigation: commands</string>
+    <string name="rd_s1_cmd_nav_command_sub">Icon rail with the search bar in the centre</string>
+    <string name="rd_s1_badge_current">Current</string>
+    <string name="rd_s1_badge_on">On</string>
+    <string name="rd_s1_badge_off">Off</string>
+
+    <string name="rd_s1_sc_palette">Open this palette</string>
+    <string name="rd_s1_sc_settings">Open Settings (Ctrl+P also works)</string>
+    <string name="rd_s1_sc_rail">Rail with or without labels</string>
+    <string name="rd_s1_sc_back">Go back or close the top layer</string>
+    <string name="rd_s1_sc_digits">Go to rail destination 1 to 9</string>
+    <string name="rd_s1_sc_sub">Keyboard shortcut</string>
+
+    <string name="rd_s1_section_appearance">Appearance</string>
+    <string name="rd_s1_section_player">Player</string>
+    <string name="rd_s1_section_metadata">Metadata</string>
+    <string name="rd_s1_section_accounts">Accounts</string>
+    <string name="rd_s1_section_link">Link</string>
+    <string name="rd_s1_section_network">Network</string>
+    <string name="rd_s1_section_torrents">Torrents</string>
+    <string name="rd_s1_section_downloads">Downloads</string>
+    <string name="rd_s1_section_reader">Reader</string>
+    <string name="rd_s1_section_data">Data</string>
+    <string name="rd_s1_section_about">About</string>
+
+    <!-- File drop layer (desktop) -->
+    <string name="rd_s1_drop_hover">Drop to see what to do with it</string>
+    <string name="rd_s1_drop_formats">Opens .kai, .torrent, magnet links, video (.mkv, .mp4, .webm) and subtitles (.ass, .srt, .vtt).</string>
+    <string name="rd_s1_drop_cancel">Cancel</string>
+    <string name="rd_s1_drop_ok">Got it</string>
+    <string name="rd_s1_drop_kai_label">Extension .kai</string>
+    <string name="rd_s1_drop_kai_title">Install the extension</string>
+    <string name="rd_s1_drop_kai_detail">It is active once installed. You can review or turn it off in Sources.</string>
+    <string name="rd_s1_drop_kai_versions">Installed: %1$s. This file: %2$s.</string>
+    <string name="rd_s1_drop_kai_action">Install</string>
+    <string name="rd_s1_drop_kai_done">Extension installed: %1$s</string>
+    <string name="rd_s1_drop_kai_failed">Could not install the extension</string>
+    <string name="rd_s1_drop_torrent_label">.torrent file</string>
+    <string name="rd_s1_drop_torrent_title">Add torrent</string>
+    <string name="rd_s1_drop_torrent_detail">Opens Transfers with the torrent ready to add. You can pick files before it starts.</string>
+    <string name="rd_s1_drop_magnet_label">Magnet link</string>
+    <string name="rd_s1_drop_magnet_title">Add magnet link</string>
+    <string name="rd_s1_drop_magnet_detail">Metadata comes from the peers; the files show up as soon as they arrive.</string>
+    <string name="rd_s1_drop_add">Add</string>
+    <string name="rd_s1_drop_video_label">Local video</string>
+    <string name="rd_s1_drop_video_title">Play local file</string>
+    <string name="rd_s1_drop_video_detail">Plays it without looking anything up online.</string>
+    <string name="rd_s1_drop_play">Play</string>
+    <string name="rd_s1_drop_sub_label">Subtitle</string>
+    <string name="rd_s1_drop_sub_title">Load subtitle</string>
+    <string name="rd_s1_drop_sub_detail">Open the episode first, then add it from the player: Subtitles › Add file.</string>
+    <string name="rd_s1_drop_none_label">Not supported</string>
+    <string name="rd_s1_drop_none_title">This file cannot be opened</string>
+
+    <!-- One-time notice after updating to Sparkles -->
+    <string name="rd_s1_intro_title">Nijiyome has a new look</string>
+    <string name="rd_s1_intro_body">Your Home, calendar and motion stay as they were. Pick a direction, palette and cards in Appearance.</string>
+    <string name="rd_s1_intro_open">Choose style</string>
+    <string name="rd_s1_intro_dismiss">Not now</string>
+</resources>
