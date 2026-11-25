@@ -181,10 +181,11 @@ private fun RailItem(route: Route, selected: Boolean, badge: Int, slim: Boolean,
                 Modifier
                     .size(width = if (slim) 44.dp else 56.dp, height = if (slim) 40.dp else 32.dp)
                     .clip(RoundedCornerShape(999.dp))
-                    .background(if (selected) scheme.secondaryContainer else Color.Transparent),
+                    // The artifact's `--nj-accent-soft` pill: the accent family reads the same in every direction (Obi's secondary is ink).
+                    .background(if (selected) scheme.primaryContainer else Color.Transparent),
                 contentAlignment = Alignment.Center,
             ) {
-                val tint = if (selected) scheme.onSecondaryContainer else scheme.onSurfaceVariant
+                val tint = if (selected) scheme.onPrimaryContainer else scheme.onSurfaceVariant
                 if (badge > 0) {
                     BadgedBox(badge = { Badge { Text(if (badge > 99) "99+" else badge.toString()) } }) {
                         Icon(route.icon(selected), contentDescription = null, tint = tint)
