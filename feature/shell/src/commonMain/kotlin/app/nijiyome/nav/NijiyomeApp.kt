@@ -105,6 +105,7 @@ import app.nijiyome.feature.home.HomeScreen
 import app.nijiyome.feature.home.TasteAtlas
 import app.nijiyome.feature.library.LibraryScreen
 import app.nijiyome.feature.library.LibraryTab
+import app.nijiyome.feature.link.ExtensionServersContent
 import app.nijiyome.feature.link.ExtensionServersScreen
 import app.nijiyome.feature.link.LinkedDeviceScreen
 import app.nijiyome.feature.manga.MangaDetailsScreen
@@ -767,6 +768,19 @@ private fun AppNavDisplay(
     // Reduce motion: instant screen changes (no slide / fade), predictive back included.
     val reduceMotion = LocalReduceMotion.current
     val instant = remember { ContentTransform(EnterTransition.None, ExitTransition.None) }
+    /** Nijiyome Link: the client on Android, the server (with the desktop monitor) on desktop; the screen picks the side. */
+    val linkedDevice: @Composable () -> Unit = {
+        LinkedDeviceScreen(
+            onBack = ::back,
+            onPlay = ::play,
+            onOpenExtensionServers = if (available.offers(Route.ExtensionServers)) ({ push(Route.ExtensionServers) }) else null,
+            onOpenLogs = { openSettingsAt(SettingsSection.ABOUT) },
+            onOpenLinkSettings = { openSettingsAt(SettingsSection.LINK) },
+            onOpenMonitor = openLinkMonitor,
+            onOpenTorrents = { openDownloads() },
+        )
+    }
+
     // Sparkles motion "ficha": opening or leaving a Details page uses the card-to-details screen transform; the rest keeps the defaults.
     val motion = LocalMotion.current
     val density = LocalDensity.current
@@ -1028,6 +1042,14 @@ private fun AppNavDisplay(
                     } else {
                         null
                     },
+                    // Sparkles S9: the Servidores tab embeds :feature:link's content (it needs the extension-server service).
+                    serversContent = if (available.offers(Route.ExtensionServers)) {
+                        { ExtensionServersContent() }
+                    } else {
+                        null
+                    },
+                    onOpenLink = if (available.offers(Route.Linked)) ({ push(Route.Linked) }) else null,
+                    onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
                 )
             }
             // parity wave B (16 §3.4, worker r): custom provider pages.
@@ -1060,6 +1082,9 @@ private fun AppNavDisplay(
                     onOpenReader = { args -> push(Route.MangaReader(args)) },
                     onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
                     initialQuery = key.query,
+                    onOpenNovels = { backStack.navigateTop(Route.Novels()) },
+                    // Library on the manga medium (LibraryTab.MANGA selects it).
+                    onOpenLibrary = { push(Route.LibraryTab(LibraryTab.MANGA)) },
                 )
             }
             entry<Route.MangaReader> { key ->
@@ -1077,6 +1102,9 @@ private fun AppNavDisplay(
                     onOpenReader = { args -> push(Route.NovelReader(args)) },
                     onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
                     initialQuery = key.query,
+                    onOpenManga = { backStack.navigateTop(Route.Manga()) },
+                    // Library on the novel medium (LibraryTab.NOVELS selects it).
+                    onOpenLibrary = { push(Route.LibraryTab(LibraryTab.NOVELS)) },
                 )
             }
             entry<Route.NovelDetails>(metadata = ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata) { key ->
@@ -1121,12 +1149,8 @@ private fun AppNavDisplay(
                     onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
                 )
             }
-            entry<Route.Link> {
-                LinkedDeviceScreen(onBack = ::back, onPlay = ::play, onOpenExtensionServers = { push(Route.ExtensionServers) })
-            }
-            entry<Route.Linked> {
-                LinkedDeviceScreen(onBack = ::back, onPlay = ::play, onOpenExtensionServers = { push(Route.ExtensionServers) })
-            }
+            entry<Route.Link> { linkedDevice() }
+            entry<Route.Linked> { linkedDevice() }
             entry<Route.ExtensionServers> { ExtensionServersScreen(onBack = ::back) }
             entry<Route.Torrents> { key ->
                 // Sparkles: the torrent client is a section of Transferencias. A torrent opens its detail there; the client's lists
