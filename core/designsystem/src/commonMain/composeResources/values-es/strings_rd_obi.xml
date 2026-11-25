@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, carril D2: la dirección Obi. -->
+    <string name="rd_obi_name">Obi</string>
+    <string name="rd_obi_tagline">Cada serie con su faja: la banda de papel de las novelas ligeras y los Blu-ray japoneses lleva el estado, el episodio y la frase del momento.</string>
+    <string name="rd_obi_palette_tienda">Tienda</string>
+    <string name="rd_obi_palette_nocturna">Estantería nocturna</string>
+    <string name="rd_obi_palette_limitada">Edición limitada</string>
+    <string name="rd_obi_palette_mono">Monocromo con faja</string>
+</resources>
