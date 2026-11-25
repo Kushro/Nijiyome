@@ -199,14 +199,19 @@ SnackbarTransition(current != null) { AppSnackbar(current, Modifier.snackbarBehi
 
 ## Equipo lento: `rememberLowEndDevice(): Boolean`
 
-`expect/actual`. Android: `ActivityManager.isLowRamDevice` o una pantalla cuyo modo más rápido es de 60 Hz o menos (se mira
-el máximo de `Display.supportedModes`, no el refresco del momento, para no confundir un 120 Hz en ahorro de batería).
-Escritorio: Skia por software (`SOFTWARE_FAST` / `SOFTWARE_COMPAT`, forzado con `skiko.renderApi` / `SKIKO_RENDER_API` o por
-la caída de Skiko al iniciar; se vuelve a mirar tras el primer cuadro y a los 2 s). Lo pasa el shell:
+`expect/actual`. Android: `ActivityManager.isLowRamDevice`. Escritorio: Skia por software (`SOFTWARE_FAST` /
+`SOFTWARE_COMPAT`, forzado con `skiko.renderApi` / `SKIKO_RENDER_API` o por la caída de Skiko al iniciar; se vuelve a mirar
+tras el primer cuadro y a los 2 s). Un panel de 60 Hz no activa nada. Lo pasa el shell:
 
 ```kotlin
 LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion, lowEndDevice = rememberLowEndDevice())
 ```
+
+## Refresco bajo: `rememberLowRefreshRate(): Boolean`
+
+`expect/actual`, aparte de lo anterior. Android: la pantalla cuyo modo más rápido es de 60 Hz o menos (se mira el máximo de
+`Display.supportedModes`, no el refresco del momento, para no confundir un 120 Hz en ahorro de batería). Escritorio: siempre
+`false`. No cambia el nivel de movimiento: Ajustes puede usarla para sugerir el modo rendimiento.
 
 ## Lo que conecta el shell (S1)
 

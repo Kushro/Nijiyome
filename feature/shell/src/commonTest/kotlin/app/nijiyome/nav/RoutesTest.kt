@@ -54,15 +54,17 @@ class RoutesTest {
         assertEquals(Route.Extensions, Route.ExtensionServers.topLevel(wide = true))
         assertEquals(Route.Calendar, Route.Calendar.topLevel(wide = false))
         assertEquals(Route.Calendar, Route.Calendar.topLevel(wide = true))
-        // Para ti is a tab of Explorar on wide windows and a row of Tú on phones.
+        // Para ti is a tab of Explorar on every window.
         assertEquals(Route.Search, Route.ForYou.topLevel(wide = true))
-        assertEquals(Route.You, Route.ForYou.topLevel(wide = false))
+        assertEquals(Route.Search, Route.ForYou.topLevel(wide = false))
     }
 
     @Test
     fun `compact folds transfers and settings-like routes into you`() {
         assertEquals(Route.You, Route.Torrents(TorrentSection.PEERS, "abc").topLevel(wide = false))
         assertEquals(Route.Library, Route.LibraryTab(LibraryTab.HISTORY).topLevel(wide = false))
+        assertEquals(Route.You, Route.LibraryTab(LibraryTab.TORRENTS).topLevel(wide = false))
+        assertEquals(Route.Downloads(), Route.LibraryTab(LibraryTab.TORRENTS).topLevel(wide = true))
         listOf(Route.Extensions, Route.Link, Route.Linked, Route.Settings, Route.SettingsSection(SettingsSection.PLAYER), Route.You)
             .forEach { assertEquals(Route.You, it.topLevel(wide = false), "$it") }
         assertEquals(Route.Search, Route.SearchFor(feed = FeedKind.entries.first()).topLevel(wide = false))

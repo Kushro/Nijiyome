@@ -26,6 +26,10 @@ actual fun rememberLowEndDevice(): Boolean {
     return software
 }
 
+/** Desktop panels are not judged by refresh rate. */
+@Composable
+actual fun rememberLowRefreshRate(): Boolean = false
+
 private fun softwareRendering(): Boolean = runCatching {
     val forced = System.getProperty("skiko.renderApi") ?: System.getenv("SKIKO_RENDER_API")
     if (forced != null && forced.startsWith("SOFTWARE", ignoreCase = true)) return@runCatching true

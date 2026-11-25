@@ -43,7 +43,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.direction.BrandMark
 import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.LocalDirection
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.feature.shell.resources.Res
 import app.nijiyome.feature.shell.resources.rd_s1_cmd_field
@@ -258,6 +260,7 @@ internal fun ShellTopBar(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (LocalDirection.current.decor.hasBrandMark) BrandMark(Modifier.size(26.dp))
         ShellMediumSelector(height = 40.dp)
         Box(Modifier.weight(1f))
         ShellCommandField(height = 40.dp)

@@ -54,7 +54,11 @@ import app.nijiyome.feature.settings.DesktopAppProperties
 import app.nijiyome.model.LinkServerController
 import app.nijiyome.model.MediaRef
 import app.nijiyome.model.PlayerArgs
+import app.nijiyome.model.NoticeDestination
 import app.nijiyome.model.SettingsRepository
+import app.nijiyome.model.SystemNotifier
+import app.nijiyome.model.torrent.TorrentSection
+import app.nijiyome.desktop.system.DesktopNotifier
 import app.nijiyome.nav.NijiyomeApp
 import app.nijiyome.nav.Route
 import app.nijiyome.ui.platform.AppWindow
@@ -164,6 +168,13 @@ fun main(args: Array<String>) {
     // v1.1 (F2): the desktop's scale (Xft.dpi) that AWT ignores on Linux, applied to Compose's density (LinuxUiScale).
     val uiScale = LinuxUiScale.factor
     var showWindow: () -> Unit = {}
+    // DESK-09: a clicked notification shows the window on its screen, through the same route links as a forwarded launch.
+    (koin.getOrNull<SystemNotifier>() as? DesktopNotifier)?.onOpen = { destination ->
+        EventQueue.invokeLater {
+            router.routeLinks.value = destination.route()
+            showWindow()
+        }
+    }
     val channel = InstanceChannel.listen(paths.dataDir) { forwarded ->
         EventQueue.invokeLater {
             router.open(LaunchArgs.parse(forwarded).target)
@@ -212,7 +223,7 @@ fun main(args: Array<String>) {
             var liveStatus by remember { mutableStateOf(TrayLiveStatus(spanish = spanish, link = link)) }
             var traySnapshot by remember { mutableStateOf(liveStatus.quantizedForTray()) }
             val trayFreezeUntilMs = remember { java.util.concurrent.atomic.AtomicLong(0L) }
-            LaunchedEffect(linkServer, torrentRepo, trayOn, linkMonitorOpen, spanish) {
+            LaunchedEffect(linkServer, torrentRepo, trayOn, linkMonitorOpen, spanish, trayTexts) {
                 while (true) {
                     val snapshot = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         val rt = Runtime.getRuntime()
@@ -231,10 +242,10 @@ fun main(args: Array<String>) {
                                 kotlinx.coroutines.withTimeoutOrNull(250) { torrentRepo?.stats(item.id)?.first() }
                             }.getOrNull()
                             val stateLbl = when (st?.state ?: item.state) {
-                                app.nijiyome.model.torrent.TorrentState.DOWNLOADING -> if (spanish) "Descargando" else "Downloading"
-                                app.nijiyome.model.torrent.TorrentState.SEEDING -> if (spanish) "Compartiendo" else "Seeding"
-                                app.nijiyome.model.torrent.TorrentState.INITIALIZING -> if (spanish) "Iniciando" else "Initializing"
-                                else -> if (spanish) "Activo" else "Active"
+                                app.nijiyome.model.torrent.TorrentState.DOWNLOADING -> trayTexts.stateDownloading
+                                app.nijiyome.model.torrent.TorrentState.SEEDING -> trayTexts.stateSeeding
+                                app.nijiyome.model.torrent.TorrentState.INITIALIZING -> trayTexts.stateInitializing
+                                else -> trayTexts.stateActive
                             }
                             ActiveTorrentSummary(
                                 id = item.id,
@@ -371,6 +382,7 @@ fun main(args: Array<String>) {
                                     shortcuts = shortcuts,
                                     // Sparkles file drop: a magnet or a .torrent dropped on the window goes where the command line sends it.
                                     openExternal = { raw -> LaunchArgs.targetOf(raw)?.let { router.open(it); true } ?: false },
+                                    openLinkMonitor = { linkMonitorOpen = true },
                                     windowTopBar = if (nativeBar) null else ({
                                         DesktopTitleBar(
                                             window = window,
@@ -472,6 +484,14 @@ private fun exitWithWatchdog(code: Int): Nothing {
 internal fun localFileRoute(path: String): Route? {
     val file = File(path).takeIf { it.isFile } ?: return null
     return Route.Player(PlayerArgs(media = MediaRef(), title = file.nameWithoutExtension, episode = 1, localUri = file.absolutePath, looseFile = true))
+}
+
+/** The screen a clicked desktop notification opens. */
+internal fun NoticeDestination.route(): Route = when (this) {
+    NoticeDestination.Transfers -> Route.Downloads()
+    is NoticeDestination.Torrent -> Route.Torrents(TorrentSection.OVERVIEW, torrentId)
+    NoticeDestination.Calendar -> Route.Calendar
+    NoticeDestination.Notifications -> Route.Notifications
 }
 
 /** Startup messages shown before any shared resource can be loaded: English, or Spanish on a Spanish system. */

@@ -176,6 +176,14 @@ interface DirectionDecor {
     fun EmptyArt(kind: EmptyKind, modifier: Modifier) {
     }
 
+    /** true when [BrandMark] draws the direction's own logo; the shell then shows it instead of the app logo. */
+    val hasBrandMark: Boolean get() = false
+
+    /** The direction's logo in the top bar / title bar; the default draws nothing (the shell keeps the app logo). */
+    @Composable
+    fun BrandMark(modifier: Modifier) {
+    }
+
     /** The plain Material decoration. */
     object Plain : DirectionDecor
 }
@@ -252,3 +260,7 @@ fun ProgressTrack(progress: Float, modifier: Modifier = Modifier, segments: Int?
 
 @Composable
 fun EmptyArt(kind: EmptyKind, modifier: Modifier = Modifier) = LocalDirection.current.decor.EmptyArt(kind, modifier)
+
+/** The active direction's logo (nothing when it has none: check `LocalDirection.current.decor.hasBrandMark`). */
+@Composable
+fun BrandMark(modifier: Modifier = Modifier) = LocalDirection.current.decor.BrandMark(modifier)

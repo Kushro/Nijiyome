@@ -2,6 +2,7 @@
 package app.nijiyome.torrent.system
 
 import app.nijiyome.model.DesktopNoticeTexts
+import app.nijiyome.model.NoticeDestination
 import app.nijiyome.model.SystemNotifier
 import java.io.File
 import java.io.FileInputStream
@@ -83,11 +84,11 @@ internal class DesktopTorrentHost(
 
     /** "Episodio N listo" (Android's TorrentNotifications.notifyCompleted, without the "Ver" action). */
     override fun notifyCompleted(torrentId: String, title: String, episode: Int?) {
-        notifier?.notify(title, DesktopNoticeTexts.episodeReady(episode))
+        notifier?.notify(title, DesktopNoticeTexts.episodeReady(episode), NoticeDestination.Torrent(torrentId))
     }
 
     override fun notifyError(torrentId: String, message: String) {
-        notifier?.notify(DesktopNoticeTexts.torrentProblem, message)
+        notifier?.notify(DesktopNoticeTexts.torrentProblem, message, NoticeDestination.Torrent(torrentId))
     }
 
     override fun startService() = Unit

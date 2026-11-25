@@ -52,7 +52,7 @@ fun ListStatus.slot(): StatusSlot = when (this) {
 /**
  * The effective motion choices for `LocalMotion`: OFF when motion is reduced (setting, system or Animaciones desactivadas, already
  * folded into [LocalReduceMotion]), PERF when performance mode is on or [lowEndDevice] and the mode is automatic, else the profile.
- * The shell provides it once; [lowEndDevice] comes from the platform (lane M1: low RAM, 60 Hz, software rendering).
+ * The shell provides it once; [lowEndDevice] comes from the platform (lane M1: low RAM or software rendering).
  */
 @Composable
 fun rememberMotionChoices(prefs: DesignPrefs, reduce: Boolean = LocalReduceMotion.current, lowEndDevice: Boolean = false): MotionChoices {

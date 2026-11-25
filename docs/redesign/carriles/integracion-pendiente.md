@@ -8,21 +8,21 @@ Lo que los carriles dejaron para conectar, tomado de sus informes finales. Se co
   `NavEntryDecorator` que ejecute `CardToDetailsEntry(LocalNavAnimatedContentScope.current) { entry.Content() }`; cuando la
   entrada superior es Details usar `LocalMotion.current.cardToDetailsEnterTransform(density)` / `cardToDetailsPopTransform(density)`
   en `transitionSpec` / `popTransitionSpec`; pasar `lowEndDevice = rememberLowEndDevice()` a `rememberMotionChoices`.
-  Ver `docs/redesign/carriles/movimiento-api.md`.
+  Ver `docs/redesign/carriles/movimiento-api.md`. (hecho)
 - **Regla de equipo lento:** el modo automático solo debe activarse con poca RAM o render por software. Un panel de 60 Hz no
-  activa nada: separar la señal de 60 Hz en `rememberLowEndDevice` (por ejemplo una función aparte) para que Ajustes solo sugiera.
+  activa nada: separar la señal de 60 Hz en `rememberLowEndDevice` (por ejemplo una función aparte) para que Ajustes solo sugiera. (hecho)
 - **Explorar (S3):** en `Route.Search` y `Route.SearchFor` pasar a `SearchScreen`:
   `forYouPanel = { onGenre, m -> ForYouPanel(onMediaClick = ::openMedia, modifier = m, onGenre = onGenre) }`,
   `forYouPreview = { onSeeAll, onGenre, m -> ForYouPreview(::openMedia, onSeeAll, onGenre, m) }`,
   `tasteAtlas = { m -> TasteAtlas(::openMedia, m) }`, `onOpenExtensions = { … Route.Extensions }`.
-  `Route.ForYou` llama a `SearchScreen` con lo mismo más `initialTab = ExploreTab.FOR_YOU`.
+  `Route.ForYou` llama a `SearchScreen` con lo mismo más `initialTab = ExploreTab.FOR_YOU`. (hecho)
 - **Inicio (S2):** `HomeScreen(onOpenDownloads → Route.Downloads, onOpenLink → Route.Linked, onOpenLinkMonitor → monitor de Link,
-  onOpenMetadataSettings → Ajustes › Metadatos y descubrir, onOpenExtensions → Route.Extensions)`.
+  onOpenMetadataSettings → Ajustes › Metadatos y descubrir, onOpenExtensions → Route.Extensions)`. (hecho; en Android el monitor cae a la pantalla Link)
 - **Biblioteca (S7):** `LibraryScreen(onOpenTransfers → Route.Downloads, sección torrents)`; `Route.LibraryTab(TORRENTS)` debe ir a
-  `Route.Downloads`. `YouScreen(onOpenTorrents)` ya no se dibuja.
+  `Route.Downloads`. `YouScreen(onOpenTorrents)` ya no se dibuja. (hecho)
 - **Ficha (S4):** el reproductor puede pasar `onOpenExtensions` a `SourcePickerSheet`.
 - **Capa de soltar (S1/I1):** S1 escribió la suya en `feature/shell/FileDropLayer.kt` porque la de I1 no estaba; decidir si se
-  reemplaza por `FileDropOverlay` / `FileDropResult` de `core/ui/patterns` o se deja (no duplicar comportamiento).
+  reemplaza por `FileDropOverlay` / `FileDropResult` de `core/ui/patterns` o se deja (no duplicar comportamiento). (hecho: se usan los compartidos; el shell conserva la acción de cada tipo)
 - **Medio (S1):** `LocalShellMedium` vive en `feature/shell`; Inicio, Explorar y Biblioteca no lo leen. En navegación «por medio»
   el selector navega entre los inicios de Anime / Manga / Novelas; con eso alcanza salvo que se quiera filtrar Explorar y Biblioteca.
 - **Galería de diseño (I1):** `DesignGalleryScreen(onBack)`; S10 la abre dentro de Ajustes. Comprobar que quedó accesible.
@@ -30,14 +30,14 @@ Lo que los carriles dejaron para conectar, tomado de sus informes finales. Se co
   `SettingsScreen` cuando S10 lo entregue.
 - **Aviso tras actualizar:** el primer arranque (S10) debe marcar `introSeen = true`.
 - **Notificaciones de escritorio (DESK-09):** `SystemNotifier.notify(title, body)` (core/model) no lleva destino y `DesktopNotifier`
-  no escucha el clic. Agregar un destino opcional con valor por defecto y el manejador de clic.
+  no escucha el clic. Agregar un destino opcional con valor por defecto y el manejador de clic. (hecho; ver límites del clic en el informe del integrador)
 - **Link en escritorio:** el destino Link está oculto porque `Route.Linked` necesita `LinkRepository`; ver informe de S9 y ajustar
   `RouteAvailability`.
 - **Textos que aún eligen idioma en código:** diálogo del monitor de Link, etiquetas de estado de torrents en `Main.kt`, título de
-  la ventana (`windowTitle`, fijado por una prueba).
+  la ventana (`windowTitle`, fijado por una prueba). (hecho salvo `windowTitle`, que fija una prueba)
 - **Logo de Sumi en la barra superior:** `SumiMark(tile = true)` es público, pero el shell no puede preguntar por la dirección.
-  Hace falta una ranura de marca en `DirectionDecor` (por defecto el logo actual).
-- **Indicador de navegación:** en Obi `secondaryContainer` es tinta; si el indicador del riel debe ser el acento, usar `primary`.
+  Hace falta una ranura de marca en `DirectionDecor` (por defecto el logo actual). (hecho)
+- **Indicador de navegación:** en Obi `secondaryContainer` es tinta; si el indicador del riel debe ser el acento, usar `primary`. (hecho: `primaryContainer`, el `--nj-accent-soft` del artefacto)
 
 ## Contrato (`core/designsystem`, `core/ui`)
 
@@ -62,7 +62,7 @@ Lo que los carriles dejaron para conectar, tomado de sus informes finales. Se co
 
 Agregar los textos OFL a `assets/licenses/` y las filas a `THIRD_PARTY_NOTICES.md` §3:
 Zen Kaku Gothic New, Yuji Boku (Sumi); Dela Gothic One, M PLUS 1 (Obi); M PLUS Rounded 1c, Yuji Syuku (Tanabata);
-Atkinson Hyperlegible Next, Overpass (Tránsito). Orígenes en `google/fonts` `ofl/<familia>/`.
+Atkinson Hyperlegible Next, Overpass (Tránsito). Orígenes en `google/fonts` `ofl/<familia>/`. (hecho)
 
 ## Ajustes que cambian de lugar (para comprobar contra lo que entregue S10)
 
@@ -91,9 +91,9 @@ Atkinson Hyperlegible Next, Overpass (Tránsito). Orígenes en `google/fonts` `o
 - `Route.Downloads(tab)`: llamar a `DownloadsScreen(initialTab, onBack, onPlay, onOpenDetails, onOpenTorrent, onOpenMangaReader,
   onOpenNovelReader, torrentSlots = TransfersTorrentSlots(detail = { id, back, showBack, m -> TransfersTorrentDetail(id, back, ::play, showBack, m) },
   addTorrent = { open, setOpen, onAdded -> TransfersAddTorrentHost(open, setOpen, onAdded) }), onOpenSettings, onOpenDebrid)`.
-  Sin `torrentSlots` el cliente torrent no aparece dentro de la página.
+  Sin `torrentSlots` el cliente torrent no aparece dentro de la página. (hecho)
 - `Route.Torrents(section, torrentId)`: con id, `DownloadsScreen(initialTab = ACTIVE, initialTorrentId = id, torrentSlots = …)`;
-  sin id, LIBRARY / DOWNLOADS / HISTORY redirigen a `Route.Downloads`; DEBRID va a Fuentes (S9); SETTINGS a Ajustes (S10).
+  sin id, LIBRARY / DOWNLOADS / HISTORY redirigen a `Route.Downloads`; DEBRID va a Fuentes (S9); SETTINGS a Ajustes (S10). (hecho; DEBRID y SETTINGS siguen en `TorrentsScreen` como hoy)
 - Alternativa más limpia: `implementation(projects.feature.torrents)` en `feature/downloads/build.gradle.kts` y quitar los slots.
 - Falta en core: borrar una regla de auto-descarga (`setRule(null)` no hace nada), orden combinado de la cola (no hay arrastre
   para reordenar), «mover datos» y «recomprobar» (no existen en `TorrentRepository`).

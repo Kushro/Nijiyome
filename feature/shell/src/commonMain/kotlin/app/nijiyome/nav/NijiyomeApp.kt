@@ -54,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
@@ -63,10 +64,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.defaultPopTransitionSpec
 import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
@@ -77,21 +81,28 @@ import app.nijiyome.designsystem.components.LocalAppSnackbar
 import app.nijiyome.designsystem.components.rememberAppSnackbarController
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.CardToDetailsEntry
 import app.nijiyome.designsystem.motion.CardToDetailsHost
 import app.nijiyome.designsystem.motion.LocalMotion
+import app.nijiyome.designsystem.motion.cardToDetailsEnterTransform
+import app.nijiyome.designsystem.motion.cardToDetailsPopTransform
+import app.nijiyome.designsystem.motion.rememberLowEndDevice
 import app.nijiyome.designsystem.theme.LocalReduceMotion
 import app.nijiyome.designsystem.theme.NijiyomeTheme
 import app.nijiyome.designsystem.theme.rememberReduceMotion
 import app.nijiyome.feature.details.CharacterScreen
 import app.nijiyome.feature.details.DetailsScreen
 import app.nijiyome.feature.downloads.DownloadsScreen
+import app.nijiyome.feature.downloads.TransfersTorrentSlots
 import app.nijiyome.feature.extensions.ExtensionsScreen
 import app.nijiyome.feature.extensions.ProviderItemScreen
 import app.nijiyome.feature.extensions.ProviderScreen
 import app.nijiyome.feature.extensions.rememberProviderResume
 import app.nijiyome.feature.home.CalendarScreen
-import app.nijiyome.feature.home.ForYouScreen
+import app.nijiyome.feature.home.ForYouPanel
+import app.nijiyome.feature.home.ForYouPreview
 import app.nijiyome.feature.home.HomeScreen
+import app.nijiyome.feature.home.TasteAtlas
 import app.nijiyome.feature.library.LibraryScreen
 import app.nijiyome.feature.library.LibraryTab
 import app.nijiyome.feature.link.ExtensionServersScreen
@@ -103,6 +114,7 @@ import app.nijiyome.feature.novel.NovelDetailsScreen
 import app.nijiyome.feature.novel.NovelHomeScreen
 import app.nijiyome.feature.novel.NovelReaderScreen
 import app.nijiyome.feature.player.PlayerScreen
+import app.nijiyome.feature.search.ExploreTab
 import app.nijiyome.feature.search.ImageSearchScreen
 import app.nijiyome.feature.search.SearchScreen
 import app.nijiyome.feature.settings.OnboardingScreen
@@ -117,6 +129,8 @@ import app.nijiyome.feature.social.ActivityThreadScreen
 import app.nijiyome.feature.social.NotificationsScreen
 import app.nijiyome.feature.social.ProfileScreen
 import app.nijiyome.feature.torrents.TorrentsScreen
+import app.nijiyome.feature.torrents.TransfersAddTorrentHost
+import app.nijiyome.feature.torrents.TransfersTorrentDetail
 import app.nijiyome.feature.you.YouScreen
 import app.nijiyome.model.AppSettings
 import app.nijiyome.model.DownloadRepository
@@ -183,6 +197,8 @@ fun NijiyomeApp(
      * Non-null turns the window-wide drop layer on. Android passes none (files arrive by Open with / Share).
      */
     openExternal: ((String) -> Boolean)? = null,
+    /** Desktop: opens the Link monitor dialog (Inicio's Link panel "Monitor"). Null on Android: that button opens the Link screen. */
+    openLinkMonitor: (() -> Unit)? = null,
     platformEffects: @Composable (settings: AppSettings, dark: Boolean) -> Unit = { _, _ -> },
 ) {
     val settingsRepo = koinInject<SettingsRepository>()
@@ -212,7 +228,7 @@ fun NijiyomeApp(
             LocalAppSnackbar provides snackbar,
             LocalTitleLanguage provides settings.titleLanguage,
             LocalLook provides settings.look,
-            LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion),
+            LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion, lowEndDevice = rememberLowEndDevice()),
             LocalShellChrome provides chrome,
         ) {
             val shell: @Composable () -> Unit = {
@@ -223,7 +239,7 @@ fun NijiyomeApp(
                 } else {
                     AppShell(
                         snackbar, chrome, torrentLinks, serverLinks, accountLinks, imageLinks, routeLinks, shortcuts,
-                        hostTopBar = windowTopBar != null, openExternal = openExternal,
+                        hostTopBar = windowTopBar != null, openExternal = openExternal, openLinkMonitor = openLinkMonitor,
                     )
                 }
             }
@@ -254,6 +270,7 @@ private fun AppShell(
     shortcuts: ShellShortcuts? = null,
     hostTopBar: Boolean = false,
     openExternal: ((String) -> Boolean)? = null,
+    openLinkMonitor: (() -> Unit)? = null,
 ) {
     val backStack = rememberNavBackStack(RouteSavedState, Route.Home)
     val current = backStack.lastOrNull() as? Route
@@ -522,7 +539,11 @@ private fun AppShell(
                             Box(Modifier.weight(1f).fillMaxWidth()) {
                                 // Sparkles motion "ficha": the card and the Details header meet inside this host.
                                 CardToDetailsHost {
-                                    AppNavDisplay(backStack, wide, available, snackbar, shortcuts)
+                                    AppNavDisplay(
+                                        backStack, wide, available, snackbar, shortcuts,
+                                        openSettingsAt = { section -> openSettings(section, null) },
+                                        openLinkMonitor = openLinkMonitor,
+                                    )
                                 }
                             }
                             AnimatedVisibility(visible = showOffline, enter = expandVertically(), exit = shrinkVertically()) {
@@ -641,6 +662,8 @@ private fun AppNavDisplay(
     available: RouteAvailability,
     snackbar: AppSnackbarController,
     shortcuts: ShellShortcuts?,
+    openSettingsAt: (SettingsSection) -> Unit,
+    openLinkMonitor: (() -> Unit)?,
 ) {
     // List-detail on expanded windows: Search/Library are list panes, Details the detail pane.
     // BUG-045: two panes only when the window really is wide and tall enough (read from the configuration, which follows rotation at
@@ -700,20 +723,83 @@ private fun AppNavDisplay(
     fun openUser(userName: String) = push(Route.Profile(userName))
     fun openActivity(activityId: Int) = push(Route.ActivityThread(activityId))
 
+    // Explorar's Para ti pieces live in :feature:home; Explorar (:feature:search) takes them as slots.
+    val forYouPanel: @Composable (onGenre: (String) -> Unit, modifier: Modifier) -> Unit = { onGenre, m ->
+        ForYouPanel(onMediaClick = ::openMedia, modifier = m, onGenre = onGenre)
+    }
+    val forYouPreview: @Composable (onSeeAll: () -> Unit, onGenre: (String) -> Unit, modifier: Modifier) -> Unit = { onSeeAll, onGenre, m ->
+        ForYouPreview(::openMedia, onSeeAll, onGenre, m)
+    }
+    val tasteAtlas: @Composable (modifier: Modifier) -> Unit = { m -> TasteAtlas(::openMedia, m) }
+
+    /**
+     * Transferencias (S8) with the torrent client inside it (:feature:downloads cannot see :feature:torrents, so the shell hands
+     * the torrent detail and "Añadir torrent" in as slots). [torrentId] opens on that torrent, at [section] when it is a per-torrent one.
+     */
+    val transfers: @Composable (tab: DownloadsTab, torrentId: String?, section: TorrentSection) -> Unit = { tab, torrentId, section ->
+        DownloadsScreen(
+            initialTab = tab,
+            onBack = if (wide && torrentId == null) null else ::back,
+            onPlay = ::play,
+            onOpenDetails = ::openDetails,
+            onOpenTorrent = ::openTorrent,
+            onOpenMangaReader = { args -> push(Route.MangaReader(args)) },
+            onOpenNovelReader = { args -> push(Route.NovelReader(args)) },
+            torrentSlots = TransfersTorrentSlots(
+                detail = { id, onDetailBack, showBack, m ->
+                    TransfersTorrentDetail(
+                        torrentId = id,
+                        onBack = onDetailBack,
+                        onPlay = ::play,
+                        showBack = showBack,
+                        modifier = m,
+                        initialSection = if (id == torrentId && section.perTorrent) section else TorrentSection.OVERVIEW,
+                    )
+                },
+                addTorrent = { open, onOpenChange, onAdded -> TransfersAddTorrentHost(open, onOpenChange, onAdded) },
+            ),
+            initialTorrentId = torrentId,
+            onOpenSettings = { openSettingsAt(SettingsSection.TORRENTS) },
+            onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
+        )
+    }
+
     // Reduce motion: instant screen changes (no slide / fade), predictive back included.
     val reduceMotion = LocalReduceMotion.current
     val instant = remember { ContentTransform(EnterTransition.None, ExitTransition.None) }
+    // Sparkles motion "ficha": opening or leaving a Details page uses the card-to-details screen transform; the rest keeps the defaults.
+    val motion = LocalMotion.current
+    val density = LocalDensity.current
+    val baseEnter = remember { defaultTransitionSpec<NavKey>() }
+    val basePop = remember { defaultPopTransitionSpec<NavKey>() }
+    // Gives each entry its AnimatedVisibilityScope so the poster and the Details header share bounds.
+    val cardToDetailsDecorator = remember {
+        NavEntryDecorator<NavKey>({ _ -> }) { entry -> CardToDetailsEntry(LocalNavAnimatedContentScope.current) { entry.Content() } }
+    }
 
     NavDisplay(
         backStack = backStack,
         onBack = ::back,
         sceneStrategies = listOf(listDetail),
-        transitionSpec = if (reduceMotion) ({ instant }) else defaultTransitionSpec<NavKey>(),
-        popTransitionSpec = if (reduceMotion) ({ instant }) else defaultPopTransitionSpec<NavKey>(),
+        transitionSpec = {
+            when {
+                reduceMotion -> instant
+                targetState.entries.lastOrNull().isCardToDetailsTarget() -> motion.cardToDetailsEnterTransform(density)
+                else -> baseEnter()
+            }
+        },
+        popTransitionSpec = {
+            when {
+                reduceMotion -> instant
+                initialState.entries.lastOrNull().isCardToDetailsTarget() -> motion.cardToDetailsPopTransform(density)
+                else -> basePop()
+            }
+        },
         predictivePopTransitionSpec = if (reduceMotion) ({ _ -> instant }) else defaultPredictivePopTransitionSpec<NavKey>(),
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
+            cardToDetailsDecorator,
         ),
         modifier = Modifier.fillMaxSize(),
         entryProvider = entryProvider {
@@ -739,6 +825,12 @@ private fun AppNavDisplay(
                         onOpenItem = { ext, source, item -> push(Route.ProviderItem(ext, source, item)) },
                     ),
                     onOpenDetails = ::openDetails,
+                    // Sparkles (S2)
+                    onOpenDownloads = { openDownloads() },
+                    onOpenLink = { push(Route.Linked) },
+                    onOpenLinkMonitor = openLinkMonitor,
+                    onOpenMetadataSettings = { openSettingsAt(SettingsSection.METADATA) },
+                    onOpenExtensions = { push(Route.Extensions) },
                 )
             }
             // parity wave B (16 §3.1, worker r): calendar and "Para ti" sub-screens of Home.
@@ -747,8 +839,18 @@ private fun AppNavDisplay(
                 CalendarScreen(onBack = null, onMediaClick = ::openMedia)
             }
             entry<Route.ForYou>(metadata = ListDetailSceneStrategy.listPane()) {
-                // Sparkles: Para ti is a tab of Explorar (S3); this page is reached from Inicio, Tú and the palette, so it goes back.
-                ForYouScreen(onBack = ::back, onMediaClick = ::openMedia)
+                // Sparkles: Para ti is a tab of Explorar (S3); Route.ForYou opens Explorar on it.
+                SearchScreen(
+                    onMediaClick = { media -> media.ref.anilistId?.let { openDetails(it) } },
+                    onOpenImageSearch = { push(Route.ImageSearch()) },
+                    onOpenMangaSearch = { q -> push(Route.Manga(q.ifBlank { null })) },
+                    onOpenNovelSearch = { q -> push(Route.Novels(q.ifBlank { null })) },
+                    initialTab = ExploreTab.FOR_YOU,
+                    forYouPanel = forYouPanel,
+                    forYouPreview = forYouPreview,
+                    tasteAtlas = tasteAtlas,
+                    onOpenExtensions = { push(Route.Extensions) },
+                )
             }
             entry<Route.Search>(metadata = ListDetailSceneStrategy.listPane()) {
                 SearchScreen(
@@ -759,6 +861,10 @@ private fun AppNavDisplay(
                     onOpenNovelSearch = { q -> push(Route.Novels(q.ifBlank { null })) },
                     focusQuery = shortcuts?.focusSearchPending == true,
                     onQueryFocused = { shortcuts?.focusSearchPending = false },
+                    forYouPanel = forYouPanel,
+                    forYouPreview = forYouPreview,
+                    tasteAtlas = tasteAtlas,
+                    onOpenExtensions = { push(Route.Extensions) },
                 )
             }
             entry<Route.SearchFor>(metadata = ListDetailSceneStrategy.listPane()) { key ->
@@ -772,6 +878,10 @@ private fun AppNavDisplay(
                     // parity wave B (s, manga.route / novel.route): the Manga / Novel type chips open those homes.
                     onOpenMangaSearch = { q -> push(Route.Manga(q.ifBlank { null })) },
                     onOpenNovelSearch = { q -> push(Route.Novels(q.ifBlank { null })) },
+                    forYouPanel = forYouPanel,
+                    forYouPreview = forYouPreview,
+                    tasteAtlas = tasteAtlas,
+                    onOpenExtensions = { push(Route.Extensions) },
                 )
             }
             // parity wave A (15 §3.1, worker o): image search (trace.moe), opened from the search bar or by sharing a picture.
@@ -792,22 +902,29 @@ private fun AppNavDisplay(
                     onOpenMangaDetails = ::openMangaDetails,
                     onOpenNovelDetails = ::openNovelDetails,
                     onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
+                    onOpenTransfers = { openDownloads() },
                 )
             }
             entry<Route.LibraryTab>(metadata = ListDetailSceneStrategy.listPane()) { key ->
-                LibraryScreen(
-                    onOpenDetails = ::openDetails,
-                    onPlay = ::play,
-                    onExplore = { backStack.navigateTop(Route.Home) },
-                    initialTab = key.tab,
-                    onOpenTorrent = ::openTorrent,
-                    onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
-                    onOpenMangaDetails = ::openMangaDetails,
-                    onOpenNovelDetails = ::openNovelDetails,
-                    onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
-                )
+                // Sparkles: the torrents left Library for Transferencias.
+                if (key.tab == LibraryTab.TORRENTS && available.offers(Route.Downloads())) {
+                    transfers(DownloadsTab.ACTIVE, null, TorrentSection.LIBRARY)
+                } else {
+                    LibraryScreen(
+                        onOpenDetails = ::openDetails,
+                        onPlay = ::play,
+                        onExplore = { backStack.navigateTop(Route.Home) },
+                        initialTab = key.tab,
+                        onOpenTorrent = ::openTorrent,
+                        onOpenAccounts = { openSettings(SettingsSection.ACCOUNTS) },
+                        onOpenMangaDetails = ::openMangaDetails,
+                        onOpenNovelDetails = ::openNovelDetails,
+                        onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
+                        onOpenTransfers = { openDownloads() },
+                    )
+                }
             }
-            entry<Route.Details>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
+            entry<Route.Details>(metadata = ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata) { key ->
                 if (key.kind == MediaKind.MANGA) {
                     // parity wave B (16 §3.5, worker s): manga details (own screen, same route so every Media click works).
                     MangaDetailsScreen(
@@ -934,17 +1051,7 @@ private fun AppNavDisplay(
                 )
             }
             // parity wave B (16 §3.2, worker r): Downloads page (rail destination on wide windows: no back arrow).
-            entry<Route.Downloads> { key ->
-                DownloadsScreen(
-                    initialTab = key.tab,
-                    onBack = if (wide) null else ::back,
-                    onPlay = ::play,
-                    onOpenDetails = ::openDetails,
-                    onOpenTorrent = ::openTorrent,
-                    onOpenMangaReader = { args -> push(Route.MangaReader(args)) },
-                    onOpenNovelReader = { args -> push(Route.NovelReader(args)) },
-                )
-            }
+            entry<Route.Downloads> { key -> transfers(key.tab, null, TorrentSection.LIBRARY) }
             // parity wave B (16 §3.5 / §3.6, worker s): manga and novels.
             entry<Route.Manga>(metadata = ListDetailSceneStrategy.listPane()) { key ->
                 MangaHomeScreen(
@@ -972,7 +1079,7 @@ private fun AppNavDisplay(
                     initialQuery = key.query,
                 )
             }
-            entry<Route.NovelDetails>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
+            entry<Route.NovelDetails>(metadata = ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata) { key ->
                 NovelDetailsScreen(
                     anilistId = key.anilistId,
                     onBack = ::back,
@@ -1022,13 +1129,22 @@ private fun AppNavDisplay(
             }
             entry<Route.ExtensionServers> { ExtensionServersScreen(onBack = ::back) }
             entry<Route.Torrents> { key ->
-                TorrentsScreen(
-                    section = key.section,
-                    torrentId = key.torrentId,
-                    onNavigate = { section, torrentId -> replaceTop(Route.Torrents(section, torrentId)) },
-                    onBack = ::back,
-                    onPlay = ::play,
-                )
+                // Sparkles: the torrent client is a section of Transferencias. A torrent opens its detail there; the client's lists
+                // go to Transferencias; Debrid and the torrent settings keep their own pages until S9 / S10 take them.
+                val inTransfers = key.section != TorrentSection.DEBRID && key.section != TorrentSection.SETTINGS &&
+                    (key.torrentId != null || !key.section.perTorrent) && available.offers(Route.Downloads())
+                if (inTransfers) {
+                    val tab = if (key.torrentId == null && key.section == TorrentSection.HISTORY) DownloadsTab.HISTORY else DownloadsTab.ACTIVE
+                    transfers(tab, key.torrentId, key.section)
+                } else {
+                    TorrentsScreen(
+                        section = key.section,
+                        torrentId = key.torrentId,
+                        onNavigate = { section, torrentId -> replaceTop(Route.Torrents(section, torrentId)) },
+                        onBack = ::back,
+                        onPlay = ::play,
+                    )
+                }
             }
         },
     )
@@ -1098,6 +1214,12 @@ private fun ShellShortcutHandler(
         onDispose { shortcuts.handler = null }
     }
 }
+
+/** Marks the entries a card opens (Details, NovelDetails): their screen transition is the card-to-details one. */
+private const val CARD_TO_DETAILS_KEY = "nijiyome.cardToDetails"
+private val CardToDetailsMetadata: Map<String, Any> = mapOf(CARD_TO_DETAILS_KEY to true)
+
+private fun NavEntry<*>?.isCardToDetailsTarget(): Boolean = this?.metadata?.containsKey(CARD_TO_DETAILS_KEY) == true
 
 /** Switching tabs resets the stack to `[Home]` or `[Home, tab]` so Back from a tab returns to Home. */
 private fun NavBackStack<NavKey>.navigateTop(route: Route) {
