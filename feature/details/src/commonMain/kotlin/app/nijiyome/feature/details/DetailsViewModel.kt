@@ -756,6 +756,93 @@ class DetailsViewModel(
         }
     }
 
+    // ---- Sparkles redesign (lane S4): status picker in the header and batch marking, both undoable ----
+
+    /** The list row as it was before a change, so the change can be undone ([restoreList]). status null = not on a list. */
+    data class ListSnapshot(val status: ListStatus?, val progress: Int)
+
+    private fun snapshot(): ListSnapshot {
+        val entry = _state.value.listEntry
+        return ListSnapshot(entry?.status, entry?.progress ?: 0)
+    }
+
+    /** Header status picker: puts the title on [status] (adds it when it is not on a list). Returns the previous row for undo. */
+    fun setListStatus(status: ListStatus): ListSnapshot? {
+        val repo = lists ?: return null
+        val media = mediaOrNull ?: return null
+        val before = snapshot()
+        if (before.status == status) return null
+        viewModelScope.launch {
+            runCatchingApp { repo.setStatus(media, status).getOrThrow() }
+                .onFailure { e -> _events.trySend(DetailsEvent.ListUpdateFailed(e.toAppError())) }
+        }
+        return before
+    }
+
+    /** Header "Quitar de la lista". Returns the previous row for undo; null when it was not on a list. */
+    fun removeFromList(): ListSnapshot? {
+        val repo = lists ?: return null
+        val media = mediaOrNull ?: return null
+        val before = snapshot()
+        if (before.status == null) return null
+        viewModelScope.launch {
+            runCatchingApp { repo.setStatus(media, null).getOrThrow() }
+                .onFailure { e -> _events.trySend(DetailsEvent.ListUpdateFailed(e.toAppError())) }
+        }
+        return before
+    }
+
+    /**
+     * Batch bar "Marcar N como vistos / no vistos". The list progress is one number, so marking [episodes] watched moves it up to the
+     * highest one and marking them unwatched moves it down to just before the lowest one (the same rule as [toggleWatched], applied
+     * once). Returns the previous row for undo; null when nothing changes or there is no lists layer.
+     */
+    fun setEpisodesWatched(episodes: Set<Int>, watched: Boolean): ListSnapshot? {
+        val repo = lists ?: return null
+        val media = mediaOrNull ?: return null
+        if (episodes.isEmpty()) return null
+        val s = _state.value
+        val entry = s.listEntry
+        val before = snapshot()
+        val total = entry?.totalEpisodes?.takeIf { it > 0 } ?: media.episodes
+        val target = if (watched) episodes.max() else episodes.min()
+        val next = ListProgress.toggledProgress(entry?.progress ?: 0, target, watched = watched, total = total)
+        viewModelScope.launch {
+            val result = runCatchingApp {
+                if (watched) {
+                    if (entry == null) repo.setStatus(media, ListStatus.WATCHING).getOrThrow()
+                    if (next != (entry?.progress ?: 0)) repo.setProgress(media.ref, next).getOrThrow()
+                } else {
+                    if (entry != null && entry.progress >= target) {
+                        ListProgress.statusAfterUnmark(entry.status)?.let { repo.setStatus(media, it).getOrThrow() }
+                        repo.setProgress(media.ref, next).getOrThrow()
+                    }
+                    history.clearCompleted(media.ref, target)
+                }
+            }
+            result.onFailure { e -> _events.trySend(DetailsEvent.ListUpdateFailed(e.toAppError())) }
+        }
+        return before
+    }
+
+    /** Undo of [setListStatus], [removeFromList] and [setEpisodesWatched]: the list row goes back to [snapshot]. */
+    fun restoreList(snapshot: ListSnapshot) {
+        val repo = lists ?: return
+        val media = mediaOrNull ?: return
+        viewModelScope.launch {
+            val result = runCatchingApp {
+                repo.setStatus(media, snapshot.status).getOrThrow()
+                if (snapshot.status != null) repo.setProgress(media.ref, snapshot.progress).getOrThrow()
+            }
+            result.onFailure { e -> _events.trySend(DetailsEvent.ListUpdateFailed(e.toAppError())) }
+        }
+    }
+
+    /** Batch bar "Descargar N": every selected episode through [downloadEpisode] (each one finds its best torrent). */
+    fun downloadEpisodes(episodes: Collection<Int>) {
+        episodes.sorted().forEach { downloadEpisode(it) }
+    }
+
     /** An episode row: straight to the player (confirmed when just picked in the panel, so Manual does not ask twice). */
     fun onEpisodeClick(episode: Int) {
         val chosen = sourceKeyFor(episode)

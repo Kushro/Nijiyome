@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Sparkles redesign, lane S4 (Ficha and episode sources). -->
+<resources>
+    <string name="rd_s4_src_auto">Automática</string>
+    <string name="rd_s4_src_best">(mejor)</string>
+    <string name="rd_s4_src_chosen_by_system">El sistema eligió %1$s: %2$s.</string>
+    <string name="rd_s4_src_chosen_by_system_plain">El sistema eligió %1$s, la primera de la lista.</string>
+    <string name="rd_s4_src_chosen_by_you">Elegida por ti: %1$s. Si no aparece la próxima vez, te lo decimos.</string>
+    <string name="rd_s4_src_clear_n">Limpiar filtros (%1$d)</string>
+    <string name="rd_s4_src_close">Cerrar</string>
+    <string name="rd_s4_src_col_audio">Audio</string>
+    <string name="rd_s4_src_col_cache">Caché</string>
+    <string name="rd_s4_src_col_codec">Códec</string>
+    <string name="rd_s4_src_col_rel">Confiabilidad</string>
+    <string name="rd_s4_src_col_res">Resolución</string>
+    <string name="rd_s4_src_col_seeders">Seeders</string>
+    <string name="rd_s4_src_col_size">Tamaño</string>
+    <string name="rd_s4_src_col_source">Fuente</string>
+    <string name="rd_s4_src_col_subs">Subtítulos</string>
+    <string name="rd_s4_src_collapsed">contraído</string>
+    <string name="rd_s4_src_compare_cd">Comparación de fuentes. Los encabezados ordenan.</string>
+    <string name="rd_s4_src_count">%1$d de %2$d fuentes</string>
+    <string name="rd_s4_src_debrid_only">Solo en caché debrid</string>
+    <string name="rd_s4_src_download_cd">Descargar %1$s para después</string>
+    <string name="rd_s4_src_episode">Episodio %1$d</string>
+    <string name="rd_s4_src_expanded">expandido</string>
+    <string name="rd_s4_src_ext_error">Una extensión no respondió: %1$s</string>
+    <string name="rd_s4_src_fail_kind">no es %1$s</string>
+    <string name="rd_s4_src_fail_quality">menos de %1$s</string>
+    <string name="rd_s4_src_fail_rel">confiabilidad baja</string>
+    <string name="rd_s4_src_fail_subs">sin subtítulos %1$s</string>
+    <string name="rd_s4_src_f_audio">Audio</string>
+    <string name="rd_s4_src_f_audio_lang">Idioma del audio</string>
+    <string name="rd_s4_src_f_codec">Códec</string>
+    <string name="rd_s4_src_f_extras">Extras</string>
+    <string name="rd_s4_src_f_kind">Tipo</string>
+    <string name="rd_s4_src_f_origin">Origen</string>
+    <string name="rd_s4_src_f_rel">Confiabilidad</string>
+    <string name="rd_s4_src_f_res">Resolución</string>
+    <string name="rd_s4_src_f_subs">Subtítulos</string>
+    <string name="rd_s4_src_hint_auto">El sistema elige la mejor; si falla, prueba la siguiente de la lista.</string>
+    <string name="rd_s4_src_hint_manual">Toca una fuente para reproducirla. La recordamos para este episodio.</string>
+    <string name="rd_s4_src_manage_ext">Administrar extensiones</string>
+    <string name="rd_s4_src_manual">Manual</string>
+    <string name="rd_s4_src_no">No</string>
+    <string name="rd_s4_src_rule_any">Cualquiera</string>
+    <string name="rd_s4_src_rule_dub">Audio</string>
+    <string name="rd_s4_src_rule_kind">Tipo preferido</string>
+    <string name="rd_s4_src_rule_quality">Calidad mínima</string>
+    <string name="rd_s4_src_rules">Reglas automáticas</string>
+    <string name="rd_s4_src_rule_subs">Subtítulos</string>
+    <string name="rd_s4_src_search_again">Buscar de nuevo</string>
+    <string name="rd_s4_src_sort_asc">orden ascendente</string>
+    <string name="rd_s4_src_sort_desc">orden descendente</string>
+    <string name="rd_s4_src_sort_none">sin ordenar</string>
+    <string name="rd_s4_src_sort_quality">Calidad</string>
+    <string name="rd_s4_src_sort_rec">Recomendado</string>
+    <string name="rd_s4_src_sort_seeders">Seeders</string>
+    <string name="rd_s4_src_sort_size">Tamaño</string>
+    <string name="rd_s4_src_stream">Transmisión</string>
+    <string name="rd_s4_src_title">Fuentes del episodio</string>
+    <string name="rd_s4_src_why_cached">en caché en %1$s</string>
+    <string name="rd_s4_src_why_dub">audio %1$s</string>
+    <string name="rd_s4_src_why_rel">confiabilidad %1$d %</string>
+    <string name="rd_s4_src_why_subs">subtítulos %1$s</string>
+</resources>
