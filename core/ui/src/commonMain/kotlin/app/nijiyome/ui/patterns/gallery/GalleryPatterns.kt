@@ -328,7 +328,7 @@ private fun ReorderDemo(cards: List<TitleCardData>, undo: UndoController) {
         LazyColumn(state = reorder.listState, modifier = Modifier.fillMaxWidth().height(280.dp).reorderContainer(reorder)) {
             itemsIndexed(order, key = { _, k -> k }) { i, k ->
                 val card = cards.first { it.key == k }
-                ReorderableRow(reorder, i, order.size, card.title, Modifier.reorderPlacement(), supporting = card.subtitle)
+                ReorderableRow(reorder, i, order.size, card.title, reorderPlacement(), supporting = card.subtitle)
             }
         }
     }
