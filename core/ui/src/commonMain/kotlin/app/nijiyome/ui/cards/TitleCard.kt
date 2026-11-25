@@ -65,6 +65,10 @@ data class TitleCardData(
     val score: String? = null,
     val episodesSeen: Int? = null,
     val episodesTotal: Int? = null,
+    /** Episodes aired so far, when known. */
+    val airedEpisodes: Int? = null,
+    /** A new episode / chapter the user has not seen is out (cards may flag it). */
+    val isNew: Boolean = false,
     val bannerUrl: String? = null,
     /** Cover color of the title, when the provider gives one. */
     val accent: Color? = null,
