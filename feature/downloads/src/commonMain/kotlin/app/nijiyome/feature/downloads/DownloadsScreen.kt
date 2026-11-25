@@ -1,126 +1,116 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.feature.downloads
 
-import app.nijiyome.designsystem.components.focusOnOpen
-import app.nijiyome.feature.downloads.resources.Res
-import app.nijiyome.feature.downloads.resources.*
-import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.pluralStringResource
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.AutoStories
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Pause
-import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.automirrored.outlined.FactCheck
-import androidx.compose.material.icons.rounded.Hub
-import androidx.compose.material.icons.outlined.VideoFile
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.nijiyome.designsystem.components.EmptyState
-import app.nijiyome.designsystem.components.ListGroupHeader
-import app.nijiyome.designsystem.components.LoadingState
 import app.nijiyome.designsystem.components.LocalAppSnackbar
-import app.nijiyome.designsystem.components.Pill
-import app.nijiyome.designsystem.components.PillTone
-import app.nijiyome.designsystem.components.SectionCard
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
-import app.nijiyome.designsystem.components.rememberAfterDelay
+import app.nijiyome.designsystem.motion.LoadingPlaceholder
+import app.nijiyome.feature.downloads.resources.Res
+import app.nijiyome.feature.downloads.resources.*
+import app.nijiyome.feature.downloads.transfers.TransferFilter
+import app.nijiyome.feature.downloads.transfers.TransferItem
+import app.nijiyome.feature.downloads.transfers.TransferSort
 import app.nijiyome.model.AppError
 import app.nijiyome.model.AppException
-import app.nijiyome.model.AutoDownloadRule
 import app.nijiyome.model.ChapterDownload
 import app.nijiyome.model.ChapterKind
 import app.nijiyome.model.DownloadItem
 import app.nijiyome.model.DownloadProfile
-import app.nijiyome.model.DownloadState
 import app.nijiyome.model.DownloadsTab
-import app.nijiyome.model.ListStatus
-import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.LocalLibraryItem
-import app.nijiyome.model.SettingsRepository
-import app.nijiyome.ui.platform.rememberOpenFolder
 import app.nijiyome.model.MangaReaderArgs
-import app.nijiyome.model.Media
-import app.nijiyome.model.MediaKind
 import app.nijiyome.model.MediaRef
-import app.nijiyome.model.MetadataRepository
 import app.nijiyome.model.NovelReaderArgs
 import app.nijiyome.model.PlayerArgs
-import app.nijiyome.model.torrent.TorrentLibraryItem
+import app.nijiyome.model.TransfersStructure
+import app.nijiyome.ui.labels.labelRes
+import app.nijiyome.ui.look.structures
+import app.nijiyome.ui.patterns.ActionButton
+import app.nijiyome.ui.patterns.ActionEmphasis
+import app.nijiyome.ui.patterns.MenuEntry
+import app.nijiyome.ui.patterns.SelectionAction
+import app.nijiyome.ui.patterns.SelectionActionBar
+import app.nijiyome.ui.patterns.SelectionState
+import app.nijiyome.ui.patterns.SelectionTopBar
+import app.nijiyome.ui.patterns.UndoController
+import app.nijiyome.ui.patterns.UndoSnackbar
+import app.nijiyome.ui.patterns.isCompactWindow
+import app.nijiyome.ui.patterns.rememberSelectionState
+import app.nijiyome.ui.patterns.rememberUndoController
+import app.nijiyome.ui.platform.rememberNotificationPermission
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
-import app.nijiyome.ui.format.formatBytes
-import app.nijiyome.ui.format.formatDuration
-import app.nijiyome.ui.labels.labelRes
-import app.nijiyome.ui.media.MediaCover
-import app.nijiyome.ui.platform.rememberFilePicker
-import app.nijiyome.ui.platform.rememberFolderPicker
-import app.nijiyome.ui.platform.rememberNotificationPermission
 import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.toAppError
-import app.nijiyome.ui.state.userMessage
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import org.koin.compose.getKoin
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Parity wave B (docs/redesign/16-parity-wave-b-contract-android.md §3.2, worker r; checklist downloads.page / .history /
- * .local-library.* / .integrity-check / .storage-limit): `Route.Downloads(tab)`. Tabs = `DownloadsTab` (Activas · Anime · Manga · Novelas ·
- * Historial · Biblioteca local); search field; rows with progress, ETA, pause / resume / cancel / retry; torrents rows open the client
- * ([onOpenTorrent]); completed episodes play offline ([onPlay] with `PlayerArgs.localUri`); chapters open their reader offline.
- * [onBack] null on wide windows (rail destination). Signature FINAL (the shell wires it).
+ * The torrent pieces Transferencias shows. :feature:torrents and :feature:downloads do not see each other, so the shell builds this
+ * from `TransfersTorrentDetail` and `TransfersAddTorrentHost` of :feature:torrents and hands it to [DownloadsScreen]. Without it, a
+ * torrent opens through `onOpenTorrent` (`Route.Torrents`) and "Add torrent" is hidden.
+ */
+@Immutable
+class TransfersTorrentSlots(
+    /** The detail of one torrent (Resumen, Archivos, Pares, Rastreadores). `showBack` = stacked phone navigation. */
+    val detail: @Composable (torrentId: String, onBack: () -> Unit, showBack: Boolean, modifier: Modifier) -> Unit,
+    /** "Añadir torrent" with the file-selection step; it also opens itself for a `magnet:` / `.torrent` handed over by the system. */
+    val addTorrent: @Composable (open: Boolean, onOpenChange: (Boolean) -> Unit, onAdded: (torrentId: String) -> Unit) -> Unit,
+)
+
+/**
+ * Transferencias (Sparkles lane S8): `Route.Downloads(tab)`. One queue for web, debrid, torrent and chapter downloads, the shelves of
+ * what is on disk, the history, the local library and the auto-download rules, in the structure the user chose
+ * (`structures.transfers`: [TransfersStructure.QUEUE] or [TransfersStructure.MASTER_DETAIL]). [initialTab] picks the section
+ * (ACTIVE → queue, ANIME / MANGA / NOVELS → that shelf, HISTORY → the history sheet, LOCAL → the local library).
+ *
+ * New, optional: [torrentSlots] (the torrent client inside the page), [initialTorrentId] (open on that torrent's detail),
+ * [onOpenSettings] (Settings › Torrents y descargas) and [onOpenDebrid] (Sources › Debrid). [onBack] null on wide windows.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,16 +124,40 @@ fun DownloadsScreen(
     onOpenNovelReader: (NovelReaderArgs) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DownloadsViewModel = koinViewModel(),
+    torrentSlots: TransfersTorrentSlots? = null,
+    initialTorrentId: String? = null,
+    onOpenSettings: (() -> Unit)? = null,
+    onOpenDebrid: (() -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = LocalAppSnackbar.current
-    LaunchedEffect(initialTab) { viewModel.selectTab(initialTab) }
-    // Ask POST_NOTIFICATIONS only once an active download actually starts (never cold-prompt on an empty screen).
+    val host = remember { TransfersHost() }
+    val selection = rememberSelectionState<String>()
+    val undo = rememberUndoController()
+    val structure = structures.transfers
+    val currentOpenTorrent by rememberUpdatedState(onOpenTorrent)
+
+    LaunchedEffect(initialTab) {
+        viewModel.selectTab(initialTab)
+        host.applyTab(initialTab)
+    }
+    LaunchedEffect(initialTorrentId, torrentSlots != null) {
+        if (initialTorrentId != null && torrentSlots != null) {
+            host.section = TransfersSection.QUEUE
+            host.detailKey = "t:$initialTorrentId"
+        }
+    }
+    // Ask POST_NOTIFICATIONS only once something actually downloads (never cold-prompt on an empty screen).
     val permission = rememberNotificationPermission()
-    val hasActive = state.active.isNotEmpty() || state.activeTorrents.isNotEmpty()
+    val hasActive = state.queue.isNotEmpty()
     LaunchedEffect(hasActive) {
         if (hasActive && !permission.isGranted()) permission.request()
     }
+    // A selection keeps only rows that still exist.
+    LaunchedEffect(state.queue, state.stored) {
+        if (selection.active) selection.retainOnly((state.queue + state.stored).map { it.key })
+    }
+
     val msgChecked = stringResource(Res.string.downloads_checked)
     val msgVerified = stringResource(Res.string.downloads_verified)
     val msgVerifiedOk = stringResource(Res.string.downloads_verified_ok)
@@ -155,113 +169,360 @@ fun DownloadsScreen(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { e ->
             when (e) {
-                is DownloadsEvent.Checked -> snackbar.show(msgChecked.format(e.queued))
-                is DownloadsEvent.Verified -> snackbar.show(if (e.broken == 0) msgVerifiedOk else msgVerified.format(e.broken))
+                // DL-16: the result of Revisar / Simular / Revisar archivos stays visible in its panel, and is announced once.
+                is DownloadsEvent.Checked -> msgChecked.format(e.queued).also { host.autoResult = it; snackbar.show(it) }
+                is DownloadsEvent.Verified -> (if (e.broken == 0) msgVerifiedOk else msgVerified.format(e.broken)).also { host.verifyResult = it; snackbar.show(it) }
                 is DownloadsEvent.Imported -> snackbar.show(msgImported.format(e.added))
-                is DownloadsEvent.Preview -> snackbar.show(
-                    e.preview?.episodes?.takeIf { it.isNotEmpty() }?.let { msgPreview.format(it.joinToString(", ")) } ?: msgPreviewNone,
-                )
+                is DownloadsEvent.Preview -> {
+                    val text = e.preview?.episodes?.takeIf { it.isNotEmpty() }?.let { msgPreview.format(it.joinToString(", ")) } ?: msgPreviewNone
+                    host.autoResult = text
+                    snackbar.show(text)
+                }
                 is DownloadsEvent.Failed -> snackbar.show(errorText(e.cause))
+                is DownloadsEvent.OpenTorrent -> {
+                    if (torrentSlots != null) {
+                        host.detailKey = "t:" + e.id
+                    } else {
+                        currentOpenTorrent(e.id)
+                    }
+                }
             }
         }
     }
-    Scaffold(
-        modifier = modifier,
-        contentWindowInsets = screenInsets,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Res.string.downloads_title)) },
-                navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
-                    }
-                },
-                actions = {
-                    // Desktop: the download folder in the file manager (Tatakai Next's Descargas › "Abrir carpeta").
-                    val openFolder = rememberOpenFolder()
-                    if (openFolder != null) {
-                        val koin = getKoin()
-                        val settingsRepo = remember(koin) { koin.getOrNull<SettingsRepository>() }
-                        val chosen = settingsRepo?.settings?.collectAsStateWithLifecycle()?.value?.downloads?.directoryTreeUri
-                        val root = rememberDownloadFolderLabel(chosen)
-                        if (root.isNotBlank()) {
-                            IconButton(onClick = { openFolder(root) }) {
-                                Icon(Icons.Outlined.FolderOpen, contentDescription = stringResource(Res.string.downloads_desktop_open_folder))
-                            }
-                        }
-                    }
-                    IconButton(onClick = viewModel::verify, enabled = !state.busy) {
-                        // BUG-085: a file check, not a shield.
-                        Icon(Icons.AutoMirrored.Outlined.FactCheck, contentDescription = stringResource(Res.string.downloads_verify))
-                    }
-                },
-            )
+
+    val play: (DownloadItem) -> Unit = { item ->
+        item.localUri?.let { onPlay(PlayerArgs(media = item.ref, title = item.title, episode = item.episode, localUri = it)) }
+    }
+    val openChapter: (ChapterDownload) -> Unit = { c ->
+        when (c.kind) {
+            ChapterKind.MANGA -> decodeArgs(c, MangaReaderArgs.serializer())?.let(onOpenMangaReader) ?: snackbar.show(msgChapterUnavailable)
+            ChapterKind.NOVEL -> decodeArgs(c, NovelReaderArgs.serializer())?.let(onOpenNovelReader) ?: snackbar.show(msgChapterUnavailable)
+        }
+    }
+    val removedEpisode = stringResource(Res.string.rd_s8_undo_episode)
+    val removedChapter = stringResource(Res.string.rd_s8_undo_chapter)
+    val removedLocal = stringResource(Res.string.rd_s8_undo_local)
+    val transferError = rememberTransferErrorText()
+    val openItem: (TransferItem) -> Unit = { item ->
+        if (item.isTorrent && torrentSlots == null) {
+            onOpenTorrent(item.id)
+        } else {
+            host.detailKey = item.key
+        }
+    }
+    val playTorrent: (TransferItem) -> Unit = { item ->
+        onPlay(PlayerArgs(media = mediaRefOf(item.torrent?.mediaId), title = item.title, episode = item.episode ?: 1, torrentId = item.id))
+    }
+    val rowMenu = rememberRowMenu(viewModel, onOpen = openItem, onPlayTorrent = playTorrent, onDelete = { host.deleting = it })
+    val env = TransfersEnv(
+        vm = viewModel,
+        host = host,
+        selection = selection,
+        slots = torrentSlots,
+        openItem = openItem,
+        rowMenu = rowMenu,
+        errorText = transferError,
+        onOpenDetails = onOpenDetails,
+        playWeb = play,
+        playLocal = { item ->
+            onPlay(PlayerArgs(media = item.ref ?: MediaRef(), title = item.title ?: item.fileName, episode = item.episode ?: 1, localUri = item.uri))
         },
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            OutlinedTextField(
-                value = state.query,
-                onValueChange = viewModel::setQuery,
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                trailingIcon = if (state.query.isNotEmpty()) {
-                    {
-                        IconButton(onClick = { viewModel.setQuery("") }) {
-                            Icon(Icons.Outlined.Close, contentDescription = "Limpiar búsqueda")
-                        }
+        openChapter = openChapter,
+        // DL-04 / DL-07: one episode or chapter goes with an undo; the files are deleted when the undo runs out.
+        deleteEpisode = { item -> undoable(undo, viewModel, listOf("w:" + item.id), removedEpisode.format(item.title, item.episode)) },
+        deleteChapter = { c -> undoable(undo, viewModel, listOf("c:" + c.id), removedChapter.format(c.title, c.chapterLabel), chapterKind = c.kind) },
+        acceptBackground = {
+            viewModel.acknowledgeBackground()
+            if (!permission.isGranted()) permission.request()
+        },
+        addTorrent = if (torrentSlots != null) ({ host.addOpen = true }) else null,
+        onOpenSettings = onOpenSettings,
+        onOpenDebrid = onOpenDebrid,
+        confirmDelete = { host.deleting = it },
+    )
+
+    val compact = isCompactWindow()
+    // Phone, stacked navigation: a detail opened from the queue covers the page; back returns to the list.
+    val coveringDetail = host.detailKey != null && (structure == TransfersStructure.QUEUE || compact)
+    Box(modifier.fillMaxSize()) {
+        Scaffold(
+            contentWindowInsets = screenInsets,
+            topBar = {
+                when {
+                    coveringDetail -> Unit
+                    compact && selection.active -> SelectionTopBar(
+                        count = selection.count,
+                        onExit = selection::exit,
+                        onSelectAll = { selection.selectAll(state.queue.map { it.key }) },
+                    )
+                    else -> TransfersTopBar(state, env, onBack, compact)
+                }
+            },
+        ) { padding ->
+            Box(Modifier.padding(padding).fillMaxSize()) {
+                when {
+                    !state.loaded -> LoadingRows()
+                    coveringDetail -> {
+                        val key = host.detailKey.orEmpty()
+                        DetailPane(key, state.queue + state.stored, env, showBack = true, modifier = Modifier.fillMaxSize())
                     }
+                    // The structure is chosen once, here; both share the state, the actions and the overlays below.
+                    else -> when (structure) {
+                        TransfersStructure.QUEUE -> TransfersQueue(state, env)
+                        TransfersStructure.MASTER_DETAIL -> TransfersMasterDetail(state, env)
+                    }
+                }
+                BatchBar(state, env, Modifier.align(Alignment.BottomCenter))
+                UndoSnackbar(undo, Modifier.align(Alignment.BottomCenter).padding(bottom = 72.dp))
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ overlays shared by both structures
+    torrentSlots?.addTorrent?.invoke(host.addOpen, { host.addOpen = it }) { id ->
+        host.section = TransfersSection.QUEUE
+        host.detailKey = "t:$id"
+    }
+    if (host.limitsOpen) {
+        LimitsSheet(state.limits, state.torrentsAvailable, viewModel, onOpenSettings, onDismiss = { host.limitsOpen = false })
+    }
+    if (host.historyOpen) {
+        HistorySheet(state.history, state.torrentSessions, state.torrentIds, state.torrentsAvailable, viewModel, play, onDismiss = { host.historyOpen = false })
+    }
+    host.deleting?.let { items ->
+        TransferDeleteDialog(
+            items = items,
+            onConfirm = { deleteFiles ->
+                viewModel.removeItems(items, deleteFiles)
+                if (items.any { it.key == host.detailKey }) host.detailKey = null
+                selection.exit()
+                host.deleting = null
+            },
+            onDismiss = { host.deleting = null },
+        )
+    }
+    host.deletingTitle?.let { group ->
+        DangerConfirm(
+            title = stringResource(Res.string.downloads_remove_title),
+            body = stringResource(Res.string.downloads_remove_title_confirm, group.title),
+            confirm = stringResource(Res.string.rd_s8_delete_all),
+            onConfirm = { viewModel.removeTitle(group) },
+            onDismiss = { host.deletingTitle = null },
+        )
+    }
+    host.deletingChapters?.let { chapters ->
+        DangerConfirm(
+            title = stringResource(Res.string.rd_s8_delete_chapters_title),
+            body = pluralStringResource(Res.plurals.rd_s8_delete_chapters_body, chapters.size, chapters.size, chapters.first().title),
+            confirm = stringResource(Res.string.rd_s8_delete_all),
+            onConfirm = { chapters.forEach(viewModel::removeChapter) },
+            onDismiss = { host.deletingChapters = null },
+        )
+    }
+    host.matching?.let { item ->
+        MatchDialog(item, onDismiss = { host.matching = null }) { media, ep -> viewModel.matchLocal(item.id, media, ep) }
+    }
+    host.removingLocal?.let { item ->
+        LocalRemoveDialog(
+            item = item,
+            onRemove = { deleteFile ->
+                host.removingLocal = null
+                if (deleteFile) {
+                    viewModel.removeLocal(item.id, deleteFile = true)
                 } else {
-                    null
-                },
-                placeholder = { Text(stringResource(Res.string.downloads_search)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-            PrimaryScrollableTabRow(selectedTabIndex = DownloadsTab.entries.indexOf(state.tab)) {
-                DownloadsTab.entries.forEach { tab ->
-                    Tab(selected = state.tab == tab, onClick = { viewModel.selectTab(tab) }, text = { Text(stringResource(tab.labelRes())) })
+                    // Keeping the file is reversible: hide it now, forget it when the undo runs out.
+                    undoable(undo, viewModel, listOf("l:" + item.id), removedLocal.format(item.fileName))
                 }
-            }
-            if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-            if (!state.loaded) {
-                if (rememberAfterDelay()) LoadingState()
-                return@Column
-            }
-            val play: (DownloadItem) -> Unit = { item ->
-                item.localUri?.let { onPlay(PlayerArgs(media = item.ref, title = item.title, episode = item.episode, localUri = it)) }
-            }
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-                state.usedBytes?.let { used ->
-                    item(key = "usage") {
-                        Text(
-                            stringResource(Res.string.downloads_usage, formatBytes(used)),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        )
-                    }
-                }
-                when (state.tab) {
-                    DownloadsTab.ACTIVE -> activeTab(state, viewModel, onOpenTorrent, errorText)
-                    DownloadsTab.ANIME -> animeTab(state, viewModel, play, onOpenDetails, onOpenTorrent)
-                    DownloadsTab.MANGA -> chaptersTab(state.manga, ChapterKind.MANGA, viewModel) { c ->
-                        decodeArgs(c, MangaReaderArgs.serializer())?.let(onOpenMangaReader) ?: snackbar.show(msgChapterUnavailable)
-                    }
-                    DownloadsTab.NOVELS -> chaptersTab(state.novels, ChapterKind.NOVEL, viewModel) { c ->
-                        decodeArgs(c, NovelReaderArgs.serializer())?.let(onOpenNovelReader) ?: snackbar.show(msgChapterUnavailable)
-                    }
-                    DownloadsTab.HISTORY -> historyTab(state, viewModel, play, errorText)
-                    DownloadsTab.LOCAL -> localTab(state, viewModel, onPlay)
-                }
-            }
+            },
+            onDismiss = { host.removingLocal = null },
+        )
+    }
+}
+
+/** Removes with an undo: hide now, commit when the undo expires or the screen leaves, restore on Undo. */
+private fun undoable(undo: UndoController, vm: DownloadsViewModel, keys: List<String>, message: String, chapterKind: ChapterKind? = null) {
+    vm.hide(keys)
+    undo.show(message, undo = { vm.restore(keys) }, onCommit = { vm.commitRemoval(keys, deleteLocalFile = false, chapterKind = chapterKind) })
+}
+
+/** Everything both structures need: the state holder, the selection and the actions. */
+@Stable
+internal class TransfersEnv(
+    val vm: DownloadsViewModel,
+    val host: TransfersHost,
+    val selection: SelectionState<String>,
+    val slots: TransfersTorrentSlots?,
+    val openItem: (TransferItem) -> Unit,
+    val rowMenu: (TransferItem) -> List<MenuEntry>,
+    val errorText: (String) -> String,
+    val onOpenDetails: (Int) -> Unit,
+    val playWeb: (DownloadItem) -> Unit,
+    val playLocal: (LocalLibraryItem) -> Unit,
+    val openChapter: (ChapterDownload) -> Unit,
+    val deleteEpisode: (DownloadItem) -> Unit,
+    val deleteChapter: (ChapterDownload) -> Unit,
+    val acceptBackground: () -> Unit,
+    val addTorrent: (() -> Unit)?,
+    val onOpenSettings: (() -> Unit)?,
+    val onOpenDebrid: (() -> Unit)?,
+    val confirmDelete: (List<TransferItem>) -> Unit,
+)
+
+/** Screen-level UI state of Transferencias (which section, which detail, which sheet or dialog is open). */
+@Stable
+internal class TransfersHost {
+    var section by mutableStateOf(TransfersSection.QUEUE)
+    var detailKey by mutableStateOf<String?>(null)
+    var doneMedia by mutableStateOf(DoneMedia.ANIME)
+    var filter by mutableStateOf(TransferFilter.ALL)
+    var sort by mutableStateOf(TransferSort.ADDED)
+    var descending by mutableStateOf(true)
+    var addOpen by mutableStateOf(false)
+    var historyOpen by mutableStateOf(false)
+    var limitsOpen by mutableStateOf(false)
+    var searchOpen by mutableStateOf(false)
+    var noticeHidden by mutableStateOf(false)
+    var onlyUnmatched by mutableStateOf(false)
+    var deleting by mutableStateOf<List<TransferItem>?>(null)
+    var deletingTitle by mutableStateOf<TitleGroup?>(null)
+    var deletingChapters by mutableStateOf<List<ChapterDownload>?>(null)
+    var matching by mutableStateOf<LocalLibraryItem?>(null)
+    var removingLocal by mutableStateOf<LocalLibraryItem?>(null)
+    var autoResult by mutableStateOf<String?>(null)
+    var verifyResult by mutableStateOf<String?>(null)
+
+    /** `Route.Downloads(tab)` → the matching place of the page. */
+    fun applyTab(tab: DownloadsTab) {
+        when (tab) {
+            DownloadsTab.ACTIVE -> section = TransfersSection.QUEUE
+            DownloadsTab.ANIME -> { section = TransfersSection.DONE; doneMedia = DoneMedia.ANIME }
+            DownloadsTab.MANGA -> { section = TransfersSection.DONE; doneMedia = DoneMedia.MANGA }
+            DownloadsTab.NOVELS -> { section = TransfersSection.DONE; doneMedia = DoneMedia.NOVELS }
+            DownloadsTab.HISTORY -> historyOpen = true
+            DownloadsTab.LOCAL -> section = TransfersSection.LOCAL
         }
     }
 }
+
+// ------------------------------------------------------------------ header
+
+/**
+ * Wide: title, a live line (how many move, the download limit) and the actions (search, limits, history, add torrent). Phone: the
+ * title with icon actions (search, limits, history, settings), the search field under it when open.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TransfersTopBar(state: DownloadsUiState, env: TransfersEnv, onBack: (() -> Unit)?, compact: Boolean) {
+    val host = env.host
+    val moving = state.queue.count { it.phase == app.nijiyome.feature.downloads.transfers.TransferPhase.DOWNLOADING }
+    val meta = listOfNotNull(
+        pluralStringResource(Res.plurals.rd_s8_meta_moving, moving, moving),
+        if (!state.torrentsAvailable) null
+        else if (state.limits.downKib == 0) stringResource(Res.string.rd_s8_meta_no_limit)
+        else stringResource(Res.string.rd_s8_meta_limited, app.nijiyome.ui.patterns.formatQuantity(state.limits.downKib.toLong(), app.nijiyome.ui.patterns.speedUnits())),
+        state.usedBytes?.let { stringResource(Res.string.downloads_usage, app.nijiyome.ui.format.formatBytes(it)) },
+    ).joinToString(" · ")
+    Column {
+        TopAppBar(
+            title = {
+                Column {
+                    Text(stringResource(Res.string.rd_s8_title), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (!compact) Text(meta, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            navigationIcon = {
+                if (onBack != null) {
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
+                }
+            },
+            actions = {
+                if (compact) {
+                    IconButton(onClick = { host.searchOpen = !host.searchOpen }) { Icon(Icons.Outlined.Search, contentDescription = stringResource(Res.string.rd_s8_search)) }
+                    IconButton(onClick = { host.limitsOpen = true }) { Icon(Icons.Outlined.Speed, contentDescription = stringResource(Res.string.rd_s8_limits_title)) }
+                    IconButton(onClick = { host.historyOpen = true }) { Icon(Icons.Outlined.History, contentDescription = stringResource(Res.string.rd_s8_history_title)) }
+                    env.onOpenSettings?.let { open ->
+                        IconButton(onClick = open) { Icon(Icons.Outlined.Settings, contentDescription = stringResource(Res.string.rd_s8_settings)) }
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 12.dp)) {
+                        if (env.host.section != TransfersSection.QUEUE || structuresIsQueue()) {
+                            TransfersSearchField(state.query, env.vm::setQuery, Modifier.width(280.dp))
+                        }
+                        ActionButton(stringResource(Res.string.rd_s8_limits), onClick = { host.limitsOpen = true }, icon = Icons.Outlined.Speed, emphasis = ActionEmphasis.OUTLINED)
+                        ActionButton(stringResource(Res.string.rd_s8_history_title), onClick = { host.historyOpen = true }, icon = Icons.Outlined.History, emphasis = ActionEmphasis.OUTLINED)
+                        env.addTorrent?.let { ActionButton(stringResource(Res.string.rd_s8_add_torrent), onClick = it, icon = Icons.Outlined.Add, emphasis = ActionEmphasis.FILLED) }
+                    }
+                }
+            },
+        )
+        if (compact && (host.searchOpen || state.query.isNotEmpty())) {
+            TransfersSearchField(state.query, env.vm::setQuery, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
+        }
+    }
+}
+
+/** The master list has its own search field; the header shows one for the queue structure. */
+@Composable
+private fun structuresIsQueue(): Boolean = structures.transfers == TransfersStructure.QUEUE
+
+// ------------------------------------------------------------------ batch actions (TOR-05)
+
+@Composable
+private fun BatchBar(state: DownloadsUiState, env: TransfersEnv, modifier: Modifier) {
+    val selection = env.selection
+    val chosen = (state.queue + state.stored).filter { selection.isSelected(it.key) }
+    val n = chosen.size
+    val torrents = chosen.any { it.isTorrent }
+    val actions = buildList {
+        add(SelectionAction(stringResource(Res.string.downloads_pause), Icons.Outlined.Pause, { env.vm.pauseItems(chosen) }, enabled = chosen.any { it.canPause }))
+        add(SelectionAction(stringResource(Res.string.downloads_resume), Icons.Outlined.PlayArrow, { env.vm.resumeItems(chosen) }, enabled = chosen.any { it.canResume || it.canRetry }))
+        if (torrents) {
+            add(SelectionAction(stringResource(Res.string.rd_s8_menu_keep), Icons.Outlined.Bookmark, { env.vm.setKeep(chosen, true) }))
+            add(SelectionAction(stringResource(Res.string.rd_s8_menu_unkeep), Icons.Outlined.BookmarkBorder, { env.vm.setKeep(chosen, false) }))
+        }
+        add(
+            SelectionAction(
+                pluralStringResource(Res.plurals.rd_s8_batch_delete, n, n),
+                Icons.Outlined.Delete,
+                { env.host.deleting = chosen },
+                enabled = n > 0,
+                emphasis = ActionEmphasis.DANGER,
+            ),
+        )
+    }
+    SelectionActionBar(
+        visible = selection.active,
+        count = selection.count,
+        actions = actions,
+        onExit = selection::exit,
+        modifier = modifier,
+        onSelectAll = { selection.selectAll(state.queue.map { it.key } + state.stored.map { it.key }) },
+        selectAllLabel = stringResource(Res.string.rd_s8_select_all),
+        emptyHint = stringResource(Res.string.rd_s8_select_hint),
+    )
+}
+
+/** Loading: placeholders shaped like queue rows. */
+@Composable
+private fun LoadingRows() {
+    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        repeat(5) { LoadingPlaceholder(Modifier.fillMaxWidth().height(64.dp)) }
+    }
+}
+
+// ------------------------------------------------------------------ helpers kept from the Downloads page
 
 private val ArgsJson = Json { ignoreUnknownKeys = true }
 
 /** `ChapterDownload.localRef` = JSON of the reader args written by s (offline = true). */
 private fun <T> decodeArgs(c: ChapterDownload, serializer: kotlinx.serialization.KSerializer<T>): T? =
     runCatching { ArgsJson.decodeFromString(serializer, c.localRef) }.getOrNull()
+
+/** `HistoryEntry.animeIdOf` inverse: "123" → AniList 123, "mal:45" → MAL 45. */
+internal fun mediaRefOf(mediaId: String?): MediaRef {
+    val id = mediaId?.trim().orEmpty()
+    return if (id.startsWith("mal:")) MediaRef(malId = id.removePrefix("mal:").toIntOrNull()) else MediaRef(anilistId = id.toIntOrNull())
+}
 
 internal fun DownloadsTab.labelRes(): StringResource = when (this) {
     DownloadsTab.ACTIVE -> Res.string.downloads_tab_active
@@ -280,10 +541,13 @@ internal fun rememberDownloadErrorText(): (Throwable) -> String {
     val noSource = stringResource(Res.string.downloads_err_no_source)
     val folder = stringResource(Res.string.downloads_err_folder)
     val generic = stringResource(Res.string.downloads_err_generic)
-    return remember(dash, limit, noSource, folder, generic) {
+    val transfer = rememberTransferErrorText()
+    return remember(dash, limit, noSource, folder, generic, transfer) {
         { t: Throwable ->
             val code = ((t as? AppException)?.error as? AppError.Extension)?.msg ?: (t.toAppError() as? AppError.Unknown)?.msg
-            codeText(code, dash, limit, noSource, folder) ?: generic.format(t.message ?: t::class.java.simpleName)
+            codeText(code, dash, limit, noSource, folder)
+                ?: code?.takeIf { it.startsWith("torrent:") }?.let(transfer)
+                ?: generic.format(t.message ?: t::class.java.simpleName)
         }
     }
 }
@@ -296,275 +560,16 @@ internal fun codeText(code: String?, dash: String, limit: String, noSource: Stri
     else -> null
 }
 
-@Composable
-private fun itemErrorText(item: DownloadItem): String? {
-    val err = item.error ?: return null
-    return when {
-        item.state == DownloadState.BROKEN || err == "broken" -> stringResource(Res.string.downloads_err_broken)
-        err == "failed" -> stringResource(Res.string.downloads_err_failed)
-        // 1.1 review #7: a debrid (TorBox) code is shown as its reason, never as the raw code
-        else -> debridProblemIn(err)?.let { p ->
-            stringResource(Res.string.downloads_err_debrid, stringResource(p.labelRes()))
-        } ?: err
-    }
-}
-
 /**
  * 1.1 review #7: the debrid reason inside a stored download error: a bare `debrid:torbox:ACTIVE_LIMIT`, or one wrapped by an older
  * desktop build (`Unknown(msg=debrid:torbox:ACTIVE_LIMIT)`). Null = not a debrid error.
  */
 internal fun debridProblemIn(error: String): app.nijiyome.model.torrent.DebridProblem? {
     val code = DEBRID_ERROR.find(error)?.value ?: return null
-    return app.nijiyome.model.torrent.debridProblemOf(app.nijiyome.model.AppError.Unknown(code))
+    return app.nijiyome.model.torrent.debridProblemOf(AppError.Unknown(code))
 }
 
 private val DEBRID_ERROR = Regex("""debrid:[A-Za-z0-9_:]+""")
-
-// ------------------------------------------------------------------ Activas
-
-private fun LazyListScope.activeTab(
-    state: DownloadsUiState,
-    vm: DownloadsViewModel,
-    onOpenTorrent: (String) -> Unit,
-    @Suppress("UNUSED_PARAMETER") errorText: (Throwable) -> String,
-) {
-    if (state.active.isEmpty() && state.activeTorrents.isEmpty()) {
-        item(key = "empty") {
-            EmptyState(icon = Icons.Outlined.CloudDownload, title = stringResource(Res.string.downloads_empty_active), message = stringResource(Res.string.downloads_empty_active_body))
-        }
-        // BUG-085: Tú said "1 torrent en la biblioteca" and this tab looked empty: point at where the torrents are.
-        if (state.completedTorrents.isNotEmpty()) {
-            item(key = "torrents-elsewhere") {
-                val n = state.completedTorrents.size
-                val bytes = state.completedTorrents.sumOf { (it.sizeBytes * it.progress.coerceIn(0.0, 1.0)).toLong() }
-                androidx.compose.material3.ListItem(
-                    headlineContent = { Text(pluralStringResource(Res.plurals.downloads_torrents_elsewhere, n, n, formatBytes(bytes))) },
-                    supportingContent = { Text(stringResource(Res.string.downloads_torrents_elsewhere_hint)) },
-                    leadingContent = { Icon(Icons.Rounded.Hub, contentDescription = null) },
-                    trailingContent = {
-                        androidx.compose.material3.TextButton(onClick = { vm.selectTab(DownloadsTab.ANIME) }) {
-                            Text(stringResource(Res.string.downloads_torrents_elsewhere_open))
-                        }
-                    },
-                    modifier = Modifier.clickable { vm.selectTab(DownloadsTab.ANIME) },
-                )
-            }
-        }
-        return
-    }
-    items(state.active, key = { "w:" + it.id }) { item -> ActiveRow(item, state.eta[item.id], vm) }
-    if (state.activeTorrents.isNotEmpty()) {
-        item(key = "t-header") { ListGroupHeader(stringResource(Res.string.downloads_torrents)) }
-        items(state.activeTorrents, key = { "t:" + it.id }) { t -> TorrentRow(t, onOpenTorrent, vm) }
-    }
-}
-
-@Composable
-private fun ActiveRow(item: DownloadItem, eta: Long?, vm: DownloadsViewModel) {
-    var confirm by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        MediaCover(url = item.poster, modifier = Modifier.width(44.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(item.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                listOfNotNull(
-                    stringResource(UiR.string.ui_episode_number, item.episode),
-                    item.sourceLabel.takeIf { it.isNotBlank() },
-                    stringResource(item.state.labelRes()),
-                    eta?.let { stringResource(Res.string.downloads_eta, formatDuration(it)) },
-                ).joinToString(" · "),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (item.state == DownloadState.FAILED) {
-                itemErrorText(item)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-            } else {
-                LinearProgressIndicator(progress = { item.progress.toFloat().coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-                Text(
-                    "${(item.progress * 100).toInt()}% · ${formatBytes(item.downloadedBytes)}" + (item.totalBytes?.let { " / " + formatBytes(it) } ?: ""),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        when (item.state) {
-            DownloadState.PAUSED -> IconButton(onClick = { vm.resume(item.id) }) { Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(Res.string.downloads_resume)) }
-            DownloadState.FAILED -> IconButton(onClick = { vm.retry(item.id) }) { Icon(Icons.Outlined.Refresh, contentDescription = stringResource(UiR.string.ui_retry)) }
-            else -> IconButton(onClick = { vm.pause(item.id) }) { Icon(Icons.Outlined.Pause, contentDescription = stringResource(Res.string.downloads_pause)) }
-        }
-        IconButton(onClick = { confirm = true }) { Icon(Icons.Outlined.Delete, contentDescription = stringResource(Res.string.downloads_cancel)) }
-    }
-    if (confirm) {
-        ConfirmDialog(
-            title = stringResource(Res.string.downloads_cancel),
-            text = stringResource(Res.string.downloads_cancel_confirm, item.title, item.episode),
-            onConfirm = { vm.remove(item.id) },
-            onDismiss = { confirm = false },
-        )
-    }
-}
-
-@Composable
-private fun TorrentRow(t: TorrentLibraryItem, onOpen: (String) -> Unit, vm: DownloadsViewModel) {
-    Row(
-        Modifier.fillMaxWidth().clickable { onOpen(t.id) }.padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        MediaCover(url = t.poster, modifier = Modifier.width(44.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(t.series ?: t.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                listOfNotNull(t.episode?.let { stringResource(UiR.string.ui_episode_number, it) }, stringResource(Res.string.downloads_torrent), formatBytes(t.sizeBytes)).joinToString(" · "),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (t.progress < 1.0) LinearProgressIndicator(progress = { t.progress.toFloat().coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-        }
-        if (t.progress < 1.0) {
-            if (t.state == app.nijiyome.model.torrent.TorrentState.PAUSED) {
-                IconButton(onClick = { vm.resumeTorrent(t.id) }) { Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(Res.string.downloads_resume)) }
-            } else {
-                IconButton(onClick = { vm.pauseTorrent(t.id) }) { Icon(Icons.Outlined.Pause, contentDescription = stringResource(Res.string.downloads_pause)) }
-            }
-        }
-    }
-}
-
-// ------------------------------------------------------------------ Anime
-
-private fun LazyListScope.animeTab(
-    state: DownloadsUiState,
-    vm: DownloadsViewModel,
-    play: (DownloadItem) -> Unit,
-    onOpenDetails: (Int) -> Unit,
-    onOpenTorrent: (String) -> Unit,
-) {
-    item(key = "auto") { AutoDownloadCard(state.rules, vm) }
-    if (state.anime.isEmpty() && state.completedTorrents.isEmpty()) {
-        item(key = "empty") {
-            EmptyState(icon = Icons.Outlined.VideoFile, title = stringResource(Res.string.downloads_empty_anime), message = stringResource(Res.string.downloads_empty_anime_body))
-        }
-        return
-    }
-    state.anime.forEach { group ->
-        item(key = "g:" + group.ref.anilistId + ":" + group.ref.malId + ":" + group.title) {
-            GroupHeader(group, onOpenDetails = group.ref.anilistId?.let { id -> { onOpenDetails(id) } }, onRemove = { vm.removeTitle(group) })
-        }
-        items(group.episodes, key = { "e:" + it.id }) { ep -> EpisodeRow(ep, play, vm) }
-    }
-    if (state.completedTorrents.isNotEmpty()) {
-        item(key = "ct-header") { ListGroupHeader(stringResource(Res.string.downloads_torrents)) }
-        items(state.completedTorrents, key = { "ct:" + it.id }) { t -> TorrentRow(t, onOpenTorrent, vm) }
-    }
-}
-
-@Composable
-private fun GroupHeader(group: TitleGroup, onOpenDetails: (() -> Unit)?, onRemove: () -> Unit) {
-    var confirm by remember { mutableStateOf(false) }
-    Row(
-        Modifier.fillMaxWidth().then(if (onOpenDetails != null) Modifier.clickable(onClick = onOpenDetails) else Modifier).padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        MediaCover(url = group.poster, modifier = Modifier.width(48.dp))
-        Column(Modifier.weight(1f)) {
-            Text(group.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(
-                stringResource(Res.string.downloads_group_summary, group.episodes.size, formatBytes(group.bytes)),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        IconButton(onClick = { confirm = true }) { Icon(Icons.Outlined.Delete, contentDescription = stringResource(Res.string.downloads_remove_title)) }
-    }
-    if (confirm) {
-        ConfirmDialog(
-            title = stringResource(Res.string.downloads_remove_title),
-            text = stringResource(Res.string.downloads_remove_title_confirm, group.title),
-            onConfirm = onRemove,
-            onDismiss = { confirm = false },
-        )
-    }
-}
-
-@Composable
-private fun EpisodeRow(item: DownloadItem, play: (DownloadItem) -> Unit, vm: DownloadsViewModel) {
-    val broken = item.state == DownloadState.BROKEN
-    Row(
-        Modifier.fillMaxWidth().clickable(enabled = !broken) { play(item) }.padding(start = 76.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(UiR.string.ui_episode_number, item.episode), style = MaterialTheme.typography.bodyMedium)
-            Text(
-                listOfNotNull(item.sourceLabel.takeIf { it.isNotBlank() }, (item.totalBytes ?: item.downloadedBytes).takeIf { it > 0 }?.let(::formatBytes)).joinToString(" · "),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (broken) {
-            Pill(stringResource(DownloadState.BROKEN.labelRes()), tone = PillTone.ERR)
-            IconButton(onClick = { vm.retry(item.id) }) { Icon(Icons.Outlined.Refresh, contentDescription = stringResource(Res.string.downloads_redownload)) }
-        } else {
-            IconButton(onClick = { play(item) }) { Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(Res.string.downloads_play)) }
-        }
-        val openFolder = rememberOpenFolder()
-        val file = item.localUri
-        if (openFolder != null && file != null) {
-            IconButton(onClick = { openFolder(file) }) { Icon(Icons.Outlined.FolderOpen, contentDescription = stringResource(Res.string.downloads_desktop_open_folder)) }
-        }
-        IconButton(onClick = { vm.remove(item.id) }) { Icon(Icons.Outlined.Delete, contentDescription = stringResource(Res.string.downloads_delete)) }
-    }
-}
-
-/** Classic AutomationProfiles: per-title rules over WATCHING, profile, "Simular", "Comprobar ahora". */
-@Composable
-private fun AutoDownloadCard(rules: List<AutoDownloadRule>, vm: DownloadsViewModel) {
-    val koin = getKoin()
-    val lists = remember { koin.getOrNull<ListsRepository>() }
-    val watchingFlow = remember(lists) { lists?.entries(ListStatus.WATCHING) ?: flowOf(emptyList()) }
-    val watching by watchingFlow.collectAsStateWithLifecycle(initialValue = emptyList())
-    val suggestions = watching.filter { w -> rules.none { r -> sameRef(r.ref, w.ref) } }
-    SectionCard(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), title = stringResource(Res.string.downloads_auto_title)) {
-        Text(stringResource(if (desktopDownloadsUi) Res.string.downloads_desktop_auto_body else Res.string.downloads_auto_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        rules.forEach { rule ->
-            Column(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(rule.title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            stringResource(Res.string.downloads_auto_last, rule.lastEpisode),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    TextButton(onClick = { vm.preview(rule.ref) }) { Text(stringResource(Res.string.downloads_auto_simulate)) }
-                    Switch(checked = rule.enabled, onCheckedChange = { on -> vm.setRule(rule.copy(enabled = on)) })
-                }
-                ProfilePicker(rule.profile) { p -> vm.setRule(rule.copy(profile = p)) }
-            }
-        }
-        if (suggestions.isNotEmpty()) {
-            Text(stringResource(Res.string.downloads_auto_suggest), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
-            suggestions.take(MAX_SUGGESTIONS).forEach { entry ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(entry.title, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    TextButton(onClick = { vm.addRule(entry.ref, entry.title, entry.poster, DownloadProfile.BALANCED_1080) }) {
-                        Text(stringResource(Res.string.downloads_auto_add))
-                    }
-                }
-            }
-        }
-        FilledTonalButton(onClick = vm::checkNow, modifier = Modifier.padding(top = 8.dp)) {
-            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(stringResource(Res.string.downloads_auto_check), Modifier.padding(start = 6.dp))
-        }
-    }
-}
-
-private const val MAX_SUGGESTIONS = 8
 
 @Composable
 internal fun ProfilePicker(selected: DownloadProfile, onSelect: (DownloadProfile) -> Unit) {
@@ -584,290 +589,3 @@ internal fun DownloadProfile.labelRes(): StringResource = when (this) {
 
 internal fun sameRef(a: MediaRef, b: MediaRef): Boolean =
     (a.anilistId != null && a.anilistId == b.anilistId) || (a.malId != null && a.malId == b.malId)
-
-// ------------------------------------------------------------------ Manga / Novelas
-
-private fun LazyListScope.chaptersTab(list: List<ChapterDownload>, kind: ChapterKind, vm: DownloadsViewModel, onOpen: (ChapterDownload) -> Unit) {
-    if (list.isEmpty()) {
-        item(key = "empty") {
-            EmptyState(
-                icon = Icons.Outlined.AutoStories,
-                title = stringResource(if (kind == ChapterKind.MANGA) Res.string.downloads_empty_manga else Res.string.downloads_empty_novels),
-                message = stringResource(Res.string.downloads_empty_chapters_body),
-            )
-        }
-        return
-    }
-    list.groupBy { it.mediaId }.forEach { (mediaId, chapters) ->
-        val first = chapters.first()
-        item(key = "ch:$mediaId") {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                MediaCover(url = first.poster, modifier = Modifier.width(48.dp))
-                Text(first.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        items(chapters.sortedBy { it.chapterNumber ?: Double.MAX_VALUE }, key = { "c:" + it.id }) { c ->
-            Row(
-                Modifier.fillMaxWidth().clickable(enabled = c.state == DownloadState.COMPLETED) { onOpen(c) }.padding(start = 76.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(c.chapterLabel, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        listOf(stringResource(c.state.labelRes()), formatBytes(c.bytes)).joinToString(" · "),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (c.state == DownloadState.DOWNLOADING || c.state == DownloadState.QUEUED) {
-                        LinearProgressIndicator(progress = { c.progress.toFloat().coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-                    }
-                }
-                if (c.state == DownloadState.FAILED || c.state == DownloadState.BROKEN) {
-                    IconButton(onClick = { vm.retryChapter(c) }) { Icon(Icons.Outlined.Refresh, contentDescription = stringResource(UiR.string.ui_retry)) }
-                }
-                IconButton(onClick = { vm.removeChapter(c) }) { Icon(Icons.Outlined.Delete, contentDescription = stringResource(Res.string.downloads_delete)) }
-            }
-        }
-    }
-}
-
-// ------------------------------------------------------------------ Historial
-
-private fun LazyListScope.historyTab(state: DownloadsUiState, vm: DownloadsViewModel, play: (DownloadItem) -> Unit, @Suppress("UNUSED_PARAMETER") errorText: (Throwable) -> String) {
-    if (state.history.isEmpty()) {
-        item(key = "empty") {
-            EmptyState(icon = Icons.Outlined.History, title = stringResource(Res.string.downloads_empty_history), message = stringResource(Res.string.downloads_empty_history_body))
-        }
-        return
-    }
-    item(key = "clear") {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = vm::clearHistory) { Text(stringResource(Res.string.downloads_history_clear)) }
-        }
-    }
-    items(state.history, key = { "h:" + it.id }) { item ->
-        val date = remember(item.completedAtMs, item.createdAtMs) {
-            java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(item.completedAtMs ?: item.createdAtMs))
-        }
-        Row(
-            Modifier.fillMaxWidth().clickable(enabled = item.state == DownloadState.COMPLETED) { play(item) }.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            MediaCover(url = item.poster, modifier = Modifier.width(40.dp))
-            Column(Modifier.weight(1f)) {
-                Text(item.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    listOf(stringResource(UiR.string.ui_episode_number, item.episode), date).joinToString(" · "),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                itemErrorText(item)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-            }
-            Pill(
-                stringResource(item.state.labelRes()),
-                tone = when (item.state) {
-                    DownloadState.COMPLETED -> PillTone.OK
-                    DownloadState.FAILED, DownloadState.BROKEN -> PillTone.ERR
-                    else -> PillTone.NEUTRAL
-                },
-            )
-            if (item.state != DownloadState.COMPLETED) {
-                IconButton(onClick = { vm.retry(item.id) }) { Icon(Icons.Outlined.Refresh, contentDescription = stringResource(UiR.string.ui_retry)) }
-            }
-        }
-    }
-}
-
-// ------------------------------------------------------------------ Biblioteca local
-
-private fun LazyListScope.localTab(state: DownloadsUiState, vm: DownloadsViewModel, onPlay: (PlayerArgs) -> Unit) {
-    item(key = "local-actions") { LocalActions(vm) }
-    if (state.library.isEmpty()) {
-        item(key = "empty") {
-            EmptyState(icon = Icons.Outlined.FolderOpen, title = stringResource(Res.string.downloads_empty_local), message = stringResource(Res.string.downloads_empty_local_body))
-        }
-        return
-    }
-    items(state.library, key = { "l:" + it.id }) { item -> LocalRow(item, vm, onPlay) }
-}
-
-@Composable
-private fun LocalActions(vm: DownloadsViewModel) {
-    val pickFiles = rememberFilePicker(mimeTypes = listOf("video/*")) { uris ->
-        if (uris.isNotEmpty()) vm.importFiles(uris)
-    }
-    val pickFolder = rememberFolderPicker { uri ->
-        if (uri != null) vm.scanFolder(uri)
-    }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilledTonalButton(onClick = { pickFiles() }) {
-            Icon(Icons.Outlined.VideoFile, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(stringResource(Res.string.downloads_local_import), Modifier.padding(start = 6.dp))
-        }
-        OutlinedButton(onClick = { pickFolder() }) {
-            Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(stringResource(Res.string.downloads_local_scan), Modifier.padding(start = 6.dp))
-        }
-    }
-}
-
-@Composable
-private fun LocalRow(item: LocalLibraryItem, vm: DownloadsViewModel, onPlay: (PlayerArgs) -> Unit) {
-    var matching by remember { mutableStateOf(false) }
-    var confirm by remember { mutableStateOf(false) }
-    val title = item.title ?: item.fileName
-    Row(
-        Modifier.fillMaxWidth().clickable {
-            onPlay(PlayerArgs(media = item.ref ?: MediaRef(), title = title, episode = item.episode ?: 1, localUri = item.uri))
-        }.padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        MediaCover(url = item.poster, modifier = Modifier.width(40.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                listOfNotNull(item.episode?.let { stringResource(UiR.string.ui_episode_number, it) }, item.fileName, formatBytes(item.sizeBytes)).joinToString(" · "),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (!item.matched) Pill(stringResource(Res.string.downloads_local_unmatched), tone = PillTone.WARN)
-        }
-        val openFolder = rememberOpenFolder()
-        if (openFolder != null) {
-            IconButton(onClick = { openFolder(item.uri) }) { Icon(Icons.Outlined.FolderOpen, contentDescription = stringResource(Res.string.downloads_desktop_open_folder)) }
-        }
-        IconButton(onClick = { matching = true }) { Icon(Icons.Outlined.Link, contentDescription = stringResource(Res.string.downloads_local_match)) }
-        IconButton(onClick = { confirm = true }) { Icon(Icons.Outlined.Delete, contentDescription = stringResource(Res.string.downloads_delete)) }
-    }
-    if (matching) MatchDialog(item, onDismiss = { matching = false }) { media, ep -> vm.matchLocal(item.id, media, ep) }
-    if (confirm) {
-        AlertDialog(
-            onDismissRequest = { confirm = false },
-            title = { Text(stringResource(Res.string.downloads_local_remove)) },
-            text = { Text(stringResource(Res.string.downloads_local_remove_body, item.fileName)) },
-            confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(onClick = {
-                        vm.removeLocal(item.id, deleteFile = false)
-                        confirm = false
-                    }) { Text(stringResource(Res.string.downloads_local_remove_entry)) }
-                    TextButton(
-                        onClick = {
-                            vm.removeLocal(item.id, deleteFile = true)
-                            confirm = false
-                        },
-                        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    ) { Text(stringResource(Res.string.downloads_local_remove_file)) }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirm = false }) { Text(stringResource(UiR.string.ui_cancel)) }
-            },
-        )
-    }
-}
-
-/** Emparejar / reparar (classic ImportMappingModal): search the title, pick it, set the episode. */
-@Composable
-private fun MatchDialog(item: LocalLibraryItem, onDismiss: () -> Unit, onMatch: (Media?, Int?) -> Unit) {
-    val koin = getKoin()
-    val metadata = remember { koin.getOrNull<MetadataRepository>() }
-    var query by remember { mutableStateOf(item.title ?: item.fileName.substringBeforeLast('.')) }
-    var episode by remember { mutableStateOf(item.episode?.toString().orEmpty()) }
-    var results by remember { mutableStateOf<List<Media>>(emptyList()) }
-    var picked by remember { mutableStateOf<Media?>(null) }
-    var searching by remember { mutableStateOf(false) }
-    var failed by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.downloads_local_match)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    modifier = Modifier.focusOnOpen(),
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    label = { Text(stringResource(Res.string.downloads_local_match_title)) },
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            val repo = metadata
-                            if (repo != null) {
-                                searching = true
-                                failed = false
-                                scope.launch {
-                                    val r = runCatching { repo.search(MediaKind.ANIME, query).items.take(6) }
-                                    results = r.getOrDefault(emptyList())
-                                    failed = r.isFailure
-                                    searching = false
-                                }
-                            }
-                        }) { Icon(Icons.Outlined.Search, contentDescription = stringResource(Res.string.downloads_search)) }
-                    },
-                )
-                if (searching) LinearProgressIndicator(Modifier.fillMaxWidth())
-                if (failed) Text(stringResource(Res.string.downloads_local_match_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                results.forEach { m ->
-                    Surface(
-                        onClick = { picked = m },
-                        color = if (picked == m) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-                        shape = MaterialTheme.shapes.small,
-                    ) {
-                        Row(Modifier.fillMaxWidth().padding(6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            MediaCover(url = m.cover, modifier = Modifier.width(32.dp))
-                            Text(m.title, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                }
-                OutlinedTextField(
-                    value = episode,
-                    onValueChange = { v -> episode = v.filter { it.isDigit() }.take(4) },
-                    singleLine = true,
-                    label = { Text(stringResource(Res.string.downloads_local_match_episode)) },
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                onMatch(picked ?: currentMedia(item), episode.toIntOrNull())
-                onDismiss()
-            }) { Text(stringResource(Res.string.downloads_local_match_save)) }
-        },
-        dismissButton = {
-            TextButton(onClick = {
-                onMatch(null, null)
-                onDismiss()
-            }) { Text(stringResource(Res.string.downloads_local_match_clear)) }
-        },
-    )
-}
-
-/** Keeps the current match when only the episode changes. */
-private fun currentMedia(item: LocalLibraryItem): Media? {
-    val ref = item.ref ?: return null
-    return Media(
-        ref = ref, kind = MediaKind.ANIME, title = item.title ?: item.fileName, titles = emptyMap(), cover = item.poster, banner = null, color = null,
-        synopsis = null, genres = emptyList(), episodes = null, status = null, season = null, year = null, score = null, sourceProvider = "local",
-    )
-}
-
-@Composable
-internal fun ConfirmDialog(title: String, text: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(text) },
-        confirmButton = {
-            TextButton(onClick = {
-                onConfirm()
-                onDismiss()
-            }) { Text(title) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
-    )
-}
