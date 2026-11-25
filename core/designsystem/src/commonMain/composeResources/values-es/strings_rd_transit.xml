@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, carril D3 (Tránsito nocturno). -->
+    <string name="rd_transit_name">Tránsito nocturno</string>
+    <string name="rd_transit_tagline">Señalética de metro sobre grafito: cada serie es una línea de color, cada episodio una estación.</string>
+    <string name="rd_transit_palette_grafito">Grafito</string>
+    <string name="rd_transit_palette_anden">Andén</string>
+    <string name="rd_transit_palette_yamanote">Línea Yamanote</string>
+    <string name="rd_transit_palette_ultima">Última salida</string>
+    <!-- Letra antes del número de episodio en el rótulo de estación (E09). -->
+    <string name="rd_transit_prefix_episode">E</string>
+</resources>
