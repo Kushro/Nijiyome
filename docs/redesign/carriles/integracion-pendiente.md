@@ -125,3 +125,14 @@ S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4
 - B-OCULTA-01 (fuente de manga preferida global): falta un campo en `MangaPrefs` / `MangaCatalog` (core).
 - Zonas de toque alternativas del lector (L, bordes, ninguna): faltaría un campo en `ReaderSettings`; hoy solo los tercios.
 - Posibles errores de compilación: dos imports de `itemsIndexed` en `MangaHomeScreen.kt`; lambdas con nombre en `FilterChipMenu`.
+
+## Ajustes (S10), agregado tras su informe
+
+- Salto exacto: en `NijiyomeApp.openSettings(section, itemId)` pasar `initialItemId = itemId` a `SettingsScreen` y a `SettingsModalDialog`.
+- `SettingsCatalog.items` ahora es `@Composable get()`; comprobar la llamada en `CommandPalette.kt`.
+- `onOpenCalendar` en `SettingsScreen` y `SettingsModalDialog` → `Route.Calendar`.
+- Sugerencia de modo rendimiento: usar `rememberLowRefreshRate()` además de `rememberLowEndDevice()` en el selector de diseño.
+- `LinkServerSection` duplica lo que ya está en la pantalla de Link de escritorio: dejar el nombre del servidor y un enlace a `Route.Linked`.
+- Límites de velocidad y rejilla semanal de torrents siguen como campos de texto dentro de `feature/torrents` (`TorrentSettingsPage`).
+- Primer arranque: el paso Fuentes no instala `.kai` ni agrega repositorios (faltan APIs de `feature/extensions` visibles desde settings).
+- Estado de categoría y búsqueda con `remember` (se pierde al rotar): pasar a `rememberSaveable`.
