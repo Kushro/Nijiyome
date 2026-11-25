@@ -104,7 +104,7 @@ internal fun LibraryList(
             }
             item(key = "filters", contentType = "filters") {
                 Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ListFilterBar(state, labels, actions, showStatus = true)
+                    ListFilterBar(state, labels, actions, showStatus = true, showSort = false)
                     ListAccountsLine(state, actions.openAccounts)
                 }
             }
@@ -273,13 +273,7 @@ private fun SortHead(sort: ListSort, state: ListsUiState, actions: MyListActions
     }
 }
 
-private fun ListSort.columnRes() = when (this) {
-    ListSort.TITLE -> Res.string.rd_s7_col_title
-    ListSort.STATUS -> Res.string.rd_s7_col_status
-    ListSort.PROGRESS -> Res.string.rd_s7_col_progress
-    ListSort.SCORE -> Res.string.rd_s7_col_score
-    ListSort.UPDATED -> Res.string.rd_s7_col_updated
-}
+private fun ListSort.columnRes() = sortLabelRes()
 
 /** A click opens the title (or toggles while selecting); long-press and Ctrl / Shift click select. */
 private fun rowClick(entry: ListEntry, sel: SelectionState<String>, actions: MyListActions): () -> Unit =

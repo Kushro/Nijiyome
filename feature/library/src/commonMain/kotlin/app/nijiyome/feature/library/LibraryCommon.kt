@@ -30,8 +30,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.contentDescription
+import app.nijiyome.ui.patterns.MenuEntriesDropdown
+import org.jetbrains.compose.resources.StringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
@@ -133,7 +142,7 @@ internal fun entryMenu(entry: ListEntry, labels: LibraryLabels, actions: MyListA
                 icon = Icons.Outlined.SwapHoriz,
             ),
         )
-        if (onPick != null) add(MenuAction(labels.pick, onClick = onPick, icon = Icons.Outlined.PanTool, shortcut = "Space"))
+        if (onPick != null) add(MenuAction(labels.pick, onClick = onPick, icon = Icons.Outlined.PanTool))
         add(MenuAction(labels.edit, onClick = { actions.edit(entry) }, icon = Icons.Outlined.Edit))
         add(
             MenuAction(
@@ -254,7 +263,7 @@ internal fun ContinueShelf(entries: List<HistoryEntry>, onPlay: (HistoryEntry) -
     }
 }
 
-/** Title filter and, when [showStatus], the status chips with their counts ("Todo" first). */
+/** Title filter, the sort menu when [showSort], and when [showStatus] the status chips with their counts ("Todo" first). */
 @Composable
 internal fun ListFilterBar(
     state: ListsUiState,
@@ -262,25 +271,13 @@ internal fun ListFilterBar(
     actions: MyListActions,
     showStatus: Boolean,
     modifier: Modifier = Modifier,
+    showSort: Boolean = true,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
-            value = state.query,
-            onValueChange = actions.setQuery,
-            singleLine = true,
-            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-            trailingIcon = if (state.query.isNotEmpty()) {
-                {
-                    IconButton(onClick = { actions.setQuery("") }) {
-                        Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.library_lists_clear_filter))
-                    }
-                }
-            } else {
-                null
-            },
-            placeholder = { Text(stringResource(Res.string.library_lists_filter)) },
-            modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TitleFilterField(state, actions, Modifier.weight(1f, fill = false))
+            if (showSort) SortMenuButton(state, actions)
+        }
         if (showStatus) {
             val total = state.counts.values.sum()
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -301,6 +298,57 @@ internal fun ListFilterBar(
                 }
             }
         }
+    }
+}
+
+/** The sort of the shelves and the board (the list structure sorts from its column heads). A second pick of the same flips it. */
+@Composable
+private fun SortMenuButton(state: ListsUiState, actions: MyListActions) {
+    var open by remember { mutableStateOf(false) }
+    val names = ListSort.entries.associateWith { stringResource(it.sortLabelRes()) }
+    val label = stringResource(Res.string.rd_s7_sort_by, names.getValue(state.sort))
+    Box {
+        IconButton(onClick = { open = true }, modifier = Modifier.semantics { contentDescription = label }) {
+            Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = null)
+        }
+        MenuEntriesDropdown(
+            expanded = open,
+            entries = ListSort.entries.map { s ->
+                MenuAction(names.getValue(s), onClick = { actions.toggleSort(s) }, checked = state.sort == s)
+            },
+            onDismiss = { open = false },
+        )
+    }
+}
+
+internal fun ListSort.sortLabelRes(): StringResource = when (this) {
+    ListSort.TITLE -> Res.string.rd_s7_col_title
+    ListSort.STATUS -> Res.string.rd_s7_col_status
+    ListSort.PROGRESS -> Res.string.rd_s7_col_progress
+    ListSort.SCORE -> Res.string.rd_s7_col_score
+    ListSort.UPDATED -> Res.string.rd_s7_col_updated
+}
+
+@Composable
+private fun TitleFilterField(state: ListsUiState, actions: MyListActions, modifier: Modifier) {
+    Box(modifier) {
+        OutlinedTextField(
+            value = state.query,
+            onValueChange = actions.setQuery,
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+            trailingIcon = if (state.query.isNotEmpty()) {
+                {
+                    IconButton(onClick = { actions.setQuery("") }) {
+                        Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.library_lists_clear_filter))
+                    }
+                }
+            } else {
+                null
+            },
+            placeholder = { Text(stringResource(Res.string.library_lists_filter)) },
+            modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
+        )
     }
 }
 

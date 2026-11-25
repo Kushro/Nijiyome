@@ -274,7 +274,7 @@ private fun NotificationsPanel(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileContent(
     user: SocialUser,
