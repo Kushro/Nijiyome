@@ -210,7 +210,7 @@ internal fun rememberTransferErrorText(): (String) -> String {
                 raw.startsWith("torrent:") -> when (parts.firstOrNull()) {
                     "missing" -> missing
                     "moved" -> moved
-                    "no_space" -> noSpace.format(formatBytes(parts.getOrNull(1)?.toLongOrNull() ?: 0))
+                    "no_space" -> noSpace.format(formatBytes(parts.getOrNull(1)?.toLongOrNull() ?: 0L))
                     "no_file" -> noFile
                     "background_off" -> bgOff
                     "incomplete" -> incomplete
@@ -232,7 +232,7 @@ private fun rememberDebridProblemTexts(): (app.nijiyome.model.torrent.DebridProb
     val all = app.nijiyome.model.torrent.DebridProblem.entries.associateWith { p ->
         stringResource(Res.string.downloads_err_debrid, stringResource(p.labelRes()))
     }
-    return remember(all) { { p -> all[p].orEmpty() } }
+    return remember(all) { { p: app.nijiyome.model.torrent.DebridProblem -> all[p].orEmpty() } }
 }
 
 /** Whether an [AppException] carries a code the screen explains. */
