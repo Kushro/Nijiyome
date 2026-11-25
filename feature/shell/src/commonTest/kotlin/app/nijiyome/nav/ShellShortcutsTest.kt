@@ -15,6 +15,10 @@ class ShellShortcutsTest {
     fun ctrlKAndCtrlB() {
         assertEquals(ShellShortcut.FocusSearch, ctrl(Key.K))
         assertEquals(ShellShortcut.ToggleNav, ctrl(Key.B))
+        // Sparkles: Ctrl+, opens Settings; Ctrl+P stays as its alias.
+        assertEquals(ShellShortcut.OpenSettings, ctrl(Key.Comma))
+        assertEquals(ShellShortcut.OpenSettings, ctrl(Key.P))
+        assertNull(plain(Key.Comma))
         assertNull(ctrl(Key.F))
         assertNull(plain(Key.K))
         assertNull(plain(Key.B))
