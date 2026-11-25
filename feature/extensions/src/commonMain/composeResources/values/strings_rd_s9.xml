@@ -96,7 +96,8 @@
     <string name="rd_s9_debrid_key_placeholder">Paste the %1$s key</string>
     <string name="rd_s9_debrid_test_link">Test and link</string>
     <string name="rd_s9_debrid_get_key">Get a key at %1$s</string>
-    <string name="rd_s9_debrid_order_note">The order of the linked accounts is the order of preference. To change it, unlink and link again, or use Transfers › Debrid while that option moves here.</string>
+    <string name="rd_s9_debrid_order_note">The order of the linked accounts is the order of preference. To change it, unlink and link again, or use More debrid options.</string>
+    <string name="rd_s9_debrid_more">More debrid options</string>
     <string name="rd_s9_debrid_linked_as">%1$s linked as %2$s</string>
     <string name="rd_s9_debrid_check_ok">%1$s: the key works (%2$s)</string>
     <string name="rd_s9_debrid_check_failed">%1$s: %2$s</string>

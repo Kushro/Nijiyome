@@ -116,7 +116,15 @@ internal fun LazyListScope.debridSection(ctx: SourcesContext) {
         )
     }
     item(key = "debrid-order", contentType = "hint") {
-        Text(stringResource(Res.string.rd_s9_debrid_order_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(Res.string.rd_s9_debrid_order_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            ctx.onOpenDebrid?.let { open ->
+                TextButton(onClick = open) {
+                    Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(stringResource(Res.string.rd_s9_debrid_more), modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+        }
     }
 }
 

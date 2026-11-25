@@ -151,6 +151,11 @@ fun ExtensionsScreen(
     serversContent: (@Composable () -> Unit)? = null,
     /** Sparkles S9: opens Nijiyome Link (Route.Linked) from the Servidores tab; null hides that button. */
     onOpenLink: (() -> Unit)? = null,
+    /**
+     * Sparkles S9: the debrid section of Transfers (`Route.Torrents(TorrentSection.DEBRID)`, lane S8), for what the DebridRepository
+     * contract cannot do from here (the preference order). Null hides that link.
+     */
+    onOpenDebrid: (() -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val hubState by hub.state.collectAsStateWithLifecycle()
@@ -206,6 +211,7 @@ fun ExtensionsScreen(
         onOpenServers = onOpenServers,
         serversContent = serversContent,
         onOpenLink = onOpenLink,
+        onOpenDebrid = onOpenDebrid,
         pickFile = pickFile,
         openInstall = { showInstallUrl = true },
         openUpdates = { showUpdates = true },
@@ -348,6 +354,7 @@ internal class SourcesContext(
     val onOpenServers: (() -> Unit)?,
     val serversContent: (@Composable () -> Unit)?,
     val onOpenLink: (() -> Unit)?,
+    val onOpenDebrid: (() -> Unit)?,
     val pickFile: () -> Unit,
     val openInstall: () -> Unit,
     val openUpdates: () -> Unit,

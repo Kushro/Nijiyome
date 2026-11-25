@@ -96,7 +96,8 @@
     <string name="rd_s9_debrid_key_placeholder">Pega la clave de %1$s</string>
     <string name="rd_s9_debrid_test_link">Probar y vincular</string>
     <string name="rd_s9_debrid_get_key">Obtener una clave en %1$s</string>
-    <string name="rd_s9_debrid_order_note">El orden de las cuentas vinculadas es el de preferencia. Para cambiarlo, desvincula y vuelve a vincular, o usa Transferencias › Debrid mientras esa opción se muda aquí.</string>
+    <string name="rd_s9_debrid_order_note">El orden de las cuentas vinculadas es el de preferencia. Para cambiarlo, desvincula y vuelve a vincular, o usa Más opciones de debrid.</string>
+    <string name="rd_s9_debrid_more">Más opciones de debrid</string>
     <string name="rd_s9_debrid_linked_as">%1$s vinculado como %2$s</string>
     <string name="rd_s9_debrid_check_ok">%1$s: la clave funciona (%2$s)</string>
     <string name="rd_s9_debrid_check_failed">%1$s: %2$s</string>
