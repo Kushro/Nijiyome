@@ -104,3 +104,13 @@ Atkinson Hyperlegible Next, Overpass (Tránsito). Orígenes en `google/fonts` `o
 Integrados: D1 a D4, I1, M1, S1 a S8. En curso al llegar al límite de uso: S9 (rama `worktree-agent-a72941510b4062fab`),
 S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4`); sus worktrees están en
 `/media/octavio/Warehouse/Personal Github Repositories/Nijiyome/.claude/worktrees/`.
+
+## Fuentes y Link (S9), agregado tras su informe
+
+- `ExtensionsScreen(serversContent = { ExtensionServersContent() }, onOpenLink = { Route.Linked }, onOpenDebrid = { Route.Torrents(TorrentSection.DEBRID) })`.
+- `LinkedDeviceScreen(onOpenLogs → Ajustes › Acerca de › Registros, onOpenLinkSettings → Ajustes › Nijiyome Link, onOpenMonitor → LinkMonitorDialog de escritorio, onOpenTorrents)`.
+- `RouteAvailability.needs()`: `Route.Link` / `Route.Linked` deben ofrecerse cuando esté registrado `LinkRepository` **o**
+  `LinkServerController` (hoy es una lista «todos»; hace falta un caso «alguno»). Con eso Link aparece en el riel de escritorio.
+- `DebridRepository` no tiene `prefer(service)` en la interfaz (solo en `DebridRepositoryImpl`): agregarlo para reordenar cuentas desde Fuentes.
+- `feature/link` debe pasar `RegionData(connected = …)` a `decor(DecorRegion.LINK, data)` cuando exista.
+- S10: los interruptores de Debrid viven ahora en Fuentes › Debrid; `LinkServerSection` puede quedar como enlace a `Route.Linked`.
