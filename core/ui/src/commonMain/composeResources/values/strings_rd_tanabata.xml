@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, lane D1: the four tanzaku card styles (rd_tanabata_*). -->
+    <string name="rd_tanabata_card_tanzaku">Tanzaku</string>
+    <string name="rd_tanabata_card_seal">Tanzaku seal</string>
+    <string name="rd_tanabata_card_vertical">Vertical tanzaku</string>
+    <string name="rd_tanabata_card_thread">Tanzaku thread</string>
+    <string name="rd_tanabata_movie">Movie</string>
+    <string name="rd_tanabata_continue">Continue %1$s, %2$s</string>
+</resources>
