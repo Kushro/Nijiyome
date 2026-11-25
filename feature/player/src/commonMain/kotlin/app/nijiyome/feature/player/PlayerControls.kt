@@ -1,21 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.feature.player
 
-import app.nijiyome.designsystem.components.TrackModal
-import app.nijiyome.feature.player.resources.Res
-import app.nijiyome.feature.player.resources.*
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,73 +19,38 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.automirrored.rounded.VolumeOff
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
-import androidx.compose.material.icons.rounded.Audiotrack
-import androidx.compose.material.icons.rounded.BrightnessMedium
+import androidx.compose.material.icons.outlined.SendToMobile
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.FormatListNumbered
-import androidx.compose.material.icons.rounded.Fullscreen
-import androidx.compose.material.icons.rounded.FullscreenExit
 import androidx.compose.material.icons.rounded.Keyboard
-import androidx.compose.material.icons.rounded.LockOpen
-import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material.icons.rounded.PhotoCamera
-import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material.icons.rounded.Forward10
-import androidx.compose.material.icons.rounded.Forward5
-import androidx.compose.material.icons.rounded.HighQuality
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PictureInPictureAlt
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Replay10
-import androidx.compose.material.icons.rounded.Replay5
-import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.Speed
-import androidx.compose.material.icons.rounded.Subtitles
-import androidx.compose.material3.AssistChip
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.material.icons.rounded.Hub
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.VideoLibrary
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.BrightnessMedium
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -99,50 +58,67 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.focus.FocusRequester
-import app.nijiyome.ui.platform.ViewerEscape
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.layout.layout
-import org.jetbrains.compose.resources.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.nijiyome.model.SkipKind
-import app.nijiyome.model.SourceKind
-import app.nijiyome.player.PlaybackState
+import app.nijiyome.designsystem.components.Segmented
+import app.nijiyome.designsystem.components.SegmentedOption
+import app.nijiyome.feature.player.chrome.CinemaChrome
+import app.nijiyome.feature.player.chrome.MinimalChrome
+import app.nijiyome.feature.player.chrome.MiniChrome
+import app.nijiyome.feature.player.chrome.MoreActionRow
+import app.nijiyome.feature.player.chrome.PanelSideLayout
+import app.nijiyome.feature.player.chrome.PanelVerticalLayout
+import app.nijiyome.feature.player.chrome.PlayerChromeActions
+import app.nijiyome.feature.player.chrome.PlayerChromeModel
+import app.nijiyome.feature.player.chrome.panelShowsTabs
+import app.nijiyome.feature.player.chrome.rememberSeekUiState
+import app.nijiyome.feature.player.resources.Res
+import app.nijiyome.feature.player.resources.*
+import app.nijiyome.feature.player.sheets.PlayerSheetActions
+import app.nijiyome.feature.player.sheets.PlayerSheetContent
+import app.nijiyome.feature.player.sheets.PlayerSheetData
+import app.nijiyome.feature.player.sheets.PlayerSheetHost
+import app.nijiyome.feature.player.sheets.PlayerSheetKind
+import app.nijiyome.model.AspectMode
+import app.nijiyome.model.PlayerStructure
+import app.nijiyome.model.SettingsSection
 import app.nijiyome.player.PlayerKeymap
 import app.nijiyome.player.PlayerSession
-import app.nijiyome.model.LinkProcessingInfo
-import app.nijiyome.ui.format.formatDuration
+import app.nijiyome.ui.look.structures
+import app.nijiyome.ui.platform.ViewerEscape
 import app.nijiyome.ui.platform.windowWidthDp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 
 // 0.4.0 (worker D): Enhancements = the "Mejoras" panel (EnhancementPanel.kt); it replaces the BUG-022 "Perfil de mejora" sheet (the
 // PC's profiles are one of its sections).
 // 0.4.1: SubtitleStyle = the subtitle sheet's "Estilo" panel, SubtitleStyleFull = its "Más opciones" (SubtitleStyleEditor.kt).
-internal enum class Sheet { Quality, Subtitles, Audio, Speed, More, Episodes, Enhancements, SubtitleStyle, SubtitleStyleFull }
+// Sparkles S5: Tracks (audio + subtitles) and Picture (quality + framing) are the grouped sheets of the redesign's chrome; Quality,
+// Subtitles and Audio stay for anything that still opens them on their own.
+internal enum class Sheet { Quality, Subtitles, Audio, Speed, More, Episodes, Enhancements, SubtitleStyle, SubtitleStyleFull, Tracks, Picture }
 
 /**
  * The running engine: video surface, subtitles (Media3), gestures, controls, overlays, PiP. Milestone 4: shared; the platform parts
  * (surface, gestures, window, PiP, volume, screenshots, frame generation) are the slots of PlayerScreenPlatform.kt.
+ *
+ * Sparkles S5: the chrome is one of the three structures of `design.structures.player` (Cine, Mínimo, Panel), switched once at the
+ * root below. They share this state and these actions; only the composition changes (chrome/).
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun PlayerContent(
     vm: PlayerViewModel,
@@ -164,6 +140,8 @@ internal fun PlayerContent(
     val platform = rememberPlayerPlatformActions()
     val capabilities = playerCapabilities
     val scheme = MaterialTheme.colorScheme
+    val structure = structures.player
+    val touch = capabilities.touchFirst
 
     var controlsVisible by remember { mutableStateOf(true) }
     var interaction by remember { mutableIntStateOf(0) }
@@ -171,8 +149,19 @@ internal fun PlayerContent(
     var inPip by remember { mutableStateOf(false) }
     var hud by remember { mutableStateOf<Hud?>(null) }
     // --- parity wave A (worker p) ---
-    val startFullscreen = initialFullscreen()
+    // Sparkles S5: the touch Panel structure is the vertical player, which starts out of fullscreen (fullscreen is its Cine view).
+    val startFullscreen = initialFullscreen() && !(touch && structure == PlayerStructure.PANEL)
     var fullscreen by rememberSaveable { mutableStateOf(startFullscreen) }
+    var fullscreenFor by rememberSaveable { mutableStateOf(structure) }
+    LaunchedEffect(structure) {
+        // Picking another layout in the Más sheet: the vertical player leaves fullscreen, Cine / Mínimo go back to it (touch).
+        if (touch && fullscreenFor != structure) {
+            fullscreenFor = structure
+            fullscreen = structure != PlayerStructure.PANEL
+        }
+    }
+    var panelTab by rememberSaveable { mutableStateOf(Sheet.Enhancements) }
+    val panelTabs = structure == PlayerStructure.PANEL && panelShowsTabs(touch, fullscreen, windowWidthDp())
     var locked by rememberSaveable { mutableStateOf(false) }
     var lockButtonVisible by remember { mutableStateOf(true) }
     var helpOpen by remember { mutableStateOf(false) }
@@ -194,15 +183,15 @@ internal fun PlayerContent(
     // The phone's frame generation of this session (Android libmpv; it also posts the notice when FG fails mid-video).
     val frameGen = rememberPhoneFrameGen(vm, session)
     var statsVisible by rememberSaveable { mutableStateOf(false) }
-    var localAspect by rememberSaveable { mutableStateOf(app.nijiyome.model.AspectMode.FIT) }
+    var localAspect by rememberSaveable { mutableStateOf(AspectMode.FIT) }
     val activeAspect = if (quality.available) quality.requested.aspect else localAspect
-    fun cycleAspect() {
-        val next = nextQuickAspect(activeAspect)
-        localAspect = next
-        session.setAspect(next, quality.requested.zoomPercent)
-        hud = Hud(Hud.Kind.Aspect, label = aspectShortLabel(next))
+    fun setAspect(mode: AspectMode) {
+        localAspect = mode
+        session.setAspect(mode, quality.requested.zoomPercent)
+        hud = Hud(Hud.Kind.Aspect, aspect = mode)
         interaction++
     }
+    fun cycleAspect() = setAspect(nextQuickAspect(activeAspect))
     val chip = enhancementChip(
         location = processing.location,
         switchingTo = processing.switchingTo,
@@ -214,6 +203,12 @@ internal fun PlayerContent(
     fun screenshot() {
         scope.launch { vm.onScreenshot(platform.screenshot(session, vm.titleForFiles, episodeForShot)) }
     }
+    // The panel's tabs take the sheets while they show (Panel structure); otherwise a sheet opens over the video.
+    fun openSheet(kind: Sheet) {
+        if (panelTabs) panelTab = kind else sheet = kind
+        interaction++
+    }
+    val sendToDevice = rememberSendToDevice(vm, args, session) { hud = Hud(Hud.Kind.Message, label = it) }
 
     // The window itself (orientation, bars, brightness) is restored by PlayerWindowScope in PlayerBody, which outlives this
     // content while the next episode resolves; keep-awake, fullscreen, background playback, PiP and pause on stop are here.
@@ -276,10 +271,9 @@ internal fun PlayerContent(
         }
     }
     LaunchedEffect(hud) {
-        if (hud != null) {
-            delay(HUD_TIMEOUT_MS)
-            hud = null
-        }
+        val h = hud ?: return@LaunchedEffect
+        delay(if (h.kind == Hud.Kind.Message) MESSAGE_TIMEOUT_MS else HUD_TIMEOUT_MS)
+        hud = null
     }
 
     // ---- 0.4.1: the end screen (EndScreen.kt) once the episode played to its end, on every engine and location ----
@@ -333,10 +327,211 @@ internal fun PlayerContent(
         ViewerEscape(focus) { escape() }
     }
 
+    val resolving = state.phase == PlayerPhase.RESOLVING
+    val buffering = (ps.isBuffering || resolving) && ps.error == null
+    val shown = controlsVisible || keepUp
+    val pcInfo = processing.pc.takeIf { processing.location != app.nijiyome.model.ProcessingLocation.PHONE }
+    val seekUi = rememberSeekUiState()
+    val model = PlayerChromeModel(
+        session = session,
+        ps = ps,
+        state = state,
+        buffering = buffering,
+        title = title,
+        episodeTitle = state.episodes.items.firstOrNull { it.number == vm.episodeNumber }?.title?.takeIf { it.isNotBlank() },
+        aspectMode = activeAspect,
+        fullscreen = fullscreen,
+        enhancementChip = chip,
+        pc = pcInfo,
+        capabilities = capabilities,
+        hasKeyboard = hasHardwareKeyboard(),
+        sendToDevice = sendToDevice,
+        openSheet = if (panelTabs) panelTab else sheet,
+        seek = seekUi,
+    )
+    val chromeActions = PlayerChromeActions(
+        onBack = onBack,
+        onPip = platform::enterPictureInPicture,
+        onOpenSheet = ::openSheet,
+        onOpenPicker = onOpenPicker,
+        onOpenTorrent = onOpenTorrent,
+        onNext = vm::playNext,
+        onPrev = vm::playPrevious,
+        onInteract = { interaction++ },
+        onLock = { locked = true; lockButtonVisible = true; sheet = null },
+        onScreenshot = { screenshot() },
+        onToggleFullscreen = { fullscreen = !fullscreen },
+        onHelp = { helpOpen = true },
+        onCycleAspect = ::cycleAspect,
+    )
+
+    // The video with everything drawn over it; [chrome] is the structure's controls ([controlsHeight]: the room they take at the
+    // bottom, for the subtitles and the skip / next cards).
+    val stage: @Composable (Modifier, Dp, @Composable BoxScope.(Boolean) -> Unit) -> Unit = { modifier, controlsHeight, chrome ->
+        Box(modifier.background(Color.Black)) {
+            PlayerVideoSurface(session, Modifier.fillMaxSize(), aspectMode = activeAspect)
+            ScreenSubtitleLayer(
+                vm = vm,
+                session = session,
+                ps = ps,
+                style = subtitleStyle,
+                fontFile = fontFile,
+                controlsPadding = if (shown && !inPip && !locked) controlsHeight else 0.dp,
+                modifier = Modifier.navigationBarsPadding(),
+            )
+
+            if (!inPip && locked) {
+                LockOverlay(visible = lockButtonVisible, onShow = { lockButtonVisible = true }, onUnlock = { locked = false; controlsVisible = true })
+            }
+            if (!inPip && !locked) {
+                PlayerGestureLayer(
+                    session = session,
+                    onToggleControls = { controlsVisible = !controlsVisible },
+                    onHud = { hud = it },
+                    controlsShown = shown || sheet != null,
+                    onPointerMoved = {
+                        controlsVisible = true
+                        interaction++
+                    },
+                    onToggleFullscreen = { fullscreen = !fullscreen },
+                )
+
+                // BUG-106: with the controls up, the chrome shows the spinner in the play button and the text out of the transport's way.
+                if (buffering && !shown) {
+                    BufferingOverlay(state, Modifier.align(Alignment.Center))
+                }
+                hud?.let {
+                    if (touch) {
+                        TouchGestureOverlay(it)
+                    } else {
+                        HudPill(it, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp))
+                    }
+                }
+                // BUG-131: the whole time a Link profile change runs (the result comes as a notice below)
+                if (state.linkProfileChanging && hud == null) {
+                    LinkProfileChangingPill(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp))
+                }
+                // 0.4.0 (worker D): a "Procesar en" switch runs: visible with the controls hidden too, with Cancel
+                processing.switchingTo?.let { to ->
+                    if (hud == null && !state.linkProfileChanging) {
+                        ProcessingSwitchPill(to, onCancel = vm::cancelProcessingSwitch, modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp))
+                    }
+                }
+                if (statsVisible) {
+                    EnhancementStatsOverlay(
+                        quality = quality,
+                        processing = processing,
+                        frameGen = frameGen,
+                        modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 16.dp, top = if (shown) 112.dp else 16.dp),
+                    )
+                }
+                val flashToast: @Composable () -> Unit = {
+                    flash?.let {
+                        FlashToast(
+                            it,
+                            onFlashDone,
+                            Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 64.dp),
+                            onUndo = { session.undoAutoDowngrade(); onFlashDone() },
+                        )
+                    }
+                }
+                if (!endVisible) flashToast()
+
+                val skip = state.markers.skipAt(ps.positionMs / 1000.0)
+                if (skip != null && ps.started) {
+                    SkipButton(
+                        kind = skip.first,
+                        onClick = { vm.seekBySkip(); interaction++ },
+                        modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 24.dp, bottom = controlsHeight + 4.dp),
+                    )
+                }
+                state.next?.takeIf { !endVisible }?.let { next ->
+                    NextEpisodeCard(
+                        next = next,
+                        onPlayNow = vm::playNext,
+                        onCancel = vm::cancelNext,
+                        modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 24.dp, bottom = controlsHeight + 4.dp),
+                    )
+                }
+
+                chrome(shown)
+
+                if (endVisible && endUi != null) {
+                    EndScreenHost(
+                        vm = vm,
+                        ui = endUi,
+                        args = args,
+                        seriesTitle = args?.title ?: title,
+                        poster = state.poster,
+                        autoListProgress = settings.autoListProgress,
+                        onEpisodes = { openSheet(Sheet.Episodes) },
+                        onDetails = onOpenDetails,
+                        onBack = onBack,
+                        onHide = { endHidden = true; controlsVisible = true },
+                    )
+                    flashToast()
+                }
+                state.translation.progress?.let { p ->
+                    PretranslateOverlay(p, onSkip = vm::cancelPretranslate, modifier = Modifier.align(Alignment.Center))
+                }
+                if (helpOpen) {
+                    Box(Modifier.fillMaxSize().background(scheme.scrim.copy(alpha = 0.5f)).clickable { helpOpen = false }, contentAlignment = Alignment.Center) {
+                        ShortcutsPanel(settings.playerKeymap, onDismiss = { helpOpen = false })
+                    }
+                }
+            }
+        }
+    }
+
+    // 0.4.1 (subtitle settings): the style steps of the Pistas sheet preview slider steps live and save when the finger lifts; the
+    // draft goes away once the Pistas sheet (or the panel's Pistas tab) closes.
+    val tracksOpen = sheet?.sheetKind() == PlayerSheetKind.TRACKS || (panelTabs && panelTab.sheetKind() == PlayerSheetKind.TRACKS)
+    LaunchedEffect(tracksOpen) { if (!tracksOpen) stylePreview = null }
+
+    // Sparkles S6's grouped sheets: what they read and what they ask the chrome to do (a null action hides its row).
+    val sheetData = PlayerSheetData(
+        vm = vm,
+        session = session,
+        state = state,
+        ps = ps,
+        quality = quality,
+        processing = processing,
+        frameGen = frameGen,
+        statsVisible = statsVisible,
+        aspect = activeAspect,
+    )
+    val sheetActions = PlayerSheetActions(
+        onStatsChange = { statsVisible = it },
+        onPreviewSubtitleStyle = { stylePreview = it; vm.previewSubtitleStyle(it) },
+        onSaveSubtitleStyle = { stylePreview = it; vm.saveSubtitleStyle(it) },
+        onLoadSubtitleFile = if (capabilities.subtitleFile) ({ sheet = null; subtitlePicker() }) else null,
+        onOpenSettings = onOpenSettings,
+        onAspect = { setAspect(it) },
+        onOpenSheet = { openSheet(it.chromeSheet()) },
+        onScreenshot = if (capabilities.screenshot) ({ screenshot() }) else null,
+        onLock = if (capabilities.screenLock) chromeActions.onLock else null,
+        onShortcuts = if (model.hasKeyboard) ({ helpOpen = true }) else null,
+        onOpenPicker = onOpenPicker,
+        onOpenTorrent = onOpenTorrent,
+        onEpisodes = if (model.canBrowseEpisodes) ({ openSheet(Sheet.Episodes) }) else null,
+    )
+
+    // The chrome's own sheet (the episode list) and, in the Panel structure, the tab content ([close]: the sheet closes; nothing in the
+    // fixed panel).
+    val sheetBody: @Composable (Sheet, () -> Unit) -> Unit = { kind, close ->
+        val grouped = kind.sheetKind()
+        if (grouped != null) {
+            PlayerSheetContent(grouped, sheetData, sheetActions, onClose = close)
+        } else {
+            EpisodesSheetContent(vm, state, current = vm.episodeNumber, onPick = { n -> close(); vm.playEpisode(n) })
+        }
+    }
+    val panelClose: () -> Unit = {}
+
     Box(
         Modifier
             .fillMaxSize()
-            .background(scheme.background)
+            .background(Color.Black)
             .focusRequester(focus)
             .focusable()
             .onPreviewKeyEvent { e ->
@@ -367,289 +562,76 @@ internal fun PlayerContent(
                 true
             },
     ) {
-        PlayerVideoSurface(session, Modifier.fillMaxSize(), aspectMode = activeAspect)
-        ScreenSubtitleLayer(
-            vm = vm,
-            session = session,
-            ps = ps,
-            style = subtitleStyle,
-            fontFile = fontFile,
-            controlsPadding = if (controlsVisible && !inPip && !locked) 136.dp else 0.dp,
-            modifier = Modifier.navigationBarsPadding(),
-        )
-
-        if (!inPip && locked) {
-            LockOverlay(visible = lockButtonVisible, onShow = { lockButtonVisible = true }, onUnlock = { locked = false; controlsVisible = true })
-        }
-        if (!inPip && !locked) {
-            PlayerGestureLayer(
-                session = session,
-                onToggleControls = { controlsVisible = !controlsVisible },
-                onHud = { hud = it },
-                controlsShown = controlsVisible || keepUp || sheet != null,
-                onPointerMoved = {
-                    controlsVisible = true
-                    interaction++
-                },
-                onToggleFullscreen = { fullscreen = !fullscreen },
-            )
-
-            val resolving = state.phase == PlayerPhase.RESOLVING
-            val buffering = (ps.isBuffering || resolving) && ps.error == null
-            // BUG-106: with the controls up, Controls shows the spinner in the play button and the text above the transport row
-            // (centred here, the −10 / play / +10 row was drawn over it).
-            if (buffering && !(controlsVisible || keepUp)) {
-                BufferingOverlay(state, Modifier.align(Alignment.Center))
-            }
-            hud?.let {
-                if (capabilities.touchFirst) {
-                    TouchGestureOverlay(it)
-                } else {
-                    HudPill(it, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp))
-                }
-            }
-            // BUG-131: the whole time a Link profile change runs (the result comes as a notice below)
-            if (state.linkProfileChanging && hud == null) {
-                LinkProfileChangingPill(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp))
-            }
-            // 0.4.0 (worker D): a "Procesar en" switch runs: visible with the controls hidden too, with Cancel
-            processing.switchingTo?.let { to ->
-                if (hud == null && !state.linkProfileChanging) {
-                    ProcessingSwitchPill(to, onCancel = vm::cancelProcessingSwitch, modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp))
-                }
-            }
-            if (statsVisible) {
-                EnhancementStatsOverlay(
-                    quality = quality,
-                    processing = processing,
-                    frameGen = frameGen,
-                    modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 16.dp, top = if (controlsVisible || keepUp) 112.dp else 16.dp),
-                )
-            }
-            val flashToast: @Composable () -> Unit = {
-                flash?.let {
-                    FlashToast(
-                        it,
-                        onFlashDone,
-                        Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 64.dp),
-                        onUndo = { session.undoAutoDowngrade(); onFlashDone() },
+        if (inPip) {
+            // Picture in picture: the video alone, whatever the layout
+            stage(Modifier.fillMaxSize(), 0.dp) { }
+        } else {
+            // Sparkles S5: the one switch on the player's structure
+            when (structure) {
+                PlayerStructure.CINEMA -> stage(Modifier.fillMaxSize(), CINEMA_CONTROLS_DP) { v -> CinemaChrome(model, chromeActions, v) }
+                PlayerStructure.MINIMAL -> stage(Modifier.fillMaxSize(), MINIMAL_CONTROLS_DP) { v -> MinimalChrome(model, chromeActions, v) }
+                PlayerStructure.PANEL -> when {
+                    !panelTabs -> stage(Modifier.fillMaxSize(), CINEMA_CONTROLS_DP) { v -> CinemaChrome(model, chromeActions, v) }
+                    touch -> PanelVerticalLayout(
+                        model = model,
+                        actions = chromeActions,
+                        tab = panelTab,
+                        onTab = { panelTab = it },
+                        stage = { m -> stage(m, MINI_CONTROLS_DP) { v -> MiniChrome(model, chromeActions, v) } },
+                        body = { t -> sheetBody(t, panelClose) },
+                    )
+                    else -> PanelSideLayout(
+                        tab = panelTab,
+                        onTab = { panelTab = it },
+                        stage = { m -> stage(m, CINEMA_CONTROLS_DP) { v -> CinemaChrome(model, chromeActions, v, inPanel = true) } },
+                        body = { t -> sheetBody(t, panelClose) },
                     )
                 }
             }
-            if (!endVisible) flashToast()
-
-            val skip = state.markers.skipAt(ps.positionMs / 1000.0)
-            if (skip != null && ps.started) {
-                SkipButton(
-                    kind = skip.first,
-                    onClick = { vm.seekBySkip(); interaction++ },
-                    modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 24.dp, bottom = 140.dp),
-                )
-            }
-            state.next?.takeIf { !endVisible }?.let { next ->
-                NextEpisodeCard(
-                    next = next,
-                    onPlayNow = vm::playNext,
-                    onCancel = vm::cancelNext,
-                    modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 24.dp, bottom = 140.dp),
-                )
-            }
-
-            AnimatedVisibility(controlsVisible || keepUp, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.fillMaxSize()) {
-                val pcInfo = processing.pc.takeIf { processing.location != app.nijiyome.model.ProcessingLocation.PHONE }
-                if (capabilities.touchFirst) {
-                    TouchControls(
-                        style = settings.playerChromeStyle,
-                        session = session,
-                        ps = ps,
-                        state = state,
-                        buffering = buffering,
-                        title = title,
-                        aspectMode = activeAspect,
-                        onCycleAspect = ::cycleAspect,
-                        onBack = onBack,
-                        onPip = platform::enterPictureInPicture,
-                        onOpenSheet = { sheet = it; interaction++ },
-                        onOpenPicker = onOpenPicker,
-                        onOpenTorrent = onOpenTorrent,
-                        onNext = vm::playNext,
-                        onInteract = { interaction++ },
-                        fullscreen = fullscreen,
-                        onPrev = vm::playPrevious,
-                        onLock = { locked = true; lockButtonVisible = true; sheet = null },
-                        onScreenshot = { screenshot() },
-                        onToggleFullscreen = { fullscreen = !fullscreen },
-                        onHelp = { helpOpen = true },
-                        enhancementChip = chip,
-                        pc = pcInfo,
-                        capabilities = capabilities,
-                    )
-                } else {
-                    Controls(
-                        session = session,
-                        ps = ps,
-                        state = state,
-                        buffering = buffering,
-                        title = title,
-                        onBack = onBack,
-                        onPip = platform::enterPictureInPicture,
-                        onOpenSheet = { sheet = it; interaction++ },
-                        onOpenPicker = onOpenPicker,
-                        onOpenTorrent = onOpenTorrent,
-                        onNext = vm::playNext,
-                        onInteract = { interaction++ },
-                        fullscreen = fullscreen,
-                        onPrev = vm::playPrevious,
-                        onLock = { locked = true; lockButtonVisible = true; sheet = null },
-                        onScreenshot = { screenshot() },
-                        onToggleFullscreen = { fullscreen = !fullscreen },
-                        onHelp = { helpOpen = true },
-                        enhancementChip = chip,
-                        pc = pcInfo,
-                        capabilities = capabilities,
-                    )
-                }
-            }
-            if (endVisible && endUi != null) {
-                EndScreenHost(
-                    vm = vm,
-                    ui = endUi,
-                    args = args,
-                    seriesTitle = args?.title ?: title,
-                    poster = state.poster,
-                    autoListProgress = settings.autoListProgress,
-                    onEpisodes = { sheet = Sheet.Episodes },
-                    onDetails = onOpenDetails,
-                    onBack = onBack,
-                    onHide = { endHidden = true; controlsVisible = true },
-                )
-                flashToast()
-            }
-            state.translation.progress?.let { p ->
-                PretranslateOverlay(p, onSkip = vm::cancelPretranslate, modifier = Modifier.align(Alignment.Center))
-            }
-            if (helpOpen) {
-                Box(Modifier.fillMaxSize().background(scheme.scrim.copy(alpha = 0.5f)).clickable { helpOpen = false }, contentAlignment = Alignment.Center) {
-                    ShortcutsPanel(settings.playerKeymap, onDismiss = { helpOpen = false })
-                }
-            }
         }
     }
 
-    if (sheet == Sheet.Enhancements) {
-        EnhancementSheet(onDismiss = { sheet = null }) {
-            EnhancementPanel(
-                vm = vm,
-                session = session,
-                state = state,
-                quality = quality,
-                processing = processing,
-                frameGen = frameGen,
-                statsVisible = statsVisible,
-                onStatsChange = { statsVisible = it },
-                onOpenFgSettings = { sheet = null; session.pause(); onOpenSettings(app.nijiyome.model.SettingsSection.PLAYER) },
-                onClose = { sheet = null },
-            )
-        }
-    }
-    // 0.4.1 (subtitle settings): "Estilo" and "Más opciones" sit beside the video in landscape (side sheet), so the subtitles stay
-    // visible while they change; slider steps are previewed live and saved when the finger lifts.
-    LaunchedEffect(sheet) { if (sheet != Sheet.SubtitleStyle && sheet != Sheet.SubtitleStyleFull) stylePreview = null }
-    val previewStyle: (app.nijiyome.model.SubtitleStyle) -> Unit = { stylePreview = it; vm.previewSubtitleStyle(it) }
-    val saveStyle: (app.nijiyome.model.SubtitleStyle) -> Unit = { stylePreview = it; vm.saveSubtitleStyle(it) }
-    if (sheet == Sheet.SubtitleStyle) {
-        EnhancementSheet(onDismiss = { sheet = null }) {
-            SubtitleStyleQuickPanel(
-                style = settings.subtitleStyle,
-                onPreview = previewStyle,
-                onChange = saveStyle,
-                onMore = { sheet = Sheet.SubtitleStyleFull },
-                onClose = { sheet = null },
-                showAss = ps.fullAss,
-            )
-        }
-    }
-    if (sheet == Sheet.SubtitleStyleFull) {
-        EnhancementSheet(onDismiss = { sheet = null }) {
-            SubtitleStyleEditor(
-                style = settings.subtitleStyle,
-                onChange = saveStyle,
-                onPreview = previewStyle,
-                onClose = { sheet = null },
-            )
-        }
-    }
-    sheet?.takeIf { it != Sheet.Enhancements && it != Sheet.SubtitleStyle && it != Sheet.SubtitleStyleFull }?.let { kind ->
-        // v1.2.0: side sheet in landscape / wide windows so the anime stays visible while picking audio, subs, speed or episodes;
-        // bottom sheet on narrow portrait phones.
-        val sheetTitle = when (kind) {
-            Sheet.Quality -> stringResource(Res.string.player_quality)
-            Sheet.Subtitles -> stringResource(Res.string.player_subtitles)
-            Sheet.Audio -> stringResource(Res.string.player_audio)
-            Sheet.Speed -> "Velocidad"
-            Sheet.More -> stringResource(Res.string.player_more)
-            Sheet.Episodes -> stringResource(Res.string.player_episodes)
-            else -> ""
-        }
-        EnhancementSheet(onDismiss = { sheet = null }) {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(sheetTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                IconButton(onClick = { sheet = null }) {
-                    Icon(Icons.Rounded.Close, stringResource(Res.string.player_fx_close))
-                }
-            }
-            when (kind) {
-                // Hito 6 (desktop): the qualities of the episode's sources; picking one switches source (SourceQualities.kt)
-                Sheet.Quality -> if (capabilities.sourceQualities && ps.videoHeights.isEmpty()) {
-                    SourceQualityRows(vm, state) { sheet = null }
-                } else {
-                    SheetRow(stringResource(Res.string.player_quality_auto), ps.selectedHeight == null) { session.selectVideoHeight(null); sheet = null }
-                    ps.videoHeights.forEach { h ->
-                        SheetRow(stringResource(Res.string.player_quality_height, h), ps.selectedHeight == h) { session.selectVideoHeight(h); sheet = null }
+    sheet?.let { kind ->
+        val grouped = kind.sheetKind()
+        if (grouped != null) {
+            // Sparkles S6: the grouped sheets (sheets/PlayerSheets.kt) in their common container
+            PlayerSheetHost(grouped, sheetData, sheetActions, onDismiss = { sheet = null })
+        } else {
+            // The episode list stays the chrome's own sheet (side sheet on wide windows, bottom sheet on a phone in portrait).
+            EnhancementSheet(onDismiss = { sheet = null }) {
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(stringResource(Res.string.player_episodes), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { sheet = null }) {
+                        Icon(Icons.Rounded.Close, stringResource(Res.string.player_fx_close))
                     }
                 }
-                Sheet.Subtitles -> SubtitlesSheetContent(
-                    vm = vm,
-                    session = session,
-                    ps = ps,
-                    state = state,
-                    onLoadFile = if (capabilities.subtitleFile) ({ sheet = null; subtitlePicker() }) else null,
-                    onDone = { sheet = null },
-                    onOpenStyle = { sheet = Sheet.SubtitleStyle },
-                )
-                Sheet.More -> MoreSheetContent(vm, state)
-                Sheet.Episodes -> EpisodesSheetContent(vm, state, current = vm.episodeNumber, onPick = { n -> sheet = null; vm.playEpisode(n) })
-                Sheet.Audio -> {
-                    if (ps.audioTracks.isEmpty()) {
-                        Text(
-                            "No se detectaron pistas de audio adicionales",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                        )
-                    } else {
-                        val anySelected = ps.audioTracks.any { it.selected }
-                        ps.audioTracks.forEach { a ->
-                            val rowLabel = listOfNotNull(a.label, a.detail).joinToString(" · ")
-                            SheetRow(rowLabel, a.selected) { session.selectAudio(a.id); sheet = null }
-                        }
-                        SheetRow("Sin audio", !anySelected) {
-                            session.selectAudio(app.nijiyome.player.AUDIO_TRACK_OFF)
-                            sheet = null
-                        }
-                    }
-                }
-                Sheet.Enhancements, Sheet.SubtitleStyle, Sheet.SubtitleStyleFull -> Unit // side / bottom sheets above
-                Sheet.Speed -> capabilities.speeds.forEach { sp ->
-                    SheetRow(stringResource(Res.string.player_speed_value, speedText(sp)), ps.speed == sp) { session.setSpeed(sp); sheet = null }
-                }
+                sheetBody(kind) { sheet = null }
+                Spacer(Modifier.height(12.dp))
             }
-            Spacer(Modifier.height(12.dp))
         }
     }
+}
+
+/** The grouped sheet of S6 a chrome sheet opens; null = the episode list (the chrome's own). */
+internal fun Sheet.sheetKind(): PlayerSheetKind? = when (this) {
+    Sheet.Tracks, Sheet.Subtitles, Sheet.Audio, Sheet.SubtitleStyle, Sheet.SubtitleStyleFull -> PlayerSheetKind.TRACKS
+    Sheet.Quality, Sheet.Picture -> PlayerSheetKind.PICTURE
+    Sheet.Speed -> PlayerSheetKind.SPEED
+    Sheet.Enhancements -> PlayerSheetKind.ENHANCEMENTS
+    Sheet.More -> PlayerSheetKind.MORE
+    Sheet.Episodes -> null
+}
+
+/** The chrome sheet of an S6 sheet (its "Mejoras" row and the like). */
+internal fun PlayerSheetKind.chromeSheet(): Sheet = when (this) {
+    PlayerSheetKind.TRACKS -> Sheet.Tracks
+    PlayerSheetKind.ENHANCEMENTS -> Sheet.Enhancements
+    PlayerSheetKind.PICTURE -> Sheet.Picture
+    PlayerSheetKind.SPEED -> Sheet.Speed
+    PlayerSheetKind.MORE -> Sheet.More
 }
 
 /**
@@ -696,7 +678,7 @@ private fun SheetRow(text: String, selected: Boolean, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         trailingContent = { if (selected) Icon(Icons.Rounded.Check, contentDescription = null) },
-        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clickable(onClick = onClick),
     )
 }
@@ -706,7 +688,7 @@ internal data class Hud(
     val percent: Int = 0,
     val seconds: Int = 0,
     val muted: Boolean = false,
-    /** Hito 6 (desktop keys): the speed, track or preset id shown, and whether a track / the loop is on. */
+    /** Hito 6 (desktop keys): the speed, track or preset id shown, and whether a track / the loop is on. S5: a [Kind.Message]'s text. */
     val label: String? = null,
     val on: Boolean = false,
     /** Hito 6: the subtitle delay shown ([Kind.SubDelay]). */
@@ -716,8 +698,10 @@ internal data class Hud(
     val durationMs: Long = 0,
     val bufferedMs: Long = 0,
     val doubleTapSide: Int = 0,
+    /** Sparkles S5: the framing picked ([Kind.Aspect]), worded where it is drawn. */
+    val aspect: AspectMode? = null,
 ) {
-    enum class Kind { Brightness, Volume, Seek, Hold, Speed, Subtitles, Audio, SubDelay, Loop, Preset, Aspect, Scrub, DoubleTapSeek }
+    enum class Kind { Brightness, Volume, Seek, Hold, Speed, Subtitles, Audio, SubDelay, Loop, Preset, Aspect, Scrub, DoubleTapSeek, Message }
 }
 
 /** BUG-131: "Cambiando perfil…" while the PC opens the session with the new profile. */
@@ -769,439 +753,28 @@ internal fun HudPill(hud: Hud, modifier: Modifier) {
                     Icon(Icons.Rounded.Speed, contentDescription = null)
                     Text(stringResource(Res.string.player_speed_hold))
                 }
+                Hud.Kind.Aspect -> Text(hud.aspect?.let { stringResource(aspectLabelRes(it)) } ?: hud.label.orEmpty())
                 else -> DesktopHudContent(hud)
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun Controls(
-    session: PlayerSession,
-    ps: PlaybackState,
-    state: PlayerUiState,
-    buffering: Boolean,
-    title: String,
-    onBack: () -> Unit,
-    onPip: () -> Unit,
-    onOpenSheet: (Sheet) -> Unit,
-    onOpenPicker: () -> Unit,
-    onOpenTorrent: (String) -> Unit,
-    onNext: () -> Unit,
-    onInteract: () -> Unit,
-    fullscreen: Boolean,
-    onPrev: () -> Unit,
-    onLock: () -> Unit,
-    onScreenshot: () -> Unit,
-    onToggleFullscreen: () -> Unit,
-    onHelp: () -> Unit,
-    enhancementChip: EnhancementChip,
-    /** 0.4.1: what the PC does (PC / Mixto), for the seek bar's "Procesado por la PC" run; null on the phone. */
-    pc: LinkProcessingInfo? = null,
-    /** Milestone 4: the platform controls offered (PiP, fullscreen, lock, screenshot); a missing one is not shown. */
-    capabilities: PlayerCapabilities = playerCapabilities,
-) {
-    val scheme = MaterialTheme.colorScheme
-    val on = scheme.onBackground
-    Box(Modifier.fillMaxSize().background(scheme.scrim.copy(alpha = 0.45f))) {
-        // Top bar: back, title + source chip, "Open in the client", PiP. BUG-060: on a compact width (a phone in portrait) the 7-8
-        // icons left the title and the source chip (the only way to change source while playing) with 0 dp: there the title row keeps
-        // back, PiP, fullscreen and a "More options" menu (download, lock, screenshot, episodes / Link profile, shortcuts), and the
-        // chips get a row of their own.
-        val compact = windowWidthDp() < COMPACT_TOP_BAR_DP
-        // BUG-061: keyboard shortcuts only mean something with a hardware keyboard.
-        val hasKeyboard = hasHardwareKeyboard()
-        val chips: @Composable () -> Unit = {
-            Row(Modifier.horizontalScroll(rememberScrollState()), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
-                // 0.4.0 (worker D): what is enhanced and where, first so it never scrolls out of sight; opens "Mejoras"
-                EnhancementStatusChip(enhancementChip, onClick = { onOpenSheet(Sheet.Enhancements) })
-                state.current?.let { cur ->
-                    val (n, total) = state.position ?: (1 to 1)
-                    AssistChip(
-                        onClick = { if (state.canPickSource) onOpenPicker() },
-                        label = {
-                            Text(
-                                stringResource(Res.string.player_source_chip, n, total, "${cur.candidate.extName} · ${cur.candidate.label}"),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                // BUG-054: the torrent type is not the download action's arrow.
-                                if (cur.candidate.kind == SourceKind.TORRENT) Icons.Rounded.Hub else Icons.Rounded.Language,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                        trailingIcon = if (state.canPickSource) ({ Icon(Icons.Rounded.ExpandMore, null, Modifier.size(18.dp)) }) else null,
-                        colors = AssistChipDefaults.assistChipColors(labelColor = on, leadingIconContentColor = on, trailingIconContentColor = on),
-                    )
-                }
-                state.torrent?.takeIf { it.fileIndex != null }?.torrentId?.let { id ->
-                    AssistChip(
-                        onClick = { onOpenTorrent(id) },
-                        label = { Text(stringResource(Res.string.player_torrent_open_client), maxLines = 1) },
-                        leadingIcon = { Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                        colors = AssistChipDefaults.assistChipColors(labelColor = on, leadingIconContentColor = on),
-                    )
-                }
-                state.torrent?.takeIf { it.fileIndex != null }?.let { t ->
-                    Text(torrentLine(t), color = on.copy(alpha = 0.8f), style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
-                }
-            }
-        }
-        val pipAndFullscreen: @Composable () -> Unit = {
-            if (capabilities.pictureInPicture) {
-                IconButton(onClick = onPip) { Icon(Icons.Rounded.PictureInPictureAlt, stringResource(Res.string.player_pip), tint = on) }
-            }
-            if (capabilities.fullscreenToggle) {
-                IconButton(onClick = onToggleFullscreen) {
-                    Icon(
-                        if (fullscreen) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen,
-                        stringResource(if (fullscreen) Res.string.player_fullscreen_exit else Res.string.player_fullscreen_enter),
-                        tint = on,
-                    )
-                }
-            }
-        }
-        Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp).align(Alignment.TopCenter)) {
-            Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(4.dp), Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(Res.string.player_back), tint = on) }
-                Column(Modifier.weight(1f)) {
-                    Text(title, color = on, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
-                    if (!compact) chips()
-                }
-                if (compact) {
-                    pipAndFullscreen()
-                    var menu by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { menu = true; onInteract() }) {
-                            Icon(Icons.Rounded.MoreVert, stringResource(Res.string.player_more_options), tint = on)
-                        }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            LocalDownloadArgs.current?.let { a ->
-                                DownloadAction(a, state.current?.candidate?.toStream(), state.current?.candidate?.label.orEmpty(), asMenuItem = true, onDone = { menu = false })
-                            }
-                            if (capabilities.screenLock) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(Res.string.player_lock)) },
-                                    onClick = { menu = false; onLock() },
-                                    leadingIcon = { Icon(Icons.Rounded.LockOpen, contentDescription = null) },
-                                )
-                            }
-                            if (capabilities.screenshot) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(Res.string.player_screenshot)) },
-                                    onClick = { menu = false; onScreenshot() },
-                                    enabled = ps.started,
-                                    leadingIcon = { Icon(Icons.Rounded.PhotoCamera, contentDescription = null) },
-                                )
-                            }
-                            if (state.remoteless && !state.looseFile) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(Res.string.player_episodes)) },
-                                    onClick = { menu = false; onOpenSheet(Sheet.Episodes) },
-                                    leadingIcon = { Icon(Icons.Rounded.FormatListNumbered, contentDescription = null) },
-                                )
-                            }
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.player_fx_title)) },
-                                onClick = { menu = false; onOpenSheet(Sheet.Enhancements) },
-                                leadingIcon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = null) },
-                            )
-                            if (hasKeyboard) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(Res.string.player_shortcuts)) },
-                                    onClick = { menu = false; onHelp() },
-                                    leadingIcon = { Icon(Icons.Rounded.Keyboard, contentDescription = null) },
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    LocalDownloadArgs.current?.let { a -> DownloadAction(a, state.current?.candidate?.toStream(), state.current?.candidate?.label.orEmpty()) } // parity wave B (r): downloads.player-button
-                    if (capabilities.screenLock) IconButton(onClick = onLock) { Icon(Icons.Rounded.LockOpen, stringResource(Res.string.player_lock), tint = on) }
-                    if (capabilities.screenshot) {
-                        IconButton(onClick = onScreenshot, enabled = ps.started) { Icon(Icons.Rounded.PhotoCamera, stringResource(Res.string.player_screenshot), tint = on) }
-                    }
-                    if (state.remoteless && !state.looseFile) {
-                        IconButton(onClick = { onOpenSheet(Sheet.Episodes) }) { Icon(Icons.Rounded.FormatListNumbered, stringResource(Res.string.player_episodes), tint = on) }
-                    }
-                    // BUG-022 / 0.4.0: the PC's profiles, local enhancements and frame generation all live in "Mejoras"
-                    IconButton(onClick = { onOpenSheet(Sheet.Enhancements) }) { Icon(Icons.Rounded.AutoAwesome, stringResource(Res.string.player_fx_title), tint = on) }
-                    if (hasKeyboard) IconButton(onClick = onHelp) { Icon(Icons.Rounded.Keyboard, stringResource(Res.string.player_shortcuts), tint = on) }
-                    pipAndFullscreen()
-                }
-            }
-            if (compact) Box(Modifier.padding(start = 52.dp)) { chips() }
-        }
-
-        // Transport
-        Row(Modifier.align(Alignment.Center), Arrangement.spacedBy(24.dp), Alignment.CenterVertically) {
-            if (state.hasPrevEpisode) {
-                IconButton(onClick = { onPrev(); onInteract() }) { Icon(Icons.Rounded.SkipPrevious, stringResource(Res.string.player_prev), tint = on) }
-            }
-            val fiveSeconds = capabilities.seekStepMs == DESKTOP_SEEK_STEP_MS
-            FilledTonalIconButton(onClick = { session.seekBy(-capabilities.seekStepMs); onInteract() }, Modifier.size(56.dp)) {
-                if (fiveSeconds) {
-                    Icon(Icons.Rounded.Replay5, stringResource(Res.string.player_seek_back_5))
-                } else {
-                    Icon(Icons.Rounded.Replay10, stringResource(Res.string.player_seek_back))
-                }
-            }
-            FilledIconButton(onClick = { session.togglePlay(); onInteract() }, Modifier.size(TRANSPORT_PLAY_DP), enabled = ps.started) {
-                val playLabel = stringResource(if (ps.isPlaying) Res.string.player_pause else Res.string.player_play)
-                if (buffering) {
-                    // BUG-106: the loading indicator takes the play button's place instead of sitting under the row
-                    LoadingIndicator(Modifier.size(48.dp).semantics { contentDescription = playLabel }, color = LocalContentColor.current)
-                } else {
-                    Icon(if (ps.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, playLabel, Modifier.size(40.dp))
-                }
-            }
-            FilledTonalIconButton(onClick = { session.seekBy(capabilities.seekStepMs); onInteract() }, Modifier.size(56.dp)) {
-                if (fiveSeconds) {
-                    Icon(Icons.Rounded.Forward5, stringResource(Res.string.player_seek_forward_5))
-                } else {
-                    Icon(Icons.Rounded.Forward10, stringResource(Res.string.player_seek_forward))
-                }
-            }
-            if (state.hasNextEpisode && state.remoteless) {
-                IconButton(onClick = { onNext(); onInteract() }) { Icon(Icons.Rounded.SkipNext, stringResource(Res.string.player_next), tint = on) }
-            }
-        }
-
-        // BUG-106: the buffering text ("Tu PC está preparando el video desde este punto…") goes in the strip above the transport row,
-        // where neither the row nor the top bar covers it (below it there is no room in landscape before the seek bar).
-        if (buffering) {
-            BufferingOverlay(state, Modifier.aboveTransport().padding(horizontal = 16.dp), showIndicator = false)
-        }
-
-        // Seek bar + chips
-        Column(Modifier.fillMaxWidth().align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
-            SeekBar(session, ps, state, pc, onInteract, hoverTime = !capabilities.touchFirst)
-            // (Android keeps the row's default top alignment; the desktop volume button is taller than the chips)
-            Row(Modifier.horizontalScroll(rememberScrollState()), Arrangement.spacedBy(8.dp), if (capabilities.volumeControls) Alignment.CenterVertically else Alignment.Top) {
-                // Hito 6 (desktop): mute button and volume slider of the engine's own volume (PlayerVolumeControl.kt)
-                if (capabilities.volumeControls) PlayerVolumeControl(session, onInteract)
-                // BUG-067: "Más" first, so it is not the chip that falls off a phone's width.
-                PlayerChip(
-                    onClick = { onOpenSheet(Sheet.More) },
-                    label = { Text(stringResource(Res.string.player_more)) },
-                    leadingIcon = { Icon(Icons.Rounded.MoreHoriz, null, Modifier.size(18.dp)) },
-                )
-                val sourceQuality = if (capabilities.sourceQualities && ps.videoHeights.isEmpty()) sourceQualityChip(state) else null
-                if (ps.videoHeights.isNotEmpty() || sourceQuality != null) {
-                    PlayerChip(
-                        onClick = { onOpenSheet(Sheet.Quality) },
-                        label = { Text(sourceQuality ?: ps.selectedHeight?.let { stringResource(Res.string.player_quality_height, it) } ?: stringResource(Res.string.player_quality)) },
-                        leadingIcon = { Icon(Icons.Rounded.HighQuality, null, Modifier.size(18.dp)) },
-                    )
-                }
-                // Always offered once playing: "Load file…", delay and translation live in this sheet.
-                if (ps.subtitles.isNotEmpty() || ps.started) {
-                    PlayerChip(
-                        onClick = { onOpenSheet(Sheet.Subtitles) },
-                        label = { Text(stringResource(Res.string.player_subtitles)) },
-                        leadingIcon = { Icon(Icons.Rounded.Subtitles, null, Modifier.size(18.dp)) },
-                    )
-                }
-                // v1.2.0: always accessible once playback starts so users can inspect/switch/mute audio tracks in Media3 & libmpv.
-                if (ps.audioTracks.isNotEmpty() || ps.started) {
-                    val activeAudioLang = ps.audioTracks.firstOrNull { it.selected }?.language?.takeIf { it.isNotBlank() }?.uppercase()
-                    val audioLabel = if (activeAudioLang != null) "${stringResource(Res.string.player_audio)} · $activeAudioLang" else stringResource(Res.string.player_audio)
-                    PlayerChip(
-                        onClick = { onOpenSheet(Sheet.Audio) },
-                        label = { Text(audioLabel) },
-                        leadingIcon = { Icon(Icons.Rounded.Audiotrack, null, Modifier.size(18.dp)) },
-                    )
-                }
-                PlayerChip(
-                    onClick = { onOpenSheet(Sheet.Speed) },
-                    label = { Text(stringResource(Res.string.player_speed_value, speedText(ps.speed))) },
-                    description = stringResource(Res.string.player_speed_desc, speedText(ps.speed)),
-                    leadingIcon = { Icon(Icons.Rounded.Speed, null, Modifier.size(18.dp)) },
-                )
-                if (state.hasNextEpisode && state.remoteless) {
-                    PlayerChip(
-                        onClick = onNext,
-                        label = {
-                            Text(
-                                stringResource(
-                                    if (state.torrent?.batch == true) Res.string.player_torrent_batch_next else Res.string.player_next,
-                                ),
-                            )
-                        },
-                        leadingIcon = { Icon(Icons.Rounded.SkipNext, null, Modifier.size(18.dp)) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * BUG-067: the bottom actions open sheets, so they are buttons ([AssistChip], read by TalkBack as "button"), not [FilterChip]s that
- * TalkBack announced as checked / unchecked boxes. [description] replaces the label for TalkBack when it says more ("Velocidad 1x").
- */
-@Composable
-private fun PlayerChip(
-    onClick: () -> Unit,
-    label: @Composable () -> Unit,
-    leadingIcon: @Composable () -> Unit,
-    description: String? = null,
-) {
-    AssistChip(
-        onClick = onClick,
-        label = label,
-        leadingIcon = leadingIcon,
-        modifier = Modifier.semantics {
-            role = Role.Button
-            if (description != null) contentDescription = description
-        },
-    )
-}
-
-/**
- * Slider whose track carries, over the part not played yet (0.4.1, "como en PC"): what the phone already has ("Descargado": the
- * engine's buffer ahead of the playhead in a light primary, a torrent's other downloaded pieces in a neutral tone) and, while the
- * PC processes (Link PC / Mixto), the range the PC already processed ("Procesado por la PC", tertiary). Intro / outro / recap
- * marks are a thin line through the middle. A small legend under the bar names the colours when there is more than a plain buffer.
- * Colours come from the scheme only; the runs are computed by [seekBarRanges].
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SeekBar(
-    session: PlayerSession,
-    ps: PlaybackState,
-    state: PlayerUiState,
-    pc: LinkProcessingInfo?,
-    onInteract: () -> Unit,
-    /** Hito 6 (pointer): the time under the mouse in a bubble over the bar (SeekHover.kt). */
-    hoverTime: Boolean = false,
-) {
-    var dragging by remember { mutableStateOf(false) }
-    var dragValue by remember { mutableFloatStateOf(0f) }
-    val duration = ps.durationMs.coerceAtLeast(1)
-    val shown = if (dragging) dragValue else ps.positionMs.toFloat().coerceIn(0f, duration.toFloat())
-    val scheme = MaterialTheme.colorScheme
-    val marks = state.markers.barMarks(ps.durationMs / 1000.0)
-    val ranges = seekBarRanges(ps.positionMs, ps.durationMs, ps.bufferedMs, state.torrent?.marks.orEmpty(), pc)
-    val colors = seekBarColors(ranges.pcEstimated)
-    Column {
-        // BUG-068: everything is drawn inside the slider's own track (16 dp in M3 Expressive), not as a loose strip under it.
-        val playedFraction = (shown / duration.toFloat()).coerceIn(0f, 1f)
-        val seekHover = rememberSeekHover()
-        Slider(
-            value = shown,
-            onValueChange = { dragging = true; dragValue = it; onInteract() },
-            onValueChangeFinished = { session.seekTo(dragValue.toLong()); dragging = false },
-            valueRange = 0f..duration.toFloat(),
-            enabled = ps.durationMs > 0,
-            modifier = Modifier.seekHover(seekHover, enabled = hoverTime && ps.durationMs > 0),
-            track = { sliderState ->
-                Box(contentAlignment = Alignment.Center) {
-                    SliderDefaults.Track(sliderState = sliderState, enabled = ps.durationMs > 0)
-                    Canvas(Modifier.fillMaxWidth().height(SEEK_TRACK_DP).clip(RoundedCornerShape(50))) {
-                        val w = size.width
-                        val h = size.height
-                        val r = CornerRadius(SEEK_RUN_CORNER_DP.toPx())
-                        // the inactive track starts past the thumb and its gap
-                        val from = w * playedFraction + SEEK_THUMB_GAP_DP.toPx()
-                        fun run(span: BarSpan, color: androidx.compose.ui.graphics.Color) {
-                            val l = maxOf(w * span.left, from)
-                            val rgt = minOf(w * span.right, w)
-                            if (rgt > l) drawRoundRect(color, Offset(l, 0f), Size(rgt - l, h), r)
-                        }
-                        // furthest-reaching first: the PC is ahead of what the phone downloaded
-                        ranges.pcProcessed?.let { run(it, colors.pc) }
-                        ranges.downloaded.forEach { run(it, colors.have) }
-                        ranges.buffered?.let { run(it, colors.buffered) }
-                        val mh = SEEK_MARK_DP.toPx()
-                        marks.forEach { m ->
-                            drawRoundRect(
-                                colors.mark.copy(alpha = if (m.kind == SkipKind.INTRO) 0.9f else 0.6f),
-                                Offset(w * m.left, (h - mh) / 2),
-                                Size(w * m.width, mh),
-                                CornerRadius(mh / 2),
-                            )
-                        }
-                    }
-                }
-            },
-        )
-        SeekHoverBubble(seekHover, ps.durationMs)
-        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
-            Text(formatDuration(shown.toLong() / 1000), color = scheme.onBackground, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                if (ranges.showLegend) SeekLegend(ranges, colors)
-            }
-            Text(
-                if (ps.durationMs > 0) formatDuration(ps.durationMs / 1000) else "--:--",
-                color = scheme.onBackground.copy(alpha = 0.8f),
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = FontFamily.Monospace,
-            )
-        }
-    }
-}
-
-/** 0.4.1: the seek bar's run colours, solid (composited over the inactive track) so overlapping runs never mix into a muddy tone. */
-private data class SeekBarColors(
-    val buffered: androidx.compose.ui.graphics.Color,
-    val have: androidx.compose.ui.graphics.Color,
-    val pc: androidx.compose.ui.graphics.Color,
-    val mark: androidx.compose.ui.graphics.Color,
-)
-
-@Composable
-private fun seekBarColors(pcEstimated: Boolean): SeekBarColors {
-    val scheme = MaterialTheme.colorScheme
-    val track = SliderDefaults.colors().inactiveTrackColor
-    return SeekBarColors(
-        buffered = scheme.primary.copy(alpha = 0.55f).compositeOver(track),
-        have = scheme.onSurface.copy(alpha = 0.3f).compositeOver(track),
-        // an estimate from the PC's lead (older PC) is drawn a little softer than the PC's own range
-        pc = scheme.tertiary.copy(alpha = if (pcEstimated) 0.6f else 0.85f).compositeOver(track),
-        mark = scheme.onSurface,
-    )
-}
-
-/** "■ Descargado  ■ Procesado por la PC" between the two times (one line, shrinks on a narrow phone). */
-@Composable
-private fun SeekLegend(ranges: SeekBarRanges, colors: SeekBarColors) {
-    Row(Modifier.horizontalScroll(rememberScrollState()), Arrangement.spacedBy(12.dp), Alignment.CenterVertically) {
-        if (ranges.hasDownloaded) LegendItem(colors.buffered, stringResource(Res.string.player_seek_legend_downloaded))
-        if (ranges.pcProcessed != null) LegendItem(colors.pc, stringResource(Res.string.player_seek_legend_pc))
-    }
-}
-
-@Composable
-private fun LegendItem(color: androidx.compose.ui.graphics.Color, label: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(10.dp).clip(RoundedCornerShape(3.dp)).background(color))
-        Text(label, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f), style = MaterialTheme.typography.labelSmall, maxLines = 1)
-    }
-}
-
 internal fun speedText(speed: Float): String = if (speed % 1f == 0f) speed.toInt().toString() else speed.toString().trimEnd('0')
 
-/** BUG-060: below this width the top bar moves its secondary actions to a menu and the chips to a row of their own. */
-private const val COMPACT_TOP_BAR_DP = 600
 private const val CONTROLS_TIMEOUT_MS = 4_000L
 private const val HUD_TIMEOUT_MS = 900L
+private const val MESSAGE_TIMEOUT_MS = 3_000L
 internal const val SEEK_STEP_MS = 10_000L
 private const val LOCK_BUTTON_TIMEOUT_MS = 2_500L
 
-/** 0.4.1 seek bar: the M3 Expressive track height, the thumb's half width + its gap, the run corners and the marks' line. */
-private val SEEK_TRACK_DP = 16.dp
-private val SEEK_THUMB_GAP_DP = 8.dp
-private val SEEK_RUN_CORNER_DP = 4.dp
-private val SEEK_MARK_DP = 4.dp
+/** Sparkles S5: the room each structure's bottom controls take (subtitles lift above it; the skip / next cards sit on it). */
+private val CINEMA_CONTROLS_DP = 136.dp
+private val MINIMAL_CONTROLS_DP = 104.dp
+private val MINI_CONTROLS_DP = 52.dp
 
 /** Size of the play button, the tallest control of the centred transport row. */
-private val TRANSPORT_PLAY_DP = 80.dp
+private val TRANSPORT_PLAY_DP = 64.dp
 
 /** Space between the transport row and the buffering card above it. */
 private val TRANSPORT_GAP_DP = 12.dp
