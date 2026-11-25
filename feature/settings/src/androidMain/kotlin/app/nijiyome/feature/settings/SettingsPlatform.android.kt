@@ -57,6 +57,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 
+internal actual val systemCategoryOffered: Boolean = false
+
 internal actual val dynamicColorSupported: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 /** Visible to the app through the manifest `<queries>` (app module). */

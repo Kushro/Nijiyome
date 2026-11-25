@@ -7,6 +7,9 @@ import app.nijiyome.model.LoadState
 
 // What Settings needs from the platform. Android keeps what it always did; desktop has its own side in desktopMain.
 
+/** Ajustes › Sistema (tray, autostart, Discord, title bar, proxy) exists on this platform: desktop yes, Android no. */
+internal expect val systemCategoryOffered: Boolean
+
 /** Dynamic color (wallpaper colors). Android 12+. */
 internal expect val dynamicColorSupported: Boolean
 
