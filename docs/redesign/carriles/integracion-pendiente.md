@@ -151,3 +151,13 @@ S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4
 - Límites de velocidad y rejilla semanal de torrents siguen como campos de texto dentro de `feature/torrents` (`TorrentSettingsPage`). (límites hecho con `QuantityPicker`; el puerto y la rejilla semanal siguen como estaban)
 - Primer arranque: el paso Fuentes no instala `.kai` ni agrega repositorios (faltan APIs de `feature/extensions` visibles desde settings).
 - Estado de categoría y búsqueda con `remember` (se pierde al rotar): pasar a `rememberSaveable`. (hecho)
+
+## Auditoría de paridad (351 entradas, solo lectura)
+
+340 ok, 1 parcial, 1 falta, 9 no verificables (notas sin función de UI). Detalle en `.claude/paridad-auditoria.md` (sin seguimiento).
+
+- **PLA-07 (parcial, nuevo):** en el chrome táctil Mínimo y en el mini-chrome del Panel vertical faltan la leyenda de la barra
+  (búfer, PC, OP/ED) y la telemetría «Buffer +Ns / velocidad del torrent». Antes: `TouchPlayerUi.kt`, `MinimalTimeTelemetryRow`.
+  Hoy `PlayerSeekLegend` solo se llama desde `chrome/CinemaChrome.kt`. Agregarla a `chrome/` Mínimo y Panel.
+- **B-OCULTA-01 (falta, conocido):** fuente de manga preferida global.
+- Textos sin uso que aún dicen «Torrents › Descargas»: `torrent_android_background_off`, `torrent_settings_background_locked`.
