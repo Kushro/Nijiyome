@@ -448,7 +448,7 @@ private fun rememberSpotlightRegion(media: Media, continueEntry: HistoryEntry?):
     val status = entry?.status
     val statusLabel = status?.let { stringResource(it.labelRes()) }
     val episodeLabel = continueEntry?.let { stringResource(Res.string.rd_s2_ep_short, it.episode) }
-    val progress = continueEntry?.durationSec?.takeIf { it > 0 }?.let { (continueEntry.progressSec.toFloat() / it).coerceIn(0f, 1f) }
+    val progress = continueEntry?.let { e -> e.durationSec?.takeIf { it > 0 }?.let { (e.progressSec.toFloat() / it).coerceIn(0f, 1f) } }
     val accent = remember(media.color) { parseHexColor(media.color) }
     return RegionData(
         title = media.displayTitle(LocalTitleLanguage.current),
