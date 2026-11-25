@@ -132,7 +132,7 @@ internal object HomeLogic {
         nowSec: Long,
         todayStartSec: Long,
     ): List<TonightItem> {
-        val resume = continueWatching.filter { !it.completed }.map { TonightItem.Resume(it) }
+        val resume: List<TonightItem> = continueWatching.filter { !it.completed }.map { TonightItem.Resume(it) }
         val resumed = continueWatching.mapNotNull { it.anilistId }.toSet()
         fun inResume(ep: AiringEpisode) = ep.media.ref.anilistId?.let { it in resumed } == true
         val aired = (newSinceVisit + today.filter { tracked(it.media.ref) && it.airingAtEpochSec <= nowSec })

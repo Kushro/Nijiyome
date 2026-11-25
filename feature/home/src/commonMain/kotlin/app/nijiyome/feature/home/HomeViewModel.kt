@@ -120,19 +120,19 @@ data class HomeUiState(
 private fun <T> LoadState<List<T>>.shown(): Boolean = !(this is LoadState.Ok && value.isEmpty())
 
 // Sparkles (S2): Home row ids (HomeRowIds.DEFAULT_ORDER); every row of Home has one.
-const val ROW_CONTINUE = "continuar"
-const val ROW_DOWNLOADS = "descargando"
-const val ROW_FOLLOWED = "siguiendo"
-const val ROW_LATEST = "ultimos"
-const val ROW_TOP = "top"
-const val ROW_FOR_YOU = "parati"
-const val ROW_BECAUSE = "porque"
-const val ROW_GENRES = "generos"
-const val ROW_FEEDS = "feeds"
-const val ROW_PREMIERES = "estrenos"
-const val ROW_FAVOURITES = "favoritos"
-const val ROW_EXTENSIONS = "extensiones"
-const val ROW_MORE = "mas"
+internal const val ROW_CONTINUE = "continuar"
+internal const val ROW_DOWNLOADS = "descargando"
+internal const val ROW_FOLLOWED = "siguiendo"
+internal const val ROW_LATEST = "ultimos"
+internal const val ROW_TOP = "top"
+internal const val ROW_FOR_YOU = "parati"
+internal const val ROW_BECAUSE = "porque"
+internal const val ROW_GENRES = "generos"
+internal const val ROW_FEEDS = "feeds"
+internal const val ROW_PREMIERES = "estrenos"
+internal const val ROW_FAVOURITES = "favoritos"
+internal const val ROW_EXTENSIONS = "extensiones"
+internal const val ROW_MORE = "mas"
 
 
 val HERO_FEED = FeedKind.TRENDING
