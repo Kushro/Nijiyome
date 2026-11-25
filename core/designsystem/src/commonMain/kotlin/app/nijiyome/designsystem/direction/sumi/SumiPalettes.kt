@@ -89,7 +89,7 @@ private val NightInk = SumiInk(
 )
 
 /** One accent of a role in light (`l*`) and dark (`d*`): the color, on it, its soft container and on the container. */
-private class Accent(
+internal class Accent(
     val light: Color,
     val onLight: Color,
     val lightContainer: Color,
