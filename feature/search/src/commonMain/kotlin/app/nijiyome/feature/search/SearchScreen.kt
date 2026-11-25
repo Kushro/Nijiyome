@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.feature.search
 
 import androidx.compose.foundation.layout.Arrangement
