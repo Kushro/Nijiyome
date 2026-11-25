@@ -380,6 +380,7 @@ private fun AppShell(
     var paletteOpen by remember { mutableStateOf(false) }
     var settingsModalOpen by remember { mutableStateOf(false) }
     var settingsModalSection by remember { mutableStateOf<SettingsSection?>(null) }
+    var settingsModalItemId by remember { mutableStateOf<String?>(null) }
 
     val allowedSettingsSections = remember(koin) {
         val hasLists = koin.getOrNull<ListsRepository>() != null
@@ -402,15 +403,15 @@ private fun AppShell(
 
     /**
      * Settings at [section]: the modal over the current screen on desktop, the screen elsewhere. [itemId] (a `SettingsCatalog` id) is
-     * the exact setting to land on; Settings takes only the section today, so it opens there (integrator: pass [itemId] through once
-     * S10's Settings accepts it).
+     * the exact setting to land on (Settings scrolls to it and highlights it).
      */
     fun openSettings(section: SettingsSection?, itemId: String?) {
         if (wide && shortcuts != null) {
             settingsModalSection = section
+            settingsModalItemId = itemId
             settingsModalOpen = true
         } else {
-            val r = if (section != null) Route.SettingsSection(section) else Route.Settings
+            val r = if (section != null) Route.SettingsSection(section, itemId) else Route.Settings
             if (backStack.lastOrNull() != r) backStack.add(r)
         }
     }
@@ -609,11 +610,13 @@ private fun AppShell(
         if (settingsModalOpen) {
             SettingsModalDialog(
                 initialSection = settingsModalSection,
+                initialItemId = settingsModalItemId,
                 onDismiss = { settingsModalOpen = false },
                 onOpenExtensions = { backStack.navigateTop(Route.Extensions) },
                 onOpenLink = { if (available.offers(Route.Linked)) backStack.add(Route.Linked) },
                 onOpenLinked = { if (available.offers(Route.Linked)) backStack.add(Route.Linked) },
                 onOpenDebrid = { backStack.add(Route.Torrents(TorrentSection.DEBRID)) },
+                onOpenCalendar = { backStack.navigateTop(Route.Calendar) },
             )
         }
     }
@@ -1020,6 +1023,7 @@ private fun AppNavDisplay(
                     // Rail destination on wide windows (no back arrow); reached from "Tú" on phones.
                     onBack = if (wide) null else ::back,
                     onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
+                    onOpenCalendar = { backStack.navigateTop(Route.Calendar) },
                 )
             }
             entry<Route.SettingsSection> { key ->
@@ -1030,6 +1034,8 @@ private fun AppNavDisplay(
                     onOpenLinked = { push(Route.Linked) },
                     onBack = ::back,
                     onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
+                    initialItemId = key.itemId,
+                    onOpenCalendar = { backStack.navigateTop(Route.Calendar) },
                 )
             }
             entry<Route.Extensions> {
