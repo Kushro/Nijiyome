@@ -754,7 +754,7 @@ private fun HomeRowsEditor(design: DesignPrefs, vm: SettingsViewModel) {
                     count = order.size,
                     title = name,
                     supporting = if (visible) null else hiddenLabel,
-                    modifier = Modifier.reorderPlacement(),
+                    modifier = reorderPlacement(),
                     trailing = {
                         Switch(
                             checked = visible,

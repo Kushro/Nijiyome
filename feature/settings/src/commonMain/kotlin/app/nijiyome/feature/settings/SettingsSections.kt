@@ -507,7 +507,7 @@ private fun ProviderPriority(priority: List<String>, vm: SettingsViewModel) {
                 count = priority.size,
                 title = providerName(id),
                 supporting = providerSubRes(id)?.let { stringResource(it) },
-                modifier = Modifier.reorderPlacement(),
+                modifier = reorderPlacement(),
                 leading = {
                     Text(
                         "${i + 1}",
