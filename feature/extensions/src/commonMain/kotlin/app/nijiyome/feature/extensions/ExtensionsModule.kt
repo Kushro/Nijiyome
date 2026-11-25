@@ -11,6 +11,8 @@ val extensionsFeatureModule = module {
     single { ProviderResumer(repo = get()) }
     // parity wave B closure (server.api.extensions): extensions of the linked PC servers (null client = section hidden).
     viewModel { ServerExtensionsViewModel(repository = getOrNull(), extensions = getOrNull()) }
+    // Sparkles S9: the Debrid tab of Fuentes (null client = the tab says debrid is not available in this build).
+    viewModel { SourcesDebridViewModel(debrid = getOrNull(), settings = getOrNull()) }
     viewModel { params -> ProviderViewModel(extensionId = params.get<String>(0), sourceId = params.get<String>(1), repo = get()) }
     viewModel { params -> ProviderItemViewModel(extensionId = params.get<String>(0), sourceId = params.get<String>(1), itemId = params.get<String>(2), repo = get(), history = getOrNull()) }
 }
