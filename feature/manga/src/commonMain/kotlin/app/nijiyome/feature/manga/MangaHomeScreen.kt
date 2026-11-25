@@ -247,7 +247,7 @@ private fun MangaCatalogHome(state: MangaHomeState, actions: MangaHomeActions, m
                 )
                 MangaFilterBar(state.filters, state.home.genres, actions.onFilters, actions.onClear)
             }
-            if (state.filters.active || state.filters.sort != MediaSort.POPULARITY) {
+            if (state.filters.active) {
                 MangaResults(state, actions, Modifier.weight(1f))
             } else {
                 MangaFeed(state, actions, undo, compact, Modifier.weight(1f))
@@ -313,6 +313,7 @@ private fun MangaFilterBar(filters: MangaFilters, genres: List<String>, onFilter
                 optionLabel = { sortLabel(it) },
                 onSelect = { v -> onFilters { it.copy(sort = v) } },
                 sort = true,
+                active = filters.sort != MediaSort.POPULARITY,
             )
         }
         val active = buildList {
@@ -505,7 +506,8 @@ private fun MangaFeed(
                     onRetry = actions.onRefresh,
                     onOpen = actions.onOpen,
                     cardOf = { it.mangaCard(lang) },
-                    onSeeAll = { actions.onFilters { f -> f.copy(sort = sort) } },
+                    // POPULARITY is the default sort, so "Ver todo" of Populares has nothing to sort by.
+                    onSeeAll = if (sort != MediaSort.POPULARITY) ({ actions.onFilters { f -> f.copy(sort = sort) } }) else null,
                     modifier = Modifier.homeEntrance(index),
                 )
             }

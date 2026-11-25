@@ -53,7 +53,8 @@ data class NovelFilters(
     val origin: String? = null,
     val sort: MediaSort = MediaSort.POPULARITY,
 ) {
-    val active: Boolean get() = query.isNotBlank() || genre != null || status != null || origin != null
+    // A sort other than the default is a search of its own (the sort chip, "Ver todo"), so it keeps the results open.
+    val active: Boolean get() = query.isNotBlank() || genre != null || status != null || origin != null || sort != MediaSort.POPULARITY
 
     fun toQuery(): MediaSearchQuery = MediaSearchQuery(
         query = query.trim().ifEmpty { null },
