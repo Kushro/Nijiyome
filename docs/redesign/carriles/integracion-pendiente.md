@@ -85,3 +85,22 @@ Atkinson Hyperlegible Next, Overpass (Tránsito). Orígenes en `google/fonts` `o
   Panel cae a Cine por debajo de 900 dp.
 - Nombres de iconos no confirmados en `feature/details` (`DownloadDone`, `VideoLibrary`, `UnfoldMore`, `Filled.PlayCircle`).
 - Costo de reportar los límites de cada tarjeta por cuadro (transición tarjeta-ficha) en el moto g51.
+
+## Transferencias (S8), agregado tras su informe
+
+- `Route.Downloads(tab)`: llamar a `DownloadsScreen(initialTab, onBack, onPlay, onOpenDetails, onOpenTorrent, onOpenMangaReader,
+  onOpenNovelReader, torrentSlots = TransfersTorrentSlots(detail = { id, back, showBack, m -> TransfersTorrentDetail(id, back, ::play, showBack, m) },
+  addTorrent = { open, setOpen, onAdded -> TransfersAddTorrentHost(open, setOpen, onAdded) }), onOpenSettings, onOpenDebrid)`.
+  Sin `torrentSlots` el cliente torrent no aparece dentro de la página.
+- `Route.Torrents(section, torrentId)`: con id, `DownloadsScreen(initialTab = ACTIVE, initialTorrentId = id, torrentSlots = …)`;
+  sin id, LIBRARY / DOWNLOADS / HISTORY redirigen a `Route.Downloads`; DEBRID va a Fuentes (S9); SETTINGS a Ajustes (S10).
+- Alternativa más limpia: `implementation(projects.feature.torrents)` en `feature/downloads/build.gradle.kts` y quitar los slots.
+- Falta en core: borrar una regla de auto-descarga (`setRule(null)` no hace nada), orden combinado de la cola (no hay arrastre
+  para reordenar), «mover datos» y «recomprobar» (no existen en `TorrentRepository`).
+- S10 debe incrustar `TorrentSettingsPage(onBack = null)`; esa página aún usa campos de texto para límites.
+
+## Estado al cortar la sesión
+
+Integrados: D1 a D4, I1, M1, S1 a S8. En curso al llegar al límite de uso: S9 (rama `worktree-agent-a72941510b4062fab`),
+S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4`); sus worktrees están en
+`/media/octavio/Warehouse/Personal Github Repositories/Nijiyome/.claude/worktrees/`.
