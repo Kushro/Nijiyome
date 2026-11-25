@@ -4,6 +4,7 @@ package app.nijiyome.nav
 import androidx.navigation3.runtime.NavKey
 import app.nijiyome.model.DownloadRepository
 import app.nijiyome.model.LinkRepository
+import app.nijiyome.model.LinkServerController
 import app.nijiyome.model.SettingsSection
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.test.Test
@@ -35,7 +36,7 @@ class RouteSavedStateTest {
         assertFalse(nothing.offers(Route.Linked))
         assertFalse(nothing.offers(Route.Downloads()))
         assertEquals(
-            listOf(Route.Home, Route.Search, Route.Calendar, Route.ForYou, Route.Library, Route.Manga(), Route.Novels(), Route.Torrents(), Route.Extensions, Route.Settings),
+            listOf(Route.Home, Route.Search, Route.Calendar, Route.Library, Route.Manga(), Route.Novels(), Route.Extensions, Route.Settings),
             topLevelRoutes(wide = true).filter(nothing::offers),
         )
         val everything = RouteAvailability { true }
@@ -45,5 +46,17 @@ class RouteSavedStateTest {
         assertTrue(onlyLink.offers(Route.Linked))
         assertFalse(onlyLink.offers(Route.You)) // also needs the lists service
         assertFalse(onlyLink.offers(Route.Downloads()) || RouteAvailability { it == DownloadRepository::class }.offers(Route.Linked))
+    }
+
+    @Test
+    fun linkIsOfferedWithEitherSideOfLink() {
+        // Desktop: the Link server alone opens Link (its server side), not the Tú page, which needs the client.
+        val server = RouteAvailability { it == LinkServerController::class }
+        assertTrue(server.offers(Route.Linked))
+        assertTrue(server.offers(Route.Link))
+        assertFalse(server.offers(Route.You))
+        val client = RouteAvailability { it == LinkRepository::class }
+        assertTrue(client.offers(Route.Linked))
+        assertFalse(RouteAvailability { false }.offers(Route.Link))
     }
 }

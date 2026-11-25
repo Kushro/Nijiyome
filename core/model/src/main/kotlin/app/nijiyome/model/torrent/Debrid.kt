@@ -114,6 +114,12 @@ interface DebridRepository {
 
     suspend fun unlink(service: DebridService)
 
+    /**
+     * Moves [service] to the front of the preference order (the first linked service that has a torrent plays it). The default
+     * does nothing, for implementations without an order.
+     */
+    suspend fun prefer(service: DebridService) {}
+
     /** Which linked services have each info-hash cached (instant availability). Unknown / unlinked = absent. Batched, short timeout. */
     suspend fun cached(infoHashes: List<String>): Map<String, Set<DebridService>>
 

@@ -214,7 +214,7 @@ class DebridRepositoryImpl(
     }
 
     /** Moves [service] to the front: the first linked service that has a torrent is the one that plays it (preference order). */
-    suspend fun prefer(service: DebridService) {
+    override suspend fun prefer(service: DebridService) {
         ensureLoaded()
         mutex.withLock {
             val list = _accounts.value
