@@ -22,6 +22,7 @@ import app.nijiyome.designsystem.direction.sumi.SumiInkLine
 import app.nijiyome.model.CardSize
 import app.nijiyome.ui.cards.CardContext
 import app.nijiyome.ui.cards.CardPlayTarget
+import app.nijiyome.ui.cards.LocalCardIndex
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.look.CardSizing
@@ -164,7 +165,7 @@ internal fun EnsoContinue(data: TitleCardData, size: CardSize, show: CardShow, o
                 CardSub(data.sumiContinueSub(), CardContext.CONTINUE)
             }
             CardPlayTarget(data.title) {
-                if (p != null) RingPlay(p, 58.dp, traceKey = "continue:" + data.key, traceIndex = 0) else PlayDisc(42.dp)
+                if (p != null) RingPlay(p, 58.dp, traceKey = "continue:" + data.key, traceIndex = LocalCardIndex.current.coerceAtLeast(0)) else PlayDisc(42.dp)
             }
         }
     }

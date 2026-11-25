@@ -51,6 +51,7 @@ import app.nijiyome.model.CardSize
 import app.nijiyome.model.Density
 import app.nijiyome.ui.cards.CardContext
 import app.nijiyome.ui.cards.CardPlayTarget
+import app.nijiyome.ui.cards.LocalCardIndex
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.look.CardSizing
@@ -375,7 +376,7 @@ internal fun SumiHero(style: SumiStyle, data: TitleCardData, size: CardSize, sho
                     SumiStyle.HANKO -> SumiInkLine(p, Modifier.widthIn(max = 280.dp))
                     SumiStyle.ENSO -> if (data.sumiLive(CardContext.HERO)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            CardPlayTarget(data.title) { RingPlay(p, 84.dp, traceKey = "hero:" + data.key, traceIndex = 0) }
+                            CardPlayTarget(data.title) { RingPlay(p, 84.dp, traceKey = "hero:" + data.key, traceIndex = LocalCardIndex.current.coerceAtLeast(0)) }
                             HeroCta(data.sumiContinueSub(), progressLabel)
                         }
                     }

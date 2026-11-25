@@ -502,6 +502,7 @@ private fun FavoriteRow(title: String, list: List<Media>, onOpenMedia: (Media) -
                 context = CardContext.ROW,
                 show = CardShow(progress = false, status = false, next = false, score = true),
                 modifier = Modifier.cardSway(i).cardToDetailsSource(data.key),
+                index = i,
             )
         }
     }
