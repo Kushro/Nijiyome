@@ -27,7 +27,7 @@ Lo que los carriles dejaron para conectar, tomado de sus informes finales. Se co
   el selector navega entre los inicios de Anime / Manga / Novelas; con eso alcanza salvo que se quiera filtrar Explorar y Biblioteca.
 - **Galería de diseño (I1):** `DesignGalleryScreen(onBack)`; S10 la abre dentro de Ajustes. Comprobar que quedó accesible.
 - **Salto al ajuste exacto (S1 + S10):** el shell guarda el id en `openSettings(section, itemId)`; pasarlo al parámetro nuevo de
-  `SettingsScreen` cuando S10 lo entregue.
+  `SettingsScreen` cuando S10 lo entregue. (hecho)
 - **Aviso tras actualizar:** el primer arranque (S10) debe marcar `introSeen = true`.
 - **Notificaciones de escritorio (DESK-09):** `SystemNotifier.notify(title, body)` (core/model) no lleva destino y `DesktopNotifier`
   no escucha el clic. Agregar un destino opcional con valor por defecto y el manejador de clic. (hecho; ver límites del clic en el informe del integrador)
@@ -128,11 +128,11 @@ S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4
 
 ## Ajustes (S10), agregado tras su informe
 
-- Salto exacto: en `NijiyomeApp.openSettings(section, itemId)` pasar `initialItemId = itemId` a `SettingsScreen` y a `SettingsModalDialog`.
-- `SettingsCatalog.items` ahora es `@Composable get()`; comprobar la llamada en `CommandPalette.kt`.
-- `onOpenCalendar` en `SettingsScreen` y `SettingsModalDialog` → `Route.Calendar`.
-- Sugerencia de modo rendimiento: usar `rememberLowRefreshRate()` además de `rememberLowEndDevice()` en el selector de diseño.
-- `LinkServerSection` duplica lo que ya está en la pantalla de Link de escritorio: dejar el nombre del servidor y un enlace a `Route.Linked`.
-- Límites de velocidad y rejilla semanal de torrents siguen como campos de texto dentro de `feature/torrents` (`TorrentSettingsPage`).
+- Salto exacto: en `NijiyomeApp.openSettings(section, itemId)` pasar `initialItemId = itemId` a `SettingsScreen` y a `SettingsModalDialog`. (hecho; `Route.SettingsSection` lleva `itemId`)
+- `SettingsCatalog.items` ahora es `@Composable get()`; comprobar la llamada en `CommandPalette.kt`. (hecho: se llama dentro de `NijiyomeCommandPalette`, composable)
+- `onOpenCalendar` en `SettingsScreen` y `SettingsModalDialog` → `Route.Calendar`. (hecho)
+- Sugerencia de modo rendimiento: usar `rememberLowRefreshRate()` además de `rememberLowEndDevice()` en el selector de diseño. (hecho: aviso aparte para 60 Hz, con el modo en Auto o apagado)
+- `LinkServerSection` duplica lo que ya está en la pantalla de Link de escritorio: dejar el nombre del servidor y un enlace a `Route.Linked`. (hecho: nombre, estado y botón a la pantalla de Link; `link_cache`, `link_ports` y `link_ext_server` abren esa pantalla)
+- Límites de velocidad y rejilla semanal de torrents siguen como campos de texto dentro de `feature/torrents` (`TorrentSettingsPage`). (límites hecho con `QuantityPicker`; el puerto y la rejilla semanal siguen como estaban)
 - Primer arranque: el paso Fuentes no instala `.kai` ni agrega repositorios (faltan APIs de `feature/extensions` visibles desde settings).
-- Estado de categoría y búsqueda con `remember` (se pierde al rotar): pasar a `rememberSaveable`.
+- Estado de categoría y búsqueda con `remember` (se pierde al rotar): pasar a `rememberSaveable`. (hecho)
