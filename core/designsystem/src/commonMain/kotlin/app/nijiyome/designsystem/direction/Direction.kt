@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
@@ -129,6 +130,20 @@ interface DirectionDecor {
     @Composable
     fun regionModifier(region: DecorRegion): Modifier = Modifier
 
+    /**
+     * Same as [regionModifier] with what the screen knows about the region (status, episode line, connection, chapters). A direction
+     * overrides this one only when it prints or draws that data; the default ignores [data].
+     */
+    @Composable
+    fun regionModifier(region: DecorRegion, data: RegionData): Modifier = regionModifier(region)
+
+    /**
+     * Color for text and icons a screen draws directly on [region]. A direction whose region is a dark island on a light theme (a
+     * departure board, an ink band) returns the matching light color here; the default keeps the current content color.
+     */
+    @Composable
+    fun regionContentColor(region: DecorRegion): Color = LocalContentColor.current
+
     /** Title of a section or card row, with an optional trailing action ("Ver todo"). */
     @Composable
     fun SectionHeader(title: String, modifier: Modifier, trailing: (@Composable () -> Unit)?) {
@@ -188,6 +203,29 @@ interface DirectionDecor {
     object Plain : DirectionDecor
 }
 
+/**
+ * What a screen knows about a decorated region, for directions that print or draw it ([DirectionDecor.regionModifier] with data).
+ * Every field is optional; a direction draws only what is present. All text is already localised.
+ */
+@Immutable
+data class RegionData(
+    /** Title shown in the region (Details header, Home stage). */
+    val title: String? = null,
+    /** Localised label of [status] ("Viendo"). */
+    val statusLabel: String? = null,
+    val status: StatusSlot? = null,
+    /** "Ep 9 · en 6 d". */
+    val episodeLabel: String? = null,
+    /** Series or episode progress, 0..1. */
+    val progress: Float? = null,
+    /** Link / connection state; null = unknown. */
+    val connected: Boolean? = null,
+    /** Chapter starts on a seek bar, each in 0..1. */
+    val chapterFractions: List<Float> = emptyList(),
+    /** Cover color of the title, when known. */
+    val accent: Color? = null,
+)
+
 /** A visual direction: palettes, type, shape and decoration. Implementations are `object`s listed in [Directions]. */
 interface DirectionSpec {
     /** `DesignDirection.id` of `:core:model` (`tanabata`, `obi`, `transit`, `sumi`, `canon`). */
@@ -241,6 +279,15 @@ val LocalCoverAccent: ProvidableCompositionLocal<Color?> = staticCompositionLoca
 /** Decorates [region] with the active direction. */
 @Composable
 fun Modifier.decor(region: DecorRegion): Modifier = this.then(LocalDirection.current.decor.regionModifier(region))
+
+/** Decorates [region] with the active direction, giving it what the screen knows about the region. */
+@Composable
+fun Modifier.decor(region: DecorRegion, data: RegionData): Modifier =
+    this.then(LocalDirection.current.decor.regionModifier(region, data))
+
+/** Color for text a screen draws directly on [region]; provide it as `LocalContentColor` inside the region. */
+@Composable
+fun regionContentColor(region: DecorRegion): Color = LocalDirection.current.decor.regionContentColor(region)
 
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier, trailing: (@Composable () -> Unit)? = null) =

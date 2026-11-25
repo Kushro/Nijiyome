@@ -517,7 +517,8 @@ private fun StageHero(ctx: HomeRowCtx, frame: HomeFrame, modifier: Modifier) {
                 onOpen = { media -> ctx.gate.open(media) { a.onMediaClick(media) } },
                 onWatch = a.onWatch,
                 onContinue = a.onResumeEntry,
-                modifier = modifier.decor(DecorRegion.HERO),
+                modifier = modifier,
+                decorHero = true,
                 topEnd = { if (!frame.wide) NotificationBell(frame.unread, a.onOpenNotifications, onScrim = true) },
             )
         } else {

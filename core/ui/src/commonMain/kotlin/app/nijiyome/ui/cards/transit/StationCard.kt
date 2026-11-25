@@ -200,7 +200,7 @@ object StationCard : TitleCardStyle {
                     }
                     CardRoute(data, model, line, show, state.lit, height = 14.dp, halo = floor)
                 }
-                if (resume) PlayDisc()
+                if (resume) PlayDisc(data.title)
             }
         }
     }

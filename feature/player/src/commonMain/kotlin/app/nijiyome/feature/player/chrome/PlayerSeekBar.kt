@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.LocalSignalColors
+import app.nijiyome.designsystem.direction.RegionData
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.designsystem.motion.MotionLevel
@@ -150,7 +151,11 @@ internal fun PlayerSeekBar(
         stringResource(Res.string.rd_s5_seek_value, position, total)
     }
 
-    Column(modifier.decor(DecorRegion.PLAYER_SEEK)) {
+    // Chapter starts for directions that mark them on the bar: where each marked segment begins and where it ends (the next one starts).
+    val chapters = remember(marks) {
+        marks.flatMap { listOf(it.left, it.left + it.width) }.filter { it > 0.002f && it < 0.998f }.distinct().sorted()
+    }
+    Column(modifier.decor(DecorRegion.PLAYER_SEEK, RegionData(chapterFractions = chapters))) {
         Box(
             Modifier
                 .fillMaxWidth()

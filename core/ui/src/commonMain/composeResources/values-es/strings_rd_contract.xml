@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, integración del contrato: piezas comunes de las tarjetas. -->
+    <string name="rd_contract_play_title">Reproducir %1$s</string>
+    <string name="rd_contract_stamp_new">Nuevo</string>
+    <string name="rd_contract_stamp_soon">Pronto</string>
+    <string name="rd_contract_new_ep">Nuevo ep. %1$d</string>
+</resources>

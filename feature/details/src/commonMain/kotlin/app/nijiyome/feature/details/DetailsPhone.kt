@@ -84,65 +84,8 @@ import app.nijiyome.ui.media.displayTitle
 import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
 
-// Ficha "Primero el episodio" (phone, < 840 dp): a compact header (168 dp fanart, the poster overlapping it, the title and, in the A / C
-// compositions, the facts line); the rest of the header is the "Cabecera de la ficha" composition (DetailsHead.kt), so the button, the
-// tabs and the episode to continue are on screen at scroll 0. Studios, genres and the synopsis live in "Información".
-
-/** Compact phone header: fanart, overlapping poster, title (2 lines) and [facts] (the A / C facts line; null = the title only). */
-@Composable
-internal fun CompactHeader(
-    media: Media,
-    state: DetailsUiState,
-    actions: DetailsActions,
-    facts: (@Composable () -> Unit)? = null,
-    /** B / D (no facts line): the "+18" badge goes under the title. */
-    adultBadge: Boolean = false,
-) {
-    val background = MaterialTheme.colorScheme.background
-    val title = media.displayTitle(state.titleLanguage)
-    val blurred = state.coverBlurred
-    val blurModifier = if (blurred) Modifier.blur(24.dp).clickable(onClick = actions.onRevealCover) else Modifier
-    val backdrop = headerBackdrop(media, state.artwork)
-    Column(Modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().height(COMPACT_FANART)) {
-            AsyncImage(
-                model = backdrop.url,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = if (backdrop.lowRes && media.banner != null) Alignment.BottomCenter else Alignment.Center,
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest).then(blurModifier),
-            )
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        listOf(background.copy(alpha = if (backdrop.lowRes) 0.35f else 0.1f), background.copy(alpha = if (backdrop.lowRes) 0.7f else 0.45f), background),
-                    ),
-                ),
-            )
-            if (blurred) MatureReveal(actions, Modifier.align(Alignment.Center))
-        }
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            MediaCover(url = media.cover, modifier = Modifier.width(96.dp).overlapUp(POSTER_OVERLAP).then(blurModifier))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                androidx.compose.foundation.text.selection.SelectionContainer {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                }
-                facts?.invoke()
-                TitleQuickActions(title = title, media = media, actions = actions, adultBadge = adultBadge)
-            }
-        }
-    }
-}
+// Pieces of the Ficha header shared by its structures: the adult badge, the title's quick actions, the mature reveal, the Watch
+// button with its labels and the source line.
 
 /** "+18" next to the title when no facts line carries it (B / D). */
 @Composable
@@ -248,13 +191,6 @@ internal fun MatureReveal(actions: DetailsActions, modifier: Modifier = Modifier
         Icon(Icons.Outlined.NoAdultContent, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
         Text(stringResource(Res.string.details_mature_tap), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
     }
-}
-
-/** Draws the content [by] higher than its slot and reports that much less height (the poster overlapping the fanart). */
-private fun Modifier.overlapUp(by: Dp): Modifier = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    val px = by.roundToPx().coerceAtMost(placeable.height)
-    layout(placeable.width, placeable.height - px) { placeable.place(0, -px) }
 }
 
 /** Primary button label: [word] may ellipsize, [number] (" · ep. 12") never does; [long] is the TalkBack form. */
@@ -393,68 +329,6 @@ internal fun WatchButton(
     }
 }
 
-/** "Más": Enviar a dispositivo, Descargar episodio N / temporada, Compartir; [anchor] draws the control that opens it. */
-@Composable
-internal fun MoreActionsButton(media: Media, state: DetailsUiState, actions: DetailsActions, anchor: @Composable (open: () -> Unit) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        anchor { open = true }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            if (state.sendAvailable) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(if (state.sending) Res.string.details_send_sending else Res.string.details_send_device)) },
-                    onClick = {
-                        open = false
-                        actions.onSendToDevice()
-                    },
-                    enabled = !state.sending && state.playable,
-                    leadingIcon = { Icon(Icons.Outlined.Cast, contentDescription = null) },
-                )
-            }
-            val panel = state.panel
-            val best = state.bestTorrent
-            if (panel != null && best != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_episode, panel.episode)) },
-                    onClick = {
-                        open = false
-                        actions.onDownloadSource(best, panel.episode)
-                    },
-                    enabled = state.playable,
-                    leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                )
-                if (state.canDownloadSeason) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.details_download_season)) },
-                        onClick = {
-                            open = false
-                            actions.onDownloadSeason()
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.Movie, contentDescription = null) },
-                    )
-                }
-            } else {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_none)) },
-                    onClick = { open = false },
-                    enabled = false,
-                    leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                )
-            }
-            if (shareLink(media) != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_share)) },
-                    onClick = {
-                        open = false
-                        actions.onShare(media)
-                    },
-                    leadingIcon = { Icon(Icons.Outlined.Share, contentDescription = null) },
-                )
-            }
-        }
-    }
-}
-
 /**
  * The source as one line (replaces the phone's source card): `● Toko · anizone · 1080p · Subs ES   Cambiar (n)`. Same states as
  * [SourcePanelCard]: no extension, searching, error with retry, nothing found, and the chosen source.
@@ -539,5 +413,3 @@ internal fun SourceLine(
 }
 
 internal val ACTION_HEIGHT = 52.dp
-private val COMPACT_FANART = 168.dp
-private val POSTER_OVERLAP = 56.dp

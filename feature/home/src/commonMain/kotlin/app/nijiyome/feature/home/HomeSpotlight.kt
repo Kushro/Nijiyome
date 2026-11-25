@@ -69,6 +69,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.components.LocalAppSnackbar
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.RegionData
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.theme.parseHexColor
+import app.nijiyome.ui.labels.labelRes
+import app.nijiyome.ui.look.slot
 import app.nijiyome.model.HistoryEntry
 import app.nijiyome.model.ListStatus
 import app.nijiyome.model.ListsRepository
@@ -132,10 +138,18 @@ internal fun Spotlight(
     onContinue: (HistoryEntry) -> Unit,
     modifier: Modifier = Modifier,
     topEnd: @Composable () -> Unit = {},
+    /** Decorate the hero as `DecorRegion.HERO` with what the current page knows (title, list status, episode, progress, color). */
+    decorHero: Boolean = false,
 ) {
     val ordered = remember(items) { spotlightOrder(items) }
     if (ordered.isEmpty()) return
     val pager = rememberPagerState { ordered.size }
+    val heroMedia = ordered[pager.currentPage.coerceIn(0, ordered.lastIndex)]
+    val heroModifier = if (decorHero) {
+        Modifier.decor(DecorRegion.HERO, rememberSpotlightRegion(heroMedia, continueEntryFor(heroMedia, continueWatching)))
+    } else {
+        Modifier
+    }
     val motion = lookMotion()
     val scope = rememberCoroutineScope()
     var touching by remember { mutableStateOf(false) }
@@ -162,6 +176,7 @@ internal fun Spotlight(
 
     BoxWithConstraints(
         modifier
+            .then(heroModifier)
             .fillMaxWidth()
             // Observe (never consume) touches so the buttons and the pager keep working: a finger on the hero pauses the timer.
             .pointerInput(Unit) {
@@ -421,6 +436,28 @@ private fun seasonLabel(season: String?): String? = when (season?.uppercase()) {
     "SUMMER" -> stringResource(Res.string.home_season_summer)
     "FALL" -> stringResource(Res.string.home_season_fall)
     else -> null
+}
+
+/** What the stage hero knows about [media] for the direction's decoration: its list status (when a lists layer is bound) and the episode to continue. */
+@Composable
+private fun rememberSpotlightRegion(media: Media, continueEntry: HistoryEntry?): RegionData {
+    val koin = getKoin()
+    val lists = remember(koin) { runCatching { koin.getOrNull<ListsRepository>() }.getOrNull() }
+    val entryFlow = remember(lists, media.ref) { lists?.let { runCatching { it.entry(media.ref) }.getOrNull() } ?: flowOf(null) }
+    val entry by entryFlow.collectAsState(initial = null)
+    val status = entry?.status
+    val statusLabel = status?.let { stringResource(it.labelRes()) }
+    val episodeLabel = continueEntry?.let { stringResource(Res.string.rd_s2_ep_short, it.episode) }
+    val progress = continueEntry?.let { e -> e.durationSec?.takeIf { it > 0 }?.let { (e.progressSec.toFloat() / it).coerceIn(0f, 1f) } }
+    val accent = remember(media.color) { parseHexColor(media.color) }
+    return RegionData(
+        title = media.displayTitle(LocalTitleLanguage.current),
+        statusLabel = statusLabel,
+        status = status?.slot(),
+        episodeLabel = episodeLabel,
+        progress = progress,
+        accent = accent,
+    )
 }
 
 /**

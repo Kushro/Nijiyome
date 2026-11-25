@@ -299,7 +299,7 @@ private fun TrendingSection(state: SearchUiState, actions: ExploreActions) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     itemsIndexed(row.value, key = { _, m -> "t-" + mediaKey(m) }) { i, media ->
-                        ResultCard(media, state, revealed, actions, CardContext.ROW, Modifier.cardSway(i))
+                        RankedCard(i + 1) { ResultCard(media, state, revealed, actions, CardContext.ROW, Modifier.cardSway(i), index = i) }
                     }
                 }
             }

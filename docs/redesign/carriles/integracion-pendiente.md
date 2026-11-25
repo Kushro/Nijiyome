@@ -44,19 +44,31 @@ Lo que los carriles dejaron para conectar, tomado de sus informes finales. Se co
 - **Datos para la decoración:** `regionModifier(region)` no recibe datos de la pantalla. Faltan: texto de estado y episodio en la
   faja del héroe (Obi), estado de conexión en LINK (Tránsito lo dibuja siempre conectado), marcas de capítulo en PLAYER_SEEK
   (Tránsito no las dibuja), color de texto del tablero de salidas en claro (Tránsito). Propuesta: un `CompositionLocal` de datos de
-  región o un parámetro opcional `RegionData` con valor por defecto, y que las pantallas lo llenen.
+  región o un parámetro opcional `RegionData` con valor por defecto, y que las pantallas lo llenen. (hecho)
+  - **Pendiente para S9:** `feature/link` debe pasar `Modifier.decor(DecorRegion.LINK, RegionData(connected = …))` en su región
+    de Link (Tránsito punteará la línea del teléfono y Sumi separará los ensō si no hay conexión). Los paneles de Link de Inicio
+    ya lo pasan.
 - **Reproducir desde la tarjeta:** las tarjetas CONTINUE y HERO dibujan un disco de reproducir que solo es visual; la única acción
-  es `onClick`. S2 resolvió «Esta noche» con un botón propio bajo la tarjeta. Decidir si se agrega `onPlay` al contrato.
-- **Índice de tarjeta:** `TitleCard` no recibe el índice en la fila (Sumi no puede escalonar el trazo del ensō).
+  es `onClick`. S2 resolvió «Esta noche» con un botón propio bajo la tarjeta. Decidir si se agrega `onPlay` al contrato. (hecho)
+  - El botón propio bajo la tarjeta de «Esta noche» sigue (paridad); decidir si se quita ahora que el disco es un botón.
+- **Índice de tarjeta:** `TitleCard` no recibe el índice en la fila (Sumi no puede escalonar el trazo del ensō). (hecho)
 - **Balanceo:** `cardSway` rota la tarjeta entera; en «tanzaku sello» debería balancearse solo la tira.
+  - Sin hacer: la API de movimiento no deja que un estilo anule el `cardSway` que la pantalla pone afuera (no hay local ni
+    bandera, y el ángulo no se expone para compensarlo). Hace falta que M1 agregue, por ejemplo, un `LocalCardSwayHost` que el
+    estilo pueda apagar, o que `cardSway` se aplique dentro de la tarjeta.
 - **Sellos «Nuevo» / «Pronto» de Tanabata** y **banda de novedad de Obi diagonal:** `TitleCardData.isNew` y `airedEpisodes` ya
-  existen; D1, D2 y D3 se escribieron antes: hacer que los usen (Tránsito infiere los emitidos de `nextLabel`).
+  existen; D1, D2 y D3 se escribieron antes: hacer que los usen (Tránsito infiere los emitidos de `nextLabel`). (hecho)
 - **Números de ranking** en la fila de tendencias de Explorar (S3 los omitió por la regla de numeración decorativa): restituir,
-  son información.
+  son información. (hecho)
 - **Duplicación:** S6 escribió chips, stepper y deslizador propios en `feature/player/sheets/SheetParts.kt` antes de que existieran
-  los de `core/ui/patterns`.
+  los de `core/ui/patterns`. (revisado: ninguno es equivalente, se dejan)
+  - `ChoiceChips` es una sola elección con fichas de radio, atajo de teclado y motivo de deshabilitado; `Facets` es multiselección
+    con panel. `Stepper` mueve un texto libre ("+0,5 s") con restablecer; `NumberStepperField` es un campo numérico con rango y
+    `ProgressStepper` un entero 0..máx con «de N». `ValueSlider` no tiene par en `patterns`.
 - **Código sin uso:** en `feature/details`: `HeaderBody`, `HeadActions`, `MoreActionsButton`, `CompactHeader`, `EpisodeCard`,
   `CompactEpisodeLine`, `DownloadMenuButton`. `PlayerViewModel.setPlayerChromeStyle`. `TrayTexts` + `DesktopLocaleTest`.
+  - Borrados (hecho) salvo `TrayTexts` + `DesktopLocaleTest`: están en `desktopApp`, que edita otro ayudante; `TrayTexts` solo
+    lo usa su prueba.
 
 ## Licencias
 
@@ -85,6 +97,9 @@ Atkinson Hyperlegible Next, Overpass (Tránsito). Orígenes en `google/fonts` `o
   Panel cae a Cine por debajo de 900 dp.
 - Nombres de iconos no confirmados en `feature/details` (`DownloadDone`, `VideoLibrary`, `UnfoldMore`, `Filled.PlayCircle`).
 - Costo de reportar los límites de cada tarjeta por cuadro (transición tarjeta-ficha) en el moto g51.
+- Contrato: la faja de Obi con texto (40 dp, `drawText`) en la Ficha y el escenario; el tablero de Tránsito oscuro en tema claro con
+  las filas claras encima; el disco de reproducir de 48 dp dentro de la fila de la faja de Obi (36-40 dp de alto); que TalkBack
+  llegue a «Reproducir …» en Obi por la acción personalizada; el número de ranking con contorno (`drawStyle = Stroke`).
 
 ## Transferencias (S8), agregado tras su informe
 

@@ -59,6 +59,7 @@ import app.nijiyome.designsystem.direction.transit.rememberTransitLine
 import app.nijiyome.model.CardSize
 import app.nijiyome.model.Density
 import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardPlayTarget
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.look.CardSizing
@@ -123,8 +124,10 @@ internal fun TitleCardData.lineModel(): LineModel {
     val reading = key.startsWith("manga") || key.startsWith("novel")
     val total = episodesTotal?.takeIf { it > 0 }
     val done = (episodesSeen ?: 0).coerceAtLeast(0).let { if (total != null) it.coerceAtMost(total) else it }
+    // The screen's aired count when it has one; otherwise inferred (the next episode in the label is the first not aired yet).
     val aired: Int? = when {
         reading -> total
+        airedEpisodes != null -> airedEpisodes.coerceAtLeast(0).let { if (total != null) it.coerceAtMost(total) else it }
         airing == MediaStatusKind.UPCOMING -> 0
         airing == MediaStatusKind.AIRING -> nextLabel?.let { FIRST_INT.find(it)?.value?.toIntOrNull() }?.let { (it - 1).coerceAtLeast(0) }
             ?.let { if (total != null) it.coerceAtMost(total) else it }
@@ -328,18 +331,20 @@ internal fun PosterStatusBadge(slot: StatusSlot, label: String, modifier: Modifi
 
 private val BADGE_TEXT = Color(0xFFEEF1FA)
 
-/** The play disc of CONTINUE cards; decorative, the whole card is the button. */
+/** The play disc of CONTINUE cards: the card's play button when the screen gives one ([CardPlayTarget]), otherwise decorative. */
 @Composable
-internal fun PlayDisc(modifier: Modifier = Modifier, size: Dp = 40.dp) {
-    Box(
-        modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary)
-            .clearAndSetSemantics { },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+internal fun PlayDisc(title: String, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+    CardPlayTarget(title, modifier) {
+        Box(
+            Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary)
+                .clearAndSetSemantics { },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+        }
     }
 }
 

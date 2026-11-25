@@ -2,6 +2,7 @@
 package app.nijiyome.designsystem.direction.obi
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -36,6 +37,11 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,6 +51,7 @@ import app.nijiyome.designsystem.direction.EmptyKind
 import app.nijiyome.designsystem.direction.EpisodeMarkState
 import app.nijiyome.designsystem.direction.LocalCoverAccent
 import app.nijiyome.designsystem.direction.LocalStatusColors
+import app.nijiyome.designsystem.direction.RegionData
 import app.nijiyome.designsystem.direction.StatusSlot
 import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.designsystem.motion.MotionLevel
@@ -56,6 +63,13 @@ import app.nijiyome.designsystem.motion.MotionLevel
 internal object ObiDecor : DirectionDecor {
     /** Height of the band the hero wears at its foot. */
     private val HERO_BAND = 10.dp
+
+    /** Height of the band when it prints the status and episode line (artifact `.obi-headband`, 40 px). */
+    private val HERO_HEADBAND = 40.dp
+
+    @Composable
+    override fun regionModifier(region: DecorRegion, data: RegionData): Modifier =
+        if (region == DecorRegion.HERO && (data.statusLabel != null || data.episodeLabel != null)) headband(data) else regionModifier(region)
 
     @Composable
     override fun regionModifier(region: DecorRegion): Modifier = when (region) {
@@ -103,6 +117,78 @@ internal object ObiDecor : DirectionDecor {
                 drawRect(color, topLeft = Offset(0f, size.height - h), size = Size(size.width, h))
             }
             .padding(bottom = HERO_BAND)
+    }
+
+    /**
+     * The hero's band with its copy (artifact `fillHeadband`): the status tab in inverted colors, the episode line in condensed
+     * Dela Gothic and the progress at the end. The band takes the series color while watching or planning, the status color once
+     * completed, fades to gray when paused and goes neutral when dropped. The text repeats what the screen already says, so it is
+     * only drawn and stays out of the semantics tree (artifact `aria-hidden`).
+     */
+    @Composable
+    private fun headband(data: RegionData): Modifier {
+        val scheme = MaterialTheme.colorScheme
+        val series = data.accent ?: LocalCoverAccent.current ?: scheme.primary
+        val band = when (data.status) {
+            StatusSlot.COMPLETED -> ObiInk.bandFor(LocalStatusColors.current.completed)
+            StatusSlot.DROPPED -> ObiBand(scheme.surfaceContainerHighest, scheme.onSurface)
+            StatusSlot.PAUSED -> ObiInk.bandFor(ObiInk.mix(series, ObiInk.NEUTRAL, 0.55f))
+            else -> ObiInk.bandFor(series)
+        }
+        val spec: AnimationSpec<Color> = when (LocalMotion.current.level) {
+            MotionLevel.FULL -> tween(320, easing = ObiEaseOut)
+            MotionLevel.CALM -> tween(140)
+            MotionLevel.PERF, MotionLevel.OFF -> snap()
+        }
+        val bg by animateColorAsState(band.bg, spec, label = "obiHeadbandBg")
+        val fg by animateColorAsState(band.fg, spec, label = "obiHeadbandFg")
+        val measurer = rememberTextMeasurer()
+        val ui = ObiFonts.ui()
+        val tabStyle = TextStyle(fontFamily = ui, fontWeight = FontWeight.W800, fontSize = 12.sp, lineHeight = 12.sp)
+        val lineStyle = TextStyle(fontFamily = ObiFonts.band(), fontSize = 17.sp, lineHeight = 20.sp, textGeometricTransform = ObiFonts.condensed())
+        val extraStyle = TextStyle(fontFamily = ui, fontWeight = FontWeight.W800, fontSize = 13.sp)
+        val extra = data.progress?.let { "${(it.coerceIn(0f, 1f) * 100).toInt()} %" }
+        return Modifier
+            .drawWithContent {
+                drawContent()
+                val h = HERO_HEADBAND.toPx()
+                val top = size.height - h
+                drawRect(bg, topLeft = Offset(0f, top), size = Size(size.width, h))
+                val pad = 16.dp.toPx()
+                val gap = 12.dp.toPx()
+                var x = pad
+                var right = size.width - pad
+                if (extra != null) {
+                    val m = measurer.measure(extra, extraStyle.copy(color = fg), maxLines = 1)
+                    right -= m.size.width
+                    drawText(m, topLeft = Offset(right, top + (h - m.size.height) / 2f))
+                    right -= gap
+                }
+                data.statusLabel?.let { label ->
+                    val m = measurer.measure(label, tabStyle.copy(color = bg), maxLines = 1)
+                    val padX = 6.dp.toPx()
+                    val padY = 4.dp.toPx()
+                    val tw = m.size.width + padX * 2
+                    val th = m.size.height + padY * 2
+                    val ty = top + (h - th) / 2f
+                    drawRoundRect(fg, topLeft = Offset(x, ty), size = Size(tw, th), cornerRadius = CornerRadius(2.dp.toPx()))
+                    drawText(m, topLeft = Offset(x + padX, ty + padY))
+                    x += tw + gap
+                }
+                val line = data.episodeLabel
+                val avail = (right - x).toInt()
+                if (line != null && avail > 0) {
+                    val m = measurer.measure(
+                        line,
+                        lineStyle.copy(color = fg),
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                        constraints = Constraints(maxWidth = avail),
+                    )
+                    drawText(m, topLeft = Offset(x, top + (h - m.size.height) / 2f))
+                }
+            }
+            .padding(bottom = HERO_HEADBAND)
     }
 
     /** A shelf edge of [edge] dp under the content, [gap] dp below it; TONIGHT adds the edge's soft shadow. */

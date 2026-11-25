@@ -158,7 +158,7 @@ object TicketCard : TitleCardStyle {
     }
 
     @Composable
-    private fun Segments(items: List<Segment>, hero: Boolean, small: Boolean, play: Boolean) {
+    private fun Segments(items: List<Segment>, hero: Boolean, small: Boolean, play: Boolean, title: String = "") {
         val perf = MaterialTheme.colorScheme.outline
         val value = TextStyle(
             fontFamily = transitDisplayFamily(),
@@ -192,7 +192,7 @@ object TicketCard : TitleCardStyle {
             }
             if (play) {
                 Perforation(perf)
-                Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) { PlayDisc() }
+                Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) { PlayDisc(title) }
             }
         }
     }
@@ -341,7 +341,7 @@ object TicketCard : TitleCardStyle {
                     } else {
                         CardTitle(data.title, maxLines = 1)
                     }
-                    Segments(segments(data, model, resume), hero = hero, small = size == CardSize.SMALL, play = resume)
+                    Segments(segments(data, model, resume), hero = hero, small = size == CardSize.SMALL, play = resume, title = data.title)
                     CardRoute(data, model, line, show, state.lit, height = if (hero) 18.dp else 12.dp, labels = hero, halo = floorColor)
                 }
             }

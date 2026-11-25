@@ -2052,12 +2052,6 @@ class PlayerViewModel(
         viewModelScope.launch { runCatching { repo.update { it.copy(stableVolume = enabled) } } }
     }
 
-    /** v1.2.0: switch between Cinema and Minimal touch player chrome styles live. */
-    fun setPlayerChromeStyle(style: app.nijiyome.model.PlayerChromeStyle) {
-        val repo = settingsRepository ?: return
-        viewModelScope.launch { runCatching { repo.update { it.copy(playerChromeStyle = style) } } }
-    }
-
     /**
      * 0.4.1 (subtitle settings, player sheet › Estilo): shows [style] on the playing session right away, without saving (a slider
      * being dragged). The screen-drawn lines follow the sheet's own draft; [saveSubtitleStyle] persists it.

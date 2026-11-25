@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ import app.nijiyome.designsystem.direction.DirectionDecor
 import app.nijiyome.designsystem.direction.EmptyKind
 import app.nijiyome.designsystem.direction.EpisodeMarkState
 import app.nijiyome.designsystem.direction.LocalSignalColors
+import app.nijiyome.designsystem.direction.RegionData
 import app.nijiyome.designsystem.direction.StatusSlot
 import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.designsystem.resources.Res
@@ -47,6 +49,36 @@ import org.jetbrains.compose.resources.stringResource
  * the kitsune inside the ensō is the empty art. Seals are never used as ornament.
  */
 internal object SumiDecor : DirectionDecor {
+
+    @Composable
+    override fun regionModifier(region: DecorRegion, data: RegionData): Modifier {
+        val connected = data.connected
+        return if (region == DecorRegion.LINK && connected != null) linkGlyph(connected) else regionModifier(region)
+    }
+
+    /**
+     * Link: two linked ensō above the region's content (artifact `.sm-link-glyph`), the second in the ok color; apart and faded when
+     * the devices are not connected. It sits in a strip reserved at the top so it never covers the content; static, so `rich` is moot.
+     */
+    @Composable
+    private fun linkGlyph(connected: Boolean): Modifier {
+        val a = MaterialTheme.colorScheme.primary
+        val b = if (connected) LocalSignalColors.current.ok else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        return Modifier
+            .drawWithCache {
+                // The artifact's 48 × 28 viewBox drawn at 40 × 24 dp.
+                val s = 40.dp.toPx() / 48f
+                val top = 4.dp.toPx()
+                val first = sumiEnsoPath(14f * s, top + 14f * s, 10.5f * s, 2.6f * s, -60f, 320f, 40)
+                val shift = if (connected) 0f else 6f * s
+                val second = sumiEnsoPath(34f * s + shift, top + 14f * s, 10.5f * s, 2.6f * s, 120f, 320f, 40)
+                onDrawBehind {
+                    drawPath(first, a)
+                    drawPath(second, b)
+                }
+            }
+            .padding(top = 32.dp)
+    }
 
     @Composable
     override fun regionModifier(region: DecorRegion): Modifier {

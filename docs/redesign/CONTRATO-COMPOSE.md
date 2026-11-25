@@ -35,13 +35,13 @@ usan `MaterialTheme`, los `CompositionLocal` y las funciones de este contrato. U
 - `core/designsystem/.../direction/Direction.kt`: `DirectionSpec`, `DirectionPalette`, `DirectionDecor`, `DecorRegion`,
   `StatusColors`, `SignalColors`, `StatusSlot`, `ThemeTone`, los locals (`LocalDirection`, `LocalThemeTone`,
   `LocalStatusColors`, `LocalSignalColors`, `LocalAccentFont`, `LocalCoverAccent`) y lo que llaman las pantallas:
-  `Modifier.decor(region)`, `SectionHeader`, `EpisodeMark`, `StatusMark`, `ProgressTrack`, `EmptyArt`.
+  `Modifier.decor(region)` y `Modifier.decor(region, data)` con `RegionData`, `regionContentColor(region)`, `SectionHeader`, `EpisodeMark`, `StatusMark`, `ProgressTrack`, `EmptyArt`.
 - `core/designsystem/.../direction/CanonDirection.kt`: implementación de referencia de una dirección y el registro
   `Directions`.
 - `core/designsystem/.../theme/NijiyomeTheme.kt`.
 - `core/designsystem/.../motion/MotionApi.kt`: firmas congeladas; **los cuerpos son de M1**.
 - `core/ui/.../cards/TitleCard.kt`: `TitleCardStyle`, `TitleCardData`, `CardContext`, `CardShow`, registro `TitleCards`,
-  `TitleCard(...)`, `Media.toCardData()`. `cards/MaterialCard.kt` es la implementación de referencia de una tarjeta.
+  `TitleCard(...)` (con `onPlay` e `index`), `LocalCardPlayAction`, `LocalCardIndex`, `Media.toCardData()`; `cards/CardPlay.kt` (`CardPlayTarget`). `cards/MaterialCard.kt` es la implementación de referencia de una tarjeta.
 - `core/ui/.../look/DesignUi.kt`: `design`, `structures`, `effectiveCardId()`, `ListStatus.slot()`, `rememberMotionChoices`.
 - `core/ui/.../media/MediaCard.kt`: `MediaCard(...)` ya despacha al estilo elegido; los sitios que la llaman no cambian.
 - `feature/shell/**` es solo de S1. `settings.gradle.kts`, `gradle/libs.versions.toml`, todos los `build.gradle.kts`,
@@ -75,6 +75,19 @@ val warn = LocalSignalColors.current.warn
 - Pon `Modifier.decor(DecorRegion.X)` en las regiones del artefacto (`data-region`): `HERO`, `TONIGHT`, `ROW`, `GRID`,
   `EPISODES`, `AIRING`, `STATUS_PICKER`, `LINK`, `PLAYER_SEEK`, `EMPTY`, `SHEET`. El shell pone `APP_BACKGROUND`, `RAIL`
   y `TOP_BAR`.
+- Datos de región: cuando la pantalla sabe algo de la región, `Modifier.decor(DecorRegion.X, RegionData(...))` (todos los campos
+  opcionales: `title`, `statusLabel`, `status`, `episodeLabel`, `progress`, `connected`, `chapterFractions` en 0..1, `accent`). La
+  dirección lo dibuja si quiere sobreescribiendo `regionModifier(region, data)`; por defecto se ignora y vale `regionModifier(region)`.
+  Hoy lo llenan la cabecera de la Ficha y el escenario de Inicio (`HERO`), la barra del reproductor (`PLAYER_SEEK`) y los paneles de
+  Link de Inicio (`LINK`).
+- Color de contenido de región: una región puede ser una isla oscura sobre tema claro (el tablero de Tránsito). Donde la pantalla
+  escribe texto directo sobre la región, `CompositionLocalProvider(LocalContentColor provides regionContentColor(DecorRegion.X))`;
+  la dirección lo sobreescribe con `DirectionDecor.regionContentColor(region)` (por defecto `LocalContentColor.current`).
+- Reproducir desde la tarjeta: `TitleCard(..., onPlay = { … })` en `CONTINUE` y `HERO` vuelve el disco de reproducir un botón
+  propio (48 dp, «Reproducir <título>»); sin `onPlay` queda decorativo. Los estilos lo leen de `LocalCardPlayAction` y envuelven su
+  disco en `CardPlayTarget(title) { … }`; los que limpian la semántica del contenido agregan `cardPlayAction` como acción accesible.
+- Índice de tarjeta: `TitleCard(..., index = i)` donde la fila ya tiene el índice (`itemsIndexed`); los estilos lo leen de
+  `LocalCardIndex` (-1 = sin índice) para escalonar (Sumi traza el ensō 70 ms por tarjeta, hasta seis).
 - Movimiento: `Modifier.homeEntrance(index)`, `Modifier.cardSway(seed)`, `Modifier.cardToDetailsSource(key)` /
   `cardToDetailsTarget(key)`, `WatchedTransition`, `PlayerControlsTransition`, `LoadingPlaceholder`,
   `StatusChangeTransition`, `SnackbarTransition`. Para lo demás, `LocalMotion.current.spatial` / `.rich` deciden si se

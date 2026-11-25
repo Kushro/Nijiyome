@@ -5,6 +5,7 @@ package app.nijiyome.ui.cards.tanabata
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -34,10 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -67,12 +70,16 @@ import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.designsystem.motion.MotionLevel
 import app.nijiyome.model.CardSize
 import app.nijiyome.model.Density
+import app.nijiyome.ui.cards.CardPlayTarget
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.look.CardSizing
 import app.nijiyome.ui.look.LocalLook
 import app.nijiyome.ui.media.MediaCover
+import app.nijiyome.ui.media.MediaStatusKind
 import app.nijiyome.ui.resources.Res
+import app.nijiyome.ui.resources.rd_contract_stamp_new
+import app.nijiyome.ui.resources.rd_contract_stamp_soon
 import app.nijiyome.ui.resources.rd_tanabata_continue
 import app.nijiyome.ui.resources.rd_tanabata_movie
 import app.nijiyome.ui.resources.ui_episodes_short
@@ -223,13 +230,57 @@ internal fun Modifier.tzFocusRing(state: TzState, corner: Dp = 2.dp): Modifier {
 
 /** Draws the thread from the rod (top of the card) down to the hole of a paper whose top edge is at [paperTop]. */
 @Composable
-internal fun Modifier.tzThread(paperTop: Dp, centerFraction: Float = 0.5f, knot: Boolean = true): Modifier {
-    val color = TanabataMaterials.thread(LocalThemeTone.current)
+internal fun Modifier.tzThread(
+    paperTop: Dp,
+    centerFraction: Float = 0.5f,
+    knot: Boolean = true,
+    color: Color? = null,
+    dashed: Boolean = false,
+): Modifier {
+    val thread = color ?: TanabataMaterials.thread(LocalThemeTone.current)
     return this.drawWithContent {
         drawContent()
         val x = size.width * centerFraction
-        drawThread(color, x, top = 2.dp.toPx(), bottom = (paperTop + TZ_HOLE_Y).toPx() + 1.dp.toPx(), knot = knot)
+        drawThread(thread, x, top = 2.dp.toPx(), bottom = (paperTop + TZ_HOLE_Y).toPx() + 1.dp.toPx(), knot = knot, dashed = dashed)
     }
+}
+
+/** What a hanging Continuar strip of "Esta noche" is (artifact `data-tz-kind`): just out, airing later, or to resume. */
+internal enum class TzTonightKind { NEW, SOON, RESUME }
+
+/**
+ * NEW when a new episode is out ([TitleCardData.isNew]); SOON when the next one has not aired yet (the screen gave the aired count
+ * without anything new, or the title has not started); RESUME otherwise.
+ */
+internal fun TitleCardData.tzTonightKind(): TzTonightKind = when {
+    isNew -> TzTonightKind.NEW
+    airedEpisodes != null || airing == MediaStatusKind.UPCOMING -> TzTonightKind.SOON
+    else -> TzTonightKind.RESUME
+}
+
+/** Lantern amber of a new episode's thread and knot (artifact `#ffb54d`). */
+private val TZ_NEW_THREAD = Color(0xFFFFB54D)
+
+/** The "Nuevo" / "Pronto" stamp across the top of a strip (artifact `.tz-paper::after`, tilted 4°). */
+@Composable
+private fun TzStamp(kind: TzTonightKind, modifier: Modifier = Modifier) {
+    if (kind == TzTonightKind.RESUME) return
+    val shape = RoundedCornerShape(3.dp)
+    val base = modifier.rotate(-4f)
+    val styled = if (kind == TzTonightKind.NEW) {
+        base.background(Brush.verticalGradient(listOf(Color(0xFFFFC56B), Color(0xFFF59A2A))), shape)
+    } else {
+        base
+            .background(TanabataMaterials.paper(null, LocalThemeTone.current), shape)
+            .border(1.dp, Color(0x5914102A), shape)
+    }
+    Text(
+        stringResource(if (kind == TzTonightKind.NEW) Res.string.rd_contract_stamp_new else Res.string.rd_contract_stamp_soon),
+        style = TzType.sub(10.5.sp, FontWeight.ExtraBold).copy(letterSpacing = 0.2.sp),
+        color = if (kind == TzTonightKind.NEW) Color(0xFF2A1600) else TanabataMaterials.ink,
+        maxLines = 1,
+        modifier = styled.padding(horizontal = 7.dp, vertical = 1.dp),
+    )
 }
 
 /** The thread hole of a paper, drawn over its content at the top center (or at [x] from the start). */
@@ -392,7 +443,7 @@ internal fun TzContinue(
 @Composable
 private fun continueSub(data: TitleCardData, texts: TzTexts): String = texts.wish ?: data.subtitle.orEmpty()
 
-/** The play disc of Continuar (decorative: the whole card resumes). */
+/** The play disc of Continuar; wrapped in [CardPlayTarget] it is the card's play button when the screen gives one. */
 @Composable
 internal fun TzPlayDisc(background: Color, glyph: Color, modifier: Modifier = Modifier, lifted: Boolean = false) {
     val perf = LocalMotion.current.level == MotionLevel.PERF
@@ -427,11 +478,15 @@ private fun TzContinueTall(
     val threadH = if (hangs) TZ_THREAD_TONIGHT else 0.dp
     val sub = continueSub(data, texts)
     val description = stringResource(Res.string.rd_tanabata_continue, texts.title, sub.ifEmpty { texts.statusLine })
+    // Hanging in "Esta noche": a new episode gets the amber thread and knot and the "Nuevo" stamp, one still to air a dotted thread
+    // and the "Pronto" stamp; a strip to resume keeps only its ink.
+    val kind = if (hangs) data.tzTonightKind() else TzTonightKind.RESUME
+    val thread = if (kind == TzTonightKind.NEW) TZ_NEW_THREAD else null
     Column(
         modifier
             .width(continueWidth(size).dense())
             .tzClickable(interaction, onClick, onLongClick, description)
-            .then(if (hangs) Modifier.tzThread(threadH) else Modifier)
+            .then(if (hangs) Modifier.tzThread(threadH, color = thread, dashed = kind == TzTonightKind.SOON) else Modifier)
             .padding(top = threadH),
     ) {
         Column(
@@ -442,7 +497,10 @@ private fun TzContinueTall(
         ) {
             Box(Modifier.padding(start = 6.dp, end = 6.dp, top = 16.dp)) {
                 TzPoster(data.coverUrl, tzPaperShape)
-                TzPlayDisc(TanabataMaterials.ink, base, Modifier.align(Alignment.BottomEnd).padding(end = 6.dp, bottom = 8.dp), lifted = true)
+                TzStamp(kind, Modifier.align(Alignment.TopStart).padding(start = 4.dp, top = 5.dp))
+                CardPlayTarget(texts.title, Modifier.align(Alignment.BottomEnd).padding(end = 6.dp, bottom = 8.dp)) {
+                    TzPlayDisc(TanabataMaterials.ink, base, lifted = true)
+                }
             }
             Column(
                 Modifier
@@ -531,6 +589,8 @@ private fun TzContinueWide(
                 if (panel) TzTag(it, data.listStatus) else Text(it, style = TzType.sub(12.5.sp), color = textColor, maxLines = 1)
             }
         }
-        if (panel) TzPlayDisc(cs.primary, cs.onPrimary) else TzPlayDisc(TanabataMaterials.ink, base)
+        CardPlayTarget(texts.title) {
+            if (panel) TzPlayDisc(cs.primary, cs.onPrimary) else TzPlayDisc(TanabataMaterials.ink, base)
+        }
     }
 }

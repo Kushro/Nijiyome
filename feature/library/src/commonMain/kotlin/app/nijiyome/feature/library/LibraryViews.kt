@@ -226,6 +226,7 @@ internal fun ContinueOnlyPane(continueWatching: LoadState<List<HistoryEntry>>, s
                         onClick = { screen.onPlay(e.toResumeArgs()) },
                         context = CardContext.GRID,
                         modifier = Modifier.cardSway(i),
+                        index = i,
                     )
                 }
             }

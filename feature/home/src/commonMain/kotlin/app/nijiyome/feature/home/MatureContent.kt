@@ -175,6 +175,9 @@ fun GatedTitleCard(
     context: CardContext = CardContext.ROW,
     show: CardShow = CardShow(),
     onLongClick: (() -> Unit)? = null,
+    /** Play / resume from the card's play disc (CONTINUE, HERO); goes through the gate like a tap. */
+    onPlay: (() -> Unit)? = null,
+    index: Int = -1,
 ) {
     val hidden = gate.isHidden(media) && gate.mode == MatureContentMode.BLUR
     Box(modifier) {
@@ -185,6 +188,8 @@ fun GatedTitleCard(
             context = context,
             show = show,
             onLongClick = onLongClick,
+            onPlay = onPlay?.let { play -> { gate.open(media, play) } },
+            index = index,
         )
         if (hidden) {
             Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
