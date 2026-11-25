@@ -225,7 +225,7 @@ fun Modifier.tanzakuPaper(
     fibreTile: Dp = 160.dp,
 ): Modifier {
     val tone = LocalThemeTone.current
-    val perf = LocalMotion.current.level == MotionLevel.PERF || LocalMotion.current.level == MotionLevel.OFF
+    val perf = LocalMotion.current.level == MotionLevel.PERF
     val shadowColor = TanabataMaterials.paperShadow(tone)
     val lifted = when {
         !elevated -> this
