@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -89,6 +90,7 @@ internal class LinkRouter(private val s: LinkServer) {
             }
             rest == listOf("history", "mode") -> on(call, method, HttpMethod.Get) { historyMode(call, device) }
             rest == listOf("history", "resync-done") -> on(call, method, HttpMethod.Post) { historyResyncDone(call, device) }
+            rest == listOf("logs") -> on(call, method, HttpMethod.Post) { pushLogs(call, device) }
             rest == listOf("devices", "self") -> on(call, method, HttpMethod.Delete) { forgetSelf(call, device) }
             rest == listOf("control") -> on(call, method, HttpMethod.Post) { control(call) }
             rest == listOf("player") -> on(call, method, HttpMethod.Get) { player(call) }
@@ -215,6 +217,22 @@ internal class LinkRouter(private val s: LinkServer) {
         val ok = withContext(Dispatchers.IO) { s.host.historyClear() }
         if (!ok) api(ErrorCode.INTERNAL)
         respondEmpty(call, HttpStatusCode.NoContent)
+    }
+
+    /** `POST /v1/logs`: receives scrubbed diagnostic log lines from a paired device (max 256 KiB, max 1000 lines). */
+    private suspend fun pushLogs(call: ApplicationCall, device: String) {
+        val o = readObject(call, 256 * 1024)
+        if (!setOf("lines", "app_version", "platform").containsAll(o.keys)) api(ErrorCode.REQUEST_INVALID)
+        val arr = o["lines"] as? JsonArray ?: api(ErrorCode.REQUEST_INVALID)
+        if (arr.size > 1000) api(ErrorCode.REQUEST_INVALID)
+        val lines = arr.map { el -> (el as? JsonPrimitive)?.takeIf { it.isString }?.content ?: api(ErrorCode.REQUEST_INVALID) }
+        val appVersion = o.optStr("app_version")
+        val platform = o.optStr("platform")
+        val deviceName = s.devices.get(device)?.name ?: device
+        val accepted = withContext(Dispatchers.IO) {
+            s.host.receiveLogs(device, deviceName, lines, appVersion, platform)
+        }
+        respondJson(call, HttpStatusCode.OK, buildJsonObject { put("accepted", accepted) })
     }
 
     private suspend fun forgetSelf(call: ApplicationCall, device: String) {

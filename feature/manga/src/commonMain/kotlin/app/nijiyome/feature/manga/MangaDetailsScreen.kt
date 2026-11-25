@@ -184,6 +184,7 @@ fun MangaDetailsScreen(
 
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(

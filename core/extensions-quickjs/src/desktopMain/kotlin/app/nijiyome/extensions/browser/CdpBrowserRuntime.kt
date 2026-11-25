@@ -160,7 +160,7 @@ class CdpBrowserRuntime(
         }
 
     companion object {
-        private const val START_MARGIN_MS = 20_000L
+        private const val START_MARGIN_MS = 35_000L
 
         /** What [capped] answers instead of a result over [BrowserPolicy.MAX_RESULT_BYTES]. */
         internal const val TOO_LARGE_MARK = "__nijiyome_result_too_large__"

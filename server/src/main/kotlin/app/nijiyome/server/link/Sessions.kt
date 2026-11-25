@@ -54,6 +54,28 @@ import kotlin.math.floor
 /** A segment PUT that the sink refuses: a bad file name (400) or a run that is no longer current (409). */
 enum class SinkResult { OK, BAD_NAME, STALE }
 
+/** v1.2.0: Immutable live telemetry snapshot of an active Link session. */
+data class SessionSnapshot(
+    val sessionId: String,
+    val deviceId: String,
+    val title: String?,
+    val episode: Int?,
+    val sourceKind: String,
+    val profile: ProfileSpec,
+    val encoder: Encoder,
+    val lsfgRate: FrameRate?,
+    val positionSecs: Double,
+    val durationSecs: Double?,
+    val paused: Boolean,
+    val cachedBytes: Long,
+    val cachedSegments: Int,
+    val cachedFromSecs: Double?,
+    val cachedToSecs: Double?,
+    val leadSecs: Double,
+    val throttled: Boolean,
+    val segIntervalMs: Long?,
+)
+
 /** One transcoding session: on-demand fMP4 HLS with a RAM window; the engine runs produce segments into it through the sink. */
 class Session internal constructor(
     val id: String,
@@ -71,6 +93,9 @@ class Session internal constructor(
     val workdir: File,
     val subs: SubtitleStore,
     startSegment: Int,
+    val sourceKind: String = "url",
+    val sourceLabel: String? = null,
+    val episode: Int? = null,
 ) {
     /** Guarded by `this`. */
     internal var phase: Phase = Phase.Preparing
@@ -186,6 +211,35 @@ class Manager(
 
     fun deviceIds(): List<String> = byDevice.keys.toList()
 
+    /** v1.2.0: Thread-safe live telemetry snapshot of all active transcode / upscale / FG sessions. */
+    fun activeSnapshots(): List<SessionSnapshot> = sessions.values.map { s ->
+        synchronized(s) {
+            val firstSeg = s.segs.firstEntry()?.key
+            val lastSeg = s.segs.lastEntry()?.key
+            val leadSegs = if (lastSeg != null) (lastSeg - s.playhead).coerceAtLeast(0) else 0
+            SessionSnapshot(
+                sessionId = s.id,
+                deviceId = s.deviceId,
+                title = s.sourceLabel,
+                episode = s.episode,
+                sourceKind = s.sourceKind,
+                profile = s.profile,
+                encoder = s.encoder,
+                lsfgRate = s.lsfgRate,
+                positionSecs = s.playhead * SEGMENT_SECS.toDouble(),
+                durationSecs = s.duration,
+                paused = s.paused,
+                cachedBytes = s.bytes,
+                cachedSegments = s.segs.size,
+                cachedFromSecs = firstSeg?.let { it * SEGMENT_SECS.toDouble() },
+                cachedToSecs = lastSeg?.let { (it + 1) * SEGMENT_SECS.toDouble() },
+                leadSecs = leadSegs * SEGMENT_SECS.toDouble(),
+                throttled = s.throttled,
+                segIntervalMs = s.segIntervalMs,
+            )
+        }
+    }
+
     // ---- create / close -----------------------------------------------------------------------------------------------
 
     suspend fun create(deviceId: String, req: CreateRequest): SessionCreatedDto {
@@ -231,11 +285,23 @@ class Manager(
         // a start past any source (no duration known) is clamped: `start * SEGMENT_SECS` must never overflow FFmpeg's `-ss`
         var start = floor(req.startSecs / SEGMENT_SECS).toInt().coerceAtMost(MAX_SEGMENT_INDEX)
         if (total != null) start = minOf(start, (total - 1).coerceAtLeast(0))
+        val sourceKind = prepared.source.kind
+        val episode = (prepared.source as? SourceRequest.Torrent)?.episode?.coerceAtMost(Int.MAX_VALUE.toLong())?.toInt()
+        val sourceLabel = req.title?.takeIf { it.isNotBlank() }
+            ?: torrent?.title?.takeIf { it.isNotBlank() }
+            ?: when (val src = prepared.source) {
+                is SourceRequest.Library -> host.libraryPath(src.itemId)?.nameWithoutExtension
+                is SourceRequest.Url -> src.url.toHttpUrlOrNull()?.pathSegments?.lastOrNull()?.takeIf { it.isNotBlank() && it != "master.m3u8" }
+                    ?: src.url.toHttpUrlOrNull()?.host
+                is SourceRequest.Torrent -> "Torrent #${src.mediaId}"
+                is SourceRequest.Session -> null
+            }
         val session = Session(
             id = id, deviceId = deviceId, profile = prepared.profile, encoder = prepared.encoder, inputUrl = opened.inputUrl,
             fetchToken = fetchToken, sinkToken = UUID.randomUUID().toString().replace("-", ""), duration = opened.duration,
             torrentId = torrent?.torrentId, audioTrack = req.audioTrack.toInt(), shader = shader, lsfgRate = prepared.lsfgRate,
             workdir = workdir, subs = subs, startSegment = start,
+            sourceKind = sourceKind, sourceLabel = sourceLabel, episode = episode,
         )
         // one active session per device; BUG-131: only now, with the new source already open. Under the device's lock, so two
         // concurrent creates of one phone cannot both survive, and a revocation during the preparation refuses the new session.
@@ -719,10 +785,12 @@ class Manager(
         }
     }
 
-    /** Drops segments from the RAM window; what the phone is about to play is never evicted, even over the budget. */
+    /**
+     * Drops segments from the RAM window only when exceeding [SessionTuning.maxRamBytes]; previously processed segments
+     * stay cached for instant rewinds (zero Anime4K / LSFG re-processing) until the RAM budget is reached.
+     * What the phone is about to play is never evicted, even over the budget.
+     */
     private fun evict(s: Session) {
-        val keepFrom = (s.playhead - KEEP_BEHIND).coerceAtLeast(0)
-        s.segs.headMap(keepFrom).keys.toList().forEach(s::removeSeg)
         val protectFrom = (s.playhead - PROTECT_BEHIND).coerceAtLeast(0)
         val protectTo = maxOf(satAdd(s.playhead, lead(s)), s.wanted)
         while (s.bytes > tuning.maxRamBytes) {

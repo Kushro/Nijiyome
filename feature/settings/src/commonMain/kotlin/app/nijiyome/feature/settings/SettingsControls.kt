@@ -1,5 +1,6 @@
 package app.nijiyome.feature.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,20 +23,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.theme.LocalNijiyomeAmoled
 import app.nijiyome.model.SettingsSection
 
 /** Prototype `.panel` of one settings section: icon + title header, then the rows. */
 @Composable
 internal fun SectionPanel(section: SettingsSection, content: @Composable ColumnScope.() -> Unit) {
+    val amoled = LocalNijiyomeAmoled.current
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.large,
+        border = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -99,9 +104,16 @@ private fun SettingText(label: String, hint: String?) {
 
 /** Whole row toggles (Role.Switch), switch on the right. */
 @Composable
-internal fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit, hint: String? = null, enabled: Boolean = true) {
+internal fun SwitchRow(
+    label: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+    hint: String? = null,
+    enabled: Boolean = true,
+    divider: Boolean = true,
+) {
     Column(Modifier.fillMaxWidth()) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        if (divider) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Row(
             Modifier
                 .fillMaxWidth()
@@ -124,7 +136,7 @@ internal fun NavRow(icon: ImageVector, label: String, onClick: () -> Unit, suppo
         supportingContent = supporting?.let { { Text(it) } },
         leadingContent = { Icon(icon, contentDescription = null) },
         trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
-        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = onClick),
     )
 }

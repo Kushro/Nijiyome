@@ -107,6 +107,7 @@ import app.nijiyome.model.LoadState
 import app.nijiyome.model.PlayerArgs
 import app.nijiyome.ui.format.relativeTime
 import app.nijiyome.ui.platform.rememberNotificationPermission
+import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.userMessage
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
@@ -157,6 +158,7 @@ fun LinkedDeviceScreen(
     LaunchedEffect(viewModel, paired) { if (paired) viewModel.pollRemote() }
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = screenInsets,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.linked_title)) },

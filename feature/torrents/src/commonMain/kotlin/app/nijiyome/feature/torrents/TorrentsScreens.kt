@@ -172,32 +172,40 @@ fun TorrentsScreen(
                 TorrentSection.HISTORY -> HistorySection(onOpenTorrent = { onNavigate(TorrentSection.OVERVIEW, it) }, modifier = Modifier.fillMaxSize())
                 TorrentSection.DEBRID -> DebridSection(modifier = Modifier.fillMaxSize())
                 else -> {
-                    val destination = ThreePaneScaffoldDestinationItem(
-                        if (torrentId != null) ListDetailPaneScaffoldRole.Detail else ListDetailPaneScaffoldRole.List,
-                        torrentId,
-                    )
-                    val value = calculateThreePaneScaffoldValue(
-                        maxHorizontalPartitions = directive.maxHorizontalPartitions,
-                        adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
-                        currentDestination = destination,
-                    )
-                    ListDetailPaneScaffold(
-                        directive = directive,
-                        value = value,
-                        listPane = {
-                            AnimatedPane {
-                                LibraryPane(
-                                    picking = section.perTorrent && torrentId == null,
-                                    selectedId = torrentId,
-                                    onOpen = { id -> onNavigate(if (section.perTorrent) section else TorrentSection.OVERVIEW, id) },
-                                    onOpenLibrary = { onNavigate(TorrentSection.LIBRARY, null) },
-                                    onPlay = onPlay,
-                                )
-                            }
-                        },
-                        detailPane = {
-                            AnimatedPane {
-                                if (torrentId != null) {
+                    if (torrentId == null) {
+                        LibraryPane(
+                            picking = section.perTorrent,
+                            selectedId = null,
+                            onOpen = { id -> onNavigate(if (section.perTorrent) section else TorrentSection.OVERVIEW, id) },
+                            onOpenLibrary = { onNavigate(TorrentSection.LIBRARY, null) },
+                            onPlay = onPlay,
+                        )
+                    } else {
+                        val destination = ThreePaneScaffoldDestinationItem(
+                            ListDetailPaneScaffoldRole.Detail,
+                            torrentId,
+                        )
+                        val value = calculateThreePaneScaffoldValue(
+                            maxHorizontalPartitions = directive.maxHorizontalPartitions,
+                            adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
+                            currentDestination = destination,
+                        )
+                        ListDetailPaneScaffold(
+                            directive = directive,
+                            value = value,
+                            listPane = {
+                                AnimatedPane {
+                                    LibraryPane(
+                                        picking = section.perTorrent,
+                                        selectedId = torrentId,
+                                        onOpen = { id -> onNavigate(if (section.perTorrent) section else TorrentSection.OVERVIEW, id) },
+                                        onOpenLibrary = { onNavigate(TorrentSection.LIBRARY, null) },
+                                        onPlay = onPlay,
+                                    )
+                                }
+                            },
+                            detailPane = {
+                                AnimatedPane {
                                     TorrentDetailPane(
                                         torrentId = torrentId,
                                         initialSection = if (section.perTorrent) section else TorrentSection.OVERVIEW,
@@ -205,18 +213,11 @@ fun TorrentsScreen(
                                         onPlay = onPlay,
                                         showBack = !twoPanes,
                                     )
-                                } else {
-                                    EmptyState(
-                                        icon = Icons.Outlined.TouchApp,
-                                        title = stringResource(Res.string.torrent_shell_pick_title),
-                                        message = stringResource(Res.string.torrent_shell_pick_body),
-                                        modifier = Modifier.fillMaxSize(),
-                                    )
                                 }
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
             }
         }

@@ -26,6 +26,7 @@ class DesktopSystemPrefsStore(private val file: File) {
             startMinimized = flag("startMinimized", d.startMinimized),
             startWithSystem = flag("startWithSystem", d.startWithSystem),
             discordPresence = flag("discordPresence", d.discordPresence),
+            nativeTitleBar = flag("nativeTitleBar", d.nativeTitleBar),
         )
     }
 
@@ -36,6 +37,7 @@ class DesktopSystemPrefsStore(private val file: File) {
         p["startMinimized"] = prefs.startMinimized.toString()
         p["startWithSystem"] = prefs.startWithSystem.toString()
         p["discordPresence"] = prefs.discordPresence.toString()
+        p["nativeTitleBar"] = prefs.nativeTitleBar.toString()
         file.parentFile?.mkdirs()
         val tmp = File(file.parentFile, file.name + ".tmp")
         tmp.outputStream().use { p.store(it, "Nijiyome desktop system settings") }

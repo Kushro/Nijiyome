@@ -3,11 +3,13 @@ package app.nijiyome.link
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.put
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
@@ -256,6 +258,31 @@ class LinkClient(private val baseUrl: HttpUrl, private val client: OkHttpClient)
     suspend fun historyClear(): LinkResult<Unit> =
         LinkHttp.exchange(client, LinkHttp.request(url("v1/history")).delete().build(), MAX_JSON) { _, _ -> Unit }
 
+    /** `POST /v1/logs`: ships scrubbed diagnostic log lines from this device to the paired PC (<= 256 KiB). */
+    suspend fun pushLogs(lines: List<String>, appVersion: String? = null, platform: String? = null): LinkResult<Int> {
+        if (lines.isEmpty()) return LinkResult.Ok(0)
+        // Trim to fit comfortably under the 256 KiB server limit.
+        val capped = ArrayList<String>(lines.size.coerceAtMost(500))
+        var bytes = 128
+        for (line in lines.takeLast(500)) {
+            val clean = line.take(2048)
+            val est = clean.length + 16
+            if (bytes + est > MAX_LOGS_BODY) break
+            capped += clean
+            bytes += est
+        }
+        val body = buildJsonObject {
+            put("lines", JsonArray(capped.map { JsonPrimitive(it) }))
+            if (!appVersion.isNullOrBlank()) put("app_version", appVersion)
+            if (!platform.isNullOrBlank()) put("platform", platform)
+        }.toString().toByteArray(Charsets.UTF_8)
+        val request = LinkHttp.request(url("v1/logs")).post(body.toRequestBody(LinkHttp.JSON_TYPE)).build()
+        return LinkHttp.exchange(client, request, MAX_JSON) { _, b ->
+            val obj = runCatching { LinkHttp.json.parseToJsonElement(b.decodeToString()) as? JsonObject }.getOrNull()
+            (obj?.get("accepted") as? JsonPrimitive)?.intOrNull ?: capped.size
+        }
+    }
+
     // --- parity wave B (16 §3.11, worker r): remote control, hand-off and PC -> phone events (canonical wire: LinkControl.kt) ---
 
     private val control by lazy { LinkControlClient(baseUrl, client) }
@@ -303,6 +330,7 @@ class LinkClient(private val baseUrl: HttpUrl, private val client: OkHttpClient)
         /** BUG-009: read / call timeout of a `torrent` session create (the PC waits up to 75 s for metadata). */
         const val TORRENT_CREATE_SECS = 90L
         private const val MAX_JSON = 256L * 1024
+        private const val MAX_LOGS_BODY = 200 * 1024
         private const val MAX_LIBRARY = 8L * 1024 * 1024
         /** tk-link `subtitles::MAX_FILE_BYTES`. */
         private const val MAX_SUBTITLE = 8L * 1024 * 1024

@@ -98,7 +98,7 @@ sealed interface SourceRequest {
     }
 }
 
-data class CreateRequest(val source: SourceRequest, val profile: String?, val audioTrack: Long = 0, val startSecs: Double = 0.0)
+data class CreateRequest(val source: SourceRequest, val profile: String?, val audioTrack: Long = 0, val startSecs: Double = 0.0, val title: String? = null)
 
 /** Back-pressure: segment [k] waits while more than [maxLead] past the playhead, unless a phone waits for it or a later one (BUG-058). */
 fun leadExceeded(k: Int, playhead: Int, wanted: Int, maxLead: Int): Boolean = k > satAdd(playhead, maxLead) && k > wanted

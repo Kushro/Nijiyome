@@ -331,7 +331,7 @@ class DetailsViewModelTest {
     }
 
     @Test
-    fun `a source chosen in the panel picker is passed once, unconfirmed`() = runTest {
+    fun `a source chosen in the panel picker is passed once, confirmed`() = runTest {
         val vm = vm()
         vm.events.test {
             vm.openPicker(playOnPick = false)
@@ -340,7 +340,7 @@ class DetailsViewModelTest {
             vm.onWatch()
             val first = assertIs<DetailsEvent.NavigateToPlayer>(awaitItem())
             assertEquals(torrent().key, first.args.sourceKey)
-            assertFalse(first.args.sourceConfirmed, "Manual still asks, with it preselected")
+            assertTrue(first.args.sourceConfirmed, "already picked in Details: Manual plays it without asking a second time")
             vm.onWatch()
             assertNull(assertIs<DetailsEvent.NavigateToPlayer>(awaitItem()).args.sourceKey)
         }

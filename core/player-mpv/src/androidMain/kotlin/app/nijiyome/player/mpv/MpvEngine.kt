@@ -290,10 +290,10 @@ class MpvEngine(context: Context, private val tlsVerify: Boolean = false) {
         refreshTracks()
     }
 
-    /** mpv `aid`. */
+    /** mpv `aid` (`AUDIO_TRACK_OFF` disables audio with `aid=no`). */
     fun selectAudio(id: Int) {
         if (released) return
-        mpv.setPropertyString("aid", id.toString())
+        mpv.setPropertyString("aid", if (id == app.nijiyome.player.AUDIO_TRACK_OFF) "no" else id.toString())
         refreshTracks()
     }
 
@@ -514,6 +514,7 @@ class MpvEngine(context: Context, private val tlsVerify: Boolean = false) {
                 codec = mpv.getPropertyString("track-list/$i/codec"),
                 selected = mpv.getPropertyBoolean("track-list/$i/selected") == true,
                 external = mpv.getPropertyBoolean("track-list/$i/external") == true,
+                channels = if (type == "audio") mpv.getPropertyInt("track-list/$i/demux-channel-count")?.takeIf { it > 0 } else null,
             )
             when (type) {
                 "sub" -> subs += track

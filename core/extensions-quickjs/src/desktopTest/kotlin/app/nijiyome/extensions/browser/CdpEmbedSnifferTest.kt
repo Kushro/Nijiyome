@@ -71,8 +71,12 @@ class CdpEmbedSnifferTest {
         val embed = pages.awaitRequest("/embed")
         assertEquals("1", embed.headers["X-Ext"])
         assertEquals("NijiyomeTest/1.0", embed.headers["User-Agent"])
-        val media = pages.awaitRequest("/hls/master.m3u8")
-        assertNull(media.headers["X-Ext"], "extra headers are for the embed page itself, as on Android")
+        assertNull(cap.headers["X-Ext"], "extra headers are for the embed page itself, as on Android")
+        // sniff() closes the tab right after Network.requestWillBeSent, so Chromium may abort the media request before it hits LocalPages.
+        val media = runCatching { pages.awaitRequest("/hls/master.m3u8", timeoutMs = 1_500) }.getOrNull()
+        if (media != null) {
+            assertNull(media.headers["X-Ext"], "extra headers are for the embed page itself, as on Android")
+        }
         assertEquals("NijiyomeTest/1.0", cap.headers["User-Agent"])
     }
 

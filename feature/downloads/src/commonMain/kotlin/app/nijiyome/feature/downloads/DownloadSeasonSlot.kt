@@ -217,6 +217,7 @@ fun DownloadsSettingsSection(settings: AppSettings, onUpdate: (transform: (AppSe
                     },
                 )
             },
+            colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
         )
         Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { pickFolder() }) {
@@ -365,6 +366,7 @@ private fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: (
         headlineContent = { Text(title) },
         supportingContent = { Text(hint) },
         trailingContent = { Switch(checked = checked, onCheckedChange = onChange) },
+        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
         modifier = Modifier.clickable { onChange(!checked) },
     )
 }

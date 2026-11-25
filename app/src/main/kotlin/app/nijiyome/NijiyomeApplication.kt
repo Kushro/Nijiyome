@@ -1,10 +1,16 @@
 package app.nijiyome
 
 import android.app.Application
+import app.nijiyome.data.AppLogStore
 import app.nijiyome.data.HistorySyncScheduler
 import app.nijiyome.data.PROP_ANILIST_CLIENT_ID
 import app.nijiyome.data.PROP_MAL_CLIENT_ID
 import app.nijiyome.data.dataModule
+import app.nijiyome.link.LinkLogShipper
+import app.nijiyome.link.LinkRepositoryImpl
+import app.nijiyome.model.LogPushTrigger
+import app.nijiyome.model.LogRepository
+import java.io.File
 import app.nijiyome.database.databaseModule
 import app.nijiyome.discover.discoverModule
 import app.nijiyome.download.downloadModule
@@ -45,6 +51,18 @@ private val appModule = module {
     // 0.4.0 integration: Link "Mixto" needs the phone frame generation (frameGenModule); FG runs on the main thread.
     single<app.nijiyome.model.PhoneFrameGenGate> {
         FrameGenLinkGate(get(), kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main))
+    }
+    // Automatically ships scrubbed Android diagnostic logs & crashes to the paired PC via POST /v1/logs.
+    single<LogPushTrigger>(createdAtStart = true) {
+        val ctx = androidContext()
+        val version = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty()
+        LinkLogShipper(
+            link = get<LinkRepositoryImpl>(),
+            logs = { getOrNull<LogRepository>() },
+            cursorFile = File(ctx.noBackupFilesDir, "link-log-cursor.txt"),
+            appVersion = version,
+            platform = "android-${android.os.Build.VERSION.RELEASE}",
+        ).also { it.start() }
     }
 }
 
@@ -90,5 +108,11 @@ class NijiyomeApplication : Application() {
             )
             modules(nijiyomeModules)
         }
+        val logRepo = org.koin.core.context.GlobalContext.get().getOrNull<LogRepository>()
+        val version = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull().orEmpty()
+        (logRepo as? AppLogStore)?.installCrashHandler(
+            appVersion = version,
+            platform = "android-${android.os.Build.VERSION.RELEASE}",
+        )
     }
 }

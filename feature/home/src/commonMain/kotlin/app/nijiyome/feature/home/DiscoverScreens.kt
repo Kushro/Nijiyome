@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -71,6 +73,7 @@ import app.nijiyome.designsystem.components.Pill
 import app.nijiyome.designsystem.components.PillTone
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.designsystem.components.rememberAfterDelay
 import app.nijiyome.model.AiringEpisode
 import app.nijiyome.model.AiringRepository
@@ -83,9 +86,11 @@ import app.nijiyome.model.RecReasonKind
 import app.nijiyome.model.RecommendationItem
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.ui.labels.genreLabel
 import app.nijiyome.ui.media.LocalTitleLanguage
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.displayTitle
+import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.userMessage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.SupervisorJob
@@ -166,23 +171,29 @@ fun ForYouScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifier:
     val snackbar = LocalAppSnackbar.current
     val undoLabel = stringResource(Res.string.home_recs_undo)
     val dismissedMsg = stringResource(Res.string.home_recs_dismissed)
-    Scaffold(modifier = modifier, topBar = { DiscoverTopBar(stringResource(Res.string.home_for_you_title), onBack) }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            Segmented(
-                options = listOf(
-                    SegmentedOption(ForYouTab.LIST, stringResource(Res.string.home_recs_tab_list), icon = Icons.Outlined.Explore),
-                    SegmentedOption(ForYouTab.ATLAS, stringResource(Res.string.home_recs_tab_atlas), icon = Icons.Outlined.Hub),
-                ),
-                selected = state.tab,
-                onSelect = vm::selectTab,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            when (state.tab) {
-                ForYouTab.LIST -> RecsList(state, onMediaClick, onRetry = vm::load, onNotInterested = { item ->
-                    vm.notInterested(item.media.ref)
-                    snackbar.show(dismissedMsg, undoLabel) { vm.undo(item.media.ref) }
-                })
-                ForYouTab.ATLAS -> AtlasTab(state.atlas, onMediaClick, onRetry = vm::loadAtlas)
+    Scaffold(
+        modifier = modifier,
+        contentWindowInsets = screenInsets,
+        topBar = { DiscoverTopBar(stringResource(Res.string.home_for_you_title), onBack) },
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+            Column(Modifier.widthIn(max = 840.dp).fillMaxSize()) {
+                Segmented(
+                    options = listOf(
+                        SegmentedOption(ForYouTab.LIST, stringResource(Res.string.home_recs_tab_list), icon = Icons.Outlined.Explore),
+                        SegmentedOption(ForYouTab.ATLAS, stringResource(Res.string.home_recs_tab_atlas), icon = Icons.Outlined.Hub),
+                    ),
+                    selected = state.tab,
+                    onSelect = vm::selectTab,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                when (state.tab) {
+                    ForYouTab.LIST -> RecsList(state, onMediaClick, onRetry = vm::load, onNotInterested = { item ->
+                        vm.notInterested(item.media.ref)
+                        snackbar.show(dismissedMsg, undoLabel) { vm.undo(item.media.ref) }
+                    })
+                    ForYouTab.ATLAS -> AtlasTab(state.atlas, onMediaClick, onRetry = vm::loadAtlas)
+                }
             }
         }
     }
@@ -201,8 +212,12 @@ private fun RecsList(state: ForYouUiState, onMediaClick: (Media) -> Unit, onRetr
                     item(key = "profile") {
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(stringResource(Res.string.home_recs_profile, p.sampleSize), style = MaterialTheme.typography.titleSmall)
-                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                p.genres.entries.sortedByDescending { it.value }.take(6).forEach { InfoChip(it.key) }
+                            val scroll = rememberScrollState()
+                            Row(
+                                Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                p.genres.entries.sortedByDescending { it.value }.take(6).forEach { InfoChip(genreLabel(it.key)) }
                             }
                         }
                     }
@@ -234,7 +249,11 @@ private fun RecRow(item: RecommendationItem, onClick: () -> Unit, onNotIntereste
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(item.media.displayTitle(LocalTitleLanguage.current), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Pill(stringResource(Res.string.home_recs_affinity, (item.affinity * 100).roundToInt()), tone = PillTone.OK)
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            val reasonScroll = rememberScrollState()
+            Row(
+                Modifier.fillMaxWidth().horizontalFadingEdge(reasonScroll).horizontalScroll(reasonScroll),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 item.reasons.forEach { InfoChip(reasonLabel(it)) }
             }
             TextButton(onClick = onNotInterested, contentPadding = PaddingValues(horizontal = 0.dp)) { Text(stringResource(Res.string.home_recs_not_interested)) }
@@ -264,26 +283,27 @@ private fun AtlasCanvas(points: List<AtlasPoint>, onMediaClick: (Media) -> Unit)
     val ring = MaterialTheme.colorScheme.onSurface
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(Res.string.home_recs_atlas_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
+        Box(Modifier.weight(1f).fillMaxWidth().heightIn(max = 520.dp), contentAlignment = Alignment.Center) {
             Canvas(
-                Modifier.fillMaxSize().pointerInput(points) {
+                Modifier.fillMaxSize().aspectRatio(1f, matchHeightConstraintsFirst = true).pointerInput(points) {
                     detectTapGestures { tap ->
-                        val pad = 24f
+                        val pad = 20.dp.toPx()
+                        val hitRadius = 28.dp.toPx()
                         val w = size.width - 2 * pad
                         val h = size.height - 2 * pad
                         val hit = points.minByOrNull { p -> hypot(pad + p.x * w - tap.x, pad + p.y * h - tap.y) }
-                        if (hit != null && hypot(pad + hit.x * w - tap.x, pad + hit.y * h - tap.y) < 48f) onMediaClick(hit.media)
+                        if (hit != null && hypot(pad + hit.x * w - tap.x, pad + hit.y * h - tap.y) < hitRadius) onMediaClick(hit.media)
                     }
                 },
             ) {
-                val pad = 24f
+                val pad = 20.dp.toPx()
                 val w = size.width - 2 * pad
                 val h = size.height - 2 * pad
                 points.forEach { p ->
                     val c = Offset(pad + p.x * w, pad + p.y * h)
                     val color = palette[p.cluster.mod(palette.size)]
-                    drawCircle(color = color, radius = if (p.recommended) 9f else 14f, center = c)
-                    if (p.recommended) drawCircle(color = ring, radius = 12f, center = c, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
+                    drawCircle(color = color, radius = if (p.recommended) 5.dp.toPx() else 7.dp.toPx(), center = c)
+                    if (p.recommended) drawCircle(color = ring, radius = 7.dp.toPx(), center = c, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()))
                 }
             }
         }

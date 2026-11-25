@@ -170,7 +170,7 @@ class ChromiumHost(
 
     companion object {
         const val DEFAULT_IDLE_MS = 60_000L
-        private const val START_TIMEOUT_MS = 20_000L
+        private const val START_TIMEOUT_MS = 30_000L
 
         /** Starts of the browser are one at a time (the Windows pipe ends must reach this process only). */
         private val LAUNCH_LOCK = Any()
@@ -264,7 +264,7 @@ class ChromiumHost(
                     else -> openPort(process, profile)
                 }
                 connection = CdpConnection(t).also { it.start() }
-                val version = kotlinx.coroutines.runBlocking { connection.call("Browser.getVersion") }
+                val version = kotlinx.coroutines.runBlocking { connection.call("Browser.getVersion", timeoutMs = START_TIMEOUT_MS) }
                 val product = version.str("product").orEmpty()
                 val ua = version.str("userAgent").orEmpty().replace("HeadlessChrome", "Chrome")
                 val proc = process

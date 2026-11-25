@@ -8,6 +8,7 @@ import app.nijiyome.model.ExtensionServerDevice
 import app.nijiyome.model.ExtensionServerLogEntry
 import app.nijiyome.model.FirewallResult
 import app.nijiyome.model.ExtensionServerPairing
+import app.nijiyome.model.LinkActiveSession
 import app.nijiyome.model.LinkDeviceHistoryMode
 import app.nijiyome.model.LinkServerController
 import app.nijiyome.model.LinkServerDevice
@@ -82,6 +83,8 @@ data class ServerSettings(
     val extProxy: Boolean = true,
     /** Addresses both servers listen on; empty = the private LAN IPv4 (+ 127.0.0.1 for the extension server). Not in the UI. */
     val bindIps: List<String> = emptyList(),
+    /** v1.2.0: RAM cache budget per Link session in MiB (512..4096) for instant rewinds without Anime4K / LSFG re-processing. */
+    val cacheLimitMb: Int = 1024,
 ) {
     companion object {
         private val JSON = Json {
@@ -250,6 +253,10 @@ class DesktopServers(
         anime4kDir = runCatching { anime4kDir() }.getOrNull(),
         allowHttpSources = settings.allowHttpSources,
         lsfg = LsfgSetup.Detect(runCatching { lsfgDll() }.getOrNull()?.trim()?.ifBlank { null }),
+        tuning = app.nijiyome.server.link.SessionTuning(
+            maxRamBytes = settings.cacheLimitMb.coerceIn(256, 4096).toLong() * 1024L * 1024L,
+            maxLeadSegments = 30,
+        ),
         serverVersion = runCatching { appVersion() }.getOrNull()?.trim()?.removePrefix("v")?.ifBlank { null } ?: LinkConfig.UNKNOWN_VERSION,
     )
 
@@ -454,6 +461,23 @@ class DesktopServers(
 
     override fun revokeExtensionDevice(deviceId: String) = launchLocked { runCatching { ext?.revoke(deviceId) } }
 
+    override fun setCacheLimitMb(mb: Int) {
+        val clamped = mb.coerceIn(512, 4096)
+        update { it.copy(cacheLimitMb = clamped) }
+        _state.update { it.copy(cacheLimitMb = clamped) }
+        launchLocked {
+            val running = link
+            if (running != null && running.activeSessions() == 0) {
+                stopLinkLocked()
+                startLinkLocked()
+            }
+        }
+    }
+
+    override fun stopSession(sessionId: String) = launchLocked {
+        runCatching { link?.stopSession(sessionId) }
+    }
+
     // ---- "Enviar a dispositivo" (tk-app live/link.rs `start_and_hand_off`) ----
 
     override suspend fun send(deviceId: String, request: SendToPhoneRequest): Result<Unit> = withContext(Dispatchers.IO) {
@@ -464,7 +488,16 @@ class DesktopServers(
             is LinkSource.Library -> SourceRequest.Library(src.itemId)
         }
         try {
-            val created = s.createSessionFor(deviceId, CreateRequest(source, profile = null, audioTrack = 0, startSecs = request.positionSecs.toDouble()))
+            val created = s.createSessionFor(
+                deviceId,
+                CreateRequest(
+                    source = source,
+                    profile = null,
+                    audioTrack = 0,
+                    startSecs = request.positionSecs.toDouble(),
+                    title = request.title.takeIf { it.isNotBlank() },
+                ),
+            )
             val event = PhoneEvent.Handoff(
                 sessionId = created.sessionId,
                 mediaId = request.mediaId,
@@ -503,6 +536,47 @@ class DesktopServers(
         val ep = extPairing?.takeIf { it.expiresAtMs > now }
         if (ep == null) extPairing = null
         _phones.value = s?.devices()?.filter { it.isActive(nowSecs) }?.map { PhoneTarget(it.id, it.name, it.id in online) }.orEmpty()
+        val deviceNames = s?.devices().orEmpty().associate { it.id to it.name }
+        val activeSessions = s?.activeSessionSnapshots().orEmpty().map { snap ->
+            val upscaleLabel = when (val u = snap.profile.upscale) {
+                is app.nijiyome.server.link.media.Upscale.None -> null
+                is app.nijiyome.server.link.media.Upscale.Anime4k -> "Anime4K ${u.mode.wire.uppercase()} (${u.variant.wire.uppercase()}) · ${snap.profile.height}p"
+            }
+            val fgLabel = when (val fg = snap.profile.fg) {
+                is app.nijiyome.server.link.media.Fg.None -> null
+                is app.nijiyome.server.link.media.Fg.FrcAmf -> "AMD FRC 2x"
+                is app.nijiyome.server.link.media.Fg.Lsfg -> {
+                    val srcFps = snap.lsfgRate?.fps()
+                    val mult = fg.mode.multiplier(srcFps)
+                    val outFps = srcFps?.let { (it * mult).toInt() }
+                    if (outFps != null) "LSFG ${mult}x (${outFps} fps)" else "LSFG ${mult}x"
+                }
+            }
+            LinkActiveSession(
+                sessionId = snap.sessionId,
+                deviceId = snap.deviceId,
+                deviceName = deviceNames[snap.deviceId] ?: snap.deviceId.take(8),
+                title = snap.title,
+                episode = snap.episode,
+                sourceKind = snap.sourceKind,
+                profileId = snap.profile.id,
+                profileLabel = snap.profile.label,
+                upscaleLabel = upscaleLabel,
+                frameGenLabel = fgLabel,
+                encoder = snap.encoder.wire,
+                positionSecs = snap.positionSecs,
+                durationSecs = snap.durationSecs,
+                paused = snap.paused,
+                cachedBytes = snap.cachedBytes,
+                cachedSegments = snap.cachedSegments,
+                cachedFromSecs = snap.cachedFromSecs,
+                cachedToSecs = snap.cachedToSecs,
+                leadSecs = snap.leadSecs,
+                throttled = snap.throttled,
+                segIntervalMs = snap.segIntervalMs,
+            )
+        }
+        val totalCacheBytes = activeSessions.sumOf { it.cachedBytes }
         _state.update { cur ->
             cur.copy(
                 enabled = settings.linkEnabled,
@@ -540,6 +614,9 @@ class DesktopServers(
                 extLogs = e?.let(::logsOf).orEmpty(),
                 firewallButton = firewallButton,
                 firewall = firewallResult,
+                activeSessions = activeSessions,
+                totalCacheBytes = totalCacheBytes,
+                cacheLimitMb = settings.cacheLimitMb,
             )
         }
     }

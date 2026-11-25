@@ -29,8 +29,10 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,11 +50,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.nijiyome.designsystem.components.ErrorState
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.model.AiringEpisode
+import app.nijiyome.model.CardSize
+import app.nijiyome.model.CardStyle
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.Media
 import app.nijiyome.model.RecommendationItem
 import app.nijiyome.model.SocialRepository
+import app.nijiyome.ui.labels.genreLabel
+import app.nijiyome.ui.look.LocalLook
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.ui.media.MediaCover
@@ -75,18 +82,34 @@ internal fun rememberUnreadNotifications(): Int {
 }
 
 @Composable
-internal fun NotificationBell(unread: Int, onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
+internal fun NotificationBell(unread: Int, onClick: () -> Unit, onScrim: Boolean = false) {
+    val content: @Composable () -> Unit = {
         BadgedBox(badge = { if (unread > 0) Badge { Text(if (unread > 99) "99+" else unread.toString()) } }) {
             Icon(Icons.Outlined.Notifications, contentDescription = stringResource(Res.string.home_notifications))
         }
+    }
+    if (onScrim) {
+        FilledTonalIconButton(
+            onClick = onClick,
+            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.76f),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            content = content,
+        )
+    } else {
+        IconButton(onClick = onClick, content = content)
     }
 }
 
 /** Quick chips of the greeting: Calendario · Para ti · Manga · Novelas (phones reach the readers from here, 16 §0.11). */
 @Composable
 internal fun QuickChips(actions: HomeActions) {
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    val scroll = rememberScrollState()
+    Row(
+        Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         QuickChip(stringResource(Res.string.home_chip_calendar), Icons.Outlined.CalendarMonth, actions.onOpenCalendar)
         QuickChip(stringResource(Res.string.home_for_you_title), Icons.Outlined.Explore, actions.onOpenForYou)
         QuickChip(stringResource(UiR.string.nav_manga), Icons.AutoMirrored.Outlined.MenuBook, actions.onOpenManga)
@@ -182,23 +205,29 @@ private fun <T> DiscoverRow(
     }
 }
 
+private fun <T> LoadState<List<T>>.isVisibleRow(): Boolean = !(this is LoadState.Ok && value.isEmpty())
+
 /** Rows above the base feeds: followed updates, latest episodes, Top 10, For you, Because you watched. */
 internal fun LazyListScope.homeDiscoverTop(d: HomeDiscoverState, gate: MatureGate, actions: HomeActions) {
-    item(key = "followed", contentType = "discover") {
-        DiscoverRow(
-            title = stringResource(Res.string.home_followed_title),
-            state = d.followed,
-            onRetry = actions.onRetryFollowed,
-            onSeeAll = actions.onOpenCalendar,
-        ) { list -> airingItems("fol", list, gate, actions) }
+    if (d.followed.isVisibleRow()) {
+        item(key = "followed", contentType = "discover") {
+            DiscoverRow(
+                title = stringResource(Res.string.home_followed_title),
+                state = d.followed,
+                onRetry = actions.onRetryFollowed,
+                onSeeAll = actions.onOpenCalendar,
+            ) { list -> airingItems("fol", list, gate, actions) }
+        }
     }
-    item(key = "latest", contentType = "discover") {
-        DiscoverRow(
-            title = stringResource(Res.string.home_latest_title),
-            state = d.latest,
-            onRetry = actions.onRetryLatest,
-            onSeeAll = actions.onOpenCalendar,
-        ) { list -> airingItems("lat", list, gate, actions) }
+    if (d.latest.isVisibleRow()) {
+        item(key = "latest", contentType = "discover") {
+            DiscoverRow(
+                title = stringResource(Res.string.home_latest_title),
+                state = d.latest,
+                onRetry = actions.onRetryLatest,
+                onSeeAll = actions.onOpenCalendar,
+            ) { list -> airingItems("lat", list, gate, actions) }
+        }
     }
     item(key = "top10", contentType = "discover") {
         DiscoverRow(
@@ -226,25 +255,27 @@ internal fun LazyListScope.homeDiscoverTop(d: HomeDiscoverState, gate: MatureGat
             }
         }
     }
-    item(key = "for-you", contentType = "discover") {
-        DiscoverRow(
-            title = stringResource(Res.string.home_for_you_title),
-            state = d.forYou,
-            onRetry = actions.onRetryForYou,
-            onSeeAll = actions.onOpenForYou,
-        ) { list ->
-            items(list, key = { "fy:" + mediaKey(it.media) }) { item: RecommendationItem ->
-                GatedMediaCard(
-                    media = item.media,
-                    gate = gate,
-                    onClick = { actions.onMediaClick(item.media) },
-                    width = CARD_WIDTH,
-                    subtitle = stringResource(Res.string.home_recs_affinity, (item.affinity * 100).roundToInt()),
-                )
+    if (d.forYou.isVisibleRow()) {
+        item(key = "for-you", contentType = "discover") {
+            DiscoverRow(
+                title = stringResource(Res.string.home_for_you_title),
+                state = d.forYou,
+                onRetry = actions.onRetryForYou,
+                onSeeAll = actions.onOpenForYou,
+            ) { list ->
+                items(list, key = { "fy:" + mediaKey(it.media) }) { item: RecommendationItem ->
+                    GatedMediaCard(
+                        media = item.media,
+                        gate = gate,
+                        onClick = { actions.onMediaClick(item.media) },
+                        width = CARD_WIDTH,
+                        subtitle = stringResource(Res.string.home_recs_affinity, (item.affinity * 100).roundToInt()),
+                    )
+                }
             }
         }
     }
-    d.because?.let { because ->
+    d.because?.takeIf { it.state.isVisibleRow() }?.let { because ->
         item(key = "because", contentType = "discover") {
             DiscoverRow(
                 title = stringResource(Res.string.home_because_title, because.sourceTitle),
@@ -258,40 +289,44 @@ internal fun LazyListScope.homeDiscoverTop(d: HomeDiscoverState, gate: MatureGat
 
 /** Rows below the base feeds: upcoming premieres (with season / year) and most favourited. */
 internal fun LazyListScope.homeDiscoverBottom(d: HomeDiscoverState, gate: MatureGate, actions: HomeActions) {
-    item(key = "upcoming", contentType = "discover") {
-        DiscoverRow(
-            title = stringResource(Res.string.home_upcoming_title),
-            state = d.upcoming,
-            onRetry = actions.onRetryUpcoming,
-            onSeeAll = null,
-        ) { list ->
-            items(list, key = { "up:" + mediaKey(it) }) { media ->
-                GatedMediaCard(
-                    media = media,
-                    gate = gate,
-                    onClick = { actions.onMediaClick(media) },
-                    width = CARD_WIDTH,
-                    subtitle = premiereLabel(media),
-                )
+    if (d.upcoming.isVisibleRow()) {
+        item(key = "upcoming", contentType = "discover") {
+            DiscoverRow(
+                title = stringResource(Res.string.home_upcoming_title),
+                state = d.upcoming,
+                onRetry = actions.onRetryUpcoming,
+                onSeeAll = null,
+            ) { list ->
+                items(list, key = { "up:" + mediaKey(it) }) { media ->
+                    GatedMediaCard(
+                        media = media,
+                        gate = gate,
+                        onClick = { actions.onMediaClick(media) },
+                        width = CARD_WIDTH,
+                        subtitle = premiereLabel(media),
+                    )
+                }
             }
         }
     }
-    item(key = "favourites", contentType = "discover") {
-        DiscoverRow(
-            title = stringResource(Res.string.home_favourites_title),
-            state = d.favourites,
-            onRetry = actions.onRetryFavourites,
-            onSeeAll = null,
-        ) { list -> mediaItems("fav", list, gate, actions) }
+    if (d.favourites.isVisibleRow()) {
+        item(key = "favourites", contentType = "discover") {
+            DiscoverRow(
+                title = stringResource(Res.string.home_favourites_title),
+                state = d.favourites,
+                onRetry = actions.onRetryFavourites,
+                onSeeAll = null,
+            ) { list -> mediaItems("fav", list, gate, actions) }
+        }
     }
 }
 
 /** Infinite genre rows: each one appended when the sentinel at the bottom is composed (scrolled into view). */
 internal fun LazyListScope.homeGenreRows(d: HomeDiscoverState, gate: MatureGate, actions: HomeActions, fallbackGenres: List<String>) {
-    d.genreRows.forEach { row ->
+    d.genreRows.filter { it.state.isVisibleRow() }.forEach { row ->
         item(key = "genre-row:" + row.genre, contentType = "discover") {
             DiscoverRow(
-                title = stringResource(Res.string.home_genre_row, row.genre),
+                title = stringResource(Res.string.home_genre_row, genreLabel(row.genre)),
                 state = row.state,
                 onRetry = { actions.onRetryGenre(row.genre) },
                 onSeeAll = { actions.onOpenGenre(row.genre) },
@@ -328,13 +363,19 @@ private fun LazyListScope.airingItems(prefix: String, list: List<AiringEpisode>,
 
 @Composable
 private fun RankedCard(rank: Int, media: Media, gate: MatureGate, onClick: () -> Unit) {
+    val look = LocalLook.current
+    val bottomPad = when {
+        look.cardStyle == CardStyle.MINIMAL -> 10.dp
+        look.cardSize == CardSize.LARGE || look.cardSize == CardSize.XL -> 14.dp
+        else -> 36.dp
+    }
     Row(verticalAlignment = Alignment.Bottom) {
         Text(
             rank.toString(),
             style = MaterialTheme.typography.displayMedium,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(end = 4.dp, bottom = 40.dp),
+            modifier = Modifier.padding(end = 4.dp, bottom = bottomPad),
         )
         GatedMediaCard(media = media, gate = gate, onClick = onClick, width = CARD_WIDTH)
     }

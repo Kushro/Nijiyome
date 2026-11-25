@@ -14,6 +14,7 @@ import app.nijiyome.model.MediaKind
 import app.nijiyome.model.MetadataRepository
 import app.nijiyome.model.PcPlayerHub
 import app.nijiyome.model.PcPlayerRemote
+import app.nijiyome.model.RemoteLogsRepository
 import app.nijiyome.model.SendToPhone
 import app.nijiyome.model.torrent.TorrentRepository
 import app.nijiyome.server.ext.HostCatalog
@@ -37,8 +38,11 @@ fun desktopServerModule(
     // The desktop player plugs into this hub while its screen is open (remote control from paired phones, GET /v1/player).
     single { PcPlayerHub() }
     single<PcPlayerRemote> { get<PcPlayerHub>() }
+    single { DeviceLogsStore(File(dataDir, "logs/devices")) }
+    single<RemoteLogsRepository> { get<DeviceLogsStore>() }
     single(createdAtStart = true) {
         val history = RoomLinkHistory(get<HistoryDao>(), File(dataDir, "link/history-origins.json"))
+        val deviceLogs = get<DeviceLogsStore>()
         val repo = getOrNull<ExtensionRepository>()
         val host = getOrNull<ExtensionHost>()
         val catalog = if (repo != null && host != null) HostCatalog(repo, host, File(dataDir, "extensions")) else null
@@ -53,6 +57,7 @@ fun desktopServerModule(
                     player = player,
                     torrentEngine = { koin.getOrNull<TorrentRepository>() },
                     mediaOf = { req -> metadata?.media(MediaKind.ANIME, DesktopLinkHost.refOf(req.mediaId)) },
+                    deviceLogs = deviceLogs,
                 )
             },
             catalog = catalog,

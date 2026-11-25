@@ -528,6 +528,10 @@ class LinkRepositoryImpl(
     override suspend fun heartbeat(sessionId: String, positionSecs: Double, paused: Boolean): Result<Unit> =
         call { c -> c.heartbeat(sessionId, positionSecs, paused) }
 
+    /** Ships scrubbed local diagnostic log lines to the paired PC (`POST /v1/logs`). */
+    suspend fun pushLogs(lines: List<String>, appVersion: String? = null, platform: String? = null): Result<Int> =
+        call { c -> c.pushLogs(lines, appVersion, platform) }
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private suspend fun <T> call(block: suspend (LinkClient) -> LinkResult<T>): Result<T> = withContext(io) {

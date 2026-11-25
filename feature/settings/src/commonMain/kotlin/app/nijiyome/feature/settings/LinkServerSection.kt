@@ -79,12 +79,16 @@ internal fun LinkSectionForPlatform(state: SettingsUiState, vm: SettingsViewMode
     val server = remember(koin) { koin.getOrNull<LinkServerController>() }
     if (server != null) {
         LinkServerSection(server)
-        // 1.1: Settings › Red (outbound proxy, FlareSolverr, loopback media proxy), desktop only
-        val net = remember(koin) { koin.getOrNull<app.nijiyome.model.NetworkSettingsController>() }
-        if (net != null) NetworkSettingsSection(net)
     } else {
         LinkSection(state, vm, onOpenLinked)
     }
+}
+
+@Composable
+internal fun NetworkSectionForPlatform() {
+    val koin = getKoin()
+    val net = remember(koin) { koin.getOrNull<app.nijiyome.model.NetworkSettingsController>() }
+    if (net != null) NetworkSettingsSection(net)
 }
 
 /**
@@ -142,6 +146,51 @@ internal fun LinkServerSection(server: LinkServerController) {
     }
     if (st.running && !st.ffmpeg) {
         Text(stringResource(Res.string.settings_linksrv_no_ffmpeg), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+    }
+
+    // v1.2.0: Live active Link sessions (shows which paired phone is using this PC for upscaling/FG right now)
+    if (st.activeSessions.isNotEmpty()) {
+        Text(
+            "Sesiones activas (${st.activeSessions.size})",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+        )
+        for (sess in st.activeSessions) {
+            val scheme = MaterialTheme.colorScheme
+            androidx.compose.material3.Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = scheme.surfaceContainerHigh,
+                border = androidx.compose.foundation.BorderStroke(1.dp, scheme.primary.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        val titleLine = buildString {
+                            append(sess.deviceName)
+                            sess.title?.takeIf { it.isNotBlank() }?.let { append(" · $it") }
+                            sess.episode?.let { append(" Ep $it") }
+                        }
+                        Text(titleLine, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                        val pipe = listOfNotNull(sess.upscaleLabel, sess.frameGenLabel, sess.encoder).joinToString(" · ")
+                        Text(pipe, style = MaterialTheme.typography.bodySmall, color = scheme.primary)
+                        val cacheMb = sess.cachedBytes / (1024L * 1024L)
+                        Text(
+                            "Caché RAM: ${cacheMb} MB / ${st.cacheLimitMb} MB · Adelanto: +${sess.leadSecs.toInt()} s",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = scheme.onSurfaceVariant,
+                        )
+                    }
+                    OutlinedButton(onClick = { server.stopSession(sess.sessionId) }) {
+                        Text("Detener")
+                    }
+                }
+            }
+        }
     }
 
     // pairing
@@ -212,6 +261,21 @@ internal fun LinkServerSection(server: LinkServerController) {
         other = st.extPort,
         onSave = server::setPort,
     )
+    SettingRow(
+        label = "Caché de reproducción en RAM",
+        hint = "Conserva segmentos ya procesados (Anime4K / LSFG) para retroceder al instante sin volver a procesarlos.",
+        stack = true,
+    ) {
+        Segmented(
+            options = listOf(512, 1024, 2048, 4096).map { mb ->
+                SegmentedOption(mb, if (mb >= 1024) "${mb / 1024} GB" else "$mb MB")
+            },
+            selected = st.cacheLimitMb,
+            onSelect = server::setCacheLimitMb,
+            fillWidth = true,
+            small = true,
+        )
+    }
     FirewallRow(st, server)
     if (st.error != "identity") {
         // 1.1.2: also offered when the identity works (a new fingerprint on purpose); with the identity error it sits by the status

@@ -4,6 +4,7 @@
 package app.nijiyome.desktop
 
 import androidx.compose.material3.LocalBasicAlertDialogOverride
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import app.nijiyome.designsystem.components.LocalModalTracker
 import app.nijiyome.designsystem.components.ModalTracker
@@ -24,6 +25,7 @@ import app.nijiyome.data.DesktopAppReset
 import app.nijiyome.data.PROP_ANILIST_CLIENT_ID
 import app.nijiyome.data.PROP_MAL_CLIENT_ID
 import app.nijiyome.data.PendingOAuthRedirect
+import app.nijiyome.desktop.system.ActiveTorrentSummary
 import app.nijiyome.desktop.system.AppLanguageProvider
 import app.nijiyome.desktop.system.AppRestarter
 import app.nijiyome.desktop.system.DesktopLocale
@@ -35,8 +37,10 @@ import app.nijiyome.desktop.system.DiscordPresence
 import app.nijiyome.desktop.system.InstanceChannel
 import app.nijiyome.desktop.system.LaunchArgs
 import app.nijiyome.desktop.system.LaunchRouter
+import app.nijiyome.desktop.system.LinkMonitorDialog
 import app.nijiyome.desktop.system.LinuxUiScale
 import app.nijiyome.desktop.system.ScaledDensity
+import app.nijiyome.desktop.system.TrayLiveStatus
 import app.nijiyome.extensionserver.PendingServerLink
 import app.nijiyome.desktop.system.NijiyomeTray
 import app.nijiyome.desktop.system.TrayTexts
@@ -69,6 +73,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.core.context.GlobalContext
@@ -133,10 +138,15 @@ fun main(args: Array<String>) {
         modules(desktopModules(paths, folders, build.version) + desktopSystemModule(paths.dataDir, build, windows, restarter))
     }
     val koin = GlobalContext.get()
+    (koin.getOrNull<app.nijiyome.model.LogRepository>() as? app.nijiyome.data.AppLogStore)?.installCrashHandler(
+        appVersion = build.version,
+        platform = "${System.getProperty("os.name").orEmpty()} ${System.getProperty("os.version").orEmpty()}".trim(),
+    )
     val settingsRepo = koin.get<SettingsRepository>()
     // Ajustes › Idioma before the first window, so the tray menu and the first frame are in it too.
     DesktopLocale.apply(settingsRepo.settings.value.language)
     val linkServer = koin.getOrNull<LinkServerController>()
+    val torrentRepo = koin.getOrNull<app.nijiyome.model.torrent.TorrentRepository>()
     val social = koin.getOrNull<DesktopSocialPoller>()
     val system = koin.get<DesktopSystem>()
     system.reconcileAutostart()
@@ -186,15 +196,87 @@ fun main(args: Array<String>) {
             }
             showWindow = show
             val trayIcons = remember { trayIconFiles(File(paths.cacheDir, "tray")) }
+            var linkMonitorOpen by remember { mutableStateOf(false) }
             // The tray menu in the chosen language from the start and as soon as it changes (its texts are a parameter, so a new
             // language recomposes the menu; they never depend on when the default locale was last set).
             DesktopLocale.apply(appSettings.language)
             val trayTexts = TrayTexts.forLocale(DesktopLocale.localeFor(appSettings.language))
-            if (trayOn && trayIcons != null) NijiyomeTray(trayIcons, trayTexts, onShow = show, onQuit = ::exitApplication)
+            val spanish = DesktopLocale.localeFor(appSettings.language).language == "es"
+
+            // Live telemetry for the system tray menu & Link Monitor (sampled every 2s on IO so UI stays idle-free).
+            var liveStatus by remember { mutableStateOf(TrayLiveStatus(spanish = spanish, link = link)) }
+            LaunchedEffect(linkServer, torrentRepo, trayOn, linkMonitorOpen, spanish) {
+                while (true) {
+                    val snapshot = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        val rt = Runtime.getRuntime()
+                        val jvmUsed = (rt.totalMemory() - rt.freeMemory()).coerceAtLeast(0L)
+                        val jvmMax = rt.maxMemory().coerceAtLeast(1L)
+                        val diskCache = runCatching { dirSizeBounded(paths.cacheDir) }.getOrDefault(0L)
+                        val storage = runCatching { torrentRepo?.storageUsage() }.getOrNull()
+                        val libItems = torrentRepo?.library?.value.orEmpty()
+                        val activeItems = libItems.filter {
+                            it.state == app.nijiyome.model.torrent.TorrentState.DOWNLOADING ||
+                                it.state == app.nijiyome.model.torrent.TorrentState.SEEDING ||
+                                it.state == app.nijiyome.model.torrent.TorrentState.INITIALIZING
+                        }
+                        val summaries = activeItems.take(6).map { item ->
+                            val st = runCatching {
+                                kotlinx.coroutines.withTimeoutOrNull(250) { torrentRepo?.stats(item.id)?.first() }
+                            }.getOrNull()
+                            val stateLbl = when (st?.state ?: item.state) {
+                                app.nijiyome.model.torrent.TorrentState.DOWNLOADING -> if (spanish) "Descargando" else "Downloading"
+                                app.nijiyome.model.torrent.TorrentState.SEEDING -> if (spanish) "Compartiendo" else "Seeding"
+                                app.nijiyome.model.torrent.TorrentState.INITIALIZING -> if (spanish) "Iniciando" else "Initializing"
+                                else -> if (spanish) "Activo" else "Active"
+                            }
+                            ActiveTorrentSummary(
+                                id = item.id,
+                                name = item.series?.takeIf { it.isNotBlank() }?.let { s ->
+                                    item.episode?.let { ep -> "$s · Ep $ep" } ?: s
+                                } ?: item.name,
+                                progress = st?.progress ?: item.progress,
+                                downBps = st?.downBps ?: 0L,
+                                upBps = st?.upBps ?: 0L,
+                                peers = (st?.seeders ?: 0) + (st?.leechers ?: 0),
+                                stateLabel = stateLbl,
+                            )
+                        }
+                        TrayLiveStatus(
+                            spanish = spanish,
+                            link = linkServer?.state?.value,
+                            activeTorrents = summaries,
+                            totalDownBps = summaries.sumOf { it.downBps },
+                            totalUpBps = summaries.sumOf { it.upBps },
+                            jvmUsedBytes = jvmUsed,
+                            jvmMaxBytes = jvmMax,
+                            diskCacheBytes = diskCache,
+                            torrentStorageBytes = storage?.usedBytes ?: 0L,
+                            torrentFreeBytes = storage?.freeBytes ?: 0L,
+                        )
+                    }
+                    liveStatus = snapshot
+                    kotlinx.coroutines.delay(if (linkMonitorOpen) 1_500L else 3_000L)
+                }
+            }
+            val openMonitor = { show(); linkMonitorOpen = true }
+            val openTorrents = { show(); router.routeLinks.value = app.nijiyome.nav.Route.Torrents() }
+            val openSettingsModal = { show(); shortcuts.openSettingsModal(null) }
+            if (trayOn && trayIcons != null) {
+                NijiyomeTray(
+                    icons = trayIcons,
+                    texts = trayTexts,
+                    live = liveStatus.copy(link = link, spanish = spanish),
+                    onShow = show,
+                    onOpenMonitor = openMonitor,
+                    onOpenTorrents = openTorrents,
+                    onOpenSettings = openSettingsModal,
+                    onQuit = ::exitApplication,
+                )
+            }
             // No tray any more (turned off, or it went away) while the window is hidden: show it, or the app could not be reached.
             LaunchedEffect(trayOn) { if (!trayOn) visible = true }
             val closeWindow: () -> Unit = { if (trayOn && prefs.closeToTray) visible = false else exitApplication() }
-            val spanish = DesktopLocale.localeFor(appSettings.language).language == "es"
+            val nativeBar = remember { system.prefs.value.nativeTitleBar }
             Window(
                 onCloseRequest = closeWindow,
                 // Keep the window title for the taskbar / Alt-Tab; the frameless bar draws the live status chips inside the window.
@@ -202,7 +284,7 @@ fun main(args: Array<String>) {
                 icon = icon,
                 state = windowState,
                 visible = visible,
-                undecorated = true,
+                undecorated = !nativeBar,
                 resizable = true,
                 // The player's picture in picture: the window itself, small and above the others.
                 alwaysOnTop = appWindow.pictureInPicture,
@@ -257,14 +339,14 @@ fun main(args: Array<String>) {
                                 }
                             },
                         ) {
-                            DesktopResizableFrame(window, windowState, appWindow) {
+                            val shellContent: @Composable () -> Unit = {
                                 NijiyomeApp(
                                     torrentLinks = router.torrentLinks,
                                     serverLinks = router.serverLinks,
                                     accountLinks = router.accountLinks,
                                     routeLinks = router.routeLinks,
                                     shortcuts = shortcuts,
-                                    windowTopBar = {
+                                    windowTopBar = if (nativeBar) null else ({
                                         DesktopTitleBar(
                                             window = window,
                                             windowState = windowState,
@@ -274,9 +356,47 @@ fun main(args: Array<String>) {
                                             spanish = spanish,
                                             windows = windows,
                                             onClose = closeWindow,
+                                            canGoBack = shortcuts.canGoBack,
+                                            onGoBack = shortcuts::navigateBack,
+                                            onOpenCommandPalette = shortcuts::openCommandPalette,
+                                            onOpenSettings = { shortcuts.openSettingsModal(null) },
+                                            activeLinkSessions = link?.activeSessions.orEmpty(),
+                                            onOpenLinkMonitor = { linkMonitorOpen = true },
                                         )
-                                    },
+                                    }),
                                 )
+                                if (linkMonitorOpen) {
+                                    val dark = when (appSettings.themeMode) {
+                                        app.nijiyome.model.ThemeMode.LIGHT -> false
+                                        app.nijiyome.model.ThemeMode.DARK -> true
+                                        app.nijiyome.model.ThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
+                                    }
+                                    val contrast = when (appSettings.contrast) {
+                                        app.nijiyome.model.ContrastPref.STANDARD -> app.nijiyome.designsystem.generated.ContrastLevel.Standard
+                                        app.nijiyome.model.ContrastPref.MEDIUM -> app.nijiyome.designsystem.generated.ContrastLevel.Medium
+                                        app.nijiyome.model.ContrastPref.HIGH -> app.nijiyome.designsystem.generated.ContrastLevel.High
+                                    }
+                                    app.nijiyome.designsystem.theme.NijiyomeTheme(
+                                        paletteId = appSettings.paletteId,
+                                        amoled = appSettings.amoled,
+                                        contrast = contrast,
+                                        dynamicColor = false,
+                                        darkTheme = dark,
+                                    ) {
+                                        LinkMonitorDialog(
+                                            status = liveStatus.copy(link = link, spanish = spanish),
+                                            linkServer = linkServer,
+                                            onDismiss = { linkMonitorOpen = false },
+                                            onOpenLinkSettings = { shortcuts.openSettingsModal(app.nijiyome.model.SettingsSection.LINK) },
+                                            onOpenTorrents = { router.routeLinks.value = app.nijiyome.nav.Route.Torrents() },
+                                        )
+                                    }
+                                }
+                            }
+                            if (nativeBar) {
+                                shellContent()
+                            } else {
+                                DesktopResizableFrame(window, windowState, appWindow, shellContent)
                             }
                         }
                     }
@@ -334,6 +454,24 @@ private object Startup {
     fun dataDir(problem: String) =
         if (spanish) "Nijiyome no puede usar su carpeta de datos: $problem" else "Nijiyome cannot use its data folder: $problem"
     fun alreadyRunning() = if (spanish) "Nijiyome ya está abierto." else "Nijiyome is already running."
+}
+
+private fun dirSizeBounded(root: File, maxFiles: Int = 5_000): Long {
+    if (!root.exists()) return 0L
+    var total = 0L
+    var seen = 0
+    val stack = ArrayDeque<File>()
+    stack.add(root)
+    while (stack.isNotEmpty() && seen < maxFiles) {
+        val f = stack.removeLast()
+        if (f.isFile) {
+            total += f.length()
+            seen++
+        } else if (f.isDirectory) {
+            f.listFiles()?.forEach(stack::add)
+        }
+    }
+    return total
 }
 
 private fun fatal(message: String, exitCode: Int): Nothing {

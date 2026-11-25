@@ -21,6 +21,8 @@ data class MpvTrack(
     val selected: Boolean,
     /** 0.4.0 (sub-translation): `track-list/N/external` - added with `sub-add`, not stored in the media file. */
     val external: Boolean = false,
+    /** v1.2.0: `track-list/N/demux-channel-count` for audio tracks, null when unknown. */
+    val channels: Int? = null,
 )
 
 /** Minimal state the player UI renders for the mpv branch (d may extend it). */
@@ -64,9 +66,12 @@ data class MpvSubtitle(val url: String, val title: String? = null, val lang: Str
 
 /** Option values both engines set the same way (Android MpvEngine's companion constants are these). */
 internal object MpvEngineDefaults {
-    const val DEMUXER_MAX_MB = 150
-    const val DEMUXER_BACK_MB = 50
-    const val READAHEAD_SECS = 60
+    const val DEMUXER_MAX_MB = 200
+    const val DEMUXER_BACK_MB = 100
+    const val READAHEAD_SECS = 90
+    const val DESKTOP_DEMUXER_MAX_MB = 300
+    const val DESKTOP_DEMUXER_BACK_MB = 150
+    const val DESKTOP_READAHEAD_SECS = 120
     const val NETWORK_TIMEOUT_S = 90
     const val DEFAULT_USER_AGENT = "Nijiyome/0.1"
     const val STABLE_VOLUME_FILTER = "lavfi=[dynaudnorm=f=250:g=15:p=0.9]"
@@ -138,7 +143,16 @@ internal fun mpvPlaybackState(prev: PlaybackState, m: MpvState, loaded: Boolean,
         subtitles = subs,
         subtitlesEnabled = subs.any { it.selected },
         subtitleIsAss = subs.any { it.selected && it.ass },
-        audioTracks = m.audio.map { t -> AudioOption(t.id, t.title ?: t.lang ?: "#${t.id}", t.lang, t.selected) },
+        audioTracks = m.audio.map { t ->
+            AudioOption(
+                id = t.id,
+                label = t.title ?: t.lang ?: "#${t.id}",
+                language = t.lang,
+                selected = t.selected,
+                codec = t.codec,
+                channels = t.channels,
+            )
+        },
         fullAss = true,
         error = if (endedHere) null else m.error?.let { PlaybackError(mpvErrorCode(it, m.started, watched), it, exhausted = true) },
         subText = m.subText,

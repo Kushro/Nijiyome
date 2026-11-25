@@ -74,8 +74,34 @@ data class SubtitleOption(
     val embeddedOrdinal: Int? = null,
 )
 
-/** One audio track ([id] = Media3 track group index, mpv `aid`). */
-data class AudioOption(val id: Int, val label: String, val language: String?, val selected: Boolean)
+/** One audio track ([id] = encoded Media3 group/track id, mpv `aid`, or [AUDIO_TRACK_OFF] to disable audio). */
+data class AudioOption(
+    val id: Int,
+    val label: String,
+    val language: String?,
+    val selected: Boolean,
+    val codec: String? = null,
+    val channels: Int? = null,
+) {
+    /** Formatted secondary metadata (language if distinct from label, codec, channel layout) for the audio picker sheet. */
+    val detail: String?
+        get() = listOfNotNull(
+            language?.takeIf { it.isNotBlank() && !label.contains(it, ignoreCase = true) }?.uppercase(),
+            codec?.takeIf { it.isNotBlank() }?.substringAfter('/')?.uppercase(),
+            channels?.takeIf { it > 0 }?.let { ch ->
+                when (ch) {
+                    1 -> "1.0"
+                    2 -> "2.0"
+                    6 -> "5.1"
+                    8 -> "7.1"
+                    else -> "${ch}ch"
+                }
+            },
+        ).takeIf { it.isNotEmpty() }?.joinToString(" · ")
+}
+
+/** Pass to [PlayerSession.selectAudio] to disable audio playback (`aid=no` on mpv, disabled track type on Media3). */
+const val AUDIO_TRACK_OFF: Int = -1
 
 data class PlaybackError(val code: Int, val name: String, val exhausted: Boolean)
 

@@ -107,6 +107,7 @@ fun ExtensionServersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(platformHint(Res.string.extserver_title)), maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -126,8 +127,8 @@ fun ExtensionServersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(
                 Modifier
-                    .fillMaxWidth()
                     .widthIn(max = 840.dp)
+                    .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),

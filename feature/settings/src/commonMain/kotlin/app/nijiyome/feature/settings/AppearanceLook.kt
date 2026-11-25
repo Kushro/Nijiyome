@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
@@ -54,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.model.CalendarView
 import app.nijiyome.model.CardSize
 import app.nijiyome.model.CardStyle
@@ -77,8 +79,14 @@ import kotlin.math.roundToInt
 // presets stay identical to the desktop ones.
 
 @Composable
-internal fun LookGroup(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit, onPreset: (LookPreset) -> Unit) {
+internal fun LookGroup(
+    look: LookPrefs,
+    onChange: ((LookPrefs) -> LookPrefs) -> Unit,
+    onPreset: (LookPreset) -> Unit,
+    showRailStyle: Boolean = true,
+) {
     val matching = look.matchingPreset()
+    val presetRow = rememberLazyListState()
     Column(Modifier.fillMaxWidth().padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             stringResource(Res.string.settings_look_title),
@@ -92,6 +100,8 @@ internal fun LookGroup(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> 
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         LazyRow(
+            state = presetRow,
+            modifier = Modifier.fillMaxWidth().horizontalFadingEdge(presetRow),
             contentPadding = PaddingValues(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -158,13 +168,15 @@ internal fun LookGroup(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> 
     LookSegmented(Res.string.settings_look_calendar, CalendarView.entries, look.calendarView, { it.labelRes() }, small = true) { v ->
         onChange { it.copy(calendarView = v) }
     }
-    LookSegmented(
-        Res.string.settings_look_rail,
-        RailStyle.entries,
-        look.railStyle,
-        { it.labelRes() },
-        hint = stringResource(Res.string.settings_look_rail_hint),
-    ) { v -> onChange { it.copy(railStyle = v) } }
+    if (showRailStyle) {
+        LookSegmented(
+            Res.string.settings_look_rail,
+            RailStyle.entries,
+            look.railStyle,
+            { it.labelRes() },
+            hint = stringResource(Res.string.settings_look_rail_hint),
+        ) { v -> onChange { it.copy(railStyle = v) } }
+    }
     if (look.homeLayout != HomeLayout.ROWS) {
         SwitchRow(
             stringResource(Res.string.settings_look_autoplay),

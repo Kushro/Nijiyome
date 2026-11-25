@@ -13,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -70,13 +71,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.nijiyome.designsystem.components.EmptyState
 import app.nijiyome.designsystem.components.ErrorState
 import app.nijiyome.designsystem.components.HeroCarousel
+import app.nijiyome.designsystem.components.HorizontalScrollStrip
 import app.nijiyome.designsystem.components.InfoChip
 import app.nijiyome.designsystem.components.ListGroupHeader
 import app.nijiyome.designsystem.components.Pill
 import app.nijiyome.designsystem.components.PillTone
 import app.nijiyome.designsystem.components.SkeletonBox
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.designsystem.components.rememberAfterDelay
 import app.nijiyome.designsystem.theme.LocalReduceMotion
+import app.nijiyome.ui.labels.genreLabel
 import app.nijiyome.model.ExtensionHomeRow
 import app.nijiyome.model.FeedKind
 import app.nijiyome.model.HistoryEntry
@@ -227,7 +231,9 @@ internal fun HomeContent(
     Scaffold(modifier = modifier, contentWindowInsets = screenInsets) { padding ->
         val listState = rememberLazyListState()
         val scrolled by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 } }
-        Box(Modifier.fillMaxSize()) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val wide = maxWidth >= 600.dp
+            val showGreetingRow = !wide || look.showGreeting || !spotlight
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
@@ -251,11 +257,21 @@ internal fun HomeContent(
                         )
                     }
                 }
-                item(key = "greeting", contentType = "greeting") {
-                    Greeting(state.providers, unreadNotifications, actions, showGreeting = look.showGreeting, showBell = !spotlight)
+                if (showGreetingRow) {
+                    item(key = "greeting", contentType = "greeting") {
+                        Greeting(
+                            unread = unreadNotifications,
+                            actions = actions,
+                            showGreeting = look.showGreeting,
+                            showBell = !spotlight,
+                            showQuickChips = !wide,
+                        )
+                    }
                 }
-                item(key = "search", contentType = "search") {
-                    SearchEntry(onClick = actions.onSearchClick)
+                if (!wide) {
+                    item(key = "search", contentType = "search") {
+                        SearchEntry(onClick = actions.onSearchClick)
+                    }
                 }
                 if (state.isEmpty) {
                     item(key = "empty", contentType = "empty") {
@@ -325,16 +341,19 @@ internal fun HomeContent(
                     )
                 }
                 homeDiscoverBottom(discover, gate, actions)
-                item(key = "extension-rows", contentType = "extension-rows") {
-                    // Composed only when scrolled into view: the lazy request of customHomeRows() (07 §1, prototype IntersectionObserver).
-                    LaunchedEffect(Unit) { actions.onLoadExtensionRows() }
-                    ExtensionRows(
-                        state.extensionRows,
-                        names = discover.extensionNames,
-                        onRetry = actions.onLoadExtensionRows,
-                        onOpenProvider = actions.onOpenProvider,
-                        onItemClick = actions.onOpenProviderItem,
-                    )
+                val extRowsEmpty = state.extensionRows is LoadState.Ok && state.extensionRows.value.isEmpty()
+                if (!extRowsEmpty) {
+                    item(key = "extension-rows", contentType = "extension-rows") {
+                        // Composed only when scrolled into view: the lazy request of customHomeRows() (07 §1, prototype IntersectionObserver).
+                        LaunchedEffect(Unit) { actions.onLoadExtensionRows() }
+                        ExtensionRows(
+                            state.extensionRows,
+                            names = discover.extensionNames,
+                            onRetry = actions.onLoadExtensionRows,
+                            onOpenProvider = actions.onOpenProvider,
+                            onItemClick = actions.onOpenProviderItem,
+                        )
+                    }
                 }
                 homeGenreRows(discover, gate, actions, fallbackGenres = genres)
             }
@@ -352,7 +371,13 @@ internal fun HomeContent(
 }
 
 @Composable
-private fun Greeting(providers: List<String>, unread: Int, actions: HomeActions, showGreeting: Boolean = true, showBell: Boolean = true) {
+private fun Greeting(
+    unread: Int,
+    actions: HomeActions,
+    showGreeting: Boolean = true,
+    showBell: Boolean = true,
+    showQuickChips: Boolean = true,
+) {
     val hour = remember { LocalTime.now().hour }
     val greeting = stringResource(
         when {
@@ -361,9 +386,8 @@ private fun Greeting(providers: List<String>, unread: Int, actions: HomeActions,
             else -> Res.string.home_greeting_evening
         },
     )
-    val sourcesLabel = stringResource(Res.string.home_sources)
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (showGreeting || showBell) {
@@ -374,17 +398,7 @@ private fun Greeting(providers: List<String>, unread: Int, actions: HomeActions,
                 if (showBell) NotificationBell(unread, actions.onOpenNotifications)
             }
         }
-        QuickChips(actions)
-        if (providers.isNotEmpty()) {
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()).semantics { contentDescription = sourcesLabel },
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                providers.forEachIndexed { index, id ->
-                    InfoChip(providerLabel(id), icon = if (index == 0) Icons.Filled.Check else null)
-                }
-            }
-        }
+        if (showQuickChips) QuickChips(actions)
     }
 }
 
@@ -446,7 +460,7 @@ private fun HeroSection(
             HeroCarousel(
                 items = hero.value,
                 key = { mediaKey(it) },
-                modifier = Modifier.fillMaxWidth().height(HERO_HEIGHT),
+                modifier = Modifier.fillMaxWidth(),
                 // HeroCarousel already turns autoplay off with LocalReduceMotion; passing it here keeps the intent explicit.
                 // 2026-11 UI refresh: Diseño y estilo › Girar el banner / segundos por título.
                 autoplay = !LocalReduceMotion.current && autoplayMs != null,
@@ -543,7 +557,7 @@ private fun SpotlightSection(
                 onOpen = actions.onMediaClick,
                 onWatch = actions.onWatch,
                 onContinue = actions.onContinueClick,
-                topEnd = { NotificationBell(unread, actions.onOpenNotifications) },
+                topEnd = { NotificationBell(unread, actions.onOpenNotifications, onScrim = true) },
             )
         } else {
             Box(Modifier.fillMaxWidth().height(topPadding))
@@ -625,7 +639,7 @@ private fun ContinueCard(entry: HistoryEntry, onPlay: () -> Unit, onDetails: () 
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            MediaCover(url = entry.poster, modifier = Modifier.width(56.dp))
+            MediaCover(url = entry.poster, modifier = Modifier.width(56.dp), shape = MaterialTheme.shapes.small)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(entry.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 val left = entry.durationSec?.let { d -> ((d - entry.progressSec).coerceAtLeast(0) + 59) / 60 }
@@ -666,12 +680,15 @@ private fun ContinueCard(entry: HistoryEntry, onPlay: () -> Unit, onDetails: () 
 private fun GenreChips(genres: List<String>, onGenre: (String) -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         SectionHeader(stringResource(Res.string.home_genres), onSeeAll = null)
-        Row(
-            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            genres.forEach { genre ->
-                AssistChip(onClick = { onGenre(genre) }, label = { Text(genre) })
+        val scroll = rememberScrollState()
+        HorizontalScrollStrip(scrollState = scroll, showChevrons = true) {
+            Row(
+                Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                genres.forEach { genre ->
+                    AssistChip(onClick = { onGenre(genre) }, label = { Text(genreLabel(genre)) })
+                }
             }
         }
     }

@@ -2,6 +2,7 @@
 
 package app.nijiyome.designsystem.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.theme.LocalNijiyomeAmoled
 
 /** Single-choice selector built on the M3E [ButtonGroup] with toggleable items (contrast level, ...). */
 @Composable
@@ -55,11 +57,13 @@ fun NijiyomeFloatingToolbar(
     content: @Composable RowScope.() -> Unit,
 ) {
     if (!expanded) return
+    val amoled = LocalNijiyomeAmoled.current
     Surface(
         modifier = modifier,
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = if (amoled) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.onSurface,
+        border = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
         tonalElevation = 3.dp,
         shadowElevation = 6.dp,
     ) {

@@ -11,7 +11,7 @@ import app.nijiyome.model.SecretStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import java.io.File
@@ -213,7 +213,7 @@ class ListFilesTest {
             assertTrue(csv.any { it.startsWith("mal:5114,,5114,Fullmetal Alchemist: Brotherhood,repeating,10,64,") }, csv.joinToString("\n"))
             assertEquals(5, csv.size - 2) // header and the final empty line
         } finally {
-            scope.cancel()
+            scope.coroutineContext[kotlinx.coroutines.Job]?.cancelAndJoin()
             db.close()
             dir.deleteRecursively()
         }

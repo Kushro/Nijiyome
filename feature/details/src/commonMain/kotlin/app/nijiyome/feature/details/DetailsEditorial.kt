@@ -79,7 +79,7 @@ internal fun EditorialHeader(
             // at the top (under the status bar and back button), never over the title
             if (blurred) MatureReveal(actions, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 56.dp))
             Column(
-                Modifier.align(Alignment.BottomStart).padding(horizontal = 20.dp).padding(bottom = 12.dp),
+                Modifier.align(Alignment.BottomStart).padding(horizontal = 16.dp).padding(bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(

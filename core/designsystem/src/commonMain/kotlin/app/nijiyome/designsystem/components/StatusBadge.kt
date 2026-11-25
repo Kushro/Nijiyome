@@ -3,6 +3,8 @@
 package app.nijiyome.designsystem.components
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.theme.LocalReduceMotion
 
 /**
  * Link status avatar (01 §4b): Cookie9Sided when no PC is connected, Sunny when connected.
@@ -37,7 +40,13 @@ fun LinkStatusAvatar(
 ) {
     val cookie = MaterialShapes.Cookie9Sided.toShape()
     val sunny = MaterialShapes.Sunny.toShape()
-    Crossfade(targetState = connected, label = "linkAvatar", modifier = modifier) { isConnected ->
+    val reduceMotion = LocalReduceMotion.current
+    Crossfade(
+        targetState = connected,
+        animationSpec = if (reduceMotion) snap() else tween(200),
+        label = "linkAvatar",
+        modifier = modifier,
+    ) { isConnected ->
         Box(
             Modifier
                 .size(size)

@@ -36,10 +36,12 @@ data class PlayerArgs(
     /** `sourceKey` chosen in Details (split button / picker): the player tries it first (Manual mode: only it). */
     val sourceKey: String? = null,
     /**
-     * BUG-018: [sourceKey] was chosen in a picker right before opening the player, so "Selección de fuente: Manual" plays it without
-     * asking again. false = it is only the panel's / remembered choice: Manual shows the picker with it preselected.
+     * BUG-018 / v1.2.0: [sourceKey] was chosen in a picker before opening the player, so "Selección de fuente: Manual" plays it
+     * without asking a second time. false = no explicit pick for this session: Manual shows the picker.
      */
     val sourceConfirmed: Boolean = false,
+    /** v1.2.0: stable torrent infoHash companion to [sourceKey] so reordering/renumbering (`#2`) never breaks confirmed matching. */
+    val sourceInfoHash: String? = null,
     /** Play a file of a torrent already in the session (client "Play this file", batch next episode, completed download). */
     val torrentId: String? = null,
     /** With [torrentId]: the file to play; null = `pickEpisodeFile`. */

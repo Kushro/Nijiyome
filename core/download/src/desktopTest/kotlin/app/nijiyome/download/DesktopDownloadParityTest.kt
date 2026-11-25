@@ -9,6 +9,7 @@ import app.nijiyome.model.MetadataRepository
 import java.io.File
 import java.lang.reflect.Proxy
 import java.nio.file.Files
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
@@ -96,11 +97,20 @@ class DesktopDownloadParityTest {
 
     @Test
     fun aFailedSegmentStopsTheQueueButKeepsTheOnesInFlight(): Unit = runBlocking {
+        // Wait until all 3 peer workers (0, 2, 3) are in flight before 1 fails, so the test never depends on thread scheduling.
+        val peersInFlight = CountDownLatch(DesktopDownloadEngine.SEGMENT_PARALLELISM - 1)
+        val failureSent = CountDownLatch(1)
         serve { r ->
             when (r.url.encodedPath) {
                 "/p.m3u8" -> bytes(mediaPlaylist(8).toByteArray())
-                "/s1.ts" -> bytes(ByteArray(0), 404)
+                "/s1.ts" -> {
+                    peersInFlight.await(5, TimeUnit.SECONDS)
+                    failureSent.countDown()
+                    bytes(ByteArray(0), 404)
+                }
                 else -> {
+                    peersInFlight.countDown()
+                    failureSent.await(5, TimeUnit.SECONDS)
                     Thread.sleep(150)
                     bytes(byteArrayOf(7, 7))
                 }

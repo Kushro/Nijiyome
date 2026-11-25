@@ -111,6 +111,7 @@ import app.nijiyome.ui.labels.genreLabel
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.components.EmptyState
 import app.nijiyome.designsystem.components.ErrorState
+import app.nijiyome.designsystem.components.HorizontalScrollStrip
 import app.nijiyome.designsystem.components.InfoChip
 import app.nijiyome.designsystem.components.LoadingState
 import app.nijiyome.designsystem.components.Pill
@@ -118,6 +119,7 @@ import app.nijiyome.designsystem.components.PillTone
 import app.nijiyome.designsystem.components.SectionCard
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
+import app.nijiyome.designsystem.components.horizontalFadingEdge
 import app.nijiyome.designsystem.components.rememberAfterDelay
 import app.nijiyome.feature.downloads.DownloadSeasonSlot
 import app.nijiyome.feature.home.FollowShowRow
@@ -203,8 +205,8 @@ internal fun LazyListScope.detailsItems(
         }
     }
     item(key = TABS_KEY, contentType = "tabs") {
-        // While the top bar shows its pinned copy, TalkBack sees only that one.
-        DetailsTabs(tab, onTab, modifier = Modifier.padding(top = 4.dp).then(if (tabsPinned) Modifier.clearAndSetSemantics {} else Modifier))
+        // While the top bar shows its pinned copy, TalkBack sees only that one (no extra top padding so pinning never jumps 4 dp).
+        DetailsTabs(tab, onTab, modifier = if (tabsPinned) Modifier.clearAndSetSemantics {} else Modifier)
     }
     when (tab) {
         DetailsTab.EPISODES -> {
@@ -218,14 +220,11 @@ internal fun LazyListScope.detailsItems(
 }
 
 /**
- * Mount points of wave B in Details (checklist `details.download-season-mount`, `details.comments-mount`): called at the end of the
- * Info tab and under the episode list. Nothing renders until wave B fills them.
+ * Mount points of wave B in Details (checklist `details.download-season-mount`, `details.comments-mount`): rendered under the
+ * episode list. FollowShowRow was removed here because the Header already has the primary Seguir action toggle.
  */
 @Composable
 internal fun WaveBSlots(media: Media) {
-    // parity wave B (16 §3.1 / §3.2 / §3.7): the three slots are owned by r (FollowShowRow, DownloadSeasonSlot) and t (AniListSocialSlot);
-    // each draws nothing until its owner implements it. This file stays closed: nobody else edits it.
-    FollowShowRow(media)
     DownloadSeasonSlot(media)
     // socialModule binds SocialRepository on Android (always); the slot's ViewModel needs it.
     if (rememberSocialAvailable()) AniListSocialSlot(media)
@@ -264,44 +263,46 @@ private fun Header(media: Media, state: DetailsUiState, actions: DetailsActions,
         // 0.3.2: ani.zip fanart (1920x1080) first; AniList's 1900x400 banner / the cover are cropped from the bottom / center under a
         // stronger scrim instead of looking stretched.
         val backdrop = headerBackdrop(media, state.artwork)
-        Box(Modifier.fillMaxWidth().height(220.dp)) {
-            AsyncImage(
-                model = backdrop.url,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = if (backdrop.lowRes && media.banner != null) Alignment.BottomCenter else Alignment.Center,
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest).then(blurModifier),
-            )
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        listOf(background.copy(alpha = if (backdrop.lowRes) 0.35f else 0f), background.copy(alpha = if (backdrop.lowRes) 0.7f else 0.5f), background),
+        Box(Modifier.fillMaxWidth()) {
+            Box(Modifier.fillMaxWidth().height(216.dp)) {
+                AsyncImage(
+                    model = backdrop.url,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alignment = if (backdrop.lowRes && media.banner != null) Alignment.BottomCenter else Alignment.Center,
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest).then(blurModifier),
+                )
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(
+                            listOf(background.copy(alpha = if (backdrop.lowRes) 0.35f else 0f), background.copy(alpha = if (backdrop.lowRes) 0.72f else 0.55f), background),
+                        ),
                     ),
-                ),
-            )
-            if (blurred) {
-                Row(
-                    Modifier.align(Alignment.Center).clickable(onClick = actions.onRevealCover).padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Outlined.NoAdultContent, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
-                    Text(stringResource(Res.string.details_mature_tap), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                )
+                if (blurred) {
+                    Row(
+                        Modifier.align(Alignment.Center).clickable(onClick = actions.onRevealCover).padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Outlined.NoAdultContent, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(Res.string.details_mature_tap), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                    }
                 }
             }
-        }
-        Row(
-            Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            MediaCover(url = media.cover, modifier = Modifier.width(110.dp).then(blurModifier))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.headlineSmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                media.alternativeTitle(title)?.let {
-                    Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+            Row(
+                Modifier.padding(top = 148.dp, start = 16.dp, end = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                MediaCover(url = media.cover, modifier = Modifier.width(114.dp).then(blurModifier))
+                Column(Modifier.weight(1f).padding(bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(title, style = MaterialTheme.typography.headlineSmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    media.alternativeTitle(title)?.let {
+                        Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                    }
+                    if (adultBadge) AdultBadge()
                 }
-                if (adultBadge) AdultBadge()
             }
         }
         headerFactsSlot(head, media, state)?.let { facts -> Box(Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) { facts() } }
@@ -658,18 +659,25 @@ private fun LazyListScope.episodeItems(
             val selected = range.coerceIn(0, ranges - 1)
             if (ranges > 1) {
                 item(key = "ranges", contentType = "ranges") {
-                    Row(
-                        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        repeat(ranges) { i ->
-                            val from = filtered[i * RANGE_SIZE].episode.number
-                            val to = filtered[minOf((i + 1) * RANGE_SIZE, filtered.size) - 1].episode.number
-                            FilterChip(
-                                selected = i == selected,
-                                onClick = { onRange(i) },
-                                label = { Text(stringResource(Res.string.details_range, from, to)) },
-                            )
+                    val scroll = rememberScrollState()
+                    HorizontalScrollStrip(scrollState = scroll, showChevrons = cardColumns > 1) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalFadingEdge(scroll)
+                                .horizontalScroll(scroll)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            repeat(ranges) { i ->
+                                val from = filtered[i * RANGE_SIZE].episode.number
+                                val to = filtered[minOf((i + 1) * RANGE_SIZE, filtered.size) - 1].episode.number
+                                FilterChip(
+                                    selected = i == selected,
+                                    onClick = { onRange(i) },
+                                    label = { Text(stringResource(Res.string.details_range, from, to)) },
+                                )
+                            }
                         }
                     }
                 }
@@ -837,7 +845,7 @@ private fun DetailsEpisodeRow(
                     stringResource(UiR.string.ui_episode_number, episode.number)
                 },
                 style = MaterialTheme.typography.titleSmall,
-                color = if (current) scheme.primary else scheme.onSurface,
+                color = if (current) scheme.onSecondaryContainer else scheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -965,7 +973,6 @@ private fun InfoTab(media: Media, state: DetailsUiState, actions: DetailsActions
                 others.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
             }
         }
-        WaveBSlots(media)
     }
 }
 
@@ -1017,12 +1024,20 @@ private fun FactsCards(details: MediaDetails, actions: DetailsActions) {
                 trailer.thumbnail?.let {
                     AsyncImage(model = it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
-                Icon(
-                    Icons.Outlined.PlayCircle,
-                    contentDescription = stringResource(Res.string.details_trailer_play),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(56.dp),
-                )
+                Box(
+                    Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.62f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.PlayCircle,
+                        contentDescription = stringResource(Res.string.details_trailer_play),
+                        tint = Color.White,
+                        modifier = Modifier.size(48.dp),
+                    )
+                }
             }
         }
     }
@@ -1245,8 +1260,9 @@ private fun SeasonsSection(media: Media, seasons: LoadState<List<Media>>?, langu
         is LoadState.Ok -> if (seasons.value.size > 1) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionTitle(stringResource(Res.string.details_seasons))
+                val scroll = rememberScrollState()
                 Row(
-                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     seasons.value.forEachIndexed { index, season ->
@@ -1256,11 +1272,12 @@ private fun SeasonsSection(media: Media, seasons: LoadState<List<Media>>?, langu
                                 .width(GRID_CARD_WIDTH)
                                 .then(
                                     if (isCurrent) {
-                                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium).padding(4.dp)
+                                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
                                     } else {
                                         Modifier
                                     },
-                                ),
+                                )
+                                .padding(4.dp),
                         ) {
                             Text(
                                 stringResource(if (isCurrent) Res.string.details_season_current else Res.string.details_season_order, index + 1),
@@ -1306,8 +1323,9 @@ private fun RelationsSection(
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (showTitle) SectionTitle(stringResource(Res.string.details_related))
+                val scroll = rememberScrollState()
                 Row(
-                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     relations.value.forEach { rel ->
@@ -1347,8 +1365,9 @@ private fun RecommendationsSection(recs: LoadState<List<Recommendation>>?, langu
         is LoadState.Ok -> if (recs.value.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionTitle(stringResource(Res.string.details_recommendations))
+                val scroll = rememberScrollState()
                 Row(
-                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     recs.value.forEach { rec ->

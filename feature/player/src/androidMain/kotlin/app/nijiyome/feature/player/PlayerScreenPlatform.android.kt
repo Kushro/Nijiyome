@@ -29,6 +29,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,6 +71,7 @@ import androidx.media3.common.text.Cue
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.ContentFrame
 import app.nijiyome.designsystem.theme.NijiyomeFonts
+import app.nijiyome.model.AspectMode
 import app.nijiyome.model.SubtitleStyle
 import app.nijiyome.player.PlaybackController
 import app.nijiyome.player.PlaybackService
@@ -93,9 +95,32 @@ import kotlin.math.roundToInt
 // ---- video surface ------------------------------------------------------------------------------------------------------------------
 
 @Composable
-internal actual fun PlayerVideoSurface(session: PlayerSession, modifier: Modifier) {
+internal actual fun PlayerVideoSurface(session: PlayerSession, modifier: Modifier, aspectMode: AspectMode) {
     when (session) {
-        is PlaybackController -> ContentFrame(player = session.player, modifier = modifier, contentScale = ContentScale.Fit)
+        is PlaybackController -> {
+            val scale = when (aspectMode) {
+                AspectMode.FIT -> ContentScale.Fit
+                AspectMode.FILL -> ContentScale.Crop
+                AspectMode.STRETCH -> ContentScale.FillBounds
+                AspectMode.RATIO_16_9, AspectMode.RATIO_4_3 -> ContentScale.FillBounds
+            }
+            val ratio = when (aspectMode) {
+                AspectMode.RATIO_16_9 -> 16f / 9f
+                AspectMode.RATIO_4_3 -> 4f / 3f
+                else -> null
+            }
+            if (ratio != null) {
+                Box(modifier, contentAlignment = Alignment.Center) {
+                    ContentFrame(
+                        player = session.player,
+                        modifier = Modifier.aspectRatio(ratio),
+                        contentScale = scale,
+                    )
+                }
+            } else {
+                ContentFrame(player = session.player, modifier = modifier, contentScale = scale)
+            }
+        }
         is MpvPlayerSession -> MpvPlayerSurface(session.engine, modifier)
     }
 }
@@ -129,6 +154,9 @@ internal actual fun PlayerGestureLayer(
     var onLeft by remember { mutableStateOf(true) }
     var scrubStartMs by remember { mutableLongStateOf(0L) }
     var scrubDeltaMs by remember { mutableLongStateOf(0L) }
+    var lastDoubleTapAt by remember { mutableLongStateOf(0L) }
+    var lastDoubleTapSide by remember { mutableStateOf(0) }
+    var doubleTapAccumSec by remember { mutableStateOf(0) }
     // player.android.long-press-speed: hold = 2x, release = the previous speed.
     var speedBeforeHold by remember { mutableStateOf<Float?>(null) }
 
@@ -154,8 +182,18 @@ internal actual fun PlayerGestureLayer(
                     onTap = { onToggleControls() },
                     onDoubleTap = { offset ->
                         val back = offset.x < size.width / 2f
+                        val side = if (back) -1 else 1
+                        val now = System.currentTimeMillis()
+                        val stepSec = (SEEK_STEP_MS / 1000L).toInt()
+                        if (side == lastDoubleTapSide && now - lastDoubleTapAt < 950L) {
+                            doubleTapAccumSec += if (back) -stepSec else stepSec
+                        } else {
+                            doubleTapAccumSec = if (back) -stepSec else stepSec
+                        }
+                        lastDoubleTapSide = side
+                        lastDoubleTapAt = now
                         session.seekBy(if (back) -SEEK_STEP_MS else SEEK_STEP_MS)
-                        onHud(Hud(Hud.Kind.Seek, seconds = if (back) -10 else 10))
+                        onHud(Hud(Hud.Kind.DoubleTapSeek, seconds = doubleTapAccumSec, doubleTapSide = side))
                     },
                 )
             }
@@ -194,9 +232,26 @@ internal actual fun PlayerGestureLayer(
                         change.consume()
                         // A full-width drag scrubs 90 s.
                         scrubDeltaMs += (dx / size.width * 90_000f).toLong()
-                        onHud(Hud(Hud.Kind.Seek, seconds = (scrubDeltaMs / 1000).toInt()))
+                        val st = session.state.value
+                        val dur = st.durationMs.coerceAtLeast(1L)
+                        val target = (scrubStartMs + scrubDeltaMs).coerceIn(0L, dur)
+                        onHud(
+                            Hud(
+                                kind = Hud.Kind.Scrub,
+                                seconds = ((target - scrubStartMs) / 1000L).toInt(),
+                                targetMs = target,
+                                durationMs = st.durationMs,
+                                bufferedMs = st.bufferedMs,
+                            ),
+                        )
                     },
-                    onDragEnd = { if (abs(scrubDeltaMs) > 500) session.seekTo(scrubStartMs + scrubDeltaMs) },
+                    onDragEnd = {
+                        if (abs(scrubDeltaMs) > 500) {
+                            val dur = session.state.value.durationMs
+                            val target = if (dur > 0) (scrubStartMs + scrubDeltaMs).coerceIn(0L, dur) else (scrubStartMs + scrubDeltaMs).coerceAtLeast(0L)
+                            session.seekTo(target)
+                        }
+                    },
                 )
             },
     )

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.data
 
+import app.nijiyome.model.AppLog
 import app.nijiyome.model.LogLevel
 import app.nijiyome.model.LogRepository
 import app.nijiyome.model.LogSink
@@ -40,6 +41,29 @@ class AppLogStore(
         val line = format(clock(), level, tag, message, throwable)
         if (mirror) runCatching { mirrorLogLine(level, line) }
         runCatching { writer.execute { append(line) } }
+        AppLog.notifyObservers(level, line)
+    }
+
+    /**
+     * Installs a chained [Thread.UncaughtExceptionHandler] that writes uncaught crashes synchronously before
+     * delegating to the previous handler, ensuring crash traces survive process termination.
+     */
+    fun installCrashHandler(appVersion: String = "", platform: String = "") {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            runCatching {
+                val meta = buildList {
+                    if (appVersion.isNotBlank()) add("v=$appVersion")
+                    if (platform.isNotBlank()) add("os=$platform")
+                    add("thread=${thread.name}")
+                }.joinToString(" ")
+                val line = format(clock(), LogLevel.ERROR, "crash", "[FATAL] uncaught exception [$meta]", throwable)
+                if (mirror) runCatching { mirrorLogLine(LogLevel.ERROR, line) }
+                append(line)
+                AppLog.notifyObservers(LogLevel.ERROR, line)
+            }
+            previous?.uncaughtException(thread, throwable)
+        }
     }
 
     /** Synchronous append (tests and the writer thread). */
@@ -93,16 +117,65 @@ class AppLogStore(
         private const val FLUSH_TIMEOUT_MS = 2_000L
         private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC)
 
-        /** `2026-11-09T21:04:11.000Z I/player: message (IOException: reset)` with [scrub] applied. */
+        /**
+         * `2026-11-09T21:04:11.000Z E/player: message (IOException: reset <- SocketException: broken) | trace: ...`
+         * Includes the full cause chain (up to 4 causes) and top 8 relevant stack frames (prioritizing `app.nijiyome.*`)
+         * for WARN/ERROR entries, with [scrub] applied to the entire line.
+         */
         fun format(epochMs: Long, level: LogLevel, tag: String, message: String, throwable: Throwable?): String {
             val letter = when (level) {
                 LogLevel.INFO -> 'I'
                 LogLevel.WARN -> 'W'
                 LogLevel.ERROR -> 'E'
             }
-            val cause = throwable?.let { t -> " (${t::class.java.simpleName}${t.message?.let { ": $it" }.orEmpty()})" }.orEmpty()
+            val cause = throwable?.let { formatThrowable(it, includeFrames = level != LogLevel.INFO) }.orEmpty()
             val text = scrub("$message$cause").replace('\n', ' ').replace('\r', ' ')
             return "${TIME.format(Instant.ofEpochMilli(epochMs))} $letter/${tag.take(32)}: $text"
+        }
+
+        private fun formatThrowable(root: Throwable, includeFrames: Boolean): String {
+            val chain = buildList {
+                var cur: Throwable? = root
+                val seen = HashSet<Throwable>()
+                while (cur != null && size < 4 && seen.add(cur)) {
+                    val name = cur::class.java.simpleName.ifBlank { cur::class.java.name }
+                    val msg = cur.message?.takeIf { it.isNotBlank() }?.let { ": ${it.take(240)}" }.orEmpty()
+                    add("$name$msg")
+                    cur = cur.cause
+                }
+            }.joinToString(" <- ")
+            if (!includeFrames) return " ($chain)"
+            val deepest = generateSequence(root) { it.cause }.take(4).last()
+            val frames = collectRelevantFrames(deepest, root)
+            return if (frames.isEmpty()) " ($chain)" else " ($chain) | trace: ${frames.joinToString(" <- ")}"
+        }
+
+        private fun collectRelevantFrames(deepest: Throwable, root: Throwable): List<String> {
+            val out = ArrayList<String>(8)
+            fun addFrame(f: StackTraceElement) {
+                val cls = f.className.substringAfterLast('.')
+                val loc = if (f.lineNumber > 0) "${f.fileName ?: cls}:${f.lineNumber}" else (f.fileName ?: cls)
+                val entry = "$cls.${f.methodName}($loc)"
+                if (entry !in out && out.size < 8) out += entry
+            }
+            // Always keep the top frame where the root cause was thrown
+            deepest.stackTrace.firstOrNull()?.let(::addFrame)
+            // Prioritize app.nijiyome.* frames from deepest, then root
+            for (f in deepest.stackTrace) {
+                if (out.size >= 8) break
+                if (f.className.startsWith("app.nijiyome.")) addFrame(f)
+            }
+            if (deepest !== root) {
+                for (f in root.stackTrace) {
+                    if (out.size >= 8) break
+                    if (f.className.startsWith("app.nijiyome.")) addFrame(f)
+                }
+            }
+            // If no app.nijiyome.* frames were present, take up to 3 top frames from deepest
+            if (out.size <= 1) {
+                for (f in deepest.stackTrace.drop(1).take(3)) addFrame(f)
+            }
+            return out
         }
 
         private val QUERY = Regex("""(https?://[^\s?#]+)\?[^\s]*""")

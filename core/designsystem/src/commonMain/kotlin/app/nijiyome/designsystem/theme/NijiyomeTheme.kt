@@ -28,6 +28,9 @@ val LocalNijiyomeDarkTheme = staticCompositionLocalOf { false }
 /** Whether the app is on Negro AMOLED (only meaningful while [LocalNijiyomeDarkTheme] is true). */
 val LocalNijiyomeAmoled = staticCompositionLocalOf { false }
 
+/** Active contrast preference, forwarded to [NijiyomeSeedTheme] so Details never silently drops high contrast. */
+val LocalNijiyomeContrast = staticCompositionLocalOf { ContrastLevel.Standard }
+
 /**
  * App theme = `MaterialExpressiveTheme` + generated token palettes (paletteId / AMOLED / contrast level)
  * + optional system dynamic color (Android 12+) + `MotionScheme.expressive()` (01 §2, §5).
@@ -44,13 +47,13 @@ fun NijiyomeTheme(
     val systemScheme = if (dynamicColor) systemDynamicColorScheme(darkTheme) else null
     val colorScheme = remember(paletteId, amoled, contrast, systemScheme, darkTheme) {
         if (systemScheme != null) {
-            if (darkTheme && amoled) systemScheme.toAmoled() else systemScheme
+            if (darkTheme && amoled) systemScheme.toAmoled(contrast) else systemScheme
         } else {
             val schemes = NijiyomeTokens.palette(paletteId, contrast)
                 ?: checkNotNull(NijiyomeTokens.palette(NijiyomeTokens.DEFAULT_PALETTE, contrast)) { "default palette missing" }
             when {
                 !darkTheme -> schemes.light
-                amoled -> schemes.amoled
+                amoled -> schemes.amoled.toAmoled(contrast)
                 else -> schemes.dark
             }
         }
@@ -59,6 +62,7 @@ fun NijiyomeTheme(
     CompositionLocalProvider(
         LocalNijiyomeDarkTheme provides darkTheme,
         LocalNijiyomeAmoled provides (darkTheme && amoled),
+        LocalNijiyomeContrast provides contrast,
     ) {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,
@@ -72,31 +76,48 @@ fun NijiyomeTheme(
 
 /**
  * Per-content accent (e.g. the poster colour in Details), derived at runtime with materialKolor (01 §2).
- * When [seed] is null the surrounding theme is used unchanged. Light/dark and AMOLED follow the app's resolved mode
- * ([LocalNijiyomeDarkTheme], [LocalNijiyomeAmoled]), never the system's: with Modo "Oscuro" on a light system the
- * seeded scheme used to come out light and left the Details text unreadable.
+ * Uses [PaletteStyle.TonalSpot] (not Expressive, which rotated hues into muddy olive), honours [LocalNijiyomeContrast]
+ * and [LocalReduceMotion], and keeps AMOLED surfaces pure black with crisp hairlines so Details harmonises with the shell.
  */
 @Composable
 fun NijiyomeSeedTheme(
     seed: Color?,
     dark: Boolean = LocalNijiyomeDarkTheme.current,
     amoled: Boolean = LocalNijiyomeAmoled.current,
+    contrast: ContrastLevel = LocalNijiyomeContrast.current,
     content: @Composable () -> Unit,
 ) {
+    val reduceMotion = LocalReduceMotion.current
     if (seed == null) {
         content()
     } else {
+        val contrastDouble = when (contrast) {
+            ContrastLevel.Standard -> 0.0
+            ContrastLevel.Medium -> 0.5
+            ContrastLevel.High -> 1.0
+        }
         DynamicMaterialExpressiveTheme(
             seedColor = seed,
             motionScheme = MotionScheme.expressive(),
             isDark = dark,
             isAmoled = dark && amoled,
-            style = PaletteStyle.Expressive,
+            style = PaletteStyle.TonalSpot,
+            contrastLevel = contrastDouble,
             shapes = MaterialTheme.shapes,
             typography = MaterialTheme.typography,
-            animate = true,
-            content = content,
-        )
+            animate = !reduceMotion,
+        ) {
+            if (dark && amoled) {
+                MaterialTheme(
+                    colorScheme = MaterialTheme.colorScheme.toAmoled(contrast),
+                    shapes = MaterialTheme.shapes,
+                    typography = MaterialTheme.typography,
+                    content = content,
+                )
+            } else {
+                content()
+            }
+        }
     }
 }
 
@@ -115,9 +136,28 @@ fun parseHexColor(hex: String?): Color? {
     }
 }
 
-private fun ColorScheme.toAmoled(): ColorScheme = copy(
-    background = Color.Black,
-    surface = Color.Black,
-    surfaceDim = Color.Black,
-    surfaceContainerLowest = Color.Black,
-)
+/**
+ * True-Black OLED palette: pure `#000000` for background, surface, rail and base cards, paired with crisp neutral hairlines
+ * (`white/14%`, scaled up for Medium/High contrast) and neutral dark-gray elevated containers (`#141418`, `#1E1E24`) for
+ * sheets, chips and interactive states. Eliminates muddy purple/olive patches on both dynamic and curated palettes.
+ */
+fun ColorScheme.toAmoled(contrast: ContrastLevel = ContrastLevel.Standard): ColorScheme {
+    val hairlineAlpha = when (contrast) {
+        ContrastLevel.Standard -> 0.14f
+        ContrastLevel.Medium -> 0.24f
+        ContrastLevel.High -> 0.38f
+    }
+    return copy(
+        background = Color.Black,
+        surface = Color.Black,
+        surfaceDim = Color.Black,
+        surfaceContainerLowest = Color.Black,
+        surfaceContainerLow = Color.Black,
+        surfaceContainer = Color.Black,
+        surfaceContainerHigh = Color(0xFF141418),
+        surfaceContainerHighest = Color(0xFF1E1E24),
+        surfaceVariant = Color(0xFF1A1A20),
+        surfaceBright = Color(0xFF26262E),
+        outlineVariant = Color.White.copy(alpha = hairlineAlpha),
+    )
+}

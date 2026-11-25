@@ -529,7 +529,7 @@ class ExternalMpvPlayerSession internal constructor(
 
     override fun selectSubtitle(groupIndex: Int?) = setOption("sid", groupIndex?.toString() ?: "no")
 
-    override fun selectAudio(id: Int) = setOption("aid", id.toString())
+    override fun selectAudio(id: Int) = setOption("aid", if (id == app.nijiyome.player.AUDIO_TRACK_OFF) "no" else id.toString())
 
     override fun setPreferredLanguages(subtitle: String?, audio: String?) {
         subLang = subtitle

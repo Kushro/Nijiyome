@@ -33,11 +33,13 @@ import java.time.LocalDate
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -156,7 +158,11 @@ class DesktopDownloadRepository internal constructor(
             for (item in queued) {
                 if (running.size >= max) break
                 val rec = records.value[item.id] ?: continue
-                running[item.id] = scope.launch { run(rec) }
+                // Register in `running` before starting so a fast-failing job cannot run `finally` before insertion.
+                val job = scope.launch(start = CoroutineStart.LAZY) { run(rec) }
+                running[item.id] = job
+                job.invokeOnCompletion { running.remove(item.id, job) }
+                job.start()
             }
         }
     }
@@ -210,7 +216,8 @@ class DesktopDownloadRepository internal constructor(
             update(id, persist = true) { it.copy(state = DownloadState.FAILED, error = storedDownloadError(e.message, rec.debrid != null, ERR_FAILED)) }
             records.value[id]?.item?.let { notifier?.notify(DesktopNoticeTexts.downloadFailed(it.title, it.episode), it.sourceLabel) }
         } finally {
-            running.remove(id)
+            val current = currentCoroutineContext()[Job]
+            if (current != null) running.remove(id, current) else running.remove(id)
             scope.launch { pump() }
         }
     }

@@ -70,6 +70,8 @@ dependencies {
     // Hito 5 (W3): the tray icon. MIT. StatusNotifierItem over D-Bus (sd-bus) on Linux, the notification area on Windows; AWT's
     // own tray only speaks XEmbed, which KDE Plasma 6 and GNOME no longer show.
     implementation(libs.composenativetray)
+    // Native WM drag/resize (_NET_WM_MOVERESIZE on X11/XWayland, WM_NCLBUTTONDOWN on Windows) to prevent drag artifacts
+    implementation(libs.jna.platform)
 
     testImplementation(libs.bundles.jvm.test)
     testImplementation(libs.cmp.lifecycle.viewmodel.compose)

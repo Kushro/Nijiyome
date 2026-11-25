@@ -63,6 +63,9 @@ class BrowserGateway(
     @Volatile var upstreamRejectedCredentials: Boolean = false
         private set
 
+    private val authLock = Any()
+    private val authVerified = AtomicBoolean(false)
+
     /** Destinations refused so far (host:port), for the logs and the tests. */
     val refused: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
@@ -179,10 +182,19 @@ class BrowserGateway(
         val up = upstream
         if (up != null) {
             if (upstreamRejectedCredentials) throw IOException("the outbound proxy refused its password")
-            return when (up.kind) {
+            fun openUpstream(): Socket = when (up.kind) {
                 ProxyKind.SOCKS5 -> viaSocks5(up, t)
                 else -> viaHttpConnect(up, t)
             }
+            if (up.hasCredentials && !authVerified.get()) {
+                synchronized(authLock) {
+                    if (upstreamRejectedCredentials) throw IOException("the outbound proxy refused its password")
+                    val sock = openUpstream()
+                    authVerified.set(true)
+                    return sock
+                }
+            }
+            return openUpstream()
         }
         val addresses = t.literal?.let { listOf(it) } ?: try {
             resolve(t.host)

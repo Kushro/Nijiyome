@@ -35,6 +35,7 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.BrightnessMedium
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FormatListNumbered
@@ -135,7 +136,7 @@ import org.koin.compose.getKoin
 // 0.4.0 (worker D): Enhancements = the "Mejoras" panel (EnhancementPanel.kt); it replaces the BUG-022 "Perfil de mejora" sheet (the
 // PC's profiles are one of its sections).
 // 0.4.1: SubtitleStyle = the subtitle sheet's "Estilo" panel, SubtitleStyleFull = its "Más opciones" (SubtitleStyleEditor.kt).
-private enum class Sheet { Quality, Subtitles, Audio, Speed, More, Episodes, Enhancements, SubtitleStyle, SubtitleStyleFull }
+internal enum class Sheet { Quality, Subtitles, Audio, Speed, More, Episodes, Enhancements, SubtitleStyle, SubtitleStyleFull }
 
 /**
  * The running engine: video surface, subtitles (Media3), gestures, controls, overlays, PiP. Milestone 4: shared; the platform parts
@@ -193,6 +194,15 @@ internal fun PlayerContent(
     // The phone's frame generation of this session (Android libmpv; it also posts the notice when FG fails mid-video).
     val frameGen = rememberPhoneFrameGen(vm, session)
     var statsVisible by rememberSaveable { mutableStateOf(false) }
+    var localAspect by rememberSaveable { mutableStateOf(app.nijiyome.model.AspectMode.FIT) }
+    val activeAspect = if (quality.available) quality.requested.aspect else localAspect
+    fun cycleAspect() {
+        val next = nextQuickAspect(activeAspect)
+        localAspect = next
+        session.setAspect(next, quality.requested.zoomPercent)
+        hud = Hud(Hud.Kind.Aspect, label = aspectShortLabel(next))
+        interaction++
+    }
     val chip = enhancementChip(
         location = processing.location,
         switchingTo = processing.switchingTo,
@@ -357,7 +367,7 @@ internal fun PlayerContent(
                 true
             },
     ) {
-        PlayerVideoSurface(session, Modifier.fillMaxSize())
+        PlayerVideoSurface(session, Modifier.fillMaxSize(), aspectMode = activeAspect)
         ScreenSubtitleLayer(
             vm = vm,
             session = session,
@@ -391,7 +401,13 @@ internal fun PlayerContent(
             if (buffering && !(controlsVisible || keepUp)) {
                 BufferingOverlay(state, Modifier.align(Alignment.Center))
             }
-            hud?.let { HudPill(it, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp)) }
+            hud?.let {
+                if (capabilities.touchFirst) {
+                    TouchGestureOverlay(it)
+                } else {
+                    HudPill(it, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp))
+                }
+            }
             // BUG-131: the whole time a Link profile change runs (the result comes as a notice below)
             if (state.linkProfileChanging && hud == null) {
                 LinkProfileChangingPill(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 16.dp))
@@ -440,29 +456,59 @@ internal fun PlayerContent(
             }
 
             AnimatedVisibility(controlsVisible || keepUp, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.fillMaxSize()) {
-                Controls(
-                    session = session,
-                    ps = ps,
-                    state = state,
-                    buffering = buffering,
-                    title = title,
-                    onBack = onBack,
-                    onPip = platform::enterPictureInPicture,
-                    onOpenSheet = { sheet = it; interaction++ },
-                    onOpenPicker = onOpenPicker,
-                    onOpenTorrent = onOpenTorrent,
-                    onNext = vm::playNext,
-                    onInteract = { interaction++ },
-                    fullscreen = fullscreen,
-                    onPrev = vm::playPrevious,
-                    onLock = { locked = true; lockButtonVisible = true; sheet = null },
-                    onScreenshot = { screenshot() },
-                    onToggleFullscreen = { fullscreen = !fullscreen },
-                    onHelp = { helpOpen = true },
-                    enhancementChip = chip,
-                    pc = processing.pc.takeIf { processing.location != app.nijiyome.model.ProcessingLocation.PHONE },
-                    capabilities = capabilities,
-                )
+                val pcInfo = processing.pc.takeIf { processing.location != app.nijiyome.model.ProcessingLocation.PHONE }
+                if (capabilities.touchFirst) {
+                    TouchControls(
+                        style = settings.playerChromeStyle,
+                        session = session,
+                        ps = ps,
+                        state = state,
+                        buffering = buffering,
+                        title = title,
+                        aspectMode = activeAspect,
+                        onCycleAspect = ::cycleAspect,
+                        onBack = onBack,
+                        onPip = platform::enterPictureInPicture,
+                        onOpenSheet = { sheet = it; interaction++ },
+                        onOpenPicker = onOpenPicker,
+                        onOpenTorrent = onOpenTorrent,
+                        onNext = vm::playNext,
+                        onInteract = { interaction++ },
+                        fullscreen = fullscreen,
+                        onPrev = vm::playPrevious,
+                        onLock = { locked = true; lockButtonVisible = true; sheet = null },
+                        onScreenshot = { screenshot() },
+                        onToggleFullscreen = { fullscreen = !fullscreen },
+                        onHelp = { helpOpen = true },
+                        enhancementChip = chip,
+                        pc = pcInfo,
+                        capabilities = capabilities,
+                    )
+                } else {
+                    Controls(
+                        session = session,
+                        ps = ps,
+                        state = state,
+                        buffering = buffering,
+                        title = title,
+                        onBack = onBack,
+                        onPip = platform::enterPictureInPicture,
+                        onOpenSheet = { sheet = it; interaction++ },
+                        onOpenPicker = onOpenPicker,
+                        onOpenTorrent = onOpenTorrent,
+                        onNext = vm::playNext,
+                        onInteract = { interaction++ },
+                        fullscreen = fullscreen,
+                        onPrev = vm::playPrevious,
+                        onLock = { locked = true; lockButtonVisible = true; sheet = null },
+                        onScreenshot = { screenshot() },
+                        onToggleFullscreen = { fullscreen = !fullscreen },
+                        onHelp = { helpOpen = true },
+                        enhancementChip = chip,
+                        pc = pcInfo,
+                        capabilities = capabilities,
+                    )
+                }
             }
             if (endVisible && endUi != null) {
                 EndScreenHost(
@@ -534,9 +580,27 @@ internal fun PlayerContent(
         }
     }
     sheet?.takeIf { it != Sheet.Enhancements && it != Sheet.SubtitleStyle && it != Sheet.SubtitleStyleFull }?.let { kind ->
-        val sheetState = rememberModalBottomSheetState()
-        ModalBottomSheet(onDismissRequest = { sheet = null }, sheetState = sheetState) {
-            TrackModal()
+        // v1.2.0: side sheet in landscape / wide windows so the anime stays visible while picking audio, subs, speed or episodes;
+        // bottom sheet on narrow portrait phones.
+        val sheetTitle = when (kind) {
+            Sheet.Quality -> stringResource(Res.string.player_quality)
+            Sheet.Subtitles -> stringResource(Res.string.player_subtitles)
+            Sheet.Audio -> stringResource(Res.string.player_audio)
+            Sheet.Speed -> "Velocidad"
+            Sheet.More -> stringResource(Res.string.player_more)
+            Sheet.Episodes -> stringResource(Res.string.player_episodes)
+            else -> ""
+        }
+        EnhancementSheet(onDismiss = { sheet = null }) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(sheetTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                IconButton(onClick = { sheet = null }) {
+                    Icon(Icons.Rounded.Close, stringResource(Res.string.player_fx_close))
+                }
+            }
             when (kind) {
                 // Hito 6 (desktop): the qualities of the episode's sources; picking one switches source (SourceQualities.kt)
                 Sheet.Quality -> if (capabilities.sourceQualities && ps.videoHeights.isEmpty()) {
@@ -558,15 +622,32 @@ internal fun PlayerContent(
                 )
                 Sheet.More -> MoreSheetContent(vm, state)
                 Sheet.Episodes -> EpisodesSheetContent(vm, state, current = vm.episodeNumber, onPick = { n -> sheet = null; vm.playEpisode(n) })
-                Sheet.Audio -> ps.audioTracks.forEach { a ->
-                    SheetRow(a.label, a.selected) { session.selectAudio(a.id); sheet = null }
+                Sheet.Audio -> {
+                    if (ps.audioTracks.isEmpty()) {
+                        Text(
+                            "No se detectaron pistas de audio adicionales",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                        )
+                    } else {
+                        val anySelected = ps.audioTracks.any { it.selected }
+                        ps.audioTracks.forEach { a ->
+                            val rowLabel = listOfNotNull(a.label, a.detail).joinToString(" · ")
+                            SheetRow(rowLabel, a.selected) { session.selectAudio(a.id); sheet = null }
+                        }
+                        SheetRow("Sin audio", !anySelected) {
+                            session.selectAudio(app.nijiyome.player.AUDIO_TRACK_OFF)
+                            sheet = null
+                        }
+                    }
                 }
                 Sheet.Enhancements, Sheet.SubtitleStyle, Sheet.SubtitleStyleFull -> Unit // side / bottom sheets above
                 Sheet.Speed -> capabilities.speeds.forEach { sp ->
                     SheetRow(stringResource(Res.string.player_speed_value, speedText(sp)), ps.speed == sp) { session.setSpeed(sp); sheet = null }
                 }
             }
-            Spacer(Modifier.navigationBarsPadding().height(16.dp))
+            Spacer(Modifier.height(12.dp))
         }
     }
 }
@@ -615,6 +696,7 @@ private fun SheetRow(text: String, selected: Boolean, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         trailingContent = { if (selected) Icon(Icons.Rounded.Check, contentDescription = null) },
+        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
         modifier = Modifier.clickable(onClick = onClick),
     )
 }
@@ -629,8 +711,13 @@ internal data class Hud(
     val on: Boolean = false,
     /** Hito 6: the subtitle delay shown ([Kind.SubDelay]). */
     val millis: Long = 0,
+    /** v1.2.0 touch gestures: scrub target / duration / buffered ms and double-tap side (-1 left, +1 right). */
+    val targetMs: Long = 0,
+    val durationMs: Long = 0,
+    val bufferedMs: Long = 0,
+    val doubleTapSide: Int = 0,
 ) {
-    enum class Kind { Brightness, Volume, Seek, Hold, Speed, Subtitles, Audio, SubDelay, Loop, Preset }
+    enum class Kind { Brightness, Volume, Seek, Hold, Speed, Subtitles, Audio, SubDelay, Loop, Preset, Aspect, Scrub, DoubleTapSeek }
 }
 
 /** BUG-131: "Cambiando perfil…" while the PC opens the session with the new profile. */
@@ -659,7 +746,7 @@ private fun ProcessingSwitchPill(to: app.nijiyome.model.ProcessingLocation, onCa
 }
 
 @Composable
-private fun HudPill(hud: Hud, modifier: Modifier) {
+internal fun HudPill(hud: Hud, modifier: Modifier) {
     val scheme = MaterialTheme.colorScheme
     Surface(modifier, shape = RoundedCornerShape(50), color = scheme.surfaceContainerHigh.copy(alpha = 0.85f), contentColor = scheme.onSurface) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
@@ -920,10 +1007,13 @@ private fun Controls(
                         leadingIcon = { Icon(Icons.Rounded.Subtitles, null, Modifier.size(18.dp)) },
                     )
                 }
-                if (ps.audioTracks.size > 1) {
+                // v1.2.0: always accessible once playback starts so users can inspect/switch/mute audio tracks in Media3 & libmpv.
+                if (ps.audioTracks.isNotEmpty() || ps.started) {
+                    val activeAudioLang = ps.audioTracks.firstOrNull { it.selected }?.language?.takeIf { it.isNotBlank() }?.uppercase()
+                    val audioLabel = if (activeAudioLang != null) "${stringResource(Res.string.player_audio)} · $activeAudioLang" else stringResource(Res.string.player_audio)
                     PlayerChip(
                         onClick = { onOpenSheet(Sheet.Audio) },
-                        label = { Text(stringResource(Res.string.player_audio)) },
+                        label = { Text(audioLabel) },
                         leadingIcon = { Icon(Icons.Rounded.Audiotrack, null, Modifier.size(18.dp)) },
                     )
                 }
@@ -1095,7 +1185,7 @@ private fun LegendItem(color: androidx.compose.ui.graphics.Color, label: String)
     }
 }
 
-private fun speedText(speed: Float): String = if (speed % 1f == 0f) speed.toInt().toString() else speed.toString().trimEnd('0')
+internal fun speedText(speed: Float): String = if (speed % 1f == 0f) speed.toInt().toString() else speed.toString().trimEnd('0')
 
 /** BUG-060: below this width the top bar moves its secondary actions to a menu and the chips to a row of their own. */
 private const val COMPACT_TOP_BAR_DP = 600
@@ -1120,7 +1210,7 @@ private val TRANSPORT_GAP_DP = 12.dp
  * BUG-106: lays the element out horizontally centred with its bottom edge [TRANSPORT_GAP_DP] above the centred transport row, whatever
  * its height. Use it on a child of a full-size Box.
  */
-private fun Modifier.aboveTransport(): Modifier = layout { measurable, constraints ->
+internal fun Modifier.aboveTransport(): Modifier = layout { measurable, constraints ->
     val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
     val width = constraints.maxWidth
     val height = constraints.maxHeight

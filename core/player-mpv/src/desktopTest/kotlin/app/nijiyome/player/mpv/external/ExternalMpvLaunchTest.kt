@@ -77,7 +77,7 @@ class ExternalMpvLaunchTest {
             ),
         )
         assertEquals("--no-config", a.first())
-        assertTrue("--cache=yes" in a && "--demuxer-max-bytes=150MiB" in a && "--network-timeout=90" in a)
+        assertTrue("--cache=yes" in a && "--demuxer-max-bytes=300MiB" in a && "--demuxer-max-back-bytes=150MiB" in a && "--network-timeout=90" in a)
         assertTrue("--autofit-larger=90%x90%" in a)
         assertTrue("--glsl-shaders=/s/a.glsl:/s/b.glsl" in a && "--sub-font=Outfit" in a)
         // The quality engine's decoder wins over the default (later options win on mpv's command line).

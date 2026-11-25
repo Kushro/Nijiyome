@@ -17,7 +17,7 @@ import java.util.Locale
 data class TorrentRequest(val uri: String, val mediaId: String, val episode: Int)
 
 /** The loopback stream of an opened torrent: `http://127.0.0.1:<port>/<token>/<hash>/<index>/<name>`. */
-data class OpenedTorrent(val url: String, val torrentId: String)
+data class OpenedTorrent(val url: String, val torrentId: String, val title: String? = null)
 
 /**
  * What the app gives the Link server: the library folder, FFmpeg, the extensions' permissions, the watch history, the player
@@ -60,6 +60,9 @@ interface LinkHost {
 
     /** A Link session reading [torrentId] ended (one call per successful open / reuse). */
     fun torrentSessionEnded(torrentId: String) {}
+
+    /** Stores diagnostic log lines shipped from a paired device (`POST /v1/logs`); returns accepted count. */
+    fun receiveLogs(deviceId: String, deviceName: String, lines: List<String>, appVersion: String? = null, platform: String? = null): Int = 0
 }
 
 /** The exact origin of the engine's stream server for [url] (loopback literal + port + `/<token>/`), trusted for that session only. */

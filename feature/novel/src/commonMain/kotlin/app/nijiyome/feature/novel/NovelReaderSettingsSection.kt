@@ -108,6 +108,7 @@ private fun SwitchRow(title: String, hint: String?, checked: Boolean, onChange: 
         headlineContent = { Text(title) },
         supportingContent = if (hint != null) ({ Text(hint) }) else null,
         trailingContent = { Switch(checked = checked, onCheckedChange = onChange) },
+        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
         modifier = Modifier.clickable { onChange(!checked) },
     )
 }
@@ -123,6 +124,7 @@ private fun SliderRow(title: String, value: Float, range: ClosedFloatingPointRan
                 Slider(value = drag, onValueChange = { drag = it }, onValueChangeFinished = { onDone(drag) }, valueRange = range, steps = steps)
             }
         },
+        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
     )
 }
 
