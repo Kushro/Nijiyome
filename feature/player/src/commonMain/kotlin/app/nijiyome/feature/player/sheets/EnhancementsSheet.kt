@@ -218,7 +218,7 @@ private fun PcSection(vm: PlayerViewModel, state: PlayerUiState, processing: Pro
         SheetSection(stringResource(Res.string.player_link_profile)) {
             Hint(stringResource(Res.string.player_link_profile_hint))
             if (processing.profileChanging || state.linkProfileChanging) {
-                Row(Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                     Text(stringResource(Res.string.player_link_profile_changing), style = MaterialTheme.typography.bodyMedium)
                 }
