@@ -6,6 +6,7 @@
     <string name="rd_s2_tonight">Esta noche</string>
     <string name="rd_s2_tonight_sub">%1$s · %2$d para ver</string>
     <string name="rd_s2_shelves_sub">Tus filas, en el orden que elegiste</string>
+    <string name="rd_s2_tonight_all">Ver todo lo que estás viendo</string>
     <string name="rd_s2_tonight_resume">Sigue donde quedaste</string>
     <string name="rd_s2_tonight_out_at">Ep. %1$d salió a las %2$s</string>
     <string name="rd_s2_tonight_out">Ep. %1$d ya salió</string>

@@ -6,6 +6,7 @@
     <string name="rd_s2_tonight">Tonight</string>
     <string name="rd_s2_tonight_sub">%1$s · %2$d to watch</string>
     <string name="rd_s2_shelves_sub">Your rows, in the order you chose</string>
+    <string name="rd_s2_tonight_all">See everything you are watching</string>
     <string name="rd_s2_tonight_resume">Pick up where you left off</string>
     <string name="rd_s2_tonight_out_at">Ep. %1$d out at %2$s</string>
     <string name="rd_s2_tonight_out">Ep. %1$d is out</string>

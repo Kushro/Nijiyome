@@ -310,7 +310,6 @@ private fun CalendarToolbar(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             Segmented(options = options, selected = structure, onSelect = onStructure)
             PeriodNav(state, onShift, onToday, Modifier.widthIn(max = 460.dp))

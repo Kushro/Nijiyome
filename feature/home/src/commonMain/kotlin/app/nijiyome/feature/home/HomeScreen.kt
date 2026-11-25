@@ -407,7 +407,13 @@ private fun HomeTonightLayout(ctx: HomeRowCtx, rows: List<String>, frame: HomeFr
                     val m = Modifier.homeEntrance(0)
                     when {
                         ctx.tonight.isEmpty() -> TonightEmpty(a.onOpenCalendar, m)
-                        frame.wide -> Box(m) { TonightRow(ctx) }
+                        frame.wide -> Column(m.fillMaxWidth()) {
+                            TonightRow(ctx)
+                            // HOME-07 "Ver todo" -> Biblioteca › Continuar (the wide header has no row title to carry it).
+                            TextButton(onClick = a.onOpenLibrary, modifier = Modifier.align(Alignment.End).padding(end = 16.dp)) {
+                                Text(stringResource(Res.string.rd_s2_tonight_all))
+                            }
+                        }
                         else -> HomeSection(stringResource(Res.string.rd_s2_tonight), m, onSeeAll = a.onOpenLibrary) { TonightRow(ctx) }
                     }
                 }
