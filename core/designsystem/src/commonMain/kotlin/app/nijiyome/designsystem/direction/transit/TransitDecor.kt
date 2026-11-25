@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -48,6 +50,7 @@ import app.nijiyome.designsystem.direction.EpisodeMarkState
 import app.nijiyome.designsystem.direction.LocalCoverAccent
 import app.nijiyome.designsystem.direction.LocalStatusColors
 import app.nijiyome.designsystem.direction.LocalThemeTone
+import app.nijiyome.designsystem.direction.RegionData
 import app.nijiyome.designsystem.direction.StatusSlot
 import app.nijiyome.designsystem.direction.ThemeTone
 import app.nijiyome.designsystem.motion.LocalMotion
@@ -61,6 +64,22 @@ import org.jetbrains.compose.resources.stringResource
 // per card, the AIRING departure board, the LINK transfer between the computer line and the phone line, episodes as stations,
 // progress as a line with its train, list statuses as ringed stations, and the end-of-line empty state.
 internal object TransitDecor : DirectionDecor {
+
+    @Composable
+    override fun regionModifier(region: DecorRegion, data: RegionData): Modifier = when (region) {
+        DecorRegion.LINK -> transfer(connected = data.connected != false)
+        DecorRegion.PLAYER_SEEK -> chapterStations(data.chapterFractions)
+        else -> regionModifier(region)
+    }
+
+    /** The departure board is a dark island in every mode (artifact `.tr-board`), so text drawn straight on it is board text. */
+    @Composable
+    override fun regionContentColor(region: DecorRegion): Color =
+        if (region == DecorRegion.AIRING) {
+            TransitPalettes.boardOf(MaterialTheme.colorScheme, LocalThemeTone.current).boardText
+        } else {
+            LocalContentColor.current
+        }
 
     @Composable
     override fun regionModifier(region: DecorRegion): Modifier {
@@ -100,35 +119,53 @@ internal object TransitDecor : DirectionDecor {
     }
 
     /**
-     * The airing agenda as a departure board: an enamel island (dark blue on Grafito) in the dark modes. In light mode the board turns
-     * to light enamel (the accent container) because the region cannot recolor the text the screen draws inside it.
+     * The airing agenda as a departure board: an enamel island (dark blue on Grafito) in every mode, like real boards. In light mode it
+     * uses the palette's dark board; the screen reads [regionContentColor] for the text it draws straight on the board.
      */
     @Composable
     private fun departureBoard(): Modifier {
         val tone = LocalThemeTone.current
-        val colors = MaterialTheme.colorScheme
+        val board = TransitPalettes.boardOf(MaterialTheme.colorScheme, tone)
         val shape = RoundedCornerShape(14.dp)
-        return if (tone == ThemeTone.LIGHT) {
-            Modifier
-                .background(colors.primaryContainer, shape)
-                .border(1.dp, mix(colors.primaryContainer, colors.primary, 0.35f), shape)
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-        } else {
-            val board = TransitPalettes.tokensOf(colors, tone)
-            val base = Modifier.background(board.boardBg, shape)
-            (if (tone == ThemeTone.OLED) base.border(1.dp, board.boardLine, shape) else base)
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+        val base = Modifier.background(board.boardBg, shape)
+        return (if (tone == ThemeTone.OLED) base.border(1.dp, board.boardLine, shape) else base)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    }
+
+    /**
+     * Chapter starts as small porcelain stations on the seek bar (artifact `.tr-chapters`), drawn above the bar at its vertical middle.
+     * Static: nothing animates, so `rich == false` changes nothing here.
+     */
+    @Composable
+    private fun chapterStations(fractions: List<Float>): Modifier {
+        if (fractions.isEmpty()) return Modifier
+        val ring = TransitInk.ink
+        return Modifier.drawWithContent {
+            drawContent()
+            val y = size.height / 2f
+            val r = 5.dp.toPx()
+            for (f in fractions) {
+                if (f <= 0f || f >= 1f) continue
+                val c = Offset(size.width * f, y)
+                drawCircle(Color.White.copy(alpha = 0.6f), r + 1.5.dp.toPx(), c)
+                drawCircle(TransitInk.porcelain, r, c)
+                drawCircle(ring, r - 1.25.dp.toPx(), c, style = Stroke(2.5.dp.toPx()))
+            }
         }
     }
 
-    /** Link: the computer line (a) and the phone line (b) meeting at a transfer capsule, drawn above the region's content. */
+    /**
+     * Link: the computer line (a) and the phone line (b) meeting at a transfer capsule, drawn above the region's content. Not
+     * [connected]: the phone line goes dashed and gray, its stations hollow, and the capsule is outlined in the warning color.
+     */
     @Composable
-    private fun transfer(): Modifier {
+    private fun transfer(connected: Boolean = true): Modifier {
         val colors = MaterialTheme.colorScheme
         val tokens = TransitPalettes.tokensOf(colors, LocalThemeTone.current)
         val a = tokens.trA
-        val b = tokens.trB
-        val capStroke = colors.onSurface
+        val b = if (connected) tokens.trB else tokens.lineStrong
+        val bFill = if (connected) TransitInk.porcelain else colors.surface
+        val capStroke = if (connected) colors.onSurface else tokens.warn
         val level = LocalMotion.current.level
         val drawn = remember { Animatable(if (level == MotionLevel.FULL || level == MotionLevel.PERF) 0f else 1f) }
         LaunchedEffect(Unit) {
@@ -143,23 +180,35 @@ internal object TransitDecor : DirectionDecor {
                 val w = 5.dp.toPx()
                 val f = drawn.value
                 drawLine(a, Offset(left, y), Offset(left + (mid - left) * f, y), strokeWidth = w)
-                drawLine(b, Offset(mid, y), Offset(mid + (right - mid) * f, y), strokeWidth = w)
+                if (connected) {
+                    drawLine(b, Offset(mid, y), Offset(mid + (right - mid) * f, y), strokeWidth = w)
+                } else {
+                    val dot = 3.dp.toPx()
+                    drawLine(
+                        b,
+                        Offset(mid, y),
+                        Offset(mid + (right - mid) * f, y),
+                        strokeWidth = 3.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(dot, dot)),
+                    )
+                }
                 val endR = 5.dp.toPx()
                 val endStroke = 3.dp.toPx()
                 drawCircle(TransitInk.porcelain, endR, Offset(left, y))
                 drawCircle(a, endR, Offset(left, y), style = Stroke(endStroke))
-                drawCircle(TransitInk.porcelain, endR, Offset(right, y))
+                drawCircle(bFill, endR, Offset(right, y))
                 drawCircle(b, endR, Offset(right, y), style = Stroke(endStroke))
                 val capSize = Size(50.dp.toPx(), 24.dp.toPx())
                 val capTopLeft = Offset(mid - capSize.width / 2f, y - capSize.height / 2f)
                 val corner = CornerRadius(12.dp.toPx())
                 drawRoundRect(TransitInk.porcelain, capTopLeft, capSize, corner)
-                drawRoundRect(capStroke, capTopLeft, capSize, corner, style = Stroke(2.5.dp.toPx()))
+                val capDash = if (connected) null else PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))
+                drawRoundRect(capStroke, capTopLeft, capSize, corner, style = Stroke(2.5.dp.toPx(), pathEffect = capDash))
                 val stR = 6.dp.toPx()
                 val stStroke = 3.5.dp.toPx()
                 drawCircle(TransitInk.porcelain, stR, Offset(mid - 12.dp.toPx(), y))
                 drawCircle(a, stR - stStroke / 2f, Offset(mid - 12.dp.toPx(), y), style = Stroke(stStroke))
-                drawCircle(TransitInk.porcelain, stR, Offset(mid + 12.dp.toPx(), y))
+                drawCircle(bFill, stR, Offset(mid + 12.dp.toPx(), y))
                 drawCircle(b, stR - stStroke / 2f, Offset(mid + 12.dp.toPx(), y), style = Stroke(stStroke))
             }
             .padding(top = 50.dp)

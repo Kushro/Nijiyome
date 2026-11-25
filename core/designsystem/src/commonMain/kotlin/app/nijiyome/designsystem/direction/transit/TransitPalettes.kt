@@ -571,4 +571,13 @@ object TransitPalettes {
      */
     fun tokensOf(scheme: ColorScheme, tone: ThemeTone): TransitTokens =
         (all.firstOrNull { it.owns(scheme, tone) } ?: grafito).tokens(tone)
+
+    /**
+     * The tokens that hold the departure board of the active scheme. The board is a dark island in every mode, so light mode borrows
+     * the board of the same palette's dark tokens (the light tokens leave it unset).
+     */
+    fun boardOf(scheme: ColorScheme, tone: ThemeTone): TransitTokens {
+        val palette = all.firstOrNull { it.owns(scheme, tone) } ?: grafito
+        return palette.tokens(if (tone == ThemeTone.LIGHT) ThemeTone.DARK else tone)
+    }
 }
