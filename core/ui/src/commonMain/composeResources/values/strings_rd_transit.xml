@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, lane D3 (Tránsito nocturno): the three Transit card styles. -->
+    <string name="rd_transit_card_station">Station</string>
+    <string name="rd_transit_card_ticket">Ticket</string>
+    <string name="rd_transit_card_line">Line</string>
+    <string name="rd_transit_prefix_episode">E</string>
+    <string name="rd_transit_prefix_chapter">C</string>
+    <string name="rd_transit_play">Play</string>
+    <string name="rd_transit_sr_read">Read up to chapter %1$d of %2$d</string>
+    <string name="rd_transit_sr_read_open">Read up to chapter %1$d</string>
+    <string name="rd_transit_sr_unaired">No episodes aired yet, %1$d in total</string>
+    <string name="rd_transit_sr_seen">Watched %1$d of %2$d</string>
+    <string name="rd_transit_sr_seen_aired">Watched %1$d of %2$d, %3$d aired</string>
+    <string name="rd_transit_sr_seen_open">Watched %1$d</string>
+    <string name="rd_transit_seg_episode">Episode</string>
+    <string name="rd_transit_seg_chapter">Chapter</string>
+    <string name="rd_transit_seg_seen">Watched</string>
+    <string name="rd_transit_seg_read">Read</string>
+    <string name="rd_transit_seg_next">Next</string>
+    <string name="rd_transit_seg_premiere">Premiere</string>
+    <string name="rd_transit_no_date">No date</string>
+    <string name="rd_transit_not_aired">Not aired</string>
+    <string name="rd_transit_count">%1$d of %2$d</string>
+    <string name="rd_transit_completed">Completed · %1$d ep.</string>
+</resources>

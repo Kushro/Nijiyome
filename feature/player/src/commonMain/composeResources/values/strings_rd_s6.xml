@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Sparkles redesign, lane S6: the player's grouped sheets (sheets/**). -->
+<resources>
+    <!-- container -->
+    <string name="rd_s6_back">Back</string>
+    <string name="rd_s6_close">Close</string>
+    <string name="rd_s6_sheet_tracks">Tracks</string>
+    <string name="rd_s6_sheet_picture">Picture</string>
+    <string name="rd_s6_sheet_speed">Speed and timer</string>
+    <string name="rd_s6_ctrl_key">Ctrl+%1$d</string>
+    <string name="rd_s6_key_suffix">Key %1$s.</string>
+
+    <!-- tracks: audio -->
+    <string name="rd_s6_audio_none">This video has no other audio track.</string>
+    <string name="rd_s6_audio_off">No audio</string>
+    <string name="rd_s6_audio_key_hint">%1$s switches the audio track.</string>
+
+    <!-- tracks: subtitles -->
+    <string name="rd_s6_subtitles_off">Off</string>
+    <string name="rd_s6_delay_key_hint">%1$s shows them earlier, %2$s later.</string>
+    <string name="rd_s6_second_track">Second track, on top</string>
+    <string name="rd_s6_style_quick">Quick style</string>
+    <string name="rd_s6_sub_size">Size</string>
+    <string name="rd_s6_sub_transparency">Background transparency</string>
+    <string name="rd_s6_sub_position">Vertical position</string>
+    <string name="rd_s6_sub_more_style">More style options</string>
+
+    <!-- tracks: translation -->
+    <string name="rd_s6_translation">Translation</string>
+    <string name="rd_s6_translation_off">No translation engine is set up. Pick one in Settings to translate subtitles while you watch.</string>
+    <string name="rd_s6_translation_no_key">%1$s needs an API key. Add it in Settings.</string>
+    <string name="rd_s6_translation_settings">Open translation settings</string>
+
+    <!-- enhancements -->
+    <string name="rd_s6_upscaling">Upscaling</string>
+    <string name="rd_s6_upscaling_phone">Upscaling on the phone</string>
+    <string name="rd_s6_family">Family</string>
+    <string name="rd_s6_mode">Mode</string>
+    <string name="rd_s6_tier">Level</string>
+    <string name="rd_s6_family_anime4k">Anime4K</string>
+    <string name="rd_s6_family_anime4k_hint">For blurry or compressed sources, like most web episodes.</string>
+    <string name="rd_s6_family_artcnn_hint">Neural upscaling that needs the Vulkan renderer.</string>
+    <string name="rd_s6_desktop_only">Desktop only: its shader ships with the computer version.</string>
+    <string name="rd_s6_where_this_device">This device</string>
+    <string name="rd_s6_open_link_settings">Open Nijiyome Link</string>
+    <string name="rd_s6_fg_title">Frame generation</string>
+    <string name="rd_s6_fg_desktop_hint">Frame generation uses lsfg-vk and only works in mpv's own window, so the episode opens there. Turn it on and pick the multiplier in Settings.</string>
+    <string name="rd_s6_fg_desktop_settings">Frame generation settings</string>
+
+    <!-- picture -->
+    <string name="rd_s6_quality_changes_source">On this computer a different quality plays a different source of the episode.</string>
+    <string name="rd_s6_quality_single">This stream comes in one quality.</string>
+    <string name="rd_s6_color">Colour</string>
+    <string name="rd_s6_picture_reset">Reset picture</string>
+    <string name="rd_s6_picture_needs_mpv">Zoom, colour and decoder need the MPV engine. Media3 plays the video as it comes.</string>
+    <string name="rd_s6_decoder_gpu">GPU</string>
+    <string name="rd_s6_decoder_gpu_direct">GPU direct</string>
+    <string name="rd_s6_decoder_cpu">CPU</string>
+    <string name="rd_s6_decoder_auto_hint">Picks the best one available by itself.</string>
+    <string name="rd_s6_decoder_gpu_hint">Decodes on the GPU and copies the frames: works with every enhancement.</string>
+    <string name="rd_s6_decoder_gpu_direct_hint">Decodes straight on the GPU: uses the least battery.</string>
+    <string name="rd_s6_decoder_cpu_hint">Plays almost anything, but it is the slowest.</string>
+
+    <!-- speed and timer -->
+    <string name="rd_s6_speed_hold_hint">Hold the video to play at 2× until you let go.</string>
+    <string name="rd_s6_speed_keys_hint">%1$s speeds up, %2$s slows down.</string>
+    <string name="rd_s6_sleep_end_hint">Pauses when this episode ends and does not start the next one.</string>
+    <string name="rd_s6_playback">Playback</string>
+
+    <!-- more -->
+    <string name="rd_s6_layout">Controls layout</string>
+    <string name="rd_s6_layout_cinema">Cinema</string>
+    <string name="rd_s6_layout_classic">Classic</string>
+    <string name="rd_s6_layout_minimal">Minimal</string>
+    <string name="rd_s6_layout_panel">Panel</string>
+    <string name="rd_s6_layout_vertical">Vertical</string>
+    <string name="rd_s6_layout_cinema_hint">Controls over the video, with the transport in the middle and gesture zones.</string>
+    <string name="rd_s6_layout_classic_hint">Controls over the video, with the sheets beside it.</string>
+    <string name="rd_s6_layout_minimal_hint">One low bar with the time, the progress bar and icon buttons.</string>
+    <string name="rd_s6_layout_panel_hint">A fixed side panel with tracks and enhancements, for large screens.</string>
+    <string name="rd_s6_layout_vertical_hint">The video on top and the tracks and enhancements under it, upright.</string>
+    <string name="rd_s6_torrent_not_in_client">This source comes from a debrid service, not from the torrent client.</string>
+    <string name="rd_s6_player_settings">Player settings</string>
+</resources>
