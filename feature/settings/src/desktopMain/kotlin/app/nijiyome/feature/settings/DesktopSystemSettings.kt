@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.nijiyome.feature.settings.resources.Res
+import app.nijiyome.feature.settings.resources.rd_s10_native_bar
+import app.nijiyome.feature.settings.resources.rd_s10_native_bar_hint
 import app.nijiyome.feature.settings.resources.settings_system_autostart
 import app.nijiyome.feature.settings.resources.settings_system_autostart_hint
 import app.nijiyome.feature.settings.resources.settings_system_close_to_tray
@@ -153,12 +155,14 @@ internal actual fun PlatformSystemRows() {
         enabled = control.discordConfigured,
         onChange = { on -> control.update { it.copy(discordPresence = on) } },
     )
-    SwitchRow(
-        label = "Barra de título nativa del sistema",
-        hint = "Usa las decoraciones de ventana del sistema operativo (aplica al reiniciar).",
-        checked = prefs.nativeTitleBar,
-        onChange = { on -> control.update { it.copy(nativeTitleBar = on) } },
-    )
+    SettingAnchor("system_native_bar") {
+        SwitchRow(
+            label = stringResource(Res.string.rd_s10_native_bar),
+            hint = stringResource(Res.string.rd_s10_native_bar_hint),
+            checked = prefs.nativeTitleBar,
+            onChange = { on -> control.update { it.copy(nativeTitleBar = on) } },
+        )
+    }
     if (control.linkHandlerSupported) LinkHandlerRow(control)
     if (control.secretsBackend == "file") SectionHint(stringResource(Res.string.settings_system_secrets_file))
     SecretsUnreadableNotice(control)

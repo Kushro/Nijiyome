@@ -65,6 +65,14 @@ import app.nijiyome.model.LinkServerState
 import app.nijiyome.model.LinkServerDevice
 import app.nijiyome.model.QrMatrix
 import app.nijiyome.ui.format.relativeTime
+import app.nijiyome.ui.patterns.FolderPathPicker
+import app.nijiyome.ui.patterns.PortCheck
+import app.nijiyome.ui.patterns.PortPicker
+import app.nijiyome.designsystem.theme.NijiyomeFonts
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
@@ -77,19 +85,29 @@ import org.koin.compose.getKoin
 internal fun LinkSectionForPlatform(state: SettingsUiState, vm: SettingsViewModel, onOpenLinked: () -> Unit) {
     val koin = getKoin()
     val server = remember(koin) { koin.getOrNull<LinkServerController>() }
-    if (server != null) {
-        LinkServerSection(server)
-    } else {
-        LinkSection(state, vm, onOpenLinked)
+    SettingAnchor("link_pairing") {
+        if (server != null) {
+            LinkServerSection(server)
+        } else {
+            LinkSection(state, vm, onOpenLinked)
+        }
     }
 }
 
+/** The desktop network controller (proxy, FlareSolverr, media proxy), or null where none is bound (Android). */
 @Composable
-internal fun NetworkSectionForPlatform() {
+internal fun rememberNetworkController(): app.nijiyome.model.NetworkSettingsController? {
     val koin = getKoin()
-    val net = remember(koin) { koin.getOrNull<app.nijiyome.model.NetworkSettingsController>() }
-    if (net != null) NetworkSettingsSection(net)
+    return remember(koin) { koin.getOrNull<app.nijiyome.model.NetworkSettingsController>() }
 }
+
+/** Pairing codes: a mono, tabular face whatever display face the direction brings (some draw headlines with a brush). */
+@Composable
+internal fun codeTextStyle(): TextStyle = MaterialTheme.typography.headlineSmall.copy(
+    fontFamily = NijiyomeFonts.jetBrainsMono,
+    fontFeatureSettings = "tnum",
+    letterSpacing = 2.sp,
+)
 
 /**
  * The desktop's Link server (after Tatakai Next's desktop Link screen): turn it on, the name phones see, mDNS, the pairing window
@@ -151,7 +169,7 @@ internal fun LinkServerSection(server: LinkServerController) {
     // v1.2.0: Live active Link sessions (shows which paired phone is using this PC for upscaling/FG right now)
     if (st.activeSessions.isNotEmpty()) {
         Text(
-            "Sesiones activas (${st.activeSessions.size})",
+            stringResource(Res.string.rd_s10_link_sessions, st.activeSessions.size),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
         )
@@ -179,14 +197,14 @@ internal fun LinkServerSection(server: LinkServerController) {
                         Text(pipe, style = MaterialTheme.typography.bodySmall, color = scheme.primary)
                         val cacheMb = sess.cachedBytes / (1024L * 1024L)
                         Text(
-                            "Caché RAM: ${cacheMb} MB / ${st.cacheLimitMb} MB · Adelanto: +${sess.leadSecs.toInt()} s",
+                            stringResource(Res.string.rd_s10_link_session_cache, cacheMb.toString(), st.cacheLimitMb.toString(), sess.leadSecs.toInt().toString()),
                             style = MaterialTheme.typography.labelSmall,
                             fontFamily = FontFamily.Monospace,
                             color = scheme.onSurfaceVariant,
                         )
                     }
                     OutlinedButton(onClick = { server.stopSession(sess.sessionId) }) {
-                        Text("Detener")
+                        Text(stringResource(Res.string.rd_s10_link_session_stop))
                     }
                 }
             }
@@ -207,7 +225,7 @@ internal fun LinkServerSection(server: LinkServerController) {
             pairing.qr?.let { QrCode(it, stringResource(Res.string.settings_linksrv_qr)) }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(Res.string.settings_linksrv_code), style = MaterialTheme.typography.labelLarge)
-                Text(pairing.code.chunked(5).joinToString(" "), style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+                Text(pairing.code.chunked(5).joinToString(" "), style = codeTextStyle())
                 val left = ((pairing.expiresAtMs - now) / 1000).coerceAtLeast(0)
                 Text(stringResource(Res.string.settings_linksrv_expires, left.toString()), style = MaterialTheme.typography.bodySmall)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -248,33 +266,31 @@ internal fun LinkServerSection(server: LinkServerController) {
         checked = st.announce,
         onChange = server::setAnnounce,
     )
-    TextSetting(
-        label = stringResource(Res.string.settings_linksrv_library),
-        hint = stringResource(Res.string.settings_linksrv_library_hint),
-        value = st.libraryFolder,
-        onSave = server::setLibraryFolder,
-    )
-    PortSetting(
-        label = stringResource(Res.string.settings_linksrv_port),
-        hint = stringResource(Res.string.settings_linksrv_port_hint, LinkServerPorts.LINK_DEFAULT.toString()),
-        value = st.port,
-        other = st.extPort,
-        onSave = server::setPort,
-    )
-    SettingRow(
-        label = "Caché de reproducción en RAM",
-        hint = "Conserva segmentos ya procesados (Anime4K / LSFG) para retroceder al instante sin volver a procesarlos.",
-        stack = true,
-    ) {
-        Segmented(
-            options = listOf(512, 1024, 2048, 4096).map { mb ->
-                SegmentedOption(mb, if (mb >= 1024) "${mb / 1024} GB" else "$mb MB")
-            },
-            selected = st.cacheLimitMb,
-            onSelect = server::setCacheLimitMb,
-            fillWidth = true,
-            small = true,
+    SettingRow(label = stringResource(Res.string.settings_linksrv_library), hint = stringResource(Res.string.settings_linksrv_library_hint), stack = true) {
+        FolderPathPicker(path = st.libraryFolder, onPathChange = server::setLibraryFolder, label = stringResource(Res.string.settings_linksrv_library))
+    }
+    SettingAnchor("link_ports") {
+        PortSetting(
+            label = stringResource(Res.string.settings_linksrv_port),
+            hint = stringResource(Res.string.settings_linksrv_port_hint, LinkServerPorts.LINK_DEFAULT.toString()),
+            value = st.port,
+            other = st.extPort,
+            default = LinkServerPorts.LINK_DEFAULT,
+            onSave = server::setPort,
         )
+    }
+    SettingAnchor("link_cache") {
+        SettingRow(label = stringResource(Res.string.rd_s10_link_ram), hint = stringResource(Res.string.rd_s10_link_ram_hint), stack = true) {
+            Segmented(
+                options = listOf(512, 1024, 2048, 4096).map { mb ->
+                    SegmentedOption(mb, if (mb >= 1024) "${mb / 1024} GB" else "$mb MB")
+                },
+                selected = st.cacheLimitMb,
+                onSelect = server::setCacheLimitMb,
+                fillWidth = true,
+                small = true,
+            )
+        }
     }
     FirewallRow(st, server)
     if (st.error != "identity") {
@@ -285,78 +301,81 @@ internal fun LinkServerSection(server: LinkServerController) {
     }
 
     // integrated extension server
-    Text(stringResource(Res.string.settings_linksrv_ext), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-    SwitchRow(
-        label = stringResource(Res.string.settings_linksrv_ext_enable),
-        hint = stringResource(Res.string.settings_linksrv_ext_hint),
-        checked = st.extEnabled,
-        onChange = server::setExtensionServerEnabled,
-    )
-    if (st.extError != null) {
-        val text = if (st.extError == "port_in_use") {
-            stringResource(Res.string.settings_linksrv_error_port, st.extPort.toString())
-        } else {
-            stringResource(Res.string.settings_linksrv_ext_error)
-        }
-        Text(text, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        if (st.extError == "port_in_use") {
-            val alt = LinkServerPorts.alternative(st.extPort, LinkServerPorts.EXT_DEFAULT).takeIf { it != st.port }
-                ?: LinkServerPorts.alternative(st.extPort + 10, LinkServerPorts.EXT_DEFAULT)
-            TextButton(onClick = { server.setExtensionPort(alt) }) { Text(stringResource(Res.string.settings_linksrv_try_port, alt.toString())) }
-        }
-    }
-    if (st.extEnabled) {
-        PortSetting(
-            label = stringResource(Res.string.settings_linksrv_port),
-            hint = stringResource(Res.string.settings_linksrv_port_hint, LinkServerPorts.EXT_DEFAULT.toString()),
-            value = st.extPort,
-            other = st.port,
-            onSave = server::setExtensionPort,
+    SettingAnchor("link_ext_server") {
+        Text(stringResource(Res.string.settings_linksrv_ext), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        SwitchRow(
+            label = stringResource(Res.string.settings_linksrv_ext_enable),
+            hint = stringResource(Res.string.settings_linksrv_ext_hint),
+            checked = st.extEnabled,
+            onChange = server::setExtensionServerEnabled,
         )
-    }
-    if (st.extRunning) {
-        st.extUrls.firstOrNull()?.let { Text(stringResource(Res.string.settings_linksrv_ext_running, it), style = MaterialTheme.typography.bodyMedium) }
-        SectionHint(stringResource(Res.string.settings_linksrv_ext_pair_hint))
-        val ep = st.extPairing
-        if (ep == null) {
-            FilledTonalButton(onClick = server::openExtensionPairing) { Text(stringResource(Res.string.settings_linksrv_ext_pair)) }
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                ep.qr?.let { QrCode(it, stringResource(Res.string.settings_linksrv_qr)) }
-                Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(Res.string.settings_linksrv_code), style = MaterialTheme.typography.labelLarge)
-                    Text(ep.code, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
-                    Text(stringResource(Res.string.settings_linksrv_expires, ((ep.expiresAtMs - now) / 1000).coerceAtLeast(0).toString()), style = MaterialTheme.typography.bodySmall)
-                    // for a device without a camera (another PC) or a phone that opens links: the nijiyome:// link itself
-                    Text(stringResource(Res.string.settings_linksrv_ext_link), style = MaterialTheme.typography.labelLarge)
-                    SelectionContainer {
-                        Text(ep.link, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(onClick = { clipboard.setText(AnnotatedString(ep.link)) }) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-                            Text(stringResource(Res.string.settings_linksrv_ext_copy_link), modifier = Modifier.padding(start = 8.dp))
+        if (st.extError != null) {
+            val text = if (st.extError == "port_in_use") {
+                stringResource(Res.string.settings_linksrv_error_port, st.extPort.toString())
+            } else {
+                stringResource(Res.string.settings_linksrv_ext_error)
+            }
+            Text(text, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            if (st.extError == "port_in_use") {
+                val alt = LinkServerPorts.alternative(st.extPort, LinkServerPorts.EXT_DEFAULT).takeIf { it != st.port }
+                    ?: LinkServerPorts.alternative(st.extPort + 10, LinkServerPorts.EXT_DEFAULT)
+                TextButton(onClick = { server.setExtensionPort(alt) }) { Text(stringResource(Res.string.settings_linksrv_try_port, alt.toString())) }
+            }
+        }
+        if (st.extEnabled) {
+            PortSetting(
+                label = stringResource(Res.string.settings_linksrv_port),
+                hint = stringResource(Res.string.settings_linksrv_port_hint, LinkServerPorts.EXT_DEFAULT.toString()),
+                value = st.extPort,
+                other = st.port,
+                default = LinkServerPorts.EXT_DEFAULT,
+                onSave = server::setExtensionPort,
+            )
+        }
+        if (st.extRunning) {
+            st.extUrls.firstOrNull()?.let { Text(stringResource(Res.string.settings_linksrv_ext_running, it), style = MaterialTheme.typography.bodyMedium) }
+            SectionHint(stringResource(Res.string.settings_linksrv_ext_pair_hint))
+            val ep = st.extPairing
+            if (ep == null) {
+                FilledTonalButton(onClick = server::openExtensionPairing) { Text(stringResource(Res.string.settings_linksrv_ext_pair)) }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ep.qr?.let { QrCode(it, stringResource(Res.string.settings_linksrv_qr)) }
+                    Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(Res.string.settings_linksrv_code), style = MaterialTheme.typography.labelLarge)
+                        Text(ep.code, style = codeTextStyle())
+                        Text(stringResource(Res.string.settings_linksrv_expires, ((ep.expiresAtMs - now) / 1000).coerceAtLeast(0).toString()), style = MaterialTheme.typography.bodySmall)
+                        // for a device without a camera (another PC) or a phone that opens links: the nijiyome:// link itself
+                        Text(stringResource(Res.string.settings_linksrv_ext_link), style = MaterialTheme.typography.labelLarge)
+                        SelectionContainer {
+                            Text(ep.link, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
                         }
-                        TextButton(onClick = server::closeExtensionPairing) { Text(stringResource(Res.string.settings_linksrv_cancel)) }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilledTonalButton(onClick = { clipboard.setText(AnnotatedString(ep.link)) }) {
+                                Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                                Text(stringResource(Res.string.settings_linksrv_ext_copy_link), modifier = Modifier.padding(start = 8.dp))
+                            }
+                            TextButton(onClick = server::closeExtensionPairing) { Text(stringResource(Res.string.settings_linksrv_cancel)) }
+                        }
                     }
                 }
             }
-        }
-        ExtPasswordSetting(st, server)
-        if (st.extDevices.isNotEmpty()) {
-            Text(stringResource(Res.string.settings_linksrv_ext_devices), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 8.dp))
-            for (d in st.extDevices) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(d.label, style = MaterialTheme.typography.bodyLarge)
-                        d.lastSeenMs?.let { Text(stringResource(Res.string.settings_linksrv_last_seen, relativeTime(it)), style = MaterialTheme.typography.bodySmall) }
+            ExtPasswordSetting(st, server)
+            if (st.extDevices.isNotEmpty()) {
+                Text(stringResource(Res.string.settings_linksrv_ext_devices), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 8.dp))
+                for (d in st.extDevices) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(d.label, style = MaterialTheme.typography.bodyLarge)
+                            d.lastSeenMs?.let { Text(stringResource(Res.string.settings_linksrv_last_seen, relativeTime(it)), style = MaterialTheme.typography.bodySmall) }
+                        }
+                        TextButton(onClick = { server.revokeExtensionDevice(d.id) }) { Text(stringResource(Res.string.settings_linksrv_revoke)) }
                     }
-                    TextButton(onClick = { server.revokeExtensionDevice(d.id) }) { Text(stringResource(Res.string.settings_linksrv_revoke)) }
                 }
             }
+            ExtLogs(st.extLogs)
         }
-        ExtLogs(st.extLogs)
     }
 
     if (confirmRegenerate) {
@@ -448,30 +467,41 @@ private fun DeviceRow(d: LinkServerDevice, server: LinkServerController, onRevok
     }
 }
 
-/** A port field: saved only when it is a valid port that the other server does not use. */
+/**
+ * A server port: the port picker (stepper, default chip, "Probar" binds it to see whether it is free) on a draft, applied with the
+ * explicit bar because applying restarts the server. Only a port from 1024 that the other server does not use can be applied.
+ */
 @Composable
-private fun PortSetting(label: String, hint: String, value: Int, other: Int, onSave: (Int) -> Unit) {
-    var text by remember(value) { mutableStateOf(value.toString()) }
-    val port = text.trim().toIntOrNull()
-    val valid = port != null && LinkServerPorts.isValid(port) && port != other
+private fun PortSetting(label: String, hint: String, value: Int, other: Int, default: Int, onSave: (Int) -> Unit) {
+    var draft by remember(value) { mutableStateOf(value) }
+    val valid = LinkServerPorts.isValid(draft) && draft != other
+    val inUse = stringResource(Res.string.rd_s10_port_in_use, "%d")
+    val free = stringResource(Res.string.rd_s10_port_free, "%d")
+    val otherServer = stringResource(Res.string.settings_linksrv_port_invalid)
     SettingRow(label = label, hint = hint, stack = true) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { v -> text = v.filter(Char::isDigit).take(5) },
-                singleLine = true,
-                isError = text.isNotEmpty() && !valid,
-                supportingText = if (text.isNotEmpty() && !valid) {
-                    { Text(stringResource(Res.string.settings_linksrv_port_invalid)) }
-                } else {
-                    null
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.widthIn(max = 160.dp),
-            )
-            TextButton(enabled = valid && port != value, onClick = { port?.let(onSave) }) { Text(stringResource(Res.string.settings_linksrv_save)) }
-        }
+        PortPicker(
+            port = draft,
+            onPortChange = { draft = it },
+            label = label,
+            defaultPort = default,
+            warnPrivileged = true,
+            onTest = { p ->
+                when {
+                    !LinkServerPorts.isValid(p) || p == other -> PortCheck(false, otherServer, suggestion = default.takeIf { it != other && it != p })
+                    p == value -> PortCheck(true, free.replace("%d", p.toString()))
+                    portIsFree(p) -> PortCheck(true, free.replace("%d", p.toString()))
+                    else -> PortCheck(false, inUse.replace("%d", p.toString()), suggestion = LinkServerPorts.alternative(p, default).takeIf { it != other })
+                }
+            },
+        )
+        if (!valid) Text(otherServer, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        CommitBar(dirty = draft != value, busy = false, canApply = valid, onDiscard = { draft = value }, onApply = { onSave(draft) })
     }
+}
+
+/** Binds [port] for a moment on all interfaces to see whether another program holds it. */
+private suspend fun portIsFree(port: Int): Boolean = withContext(Dispatchers.IO) {
+    runCatching { java.net.ServerSocket(port).use { true } }.getOrDefault(false)
 }
 
 /** Windows: "Permitir en red privada" (UAC prompt) and its outcome; elsewhere a hint with the ports to open. */
@@ -610,14 +640,13 @@ internal fun logLine(e: ExtensionServerLogEntry, time: String): String = listOfN
     e.error,
 ).joinToString(" · ")
 
+/** A text the server re-announces when it changes (the name phones see): draft, then the explicit bar. */
 @Composable
 private fun TextSetting(label: String, hint: String, value: String, onSave: (String) -> Unit) {
     var text by remember(value) { mutableStateOf(value) }
     SettingRow(label = label, hint = hint, stack = true) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, modifier = Modifier.weight(1f))
-            TextButton(enabled = text != value, onClick = { onSave(text) }) { Text(stringResource(Res.string.settings_linksrv_save)) }
-        }
+        OutlinedTextField(value = text, onValueChange = { text = it.take(64) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        CommitBar(dirty = text != value, busy = false, canApply = text.isNotBlank(), onDiscard = { text = value }, onApply = { onSave(text.trim()) })
     }
 }
 
