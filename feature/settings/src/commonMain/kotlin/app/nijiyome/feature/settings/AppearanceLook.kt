@@ -56,13 +56,10 @@ import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
 import app.nijiyome.designsystem.components.horizontalFadingEdge
-import app.nijiyome.model.CalendarView
 import app.nijiyome.model.CardSize
-import app.nijiyome.model.CardStyle
 import app.nijiyome.model.Density
 import app.nijiyome.model.EpisodeView
 import app.nijiyome.model.HeaderLayout
-import app.nijiyome.model.HomeLayout
 import app.nijiyome.model.LookPrefs
 import app.nijiyome.model.LookPreset
 import app.nijiyome.model.Motion
@@ -71,29 +68,20 @@ import app.nijiyome.model.RailStyle
 import app.nijiyome.model.RelationsView
 import kotlin.math.roundToInt
 
-// 2026-11 UI refresh: Settings › Apariencia › Diseño y estilo (desktop settings/appearance.rs). A preset applies every option at
-// once; changing one afterwards shows "Personalizado". Palette / mode / AMOLED stay above, as before.
+// Settings › Apariencia: the Diseño y estilo options (LookPrefs), each beside the screen it affects since the Sparkles redesign. A
+// preset applies every option at once; changing one afterwards shows "Personalizado". Superseded by the screen structures: the Home
+// layout (Inicio structure), the calendar default view (Calendario structure) and the card style (the Diseño card picker).
 //
 // Android adaptation: "Menú lateral" only affects the navigation rail of tablets / wide windows (phones keep the bottom bar, labelled);
 // "Efectos de desenfoque" (glass) is not offered: a real-time blur is too heavy for low-end phones, so the field is kept only so the
 // presets stay identical to the desktop ones.
 
+/** "Estilo general": the four presets as cards and whether the options still match one ("Personalizado" otherwise). */
 @Composable
-internal fun LookGroup(
-    look: LookPrefs,
-    onChange: ((LookPrefs) -> LookPrefs) -> Unit,
-    onPreset: (LookPreset) -> Unit,
-    showRailStyle: Boolean = true,
-) {
+internal fun LookPresetRow(look: LookPrefs, onPreset: (LookPreset) -> Unit) {
     val matching = look.matchingPreset()
     val presetRow = rememberLazyListState()
-    Column(Modifier.fillMaxWidth().padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            stringResource(Res.string.settings_look_title),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.semantics { heading() },
-        )
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             stringResource(Res.string.settings_look_hint),
             style = MaterialTheme.typography.bodySmall,
@@ -101,7 +89,7 @@ internal fun LookGroup(
         )
         LazyRow(
             state = presetRow,
-            modifier = Modifier.fillMaxWidth().horizontalFadingEdge(presetRow),
+            modifier = Modifier.fillMaxWidth().horizontalFadingEdge(presetRow).selectableGroup(),
             contentPadding = PaddingValues(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -115,13 +103,24 @@ internal fun LookGroup(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    LookSegmented(
-        Res.string.settings_look_home,
-        HomeLayout.entries,
-        look.homeLayout,
-        { it.labelRes() },
-        hint = stringResource(Res.string.settings_look_home_hint),
-    ) { v -> onChange { it.copy(homeLayout = v) } }
+}
+
+/** Inicio beside its structure: the banner rotation and its period, and the greeting. */
+@Composable
+internal fun HomeLookRows(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit) {
+    SwitchRow(
+        stringResource(Res.string.settings_look_autoplay),
+        look.heroAutoplay,
+        { on -> onChange { it.copy(heroAutoplay = on) } },
+        hint = stringResource(Res.string.settings_look_autoplay_hint),
+    )
+    if (look.heroAutoplay) IntervalRow(look.heroIntervalSecs) { secs -> onChange { it.copy(heroIntervalSecs = secs) } }
+    SwitchRow(stringResource(Res.string.settings_look_greeting), look.showGreeting, { on -> onChange { it.copy(showGreeting = on) } })
+}
+
+/** La ficha beside its structure: page style, header composition, episodes and relations views. */
+@Composable
+internal fun DetailsLookRows(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit) {
     LookSegmented(
         Res.string.settings_look_style,
         PageStyle.entries,
@@ -146,7 +145,13 @@ internal fun LookGroup(
             }
         }
     }
-    LookSegmented(Res.string.settings_look_cards, CardStyle.entries, look.cardStyle, { it.labelRes() }) { v -> onChange { it.copy(cardStyle = v) } }
+    LookSegmented(Res.string.settings_look_episodes, EpisodeView.entries, look.episodeView, { it.labelRes() }) { v -> onChange { it.copy(episodeView = v) } }
+    LookSegmented(Res.string.settings_look_relations, RelationsView.entries, look.relationsView, { it.labelRes() }) { v -> onChange { it.copy(relationsView = v) } }
+}
+
+/** Card size and density (the card style itself is the Diseño picker). */
+@Composable
+internal fun CardLookRows(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit) {
     LookSegmented(
         Res.string.settings_look_card_size,
         CardSize.entries,
@@ -156,6 +161,11 @@ internal fun LookGroup(
         small = true,
     ) { v -> onChange { it.copy(cardSize = v) } }
     LookSegmented(Res.string.settings_look_density, Density.entries, look.density, { it.labelRes() }) { v -> onChange { it.copy(density = v) } }
+}
+
+/** Animaciones (expressive / subtle / off; off is Reducir movimiento). */
+@Composable
+internal fun MotionLookRow(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit) {
     LookSegmented(
         Res.string.settings_look_motion,
         Motion.entries,
@@ -163,30 +173,18 @@ internal fun LookGroup(
         { it.labelRes() },
         hint = stringResource(Res.string.settings_look_motion_hint),
     ) { v -> onChange { it.copy(motion = v) } }
-    LookSegmented(Res.string.settings_look_episodes, EpisodeView.entries, look.episodeView, { it.labelRes() }) { v -> onChange { it.copy(episodeView = v) } }
-    LookSegmented(Res.string.settings_look_relations, RelationsView.entries, look.relationsView, { it.labelRes() }) { v -> onChange { it.copy(relationsView = v) } }
-    LookSegmented(Res.string.settings_look_calendar, CalendarView.entries, look.calendarView, { it.labelRes() }, small = true) { v ->
-        onChange { it.copy(calendarView = v) }
-    }
-    if (showRailStyle) {
-        LookSegmented(
-            Res.string.settings_look_rail,
-            RailStyle.entries,
-            look.railStyle,
-            { it.labelRes() },
-            hint = stringResource(Res.string.settings_look_rail_hint),
-        ) { v -> onChange { it.copy(railStyle = v) } }
-    }
-    if (look.homeLayout != HomeLayout.ROWS) {
-        SwitchRow(
-            stringResource(Res.string.settings_look_autoplay),
-            look.heroAutoplay,
-            { on -> onChange { it.copy(heroAutoplay = on) } },
-            hint = stringResource(Res.string.settings_look_autoplay_hint),
-        )
-        if (look.heroAutoplay) IntervalRow(look.heroIntervalSecs) { secs -> onChange { it.copy(heroIntervalSecs = secs) } }
-    }
-    SwitchRow(stringResource(Res.string.settings_look_greeting), look.showGreeting, { on -> onChange { it.copy(showGreeting = on) } })
+}
+
+/** Menú lateral (labelled or icons only): wide windows only. */
+@Composable
+internal fun RailStyleRow(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit) {
+    LookSegmented(
+        Res.string.settings_look_rail,
+        RailStyle.entries,
+        look.railStyle,
+        { it.labelRes() },
+        hint = stringResource(Res.string.settings_look_rail_hint),
+    ) { v -> onChange { it.copy(railStyle = v) } }
 }
 
 @Composable
@@ -396,17 +394,7 @@ private fun PageStyle.labelRes(): StringResource = when (this) {
     PageStyle.EDITORIAL -> Res.string.settings_look_style_editorial
 }
 
-private fun HomeLayout.labelRes(): StringResource = when (this) {
-    HomeLayout.SPOTLIGHT -> Res.string.settings_look_home_spotlight
-    HomeLayout.CAROUSEL -> Res.string.settings_look_home_carousel
-    HomeLayout.ROWS -> Res.string.settings_look_home_rows
-}
 
-private fun CardStyle.labelRes(): StringResource = when (this) {
-    CardStyle.CLASSIC -> Res.string.settings_look_cards_classic
-    CardStyle.DETAILED -> Res.string.settings_look_cards_detailed
-    CardStyle.MINIMAL -> Res.string.settings_look_cards_minimal
-}
 
 private fun CardSize.labelRes(): StringResource = when (this) {
     CardSize.SMALL -> Res.string.settings_look_card_size_small
@@ -437,12 +425,6 @@ private fun RelationsView.labelRes(): StringResource = when (this) {
     RelationsView.LIST -> Res.string.settings_look_relations_list
 }
 
-private fun CalendarView.labelRes(): StringResource = when (this) {
-    CalendarView.WEEK -> Res.string.settings_look_calendar_week
-    CalendarView.AGENDA -> Res.string.settings_look_calendar_agenda
-    CalendarView.MONTH -> Res.string.settings_look_calendar_month
-    CalendarView.DAY -> Res.string.settings_look_calendar_day
-}
 
 private fun RailStyle.labelRes(): StringResource = when (this) {
     RailStyle.LABELED -> Res.string.settings_look_rail_labeled
