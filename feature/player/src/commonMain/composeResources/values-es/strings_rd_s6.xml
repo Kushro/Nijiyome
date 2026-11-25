@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Rediseño Sparkles, carril S6: las hojas agrupadas del reproductor (sheets/**). -->
+<resources>
+    <!-- contenedor -->
+    <string name="rd_s6_back">Volver</string>
+    <string name="rd_s6_close">Cerrar</string>
+    <string name="rd_s6_sheet_tracks">Pistas</string>
+    <string name="rd_s6_sheet_picture">Imagen</string>
+    <string name="rd_s6_sheet_speed">Velocidad y temporizador</string>
+    <string name="rd_s6_ctrl_key">Ctrl+%1$d</string>
+    <string name="rd_s6_key_suffix">Tecla %1$s.</string>
+
+    <!-- pistas: audio -->
+    <string name="rd_s6_audio_none">Este video no tiene otras pistas de audio.</string>
+    <string name="rd_s6_audio_off">Sin audio</string>
+    <string name="rd_s6_audio_key_hint">%1$s cambia la pista de audio.</string>
+
+    <!-- pistas: subtítulos -->
+    <string name="rd_s6_subtitles_off">Desactivados</string>
+    <string name="rd_s6_delay_key_hint">%1$s los muestra antes, %2$s después.</string>
+    <string name="rd_s6_second_track">Segunda pista, arriba</string>
+    <string name="rd_s6_style_quick">Estilo rápido</string>
+    <string name="rd_s6_sub_size">Tamaño</string>
+    <string name="rd_s6_sub_transparency">Transparencia del fondo</string>
+    <string name="rd_s6_sub_position">Posición vertical</string>
+    <string name="rd_s6_sub_more_style">Más opciones de estilo</string>
+
+    <!-- pistas: traducción -->
+    <string name="rd_s6_translation">Traducción</string>
+    <string name="rd_s6_translation_off">No hay un motor de traducción configurado. Elige uno en Ajustes para traducir los subtítulos mientras ves.</string>
+    <string name="rd_s6_translation_no_key">%1$s necesita una clave de API. Agrégala en Ajustes.</string>
+    <string name="rd_s6_translation_settings">Abrir ajustes de traducción</string>
+
+    <!-- mejoras -->
+    <string name="rd_s6_upscaling">Escalado</string>
+    <string name="rd_s6_upscaling_phone">Escalado en el teléfono</string>
+    <string name="rd_s6_family">Familia</string>
+    <string name="rd_s6_mode">Modo</string>
+    <string name="rd_s6_tier">Nivel</string>
+    <string name="rd_s6_family_anime4k">Anime4K</string>
+    <string name="rd_s6_family_anime4k_hint">Para fuentes borrosas o comprimidas, como la mayoría de los episodios web.</string>
+    <string name="rd_s6_family_artcnn_hint">Escalado con red neuronal que necesita el renderizador Vulkan.</string>
+    <string name="rd_s6_desktop_only">Solo en escritorio: su sombreador viene con la versión para computadora.</string>
+    <string name="rd_s6_where_this_device">Este equipo</string>
+    <string name="rd_s6_open_link_settings">Abrir Nijiyome Link</string>
+    <string name="rd_s6_fg_title">Generación de cuadros</string>
+    <string name="rd_s6_fg_desktop_hint">La generación de cuadros usa lsfg-vk y solo funciona en la ventana propia de mpv, así que el episodio se abre ahí. Actívala y elige el multiplicador en Ajustes.</string>
+    <string name="rd_s6_fg_desktop_settings">Ajustes de generación de cuadros</string>
+
+    <!-- imagen -->
+    <string name="rd_s6_quality_changes_source">En esta computadora, otra calidad reproduce otra fuente del episodio.</string>
+    <string name="rd_s6_quality_single">Este stream viene en una sola calidad.</string>
+    <string name="rd_s6_color">Color</string>
+    <string name="rd_s6_picture_reset">Restablecer imagen</string>
+    <string name="rd_s6_picture_needs_mpv">El zoom, el color y el decodificador necesitan el motor MPV. Media3 reproduce el video tal como llega.</string>
+    <string name="rd_s6_decoder_gpu">GPU</string>
+    <string name="rd_s6_decoder_gpu_direct">GPU directa</string>
+    <string name="rd_s6_decoder_cpu">CPU</string>
+    <string name="rd_s6_decoder_auto_hint">Elige solo el mejor disponible.</string>
+    <string name="rd_s6_decoder_gpu_hint">Decodifica en la GPU y copia los cuadros: compatible con todas las mejoras.</string>
+    <string name="rd_s6_decoder_gpu_direct_hint">Decodifica directo en la GPU: gasta menos batería.</string>
+    <string name="rd_s6_decoder_cpu_hint">Reproduce casi todo, pero es lo más lento.</string>
+
+    <!-- velocidad y temporizador -->
+    <string name="rd_s6_speed_hold_hint">Mantén presionado el video para ir a 2× mientras no sueltes.</string>
+    <string name="rd_s6_speed_keys_hint">%1$s sube la velocidad, %2$s la baja.</string>
+    <string name="rd_s6_sleep_end_hint">Pausa al terminar este episodio y no empieza el siguiente.</string>
+    <string name="rd_s6_playback">Reproducción</string>
+
+    <!-- más -->
+    <string name="rd_s6_layout">Diseño de controles</string>
+    <string name="rd_s6_layout_cinema">Cine</string>
+    <string name="rd_s6_layout_classic">Clásico</string>
+    <string name="rd_s6_layout_minimal">Mínimo</string>
+    <string name="rd_s6_layout_panel">Panel</string>
+    <string name="rd_s6_layout_vertical">Vertical</string>
+    <string name="rd_s6_layout_cinema_hint">Controles sobre el video, con el transporte al centro y zonas de gesto.</string>
+    <string name="rd_s6_layout_classic_hint">Controles sobre el video, con las hojas al costado.</string>
+    <string name="rd_s6_layout_minimal_hint">Una barra baja con el tiempo, la barra de progreso y botones con icono.</string>
+    <string name="rd_s6_layout_panel_hint">Un panel lateral fijo con pistas y mejoras, para pantallas grandes.</string>
+    <string name="rd_s6_layout_vertical_hint">El video arriba y las pistas y mejoras debajo, en vertical.</string>
+    <string name="rd_s6_torrent_not_in_client">Esta fuente viene de un servicio debrid, no del cliente de torrents.</string>
+    <string name="rd_s6_player_settings">Ajustes del reproductor</string>
+</resources>

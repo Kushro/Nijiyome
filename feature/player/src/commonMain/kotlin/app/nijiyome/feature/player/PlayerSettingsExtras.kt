@@ -70,6 +70,7 @@ import app.nijiyome.player.SubtitleTranslators
 import app.nijiyome.player.TranslationException
 import app.nijiyome.player.TranslatorConfig
 import app.nijiyome.ui.format.formatBytes
+import app.nijiyome.feature.player.sheets.languageName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -106,6 +107,36 @@ fun PlayerSettingsExtras(
         SectionTitle(stringResource(Res.string.player_settings_shortcuts_section))
         ShortcutRows(settings, onUpdate)
     }
+}
+
+// Sparkles redesign (lane S6): the same rows one group at a time, for the new Settings categories (lane S10): Reproducción gets the
+// playback rows and the shortcut editor, Subtítulos y audio the second language and the translation. Same saving as above.
+
+/** Auto-next countdown, stable volume, background playback (Settings › Reproducción). */
+@Composable
+fun PlayerPlaybackSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { PlaybackRows(settings, onUpdate) }
+}
+
+/** The language of the second subtitle track (Settings › Subtítulos y audio). */
+@Composable
+fun SubtitleLanguageSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { SecondaryLanguageRow(settings, onUpdate) }
+}
+
+/** Subtitle translation: engine, mode, language, connection, key, test, cache (Settings › Subtítulos y audio › Traducción). */
+@Composable
+fun SubtitleTranslationSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    val koin = getKoin()
+    val tools = remember { koin.subtitleToolsAccess() }
+    val secrets = remember { koin.getOrNull<SecretStore>() }
+    Column(modifier.fillMaxWidth()) { TranslationRows(settings, onUpdate, tools, secrets) }
+}
+
+/** The player's keyboard shortcut editor (Settings › Reproducción › Atajos). */
+@Composable
+fun PlayerShortcutSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { ShortcutRows(settings, onUpdate) }
 }
 
 @Composable
@@ -177,7 +208,7 @@ private fun SecondaryLanguageRow(settings: AppSettings, onUpdate: ((AppSettings)
                 Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp), Arrangement.spacedBy(6.dp)) {
                     FilterChip(selected = settings.secondarySubLang == null, onClick = { onUpdate { it.copy(secondarySubLang = null) } }, label = { Text(stringResource(Res.string.player_sub_secondary_off)) })
                     SECONDARY_LANGS.forEach { l ->
-                        FilterChip(selected = settings.secondarySubLang == l, onClick = { onUpdate { it.copy(secondarySubLang = l) } }, label = { Text(l.uppercase()) })
+                        FilterChip(selected = settings.secondarySubLang == l, onClick = { onUpdate { it.copy(secondarySubLang = l) } }, label = { Text(languageName(l)) })
                     }
                 }
             }
@@ -187,7 +218,7 @@ private fun SecondaryLanguageRow(settings: AppSettings, onUpdate: ((AppSettings)
 
 // ---- translation ------------------------------------------------------------------------------------------------------------------------
 
-private fun TranslationProvider.needsKey(): Boolean = this == TranslationProvider.DEEPL || this == TranslationProvider.AZURE
+internal fun TranslationProvider.needsKey(): Boolean = this == TranslationProvider.DEEPL || this == TranslationProvider.AZURE
 private fun TranslationProvider.acceptsKey(): Boolean = this != TranslationProvider.NONE && this != TranslationProvider.GOOGLE
 private fun TranslationProvider.usesEndpoint(): Boolean = this == TranslationProvider.DEEPLX || this == TranslationProvider.OPENAI || this == TranslationProvider.AZURE
 
@@ -230,7 +261,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
         supportingContent = {
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp), Arrangement.spacedBy(6.dp)) {
                 SubtitleTranslators.TARGET_LANGUAGES.forEach { l ->
-                    FilterChip(selected = t.targetLang == l, onClick = { update { it.copy(targetLang = l) } }, label = { Text(l.uppercase()) })
+                    FilterChip(selected = t.targetLang == l, onClick = { update { it.copy(targetLang = l) } }, label = { Text(languageName(l)) })
                 }
             }
         },
