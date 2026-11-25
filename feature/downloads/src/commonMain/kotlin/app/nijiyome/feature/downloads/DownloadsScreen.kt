@@ -134,7 +134,11 @@ fun DownloadsScreen(
     val host = remember { TransfersHost() }
     val selection = rememberSelectionState<String>()
     val undo = rememberUndoController()
-    val structure = structures.transfers
+    // The structure is read once, here: it picks the body and whether a detail sits beside the list or covers the page.
+    val layout = when (structures.transfers) {
+        TransfersStructure.QUEUE -> TransfersLayout(detailBesideList = false) { s, e -> TransfersQueue(s, e) }
+        TransfersStructure.MASTER_DETAIL -> TransfersLayout(detailBesideList = true) { s, e -> TransfersMasterDetail(s, e) }
+    }
     val currentOpenTorrent by rememberUpdatedState(onOpenTorrent)
 
     LaunchedEffect(initialTab) {
@@ -207,6 +211,8 @@ fun DownloadsScreen(
         if (item.isTorrent && torrentSlots == null) {
             onOpenTorrent(item.id)
         } else {
+            // The master-detail structure shows a detail next to its list: go back to the client section first.
+            if (layout.detailBesideList) host.section = TransfersSection.QUEUE
             host.detailKey = item.key
         }
     }
@@ -243,7 +249,7 @@ fun DownloadsScreen(
 
     val compact = isCompactWindow()
     // Phone, stacked navigation: a detail opened from the queue covers the page; back returns to the list.
-    val coveringDetail = host.detailKey != null && (structure == TransfersStructure.QUEUE || compact)
+    val coveringDetail = host.detailKey != null && (!layout.detailBesideList || compact)
     Box(modifier.fillMaxSize()) {
         Scaffold(
             contentWindowInsets = screenInsets,
@@ -255,7 +261,7 @@ fun DownloadsScreen(
                         onExit = selection::exit,
                         onSelectAll = { selection.selectAll(state.queue.map { it.key }) },
                     )
-                    else -> TransfersTopBar(state, env, onBack, compact)
+                    else -> TransfersTopBar(state, env, onBack, compact, listHasSearch = layout.detailBesideList)
                 }
             },
         ) { padding ->
@@ -266,11 +272,8 @@ fun DownloadsScreen(
                         val key = host.detailKey.orEmpty()
                         DetailPane(key, state.queue + state.stored, env, showBack = true, modifier = Modifier.fillMaxSize())
                     }
-                    // The structure is chosen once, here; both share the state, the actions and the overlays below.
-                    else -> when (structure) {
-                        TransfersStructure.QUEUE -> TransfersQueue(state, env)
-                        TransfersStructure.MASTER_DETAIL -> TransfersMasterDetail(state, env)
-                    }
+                    // Both structures share the state, the actions and the overlays below.
+                    else -> layout.body(state, env)
                 }
                 BatchBar(state, env, Modifier.align(Alignment.BottomCenter))
                 UndoSnackbar(undo, Modifier.align(Alignment.BottomCenter).padding(bottom = 72.dp))
@@ -412,7 +415,7 @@ internal class TransfersHost {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TransfersTopBar(state: DownloadsUiState, env: TransfersEnv, onBack: (() -> Unit)?, compact: Boolean) {
+private fun TransfersTopBar(state: DownloadsUiState, env: TransfersEnv, onBack: (() -> Unit)?, compact: Boolean, listHasSearch: Boolean) {
     val host = env.host
     val moving = state.queue.count { it.phase == app.nijiyome.feature.downloads.transfers.TransferPhase.DOWNLOADING }
     val meta = listOfNotNull(
@@ -445,7 +448,7 @@ private fun TransfersTopBar(state: DownloadsUiState, env: TransfersEnv, onBack: 
                     }
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 12.dp)) {
-                        if (env.host.section != TransfersSection.QUEUE || structuresIsQueue()) {
+                        if (!listHasSearch || env.host.section != TransfersSection.QUEUE) {
                             TransfersSearchField(state.query, env.vm::setQuery, Modifier.width(280.dp))
                         }
                         ActionButton(stringResource(Res.string.rd_s8_limits), onClick = { host.limitsOpen = true }, icon = Icons.Outlined.Speed, emphasis = ActionEmphasis.OUTLINED)
@@ -461,9 +464,9 @@ private fun TransfersTopBar(state: DownloadsUiState, env: TransfersEnv, onBack: 
     }
 }
 
-/** The master list has its own search field; the header shows one for the queue structure. */
-@Composable
-private fun structuresIsQueue(): Boolean = structures.transfers == TransfersStructure.QUEUE
+/** What a structure changes at the root: its body, and whether a detail opens beside the list (with its own search) or covers it. */
+@Immutable
+internal class TransfersLayout(val detailBesideList: Boolean, val body: @Composable (DownloadsUiState, TransfersEnv) -> Unit)
 
 // ------------------------------------------------------------------ batch actions (TOR-05)
 
