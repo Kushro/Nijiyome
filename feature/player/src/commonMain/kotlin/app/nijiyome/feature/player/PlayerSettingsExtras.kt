@@ -109,6 +109,36 @@ fun PlayerSettingsExtras(
     }
 }
 
+// Sparkles redesign (lane S6): the same rows one group at a time, for the new Settings categories (lane S10): Reproducción gets the
+// playback rows and the shortcut editor, Subtítulos y audio the second language and the translation. Same saving as above.
+
+/** Auto-next countdown, stable volume, background playback (Settings › Reproducción). */
+@Composable
+fun PlayerPlaybackSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { PlaybackRows(settings, onUpdate) }
+}
+
+/** The language of the second subtitle track (Settings › Subtítulos y audio). */
+@Composable
+fun SubtitleLanguageSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { SecondaryLanguageRow(settings, onUpdate) }
+}
+
+/** Subtitle translation: engine, mode, language, connection, key, test, cache (Settings › Subtítulos y audio › Traducción). */
+@Composable
+fun SubtitleTranslationSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    val koin = getKoin()
+    val tools = remember { koin.subtitleToolsAccess() }
+    val secrets = remember { koin.getOrNull<SecretStore>() }
+    Column(modifier.fillMaxWidth()) { TranslationRows(settings, onUpdate, tools, secrets) }
+}
+
+/** The player's keyboard shortcut editor (Settings › Reproducción › Atajos). */
+@Composable
+fun PlayerShortcutSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { ShortcutRows(settings, onUpdate) }
+}
+
 @Composable
 private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp))
