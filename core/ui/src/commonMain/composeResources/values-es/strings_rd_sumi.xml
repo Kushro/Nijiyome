@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, carril D4: los estilos de tarjeta Sumi (rd_sumi_card_*). -->
+    <string name="rd_sumi_card_hanko">Hanko</string>
+    <string name="rd_sumi_card_enso">Ensō</string>
+    <string name="rd_sumi_card_paper">Sumi papel</string>
+    <string name="rd_sumi_card_eps">%1$d ep.</string>
+    <string name="rd_sumi_card_seen_of">%1$d de %2$d episodios</string>
+    <string name="rd_sumi_card_percent">%1$s visto</string>
+</resources>

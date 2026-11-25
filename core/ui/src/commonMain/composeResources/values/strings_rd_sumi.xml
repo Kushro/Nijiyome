@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, lane D4: the Sumi card styles (rd_sumi_card_*). -->
+    <string name="rd_sumi_card_hanko">Hanko</string>
+    <string name="rd_sumi_card_enso">Ensō</string>
+    <string name="rd_sumi_card_paper">Sumi paper</string>
+    <string name="rd_sumi_card_eps">%1$d ep.</string>
+    <string name="rd_sumi_card_seen_of">%1$d of %2$d episodes</string>
+    <string name="rd_sumi_card_percent">%1$s watched</string>
+</resources>
