@@ -319,4 +319,6 @@
     <string name="rd_s10_onb_sources_where">Extensions live in Sources</string>
     <string name="rd_s10_onb_link_title">Link and system</string>
     <string name="rd_s10_onb_link_body">Optional. Your PC can enhance the video for your phone and lend it its extensions.</string>
+    <string name="rd_s10_link_moved">Pairing, devices, ports, cache, library folder, firewall and the extension server are on the Link screen.</string>
+    <string name="rd_s10_link_open_screen">Open Nijiyome Link</string>
 </resources>
