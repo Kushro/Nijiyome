@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -63,15 +64,16 @@ internal object SumiDecor : DirectionDecor {
             }
             // Esta noche: an ink wash with brushed edges behind the focus row, drawn a little past its bounds (no layout
             // change). Without decorative cost (PERF, OFF) it is a flat 4 % tint.
-            DecorRegion.TONIGHT -> Modifier.drawBehind {
+            DecorRegion.TONIGHT -> Modifier.drawWithCache {
                 val bleed = 12.dp.toPx()
-                if (rich) {
-                    val box = Size(size.width + bleed, size.height + bleed * 2)
-                    translate(left = -bleed / 2f, top = -bleed) {
-                        drawPath(sumiWashPath(box), scheme.onSurface.copy(alpha = if (scheme.background.isLightInk()) 0.05f else 0.045f))
+                val wash = sumiWashPath(Size(size.width + bleed, size.height + bleed * 2))
+                val washInk = scheme.onSurface.copy(alpha = if (scheme.background.isLightInk()) 0.05f else 0.045f)
+                onDrawBehind {
+                    if (rich) {
+                        translate(left = -bleed / 2f, top = -bleed) { drawPath(wash, washInk) }
+                    } else {
+                        drawRect(scheme.onSurface.copy(alpha = 0.04f), topLeft = Offset(0f, -bleed / 2f), size = Size(size.width, size.height + bleed))
                     }
-                } else {
-                    drawRect(scheme.onSurface.copy(alpha = 0.04f), topLeft = Offset(0f, -bleed / 2f), size = Size(size.width, size.height + bleed))
                 }
             }
             // Sheets and side panels: a paper edge on top.
@@ -159,7 +161,6 @@ internal object SumiDecor : DirectionDecor {
                 modifier = Modifier.sumiStamp(selected, animate = selected).clearAndSetSemantics { },
                 size = 26.dp,
                 blank = !selected,
-                brush = !selected,
             )
             Text(
                 label,

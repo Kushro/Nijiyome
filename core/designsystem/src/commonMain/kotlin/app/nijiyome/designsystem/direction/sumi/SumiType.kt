@@ -36,10 +36,10 @@ internal fun sumiUiFamily(): FontFamily = FontFamily(
 @Composable
 internal fun sumiBrushFamily(): FontFamily = FontFamily(Font(Res.font.rd_sumi_yuji_boku, FontWeight.Normal))
 
-private fun TextStyle.ui(family: FontFamily, weight: FontWeight): TextStyle = copy(fontFamily = family, fontWeight = weight)
+private fun TextStyle.withUiFace(family: FontFamily, weight: FontWeight): TextStyle = copy(fontFamily = family, fontWeight = weight)
 
 /** Brush display: weight 400 and no tracking (artifact `.nj-h1`: `font-weight: 400; letter-spacing: 0; font-synthesis: none`). */
-private fun TextStyle.brush(family: FontFamily): TextStyle =
+private fun TextStyle.withBrushFace(family: FontFamily): TextStyle =
     copy(fontFamily = family, fontWeight = FontWeight.Normal, letterSpacing = 0.sp, lineHeight = fontSize * 1.18f)
 
 /**
@@ -47,36 +47,36 @@ private fun TextStyle.brush(family: FontFamily): TextStyle =
  * (titles and labels bold like `.nj-h2`, `.nj-btn` and the card titles; body regular).
  */
 internal fun sumiTypography(base: Typography, ui: FontFamily, brush: FontFamily): Typography = Typography(
-    displayLarge = base.displayLarge.brush(brush),
-    displayMedium = base.displayMedium.brush(brush),
-    displaySmall = base.displaySmall.brush(brush),
-    headlineLarge = base.headlineLarge.brush(brush),
-    headlineMedium = base.headlineMedium.brush(brush),
-    headlineSmall = base.headlineSmall.ui(ui, FontWeight.Bold),
-    titleLarge = base.titleLarge.ui(ui, FontWeight.Bold),
-    titleMedium = base.titleMedium.ui(ui, FontWeight.Bold),
-    titleSmall = base.titleSmall.ui(ui, FontWeight.Bold),
-    bodyLarge = base.bodyLarge.ui(ui, FontWeight.Normal),
-    bodyMedium = base.bodyMedium.ui(ui, FontWeight.Normal),
-    bodySmall = base.bodySmall.ui(ui, FontWeight.Normal),
-    labelLarge = base.labelLarge.ui(ui, FontWeight.Bold),
-    labelMedium = base.labelMedium.ui(ui, FontWeight.Bold),
-    labelSmall = base.labelSmall.ui(ui, FontWeight.Medium),
-    displayLargeEmphasized = base.displayLargeEmphasized.brush(brush),
-    displayMediumEmphasized = base.displayMediumEmphasized.brush(brush),
-    displaySmallEmphasized = base.displaySmallEmphasized.brush(brush),
-    headlineLargeEmphasized = base.headlineLargeEmphasized.brush(brush),
-    headlineMediumEmphasized = base.headlineMediumEmphasized.brush(brush),
-    headlineSmallEmphasized = base.headlineSmallEmphasized.ui(ui, FontWeight.Bold),
-    titleLargeEmphasized = base.titleLargeEmphasized.ui(ui, FontWeight.Bold),
-    titleMediumEmphasized = base.titleMediumEmphasized.ui(ui, FontWeight.Bold),
-    titleSmallEmphasized = base.titleSmallEmphasized.ui(ui, FontWeight.Bold),
-    bodyLargeEmphasized = base.bodyLargeEmphasized.ui(ui, FontWeight.Medium),
-    bodyMediumEmphasized = base.bodyMediumEmphasized.ui(ui, FontWeight.Medium),
-    bodySmallEmphasized = base.bodySmallEmphasized.ui(ui, FontWeight.Medium),
-    labelLargeEmphasized = base.labelLargeEmphasized.ui(ui, FontWeight.Bold),
-    labelMediumEmphasized = base.labelMediumEmphasized.ui(ui, FontWeight.Bold),
-    labelSmallEmphasized = base.labelSmallEmphasized.ui(ui, FontWeight.Bold),
+    displayLarge = base.displayLarge.withBrushFace(brush),
+    displayMedium = base.displayMedium.withBrushFace(brush),
+    displaySmall = base.displaySmall.withBrushFace(brush),
+    headlineLarge = base.headlineLarge.withBrushFace(brush),
+    headlineMedium = base.headlineMedium.withBrushFace(brush),
+    headlineSmall = base.headlineSmall.withUiFace(ui, FontWeight.Bold),
+    titleLarge = base.titleLarge.withUiFace(ui, FontWeight.Bold),
+    titleMedium = base.titleMedium.withUiFace(ui, FontWeight.Bold),
+    titleSmall = base.titleSmall.withUiFace(ui, FontWeight.Bold),
+    bodyLarge = base.bodyLarge.withUiFace(ui, FontWeight.Normal),
+    bodyMedium = base.bodyMedium.withUiFace(ui, FontWeight.Normal),
+    bodySmall = base.bodySmall.withUiFace(ui, FontWeight.Normal),
+    labelLarge = base.labelLarge.withUiFace(ui, FontWeight.Bold),
+    labelMedium = base.labelMedium.withUiFace(ui, FontWeight.Bold),
+    labelSmall = base.labelSmall.withUiFace(ui, FontWeight.Medium),
+    displayLargeEmphasized = base.displayLargeEmphasized.withBrushFace(brush),
+    displayMediumEmphasized = base.displayMediumEmphasized.withBrushFace(brush),
+    displaySmallEmphasized = base.displaySmallEmphasized.withBrushFace(brush),
+    headlineLargeEmphasized = base.headlineLargeEmphasized.withBrushFace(brush),
+    headlineMediumEmphasized = base.headlineMediumEmphasized.withBrushFace(brush),
+    headlineSmallEmphasized = base.headlineSmallEmphasized.withUiFace(ui, FontWeight.Bold),
+    titleLargeEmphasized = base.titleLargeEmphasized.withUiFace(ui, FontWeight.Bold),
+    titleMediumEmphasized = base.titleMediumEmphasized.withUiFace(ui, FontWeight.Bold),
+    titleSmallEmphasized = base.titleSmallEmphasized.withUiFace(ui, FontWeight.Bold),
+    bodyLargeEmphasized = base.bodyLargeEmphasized.withUiFace(ui, FontWeight.Medium),
+    bodyMediumEmphasized = base.bodyMediumEmphasized.withUiFace(ui, FontWeight.Medium),
+    bodySmallEmphasized = base.bodySmallEmphasized.withUiFace(ui, FontWeight.Medium),
+    labelLargeEmphasized = base.labelLargeEmphasized.withUiFace(ui, FontWeight.Bold),
+    labelMediumEmphasized = base.labelMediumEmphasized.withUiFace(ui, FontWeight.Bold),
+    labelSmallEmphasized = base.labelSmallEmphasized.withUiFace(ui, FontWeight.Bold),
 )
 
 /** Radii of the artifact (`--nj-r-xs` 3, s 6, m 10, l 14, xl 22): tighter than Material, like cut paper. */
