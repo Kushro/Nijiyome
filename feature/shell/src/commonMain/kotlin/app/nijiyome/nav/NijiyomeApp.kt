@@ -54,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
@@ -63,10 +64,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.defaultPopTransitionSpec
 import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
@@ -77,8 +81,12 @@ import app.nijiyome.designsystem.components.LocalAppSnackbar
 import app.nijiyome.designsystem.components.rememberAppSnackbarController
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.CardToDetailsEntry
 import app.nijiyome.designsystem.motion.CardToDetailsHost
 import app.nijiyome.designsystem.motion.LocalMotion
+import app.nijiyome.designsystem.motion.cardToDetailsEnterTransform
+import app.nijiyome.designsystem.motion.cardToDetailsPopTransform
+import app.nijiyome.designsystem.motion.rememberLowEndDevice
 import app.nijiyome.designsystem.theme.LocalReduceMotion
 import app.nijiyome.designsystem.theme.NijiyomeTheme
 import app.nijiyome.designsystem.theme.rememberReduceMotion
@@ -212,7 +220,7 @@ fun NijiyomeApp(
             LocalAppSnackbar provides snackbar,
             LocalTitleLanguage provides settings.titleLanguage,
             LocalLook provides settings.look,
-            LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion),
+            LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion, lowEndDevice = rememberLowEndDevice()),
             LocalShellChrome provides chrome,
         ) {
             val shell: @Composable () -> Unit = {
@@ -703,17 +711,39 @@ private fun AppNavDisplay(
     // Reduce motion: instant screen changes (no slide / fade), predictive back included.
     val reduceMotion = LocalReduceMotion.current
     val instant = remember { ContentTransform(EnterTransition.None, ExitTransition.None) }
+    // Sparkles motion "ficha": opening or leaving a Details page uses the card-to-details screen transform; the rest keeps the defaults.
+    val motion = LocalMotion.current
+    val density = LocalDensity.current
+    val baseEnter = remember { defaultTransitionSpec<NavKey>() }
+    val basePop = remember { defaultPopTransitionSpec<NavKey>() }
+    // Gives each entry its AnimatedVisibilityScope so the poster and the Details header share bounds.
+    val cardToDetailsDecorator = remember {
+        NavEntryDecorator<NavKey>({ _ -> }) { entry -> CardToDetailsEntry(LocalNavAnimatedContentScope.current) { entry.Content() } }
+    }
 
     NavDisplay(
         backStack = backStack,
         onBack = ::back,
         sceneStrategies = listOf(listDetail),
-        transitionSpec = if (reduceMotion) ({ instant }) else defaultTransitionSpec<NavKey>(),
-        popTransitionSpec = if (reduceMotion) ({ instant }) else defaultPopTransitionSpec<NavKey>(),
+        transitionSpec = {
+            when {
+                reduceMotion -> instant
+                targetState.entries.lastOrNull().isCardToDetailsTarget() -> motion.cardToDetailsEnterTransform(density)
+                else -> baseEnter()
+            }
+        },
+        popTransitionSpec = {
+            when {
+                reduceMotion -> instant
+                initialState.entries.lastOrNull().isCardToDetailsTarget() -> motion.cardToDetailsPopTransform(density)
+                else -> basePop()
+            }
+        },
         predictivePopTransitionSpec = if (reduceMotion) ({ _ -> instant }) else defaultPredictivePopTransitionSpec<NavKey>(),
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
+            cardToDetailsDecorator,
         ),
         modifier = Modifier.fillMaxSize(),
         entryProvider = entryProvider {
@@ -807,7 +837,7 @@ private fun AppNavDisplay(
                     onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
                 )
             }
-            entry<Route.Details>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
+            entry<Route.Details>(metadata = ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata) { key ->
                 if (key.kind == MediaKind.MANGA) {
                     // parity wave B (16 §3.5, worker s): manga details (own screen, same route so every Media click works).
                     MangaDetailsScreen(
@@ -972,7 +1002,7 @@ private fun AppNavDisplay(
                     initialQuery = key.query,
                 )
             }
-            entry<Route.NovelDetails>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
+            entry<Route.NovelDetails>(metadata = ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata) { key ->
                 NovelDetailsScreen(
                     anilistId = key.anilistId,
                     onBack = ::back,
@@ -1098,6 +1128,12 @@ private fun ShellShortcutHandler(
         onDispose { shortcuts.handler = null }
     }
 }
+
+/** Marks the entries a card opens (Details, NovelDetails): their screen transition is the card-to-details one. */
+private const val CARD_TO_DETAILS_KEY = "nijiyome.cardToDetails"
+private val CardToDetailsMetadata: Map<String, Any> = mapOf(CARD_TO_DETAILS_KEY to true)
+
+private fun NavEntry<*>?.isCardToDetailsTarget(): Boolean = this?.metadata?.containsKey(CARD_TO_DETAILS_KEY) == true
 
 /** Switching tabs resets the stack to `[Home]` or `[Home, tab]` so Back from a tab returns to Home. */
 private fun NavBackStack<NavKey>.navigateTop(route: Route) {
