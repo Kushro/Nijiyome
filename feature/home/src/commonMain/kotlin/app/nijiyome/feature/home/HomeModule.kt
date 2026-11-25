@@ -4,6 +4,7 @@ import app.nijiyome.metadata.TrendWindow
 import app.nijiyome.metadata.TrendingFeed
 import app.nijiyome.model.AiringRepository
 import app.nijiyome.model.DownloadRepository
+import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.RecsRepository
 import app.nijiyome.model.torrent.TorrentRepository
 import org.koin.core.module.dsl.viewModel
@@ -32,6 +33,8 @@ val homeModule = module {
             },
             downloads = getOrNull<DownloadRepository>(),
             torrents = getOrNull<TorrentRepository>(),
+            // Sparkles (S2): list status / progress / "new" on the cards.
+            lists = getOrNull<ListsRepository>(),
         )
     }
     viewModel { CalendarViewModel(airing = get(), lists = getOrNull(), settings = getOrNull()) }
