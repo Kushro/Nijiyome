@@ -31,12 +31,12 @@ class DesktopSettingsPlatformTest {
         assertEquals(LoadState.Ok(emptyList()), loadBundledLicenses { null }, "nothing bundled: the sheet says so")
     }
 
-    /** The real build output: desktopApp's generated `licenses/` holds the notices and the three font licenses (when built). */
+    /** The real build output: desktopApp's generated `licenses/` holds the notices and the font licenses (3 of the base type scale + 8 of the Sparkles directions) (when built). */
     @Test
     fun theRepositoryNoticesAreWhatGetsBundled() {
         val root = generateSequence(File("").absoluteFile) { it.parentFile }.first { File(it, "THIRD_PARTY_NOTICES.md").isFile }
         val fonts = File(root, "core/designsystem/src/androidMain/assets/licenses").listFiles().orEmpty().filter { it.name.startsWith("OFL-") }
-        assertEquals(3, fonts.size, "the OFL texts the build packages")
+        assertEquals(11, fonts.size, "the OFL texts the build packages")
         val read = { path: String ->
             val name = path.removePrefix("licenses/")
             when (name) {
