@@ -223,7 +223,7 @@ fun main(args: Array<String>) {
             var liveStatus by remember { mutableStateOf(TrayLiveStatus(spanish = spanish, link = link)) }
             var traySnapshot by remember { mutableStateOf(liveStatus.quantizedForTray()) }
             val trayFreezeUntilMs = remember { java.util.concurrent.atomic.AtomicLong(0L) }
-            LaunchedEffect(linkServer, torrentRepo, trayOn, linkMonitorOpen, spanish) {
+            LaunchedEffect(linkServer, torrentRepo, trayOn, linkMonitorOpen, spanish, trayTexts) {
                 while (true) {
                     val snapshot = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         val rt = Runtime.getRuntime()
@@ -242,10 +242,10 @@ fun main(args: Array<String>) {
                                 kotlinx.coroutines.withTimeoutOrNull(250) { torrentRepo?.stats(item.id)?.first() }
                             }.getOrNull()
                             val stateLbl = when (st?.state ?: item.state) {
-                                app.nijiyome.model.torrent.TorrentState.DOWNLOADING -> if (spanish) "Descargando" else "Downloading"
-                                app.nijiyome.model.torrent.TorrentState.SEEDING -> if (spanish) "Compartiendo" else "Seeding"
-                                app.nijiyome.model.torrent.TorrentState.INITIALIZING -> if (spanish) "Iniciando" else "Initializing"
-                                else -> if (spanish) "Activo" else "Active"
+                                app.nijiyome.model.torrent.TorrentState.DOWNLOADING -> trayTexts.stateDownloading
+                                app.nijiyome.model.torrent.TorrentState.SEEDING -> trayTexts.stateSeeding
+                                app.nijiyome.model.torrent.TorrentState.INITIALIZING -> trayTexts.stateInitializing
+                                else -> trayTexts.stateActive
                             }
                             ActiveTorrentSummary(
                                 id = item.id,

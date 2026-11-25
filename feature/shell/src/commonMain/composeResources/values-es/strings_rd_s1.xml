@@ -158,4 +158,44 @@
     <string name="rd_s1_intro_body">Tu Inicio, calendario y movimiento quedan como estaban. Elige dirección, paleta y tarjetas en Apariencia.</string>
     <string name="rd_s1_intro_open">Elegir estilo</string>
     <string name="rd_s1_intro_dismiss">Ahora no</string>
+
+    <!-- Link monitor dialog (desktop) and the tray's torrent states -->
+    <string name="rd_s1_mon_title">Monitor de Nijiyome Link y sistema</string>
+    <string name="rd_s1_mon_unavailable">Servidor Link no disponible</string>
+    <string name="rd_s1_mon_stopped">Servidor Link detenido</string>
+    <string name="rd_s1_mon_sessions_one">Puerto :%1$s · %2$s sesión activa</string>
+    <string name="rd_s1_mon_sessions_other">Puerto :%1$s · %2$s sesiones activas</string>
+    <string name="rd_s1_mon_idle">Puerto :%1$s · En espera · %2$s dispositivos vinculados</string>
+    <string name="rd_s1_mon_link_settings">Ajustes de Link</string>
+    <string name="rd_s1_mon_close">Cerrar</string>
+    <string name="rd_s1_mon_devices">Dispositivos que usan esta PC (Link)</string>
+    <string name="rd_s1_mon_server_off">El servidor de Nijiyome Link está apagado. Actívalo en Ajustes › Nijiyome Link para escalar y generar cuadros para tus dispositivos.</string>
+    <string name="rd_s1_mon_no_streaming">Ningún dispositivo está reproduciendo a través de esta PC ahora.</string>
+    <string name="rd_s1_mon_torrents">Torrents activos</string>
+    <string name="rd_s1_mon_open_transfers">Abrir Transferencias</string>
+    <string name="rd_s1_mon_no_torrents">Ningún torrent está descargando ni transmitiendo ahora.</string>
+    <string name="rd_s1_mon_memory">Memoria y caché</string>
+    <string name="rd_s1_mon_link_cache">Caché de segmentos de Link (RAM)</string>
+    <string name="rd_s1_mon_budget">Límite por sesión (retroceso sin reprocesar):</string>
+    <string name="rd_s1_mon_app_ram">Memoria RAM de la app (JVM)</string>
+    <string name="rd_s1_mon_disk_cache">Caché de disco</string>
+    <string name="rd_s1_mon_torrent_storage">Torrents en disco</string>
+    <string name="rd_s1_mon_free">%1$s libres</string>
+    <string name="rd_s1_mon_active_playback">Reproducción en curso</string>
+    <string name="rd_s1_mon_paused">En pausa</string>
+    <string name="rd_s1_mon_buffer_full">Búfer lleno</string>
+    <string name="rd_s1_mon_processing">Procesando</string>
+    <string name="rd_s1_mon_library">Biblioteca</string>
+    <string name="rd_s1_mon_no_upscaling">Sin escalado (directo)</string>
+    <string name="rd_s1_mon_stop">Detener</string>
+    <string name="rd_s1_mon_cached_ram">En caché RAM: %1$s</string>
+    <string name="rd_s1_mon_ram_cache">Caché RAM</string>
+    <string name="rd_s1_mon_lead">Adelanto</string>
+    <string name="rd_s1_mon_segments">Segmentos</string>
+    <string name="rd_s1_mon_pace">Velocidad</string>
+    <string name="rd_s1_mon_peers">%1$s · %2$s pares</string>
+    <string name="rd_s1_tray_state_downloading">Descargando</string>
+    <string name="rd_s1_tray_state_seeding">Compartiendo</string>
+    <string name="rd_s1_tray_state_initializing">Iniciando</string>
+    <string name="rd_s1_tray_state_active">Activo</string>
 </resources>

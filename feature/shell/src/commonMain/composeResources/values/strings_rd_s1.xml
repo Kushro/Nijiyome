@@ -158,4 +158,44 @@
     <string name="rd_s1_intro_body">Your Home, calendar and motion stay as they were. Pick a direction, palette and cards in Appearance.</string>
     <string name="rd_s1_intro_open">Choose style</string>
     <string name="rd_s1_intro_dismiss">Not now</string>
+
+    <!-- Link monitor dialog (desktop) and the tray's torrent states -->
+    <string name="rd_s1_mon_title">Nijiyome Link and system monitor</string>
+    <string name="rd_s1_mon_unavailable">Link server unavailable</string>
+    <string name="rd_s1_mon_stopped">Link server stopped</string>
+    <string name="rd_s1_mon_sessions_one">Port :%1$s · %2$s active session</string>
+    <string name="rd_s1_mon_sessions_other">Port :%1$s · %2$s active sessions</string>
+    <string name="rd_s1_mon_idle">Port :%1$s · Idle · %2$s paired devices</string>
+    <string name="rd_s1_mon_link_settings">Link settings</string>
+    <string name="rd_s1_mon_close">Close</string>
+    <string name="rd_s1_mon_devices">Devices using this PC (Link)</string>
+    <string name="rd_s1_mon_server_off">The Nijiyome Link server is off. Turn it on in Settings › Nijiyome Link to upscale and generate frames for your devices.</string>
+    <string name="rd_s1_mon_no_streaming">No device is streaming through this PC right now.</string>
+    <string name="rd_s1_mon_torrents">Active torrents</string>
+    <string name="rd_s1_mon_open_transfers">Open Transfers</string>
+    <string name="rd_s1_mon_no_torrents">No torrents downloading or streaming right now.</string>
+    <string name="rd_s1_mon_memory">Memory and cache</string>
+    <string name="rd_s1_mon_link_cache">Link segment cache (RAM)</string>
+    <string name="rd_s1_mon_budget">Per-session budget (instant rewind):</string>
+    <string name="rd_s1_mon_app_ram">App RAM (JVM)</string>
+    <string name="rd_s1_mon_disk_cache">Disk cache</string>
+    <string name="rd_s1_mon_torrent_storage">Torrent storage</string>
+    <string name="rd_s1_mon_free">%1$s free</string>
+    <string name="rd_s1_mon_active_playback">Active playback</string>
+    <string name="rd_s1_mon_paused">Paused</string>
+    <string name="rd_s1_mon_buffer_full">Buffer full</string>
+    <string name="rd_s1_mon_processing">Processing</string>
+    <string name="rd_s1_mon_library">Library</string>
+    <string name="rd_s1_mon_no_upscaling">No upscaling</string>
+    <string name="rd_s1_mon_stop">Stop</string>
+    <string name="rd_s1_mon_cached_ram">Cached in RAM: %1$s</string>
+    <string name="rd_s1_mon_ram_cache">RAM cache</string>
+    <string name="rd_s1_mon_lead">Lead ahead</string>
+    <string name="rd_s1_mon_segments">Segments</string>
+    <string name="rd_s1_mon_pace">Render pace</string>
+    <string name="rd_s1_mon_peers">%1$s · %2$s peers</string>
+    <string name="rd_s1_tray_state_downloading">Downloading</string>
+    <string name="rd_s1_tray_state_seeding">Seeding</string>
+    <string name="rd_s1_tray_state_initializing">Starting</string>
+    <string name="rd_s1_tray_state_active">Active</string>
 </resources>
