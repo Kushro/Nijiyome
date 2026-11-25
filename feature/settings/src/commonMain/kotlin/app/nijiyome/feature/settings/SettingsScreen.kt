@@ -57,6 +57,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -238,6 +240,22 @@ private class SettingsNav(
         open = true
         gallery = false
     }
+
+    companion object {
+        /** Keeps the category, the open page, the gallery, the search text and the recents across rotation / process death. */
+        fun saver(categories: List<SettingsCategory>): Saver<SettingsNav, Any> = listSaver(
+            save = { listOf(it.current.name, it.open, it.gallery, it.query, ArrayList(it.recents)) },
+            restore = { saved ->
+                val current = SettingsCategory.entries.firstOrNull { it.name == saved[0] }?.takeIf { it in categories } ?: categories.first()
+                SettingsNav(categories, current, saved[1] as Boolean).apply {
+                    gallery = saved[2] as Boolean
+                    query = saved[3] as String
+                    @Suppress("UNCHECKED_CAST")
+                    recents.addAll(saved[4] as List<String>)
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -261,7 +279,7 @@ private fun SettingsContent(
     val targetItem = initialItemId ?: initialSection?.defaultItem()
     val initialCategory = (SettingsCatalog.categoryOf(targetItem) ?: initialSection?.toCategory())
         ?.let { c -> if (c in categories) c else if (c == SettingsCategory.SYSTEM) SettingsCategory.SOURCES else null }
-    val nav = remember(initialSection, initialItemId) {
+    val nav = rememberSaveable(initialSection, initialItemId, saver = SettingsNav.saver(categories)) {
         SettingsNav(categories, initialCategory ?: categories.first(), open = initialCategory != null)
     }
     val jump = remember(initialSection, initialItemId) { SettingsJumpState(targetItem) }

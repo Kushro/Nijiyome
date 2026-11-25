@@ -52,6 +52,8 @@ data class YouOverview(
     val activeDownloads: Int,
     val torrentCount: Int,
     val linked: LinkedSummary,
+    /** false where this build is not a Link client (desktop): the Link row of Tú is hidden. */
+    val linkClient: Boolean = true,
     /** Sparkles S7: unread AniList notifications (badge of the Notificaciones row). */
     val unreadNotifications: Int = 0,
 )
@@ -75,7 +77,8 @@ class YouViewModel(
     private val lists: ListsRepository,
     private val history: HistoryRepository,
     private val extensions: ExtensionRepository,
-    private val link: LinkRepository,
+    /** The Link client; null where the build is not one (desktop), which hides the Link row. */
+    private val link: LinkRepository?,
     private val torrents: TorrentRepository? = null,
     /**
      * parity wave B (16 §2, worker r): web downloads of :core:download, added to [YouOverview.activeDownloads]. Read from Koin when the
@@ -109,13 +112,15 @@ class YouViewModel(
         combine(torrentOnly, repo.summary) { (active, total), web -> (active + web.active) to total }
     } ?: torrentOnly
 
-    private val linked: Flow<LinkedSummary> = combine(link.state, link.linkedDevice) { state, device ->
-        when (state) {
-            is LinkState.Paired -> LinkedSummary.Paired(device?.serverName ?: state.pc.serverName, state.reachable)
-            is LinkState.Failed -> LinkedSummary.Problem
-            LinkState.Pairing, LinkState.Unpaired -> LinkedSummary.None
+    private val linked: Flow<LinkedSummary> = link?.let { repo ->
+        combine(repo.state, repo.linkedDevice) { state, device ->
+            when (state) {
+                is LinkState.Paired -> LinkedSummary.Paired(device?.serverName ?: state.pc.serverName, state.reachable)
+                is LinkState.Failed -> LinkedSummary.Problem
+                LinkState.Pairing, LinkState.Unpaired -> LinkedSummary.None
+            }
         }
-    }
+    } ?: flowOf(LinkedSummary.None)
 
     private val unread: Flow<Int> = social?.unreadCount?.catch { emit(0) } ?: flowOf(0)
 
@@ -139,6 +144,7 @@ class YouViewModel(
                     activeDownloads = active,
                     torrentCount = total,
                     linked = linkedSummary,
+                    linkClient = link != null,
                     unreadNotifications = unreadCount,
                 ),
             )

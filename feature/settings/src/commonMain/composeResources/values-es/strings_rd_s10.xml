@@ -108,6 +108,7 @@
     <string name="rd_s10_perf_on">Encendido</string>
     <string name="rd_s10_perf_off">Apagado</string>
     <string name="rd_s10_perf_suggest">Este equipo parece lento. El modo rendimiento podría hacer la app más fluida.</string>
+    <string name="rd_s10_perf_suggest_60hz">Esta pantalla refresca a 60 Hz. El modo rendimiento acorta el movimiento y puede verse más estable en ella.</string>
     <string name="rd_s10_design_moments">Momentos de movimiento</string>
     <string name="rd_s10_design_moments_hint">La variante de cada momento animado</string>
     <string name="rd_s10_mo_ficha">De la tarjeta a la ficha</string>
@@ -318,4 +319,6 @@
     <string name="rd_s10_onb_sources_where">Las extensiones viven en Fuentes</string>
     <string name="rd_s10_onb_link_title">Link y sistema</string>
     <string name="rd_s10_onb_link_body">Es opcional. Tu PC puede mejorar el video para tu teléfono y prestarle sus extensiones.</string>
+    <string name="rd_s10_link_moved">Vinculación, dispositivos, puertos, caché, carpeta de biblioteca, firewall y el servidor de extensiones están en la pantalla de Link.</string>
+    <string name="rd_s10_link_open_screen">Abrir Nijiyome Link</string>
 </resources>

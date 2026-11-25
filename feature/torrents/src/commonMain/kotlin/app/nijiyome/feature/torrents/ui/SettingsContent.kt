@@ -43,9 +43,11 @@ import app.nijiyome.model.torrent.TorrentSettings
 import app.nijiyome.model.torrent.TorrentStorage
 import app.nijiyome.ui.format.formatBytes
 import app.nijiyome.ui.labels.labelRes
+import app.nijiyome.ui.patterns.QuantityPicker
+import app.nijiyome.ui.patterns.speedUnits
 import kotlin.math.roundToInt
 
-/** Slider stops of the speed limits in KiB/s (0 = unlimited); the text field accepts any value up to MAX_LIMIT_KIB. */
+/** Preset stops of the speed limits in KiB/s (0 = unlimited); the picker accepts any value up to MAX_LIMIT_KIB. */
 internal val LIMIT_STEPS = listOf(0, 128, 256, 512, 1_024, 2_048, 5_120, 10_240, 25_600, 51_200)
 
 /** Nearest slider stop of [kib]. */
@@ -305,23 +307,21 @@ private fun DesktopDownloadFolder(chosen: String, current: String, onChange: () 
 /** Speed limit: slider over [LIMIT_STEPS] + exact numeric field (KiB/s, 0 = unlimited). */
 @Composable
 private fun LimitField(label: String, value: Int, onValue: (Int) -> Unit) {
-    var slider by rememberSaveable(value) { mutableFloatStateOf(limitStepIndex(value).toFloat()) }
-    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        NumberField(
+    // The shared amount-with-unit picker (KiB/s or MiB/s, base unit KiB/s) with the old slider stops as presets; 0 = unlimited.
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        QuantityPicker(
+            baseValue = value.toLong(),
+            onBaseValueChange = { v -> v.toInt().coerceIn(0, TorrentSettings.MAX_LIMIT_KIB).let { if (it != value) onValue(it) } },
+            units = speedUnits(),
             label = label,
-            value = value,
-            hint = stringResource(Res.string.torrent_settings_limit_hint),
-            error = stringResource(Res.string.torrent_settings_limit_invalid, TorrentSettings.MAX_LIMIT_KIB),
-            parse = TorrentFieldRules::limit,
-            onValue = onValue,
-            suffix = stringResource(Res.string.torrent_settings_kib),
+            min = 0,
+            max = TorrentSettings.MAX_LIMIT_KIB.toLong(),
+            presets = LIMIT_STEPS.drop(1).map { it.toLong() },
         )
-        Slider(
-            value = slider,
-            onValueChange = { slider = it },
-            onValueChangeFinished = { onValue(LIMIT_STEPS[slider.roundToInt().coerceIn(LIMIT_STEPS.indices)]) },
-            valueRange = 0f..LIMIT_STEPS.lastIndex.toFloat(),
-            steps = LIMIT_STEPS.size - 2,
+        Text(
+            stringResource(Res.string.torrent_settings_limit_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

@@ -44,13 +44,13 @@ internal fun rememberRouteAvailability(): RouteAvailability {
  * The services a destination cannot open without: the ones its ViewModel asks the dependency graph for with a plain `get()`.
  * Everything else a screen uses is optional there and the screen hides what depends on it.
  */
-// Desktop (by design): la página "Tú" pide el cliente de Link (YouViewModel lo toma con get()), así que no se ofrece; Link sí,
-// por [needsAnyOf]. Con esos servicios registrados vuelven solas (Descargas, Perfil, notificaciones de AniList, Listas y cuentas y los
+// Desktop: Link se ofrece por [needsAnyOf] (el servidor) y "Tú" ya no pide el cliente de Link. Con esos servicios registrados vuelven solas (Descargas, Perfil, notificaciones de AniList, Listas y cuentas y los
 // servidores de extensiones, a los que escritorio entra desde Extensiones, ya volvieron).
 internal fun Route.needs(): List<KClass<*>> = when (this) {
     is Route.Downloads -> listOf(DownloadRepository::class)
     Route.ExtensionServers -> listOf(ExtensionServerRepository::class)
-    Route.You -> listOf(ListsRepository::class, LinkRepository::class)
+    // The Link client is optional there (its row hides without it).
+    Route.You -> listOf(ListsRepository::class)
     // Settings itself always opens; its "Listas y cuentas" section exists only with the lists service.
     is Route.SettingsSection -> if (section == SettingsSection.ACCOUNTS) listOf(ListsRepository::class) else emptyList()
     is Route.Profile, is Route.ActivityThread, Route.Notifications -> listOf(SocialRepository::class)

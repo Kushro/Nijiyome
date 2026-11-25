@@ -42,8 +42,11 @@ sealed interface Route : NavKey {
     /** Torrent client: Library tab target on phones, rail destination on medium/expanded. */
     @Serializable data class Torrents(val section: TorrentSection = TorrentSection.LIBRARY, val torrentId: String? = null) : Route
 
-    /** Settings deep link (scroll to a section; TORRENTS opens the Torrents subpage). */
-    @Serializable data class SettingsSection(val section: app.nijiyome.model.SettingsSection) : Route
+    /**
+     * Settings deep link (scroll to a section; TORRENTS opens the Torrents subpage). [itemId] is the exact `SettingsCatalog` entry to
+     * land on (palette, search), null for the section's top.
+     */
+    @Serializable data class SettingsSection(val section: app.nijiyome.model.SettingsSection, val itemId: String? = null) : Route
 
     /**
      * Search pre-filled from Home (feed "Ver todo", genre chip, extension row item). parity wave A (15 §3.1): [studio] browses a

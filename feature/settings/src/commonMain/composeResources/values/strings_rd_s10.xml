@@ -108,6 +108,7 @@
     <string name="rd_s10_perf_on">On</string>
     <string name="rd_s10_perf_off">Off</string>
     <string name="rd_s10_perf_suggest">This device looks slow. Performance mode could make the app smoother.</string>
+    <string name="rd_s10_perf_suggest_60hz">This screen refreshes at 60 Hz. Performance mode keeps motion short, which can look steadier on it.</string>
     <string name="rd_s10_design_moments">Motion moments</string>
     <string name="rd_s10_design_moments_hint">The variant of each animated moment</string>
     <string name="rd_s10_mo_ficha">Card to details</string>
@@ -318,4 +319,6 @@
     <string name="rd_s10_onb_sources_where">Extensions live in Sources</string>
     <string name="rd_s10_onb_link_title">Link and system</string>
     <string name="rd_s10_onb_link_body">Optional. Your PC can enhance the video for your phone and lend it its extensions.</string>
+    <string name="rd_s10_link_moved">Pairing, devices, ports, cache, library folder, firewall and the extension server are on the Link screen.</string>
+    <string name="rd_s10_link_open_screen">Open Nijiyome Link</string>
 </resources>

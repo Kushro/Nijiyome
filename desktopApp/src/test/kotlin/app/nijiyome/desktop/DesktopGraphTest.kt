@@ -65,18 +65,18 @@ class DesktopGraphTest {
         val available = RouteAvailability(koin)
         assertEquals(
             listOf(
-                Route.Home, Route.Search, Route.Calendar, Route.ForYou, Route.Library, Route.Manga(), Route.Novels(), Route.Downloads(),
-                Route.Torrents(), Route.Extensions, Route.Profile(), Route.Settings,
+                Route.Home, Route.Search, Route.Calendar, Route.Library, Route.Manga(), Route.Novels(), Route.Downloads(),
+                Route.Extensions, Route.Linked, Route.Settings, Route.Profile(),
             ),
             topLevelRoutes(wide = true).filter(available::offers),
         )
-        // Reached from other screens: they answer "not available yet" instead of opening.
-        assertFalse(available.offers(Route.Linked))
-        // Hito 6: a client of other PCs' extension servers (from Extensiones and nijiyome://extensionserver/connect), still not a Link
-        // client nor with the "Tú" page.
+        // Sparkles: Link opens its server side on desktop (LinkServerController).
+        assertTrue(available.offers(Route.Linked))
+        // Hito 6: a client of other PCs' extension servers (from Extensiones and nijiyome://extensionserver/connect). Tú no longer needs
+        // the Link client (its Link row hides).
         assertTrue(available.offers(Route.ExtensionServers))
-        assertFalse(available.offers(Route.Link))
-        assertFalse(available.offers(Route.You))
+        assertTrue(available.offers(Route.Link))
+        assertTrue(available.offers(Route.You))
         // Hito 5 (W3): accounts, the AniList profile and its notifications are on desktop now.
         assertTrue(available.offers(Route.Notifications))
         assertTrue(available.offers(Route.Profile()))
@@ -117,12 +117,7 @@ class DesktopGraphTest {
                     }
                 }
                 assertTrue(created >= 12, "only $created ViewModels were created")
-                assertEquals(
-                    mapOf(
-                        "YouViewModel" to "LinkRepository",
-                    ),
-                    missing.toMap(),
-                )
+                assertEquals(emptyMap<String, String>(), missing.toMap())
             }
         } finally {
             Dispatchers.resetMain()
