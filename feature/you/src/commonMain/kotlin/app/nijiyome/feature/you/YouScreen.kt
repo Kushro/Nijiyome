@@ -259,7 +259,7 @@ internal fun YouContent(
                                     },
                                     onOpenExtensions,
                                 )
-                                YouRow(
+                                if (o.linkClient) YouRow(
                                     Icons.Outlined.Devices,
                                     stringResource(Res.string.rd_s7_you_link),
                                     when (val linked = o.linked) {
