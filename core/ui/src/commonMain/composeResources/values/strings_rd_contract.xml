@@ -2,4 +2,7 @@
 <resources>
     <!-- Sparkles redesign, contract integration: shared card pieces. -->
     <string name="rd_contract_play_title">Play %1$s</string>
+    <string name="rd_contract_stamp_new">New</string>
+    <string name="rd_contract_stamp_soon">Soon</string>
+    <string name="rd_contract_new_ep">New ep. %1$d</string>
 </resources>

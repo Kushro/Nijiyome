@@ -56,11 +56,13 @@ import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.MediaStatusKind
 import app.nijiyome.ui.resources.Res
+import app.nijiyome.ui.resources.rd_contract_new_ep
+import app.nijiyome.ui.resources.rd_contract_stamp_new
 import app.nijiyome.ui.resources.rd_obi_premiere
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
-// Obi · diagonal (registerCard 'obi-diagonal'): a clean poster; only a novelty (a premiere) gets the band, crossing the top corner
+// Obi · diagonal (registerCard 'obi-diagonal'): a clean poster; only a novelty (a premiere or a new episode) gets the band, crossing the top corner
 // at 45 degrees in the novelty color, so it reads from across the room. The rest of the cards stay plain with a status chip.
 
 private class RibbonMetrics(val inset: Dp, val thickness: Dp, val fontSize: TextUnit)
@@ -77,12 +79,20 @@ private fun ribbonMetrics(size: CardSize, context: CardContext): RibbonMetrics =
 }
 
 /**
- * The novelty of a title (artifact `novelty()`), or null. The card data says when a title has not premiered yet; a "new episode"
- * novelty needs the aired count, which `TitleCardData` does not carry (see the lane report).
+ * The novelty of a title (artifact `novelty()`), or null: a premiere (not aired yet, or nothing aired so far), or a new episode the
+ * user has not seen ([TitleCardData.isNew]: "Nuevo ep. 9" when the aired count is known, just "Nuevo" on small cards).
  */
 @Composable
-private fun obiNovelty(data: TitleCardData): String? =
-    if (data.airing == MediaStatusKind.UPCOMING) stringResource(Res.string.rd_obi_premiere) else null
+private fun obiNovelty(data: TitleCardData, context: CardContext, size: CardSize): String? {
+    val short = size == CardSize.SMALL && context != CardContext.HERO
+    val aired = data.airedEpisodes
+    return when {
+        data.airing == MediaStatusKind.UPCOMING || aired == 0 -> stringResource(Res.string.rd_obi_premiere)
+        data.isNew && aired != null && !short -> stringResource(Res.string.rd_contract_new_ep, aired)
+        data.isNew -> stringResource(Res.string.rd_contract_stamp_new)
+        else -> null
+    }
+}
 
 @Composable
 internal fun ObiDiagonalCardContent(
@@ -96,7 +106,7 @@ internal fun ObiDiagonalCardContent(
 ) {
     val phrase = obiPhrase(data, context, show)
     val extra = obiExtra(data)
-    val novelty = obiNovelty(data)
+    val novelty = obiNovelty(data, context, size)
     val spoken = obiSpoken(data, phrase, extra, novelty)
     when (context) {
         CardContext.COMPACT -> ObiCompactLayout(data, phrase.long.ifBlank { null }, spoken, onClick, onLongClick, modifier) { wide ->

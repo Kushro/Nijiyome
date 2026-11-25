@@ -124,8 +124,10 @@ internal fun TitleCardData.lineModel(): LineModel {
     val reading = key.startsWith("manga") || key.startsWith("novel")
     val total = episodesTotal?.takeIf { it > 0 }
     val done = (episodesSeen ?: 0).coerceAtLeast(0).let { if (total != null) it.coerceAtMost(total) else it }
+    // The screen's aired count when it has one; otherwise inferred (the next episode in the label is the first not aired yet).
     val aired: Int? = when {
         reading -> total
+        airedEpisodes != null -> airedEpisodes.coerceAtLeast(0).let { if (total != null) it.coerceAtMost(total) else it }
         airing == MediaStatusKind.UPCOMING -> 0
         airing == MediaStatusKind.AIRING -> nextLabel?.let { FIRST_INT.find(it)?.value?.toIntOrNull() }?.let { (it - 1).coerceAtLeast(0) }
             ?.let { if (total != null) it.coerceAtMost(total) else it }
