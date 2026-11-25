@@ -398,6 +398,15 @@ internal actual val playerCapabilities: PlayerCapabilities = PlayerCapabilities(
 @Composable
 internal actual fun initialFullscreen(): Boolean = true
 
+/** The phone is the device things are sent to, not from. */
+@Composable
+internal actual fun rememberSendToDevice(
+    vm: PlayerViewModel,
+    args: app.nijiyome.model.PlayerArgs?,
+    session: PlayerSession,
+    onMessage: (String) -> Unit,
+): SendToDevice? = null
+
 @Composable
 internal actual fun hasHardwareKeyboard(): Boolean = LocalConfiguration.current.keyboard != Configuration.KEYBOARD_NOKEYS
 

@@ -25,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.nijiyome.feature.player.resources.Res
 import app.nijiyome.feature.player.resources.player_hud_audio
@@ -51,7 +53,12 @@ import kotlin.math.roundToInt
 
 /** Mute button and a short slider (0–100 %) of the session's own volume; follows changes made with the keys too. */
 @Composable
-internal fun PlayerVolumeControl(session: PlayerSession, onInteract: () -> Unit) {
+internal fun PlayerVolumeControl(
+    session: PlayerSession,
+    onInteract: () -> Unit,
+    /** Sparkles S5: the "Volumen 80 %" text after the slider (the slider says it to TalkBack either way). */
+    showLabel: Boolean = true,
+) {
     var volume by remember(session) { mutableStateOf(session.volume()) }
     var dragging by remember(session) { mutableStateOf<Float?>(null) }
     // The keys (↑ ↓ M) and the other engine change it too: read it back while the controls are up.
@@ -62,6 +69,7 @@ internal fun PlayerVolumeControl(session: PlayerSession, onInteract: () -> Unit)
         }
     }
     val v = volume ?: return
+    val volumeText = stringResource(Res.string.player_volume) + " " + (if (v.muted) 0 else v.percent) + " %"
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { session.toggleMute()?.let { volume = it }; onInteract() }) {
             if (v.muted || v.percent == 0) {
@@ -78,14 +86,12 @@ internal fun PlayerVolumeControl(session: PlayerSession, onInteract: () -> Unit)
                 dragging = null
             },
             valueRange = 0f..100f,
-            modifier = Modifier.width(VOLUME_SLIDER_DP.dp),
+            modifier = Modifier.width(VOLUME_SLIDER_DP.dp).semantics { contentDescription = volumeText },
         )
-        Spacer(Modifier.width(4.dp))
-        Text(
-            stringResource(Res.string.player_volume) + " " + (if (v.muted) 0 else v.percent) + " %",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+        if (showLabel) {
+            Spacer(Modifier.width(4.dp))
+            Text(volumeText, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onBackground)
+        }
     }
 }
 
@@ -103,6 +109,8 @@ internal fun DesktopHudContent(hud: Hud) {
             Icon(Icons.Rounded.Speed, contentDescription = null)
             Text(stringResource(Res.string.player_speed_value, hud.label.orEmpty()))
         }
+        // Sparkles S5: a short line that is already worded (the send-to-phone result)
+        Hud.Kind.Message -> Text(hud.label.orEmpty())
         Hud.Kind.Subtitles -> {
             Icon(Icons.Rounded.Subtitles, contentDescription = null)
             Text(

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Lane S5 (player chrome: structures, controls, gestures). -->
+<resources>
+    <string name="rd_s5_aspect_fit">Fit</string>
+    <string name="rd_s5_aspect_fill">Fill</string>
+    <string name="rd_s5_aspect_stretch">Stretch</string>
+    <string name="rd_s5_aspect_16_9">16:9</string>
+    <string name="rd_s5_aspect_4_3">4:3</string>
+    <string name="rd_s5_aspect">Aspect</string>
+    <string name="rd_s5_seg_opening">Opening</string>
+    <string name="rd_s5_seg_ending">Ending</string>
+    <string name="rd_s5_seg_recap">Recap</string>
+    <string name="rd_s5_change_source">Change source</string>
+    <string name="rd_s5_tracks">Tracks</string>
+    <string name="rd_s5_picture">Picture</string>
+    <string name="rd_s5_speed">Speed</string>
+    <string name="rd_s5_speed_timer">Speed and timer</string>
+    <string name="rd_s5_speed_hold_hint">Press and hold the video to play at 2× until you let go.</string>
+    <string name="rd_s5_speed_keys_hint">With the keyboard: . goes up and , goes down.</string>
+    <string name="rd_s5_no_audio_tracks">No extra audio tracks found</string>
+    <string name="rd_s5_audio_off">No audio</string>
+    <string name="rd_s5_audio_lang">Audio %1$s</string>
+    <string name="rd_s5_sub_lang">Sub %1$s</string>
+    <string name="rd_s5_sub_none">No subs</string>
+    <string name="rd_s5_tracks_summary">%1$s · %2$s</string>
+    <string name="rd_s5_buffer_ahead">Buffer +%1$ds</string>
+    <string name="rd_s5_legend_marks">OP/ED</string>
+    <string name="rd_s5_seek_label">Episode position</string>
+    <string name="rd_s5_seek_value">%1$s of %2$s</string>
+    <string name="rd_s5_seek_value_chapter">%1$s of %2$s, %3$s</string>
+    <string name="rd_s5_time_toggle">Switch between total and remaining time</string>
+    <string name="rd_s5_layout_title">Control layout</string>
+    <string name="rd_s5_layout_cinema">Cinema</string>
+    <string name="rd_s5_layout_classic">Classic</string>
+    <string name="rd_s5_layout_minimal">Minimal</string>
+    <string name="rd_s5_layout_panel">Panel</string>
+    <string name="rd_s5_layout_vertical">Vertical</string>
+    <string name="rd_s5_hint_brightness">Swipe: brightness</string>
+    <string name="rd_s5_hint_volume">Swipe: volume</string>
+    <string name="rd_s5_hint_double_tap">Double tap</string>
+    <string name="rd_s5_player_settings">Player settings</string>
+    <string name="rd_s5_panel_label">Tracks and enhancements</string>
+    <string name="rd_s5_picture_more">Zoom, color and decoder</string>
+    <string name="rd_s5_picture_more_hint">In Enhancements</string>
+    <string name="rd_s5_loop_stable">Playback</string>
+    <string name="rd_s5_send_to">Send to %1$s</string>
+</resources>

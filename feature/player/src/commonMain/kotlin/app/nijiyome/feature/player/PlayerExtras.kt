@@ -74,8 +74,11 @@ import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
 import app.nijiyome.designsystem.components.rememberAfterDelay
 import app.nijiyome.designsystem.theme.NijiyomeFonts
-import app.nijiyome.model.PlayerChromeStyle
+import app.nijiyome.model.PlayerStructure
 import app.nijiyome.model.SubtitleStyle
+import app.nijiyome.ui.look.structures
+import androidx.compose.material.icons.rounded.Settings
+import kotlinx.coroutines.launch
 import app.nijiyome.player.CueTimeline
 import app.nijiyome.player.PlaybackState
 import app.nijiyome.player.PlayerKeymap
@@ -343,27 +346,80 @@ internal fun SubtitlesSheetContent(
     }
 }
 
-/** "More" sheet: player chrome style (touch), sleep timer, loop, stable volume. */
+/**
+ * "Más" sheet. Sparkles S5: the control layout (the player's [PlayerStructure], stored in `design.structures.player`; it replaces the
+ * touch-only Cine / Minimalista style), loop and stable volume, then [actions] (the old "Más opciones" menu: screenshot, download,
+ * lock, shortcuts...) and the way to the player settings ([onOpenSettings]). The sleep timer moved to Velocidad y temporizador
+ * ([SleepTimerRows]).
+ */
 @Composable
-internal fun MoreSheetContent(vm: PlayerViewModel, state: PlayerUiState) {
+internal fun MoreSheetContent(
+    vm: PlayerViewModel,
+    state: PlayerUiState,
+    actions: @Composable () -> Unit = {},
+    onOpenSettings: (() -> Unit)? = null,
+) {
     val transparentRow = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent)
     Column {
-        if (playerCapabilities.touchFirst) {
-            SheetTitle("Estilo de controles")
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                Segmented(
-                    options = listOf(
-                        SegmentedOption(PlayerChromeStyle.CINEMA, "Cine"),
-                        SegmentedOption(PlayerChromeStyle.MINIMAL, "Minimalista"),
-                    ),
-                    selected = state.settings.playerChromeStyle,
-                    onSelect = vm::setPlayerChromeStyle,
-                    fillWidth = true,
-                    small = true,
-                )
-            }
-            HorizontalDivider(Modifier.padding(top = 8.dp))
+        SheetTitle(stringResource(Res.string.rd_s5_layout_title))
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+            val touch = playerCapabilities.touchFirst
+            val koin = org.koin.compose.getKoin()
+            val repo = remember(koin) { koin.getOrNull<app.nijiyome.model.SettingsRepository>() }
+            val scope = androidx.compose.runtime.rememberCoroutineScope()
+            Segmented(
+                options = listOf(
+                    SegmentedOption(PlayerStructure.CINEMA, stringResource(if (touch) Res.string.rd_s5_layout_cinema else Res.string.rd_s5_layout_classic)),
+                    SegmentedOption(PlayerStructure.MINIMAL, stringResource(Res.string.rd_s5_layout_minimal)),
+                    SegmentedOption(PlayerStructure.PANEL, stringResource(if (touch) Res.string.rd_s5_layout_vertical else Res.string.rd_s5_layout_panel)),
+                ),
+                selected = structures.player,
+                onSelect = pick@{ picked ->
+                    val r = repo ?: return@pick
+                    scope.launch {
+                        runCatching {
+                            r.update { s ->
+                                val design = s.look.design
+                                s.copy(look = s.look.copy(design = design.copy(structures = design.structures.copy(player = picked))))
+                            }
+                        }
+                    }
+                },
+                fillWidth = true,
+                small = true,
+            )
         }
+        HorizontalDivider(Modifier.padding(top = 8.dp))
+        ListItem(
+            headlineContent = { Text(stringResource(Res.string.player_loop)) },
+            supportingContent = { Text(stringResource(Res.string.player_loop_hint)) },
+            trailingContent = { Switch(checked = state.loop, onCheckedChange = vm::setLoop) },
+            colors = transparentRow,
+        )
+        ListItem(
+            headlineContent = { Text(stringResource(Res.string.player_stable_volume)) },
+            supportingContent = { Text(stringResource(Res.string.player_stable_volume_hint)) },
+            trailingContent = { Switch(checked = state.settings.stableVolume, onCheckedChange = vm::setStableVolume) },
+            colors = transparentRow,
+        )
+        HorizontalDivider()
+        actions()
+        if (onOpenSettings != null) {
+            ListItem(
+                headlineContent = { Text(stringResource(Res.string.rd_s5_player_settings)) },
+                leadingContent = { Icon(Icons.Rounded.Settings, contentDescription = null) },
+                colors = transparentRow,
+                modifier = Modifier.clickable(onClick = onOpenSettings),
+            )
+        }
+    }
+}
+
+/** The sleep timer's choices (Velocidad y temporizador). */
+@Composable
+internal fun SleepTimerRows(vm: PlayerViewModel, state: PlayerUiState) {
+    val transparentRow = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent)
+    Column {
         SheetTitle(stringResource(Res.string.player_sleep))
         val sleep = state.sleep
         SleepOption.entries.forEach { o ->
@@ -386,19 +442,6 @@ internal fun MoreSheetContent(vm: PlayerViewModel, state: PlayerUiState) {
                 modifier = Modifier.clickable { vm.setSleepTimer(o) },
             )
         }
-        HorizontalDivider()
-        ListItem(
-            headlineContent = { Text(stringResource(Res.string.player_loop)) },
-            supportingContent = { Text(stringResource(Res.string.player_loop_hint)) },
-            trailingContent = { Switch(checked = state.loop, onCheckedChange = vm::setLoop) },
-            colors = transparentRow,
-        )
-        ListItem(
-            headlineContent = { Text(stringResource(Res.string.player_stable_volume)) },
-            supportingContent = { Text(stringResource(Res.string.player_stable_volume_hint)) },
-            trailingContent = { Switch(checked = state.settings.stableVolume, onCheckedChange = vm::setStableVolume) },
-            colors = transparentRow,
-        )
     }
 }
 

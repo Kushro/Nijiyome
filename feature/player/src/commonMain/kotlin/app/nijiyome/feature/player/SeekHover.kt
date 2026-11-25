@@ -61,12 +61,19 @@ internal fun Modifier.seekHover(state: SeekHoverState, enabled: Boolean): Modifi
 
 /** The bubble, laid out right under the bar it belongs to and drawn above it (it takes no room). */
 @Composable
-internal fun SeekHoverBubble(state: SeekHoverState, durationMs: Long) {
+internal fun SeekHoverBubble(
+    state: SeekHoverState,
+    durationMs: Long,
+    /** Sparkles S5: what is at the hovered time (the chapter: "Opening"), shown after the time; null = the time only. */
+    labelAt: ((timeMs: Long) -> String?)? = null,
+) {
     val f = state.fraction ?: return
     val width = state.width
     if (width <= 0 || durationMs <= 0) return
+    val timeMs = hoverTimeMs(f, durationMs)
+    val text = listOfNotNull(formatDuration(timeMs / 1000), labelAt?.invoke(timeMs)).joinToString(" · ")
     Surface(
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.extraSmall,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         contentColor = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.layout { measurable, constraints ->
@@ -78,7 +85,7 @@ internal fun SeekHoverBubble(state: SeekHoverState, durationMs: Long) {
         },
     ) {
         Text(
-            formatDuration(hoverTimeMs(f, durationMs) / 1000),
+            text,
             style = MaterialTheme.typography.labelMedium,
             fontFamily = FontFamily.Monospace,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
