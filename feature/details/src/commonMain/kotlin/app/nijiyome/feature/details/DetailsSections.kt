@@ -198,50 +198,6 @@ internal fun rememberNowSec(): Long {
     return now
 }
 
-/** Download icon with its menu: "Descargar episodio N" and, when the best torrent is a batch, "Descargar temporada". */
-@Composable
-internal fun DownloadMenuButton(state: DetailsUiState, actions: DetailsActions, icon: ImageVector, outlined: Boolean = false) {
-    var open by remember { mutableStateOf(false) }
-    val description = stringResource(Res.string.details_download)
-    Box {
-        if (outlined) {
-            OutlinedIconButton(onClick = { open = true }) { Icon(icon, contentDescription = description) }
-        } else {
-            IconButton(onClick = { open = true }) { Icon(icon, contentDescription = description) }
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            val panel = state.panel
-            val best = state.bestTorrent
-            if (panel != null && best != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_episode, panel.episode)) },
-                    onClick = {
-                        open = false
-                        actions.onDownloadSource(best, panel.episode)
-                    },
-                    leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                )
-                if (state.canDownloadSeason) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.details_download_season)) },
-                        onClick = {
-                            open = false
-                            actions.onDownloadSeason()
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.Movie, contentDescription = null) },
-                    )
-                }
-            } else {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_none)) },
-                    onClick = { open = false },
-                    enabled = false,
-                )
-            }
-        }
-    }
-}
-
 // ---------------------------------------------------------------- source panel
 
 /** sources.js `summary`: mode + Settings link, the chosen row (SourceRow of :feature:player), who chose it, "Ver todas (n)". */
