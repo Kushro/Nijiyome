@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, lane D2: the Obi direction. -->
+    <string name="rd_obi_name">Obi</string>
+    <string name="rd_obi_tagline">Every series gets its band: the paper obi of light novels and Japanese Blu-rays carries the status, the episode and the line of the moment.</string>
+    <string name="rd_obi_palette_tienda">Shop</string>
+    <string name="rd_obi_palette_nocturna">Night shelf</string>
+    <string name="rd_obi_palette_limitada">Limited edition</string>
+    <string name="rd_obi_palette_mono">Monochrome with band</string>
+</resources>

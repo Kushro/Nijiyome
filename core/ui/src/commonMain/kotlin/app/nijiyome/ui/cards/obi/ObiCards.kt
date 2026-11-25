@@ -7,20 +7,24 @@ import app.nijiyome.model.CardSize
 import app.nijiyome.model.TitleCardIds
 import app.nijiyome.ui.cards.CardContext
 import app.nijiyome.ui.cards.CardShow
-import app.nijiyome.ui.cards.MaterialCard
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.cards.TitleCardStyle
+import app.nijiyome.ui.resources.Res
+import app.nijiyome.ui.resources.rd_obi_card_band
+import app.nijiyome.ui.resources.rd_obi_card_diagonal
+import app.nijiyome.ui.resources.rd_obi_card_spine
+import org.jetbrains.compose.resources.stringResource
 
-// Sparkles redesign. Owner: lane D2. STUBS written by the integrator so the registry compiles: each object draws the Material
-// card until the lane replaces its body with the style of docs/redesign/artefacto/dir-obi.{css,js} (registerCard). Keep the
-// object names and ids; split into more files inside this folder as needed.
+// The three card styles of the Obi direction (lane D2, docs/redesign/artefacto/dir-obi.{css,js} registerCard). They work under any
+// direction: they read the theme's roles and LocalStatusColors, and letter their bands with the Obi faces.
 
+/** Obi · faja: poster with a band across its foot in the series color. The Obi direction's default card. */
 object ObiCard : TitleCardStyle {
     override val id: String = TitleCardIds.OBI
     override val directionId: String = "obi"
 
     @Composable
-    override fun name(): String = "Obi · faja"
+    override fun name(): String = stringResource(Res.string.rd_obi_card_band)
 
     @Composable
     override fun Card(
@@ -31,15 +35,16 @@ object ObiCard : TitleCardStyle {
         onClick: () -> Unit,
         modifier: Modifier,
         onLongClick: (() -> Unit)?,
-    ) = MaterialCard.Detailed.Card(data, context, size, show, onClick, modifier, onLongClick)
+    ) = ObiBandCardContent(data, context, size, show, onClick, modifier, onLongClick)
 }
 
+/** Obi · lomo: a bookshelf spine with the title running down it and a big number at the foot. */
 object ObiSpineCard : TitleCardStyle {
     override val id: String = TitleCardIds.OBI_SPINE
     override val directionId: String = "obi"
 
     @Composable
-    override fun name(): String = "Obi · lomo"
+    override fun name(): String = stringResource(Res.string.rd_obi_card_spine)
 
     @Composable
     override fun Card(
@@ -50,15 +55,16 @@ object ObiSpineCard : TitleCardStyle {
         onClick: () -> Unit,
         modifier: Modifier,
         onLongClick: (() -> Unit)?,
-    ) = MaterialCard.Detailed.Card(data, context, size, show, onClick, modifier, onLongClick)
+    ) = ObiSpineCardContent(data, context, size, show, onClick, modifier, onLongClick)
 }
 
+/** Obi · diagonal: a clean poster; only a novelty gets the band, across the top corner. */
 object ObiDiagonalCard : TitleCardStyle {
     override val id: String = TitleCardIds.OBI_DIAGONAL
     override val directionId: String = "obi"
 
     @Composable
-    override fun name(): String = "Obi · diagonal"
+    override fun name(): String = stringResource(Res.string.rd_obi_card_diagonal)
 
     @Composable
     override fun Card(
@@ -69,5 +75,5 @@ object ObiDiagonalCard : TitleCardStyle {
         onClick: () -> Unit,
         modifier: Modifier,
         onLongClick: (() -> Unit)?,
-    ) = MaterialCard.Detailed.Card(data, context, size, show, onClick, modifier, onLongClick)
+    ) = ObiDiagonalCardContent(data, context, size, show, onClick, modifier, onLongClick)
 }
