@@ -15,8 +15,13 @@ private const val SIXTY_HZ = 60.5f
 @Composable
 actual fun rememberLowEndDevice(): Boolean {
     val context = LocalContext.current
+    return remember(context) { lowRam(context) }
+}
+
+@Composable
+actual fun rememberLowRefreshRate(): Boolean {
     val view = LocalView.current
-    return remember(context, view) { lowRam(context) || sixtyHzPanel(view) }
+    return remember(view) { sixtyHzPanel(view) }
 }
 
 private fun lowRam(context: Context): Boolean =
