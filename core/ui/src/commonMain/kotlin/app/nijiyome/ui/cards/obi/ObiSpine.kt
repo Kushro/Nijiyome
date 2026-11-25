@@ -273,7 +273,7 @@ private fun FlatSpine(
                         val rule = band.fg.copy(alpha = 0.26f)
                         Column(
                             Modifier
-                                .drawBehind { drawRect(rule, size = Size(1.dp.toPx(), size.height)) }
+                                .drawBehind { drawRect(rule, size = Size(1.dp.toPx(), this.size.height)) }
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {

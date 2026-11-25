@@ -254,7 +254,7 @@ object TicketCard : TitleCardStyle {
                         .fillMaxWidth()
                         .drawBehind {
                             val inset = notch.toPx() + 2.dp.toPx()
-                            perforation(perf, Offset(inset, 0f), Offset(size.width - inset, 0f))
+                            perforation(perf, Offset(inset, 0f), Offset(this.size.width - inset, 0f))
                         }
                         .padding(start = if (small) 8.dp else 10.dp, end = if (small) 8.dp else 10.dp, top = if (small) 10.dp else 12.dp, bottom = if (small) 8.dp else 10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -326,7 +326,7 @@ object TicketCard : TitleCardStyle {
                         .fillMaxHeight()
                         .drawBehind {
                             val inset = notch.toPx() + 2.dp.toPx()
-                            perforation(perf, Offset(0f, inset), Offset(0f, size.height - inset))
+                            perforation(perf, Offset(0f, inset), Offset(0f, this.size.height - inset))
                         }
                         .padding(
                             start = if (hero) 24.dp else 16.dp,
