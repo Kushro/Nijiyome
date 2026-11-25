@@ -43,6 +43,7 @@ import app.nijiyome.desktop.system.ScaledDensity
 import app.nijiyome.desktop.system.TrayLiveStatus
 import app.nijiyome.extensionserver.PendingServerLink
 import app.nijiyome.desktop.system.NijiyomeTray
+import app.nijiyome.desktop.system.quantizedForTray
 import app.nijiyome.desktop.system.TrayTexts
 import app.nijiyome.desktop.system.connectDiscord
 import app.nijiyome.desktop.system.desktopSystemModule
@@ -203,8 +204,11 @@ fun main(args: Array<String>) {
             val trayTexts = TrayTexts.forLocale(DesktopLocale.localeFor(appSettings.language))
             val spanish = DesktopLocale.localeFor(appSettings.language).language == "es"
 
-            // Live telemetry for the system tray menu & Link Monitor (sampled every 2s on IO so UI stays idle-free).
+            // Live telemetry for the Link Monitor dialog (sampled every 1.5-3s) and a coarse, freeze-guarded snapshot for
+            // the native system tray menu so D-Bus menus on KDE Plasma never flicker or drop submenu hover.
             var liveStatus by remember { mutableStateOf(TrayLiveStatus(spanish = spanish, link = link)) }
+            var traySnapshot by remember { mutableStateOf(liveStatus.quantizedForTray()) }
+            val trayFreezeUntilMs = remember { java.util.concurrent.atomic.AtomicLong(0L) }
             LaunchedEffect(linkServer, torrentRepo, trayOn, linkMonitorOpen, spanish) {
                 while (true) {
                     val snapshot = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -255,7 +259,18 @@ fun main(args: Array<String>) {
                         )
                     }
                     liveStatus = snapshot
+                    if (System.currentTimeMillis() >= trayFreezeUntilMs.get()) {
+                        val quantized = snapshot.quantizedForTray()
+                        if (quantized != traySnapshot) traySnapshot = quantized
+                    }
                     kotlinx.coroutines.delay(if (linkMonitorOpen) 1_500L else 3_000L)
+                }
+            }
+            // Also reflect Link state or language changes immediately when the tray menu is not currently open.
+            LaunchedEffect(link, spanish) {
+                if (System.currentTimeMillis() >= trayFreezeUntilMs.get()) {
+                    val quantized = liveStatus.copy(link = link, spanish = spanish).quantizedForTray()
+                    if (quantized != traySnapshot) traySnapshot = quantized
                 }
             }
             val openMonitor = { show(); linkMonitorOpen = true }
@@ -265,7 +280,11 @@ fun main(args: Array<String>) {
                 NijiyomeTray(
                     icons = trayIcons,
                     texts = trayTexts,
-                    live = liveStatus.copy(link = link, spanish = spanish),
+                    live = traySnapshot,
+                    onMenuOpened = {
+                        // Freeze tray D-Bus menu rebuilds for 15s while the user interacts with submenus.
+                        trayFreezeUntilMs.set(System.currentTimeMillis() + 15_000L)
+                    },
                     onShow = show,
                     onOpenMonitor = openMonitor,
                     onOpenTorrents = openTorrents,

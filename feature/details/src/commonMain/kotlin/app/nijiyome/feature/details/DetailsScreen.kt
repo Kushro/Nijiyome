@@ -182,6 +182,7 @@ fun DetailsScreen(
     val shareCopied = stringResource(Res.string.details_share_copied)
     val shareSend = stringResource(Res.string.details_share_send)
     val shareTitle = stringResource(Res.string.details_share)
+    val titleCopied = stringResource(Res.string.details_title_copied)
     val snackbar = LocalAppSnackbar.current
     val currentOnPlay by rememberUpdatedState(onPlay)
     val currentOnOpenDownloads by rememberUpdatedState(onOpenDownloads)
@@ -270,6 +271,11 @@ fun DetailsScreen(
             }
         },
         onOpenUrl = openUrl,
+        onCopyTitle = { title ->
+            clipboard.setText(AnnotatedString(title))
+            snackbar.show(message = titleCopied)
+        },
+        onRetryPrimary = viewModel::retryPrimaryProvider,
         onLoadCharacters = viewModel::loadCharacters,
         onRetryDetails = viewModel::retryDetails,
         onEpisodeQuery = viewModel::setEpisodeQuery,
@@ -371,6 +377,8 @@ internal data class DetailsActions(
     val onOpenStudio: (String) -> Unit = {},
     val onShare: (Media) -> Unit = {},
     val onOpenUrl: (String) -> Unit = {},
+    val onCopyTitle: (String) -> Unit = {},
+    val onRetryPrimary: () -> Unit = {},
     val onLoadCharacters: () -> Unit = {},
     val onRetryDetails: () -> Unit = {},
     val onEpisodeQuery: (String) -> Unit = {},

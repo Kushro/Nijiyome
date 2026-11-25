@@ -48,6 +48,7 @@ import app.nijiyome.model.DownloadRepository
 import app.nijiyome.model.StaffEdge
 import app.nijiyome.model.StreamSource
 import app.nijiyome.model.TitleLanguage
+import app.nijiyome.model.withAltTitles
 import app.nijiyome.model.torrent.DebridStatus
 import app.nijiyome.model.torrent.TorrentRepository
 import app.nijiyome.model.torrentUri
@@ -140,6 +141,8 @@ data class DetailsUiState(
     val clockSec: Long? = null,
     /** The title is a favorite (also when it is on no list, so [listEntry] is null). */
     val favorite: Boolean = false,
+    /** v1.2.1: live rate-limit / fallback banner state when the primary metadata provider is cooling down. */
+    val fallback: app.nijiyome.model.MetadataFallbackState? = null,
 ) {
     /** The announced total: the list's (when set) or the media's. */
     val totalEpisodes: Int? get() = listEntry?.totalEpisodes?.takeIf { it > 0 } ?: (media as? LoadState.Ok)?.value?.episodes
@@ -476,6 +479,30 @@ class DetailsViewModel(
                 .catch { }
                 .collect { has -> _state.update { it.copy(hasExtensions = has) } }
         }
+        // v1.2.1: observe live metadata rate-limit / fallback state and auto-recover once cooldown expires.
+        viewModelScope.launch {
+            var wasLimited = false
+            metadata.fallbackState.collect { fb ->
+                _state.update { it.copy(fallback = fb) }
+                if (fb != null) {
+                    wasLimited = true
+                } else if (wasLimited) {
+                    wasLimited = false
+                    val s = _state.value
+                    if (s.media is LoadState.Err && s.media.cause is AppError.RateLimited) {
+                        retry()
+                    } else if (s.details is LoadState.Err && s.details.cause is AppError.RateLimited) {
+                        retryDetails()
+                    }
+                }
+            }
+        }
+    }
+
+    /** Clears metadata provider cooldowns and retries the primary provider immediately. */
+    fun retryPrimaryProvider() {
+        metadata.resetProviderHealth()
+        retry()
     }
 
     fun retry() {
@@ -486,16 +513,42 @@ class DetailsViewModel(
     private fun load() {
         viewModelScope.launch {
             val result = runCatchingApp { metadata.media(kind, ref) }
+            val loaded = result.getOrNull()
             _state.update {
+                val existingSynonyms = (it.details as? LoadState.Ok)?.value?.synonyms.orEmpty()
                 it.copy(
                     media = result.fold(
-                        onSuccess = { m -> if (m == null) LoadState.Err(AppError.Http(404)) else LoadState.Ok(m) },
+                        onSuccess = { m ->
+                            if (m == null) LoadState.Err(AppError.Http(404))
+                            else LoadState.Ok(if (existingSynonyms.isNotEmpty()) m.withAltTitles(existingSynonyms) else m)
+                        },
                         onFailure = { e -> LoadState.Err(e.toAppError()) },
                     ),
                 )
             }
             ensurePanel()
             updateAdultGate()
+            // v1.2.1: if `media()` resolved a MAL/Kitsu ID that wasn't on the initial `ref`, enrich episodes via the full
+            // ladder (e.g. Tenrai/MAL) whenever the initial episode list came back empty or with missing titles/thumbnails.
+            if (loaded != null && kind == MediaKind.ANIME) {
+                val enrichedRef = loaded.ref.copy(
+                    anilistId = loaded.ref.anilistId ?: ref.anilistId,
+                    malId = loaded.ref.malId ?: ref.malId,
+                    kitsuId = loaded.ref.kitsuId ?: ref.kitsuId,
+                )
+                if (enrichedRef != ref) {
+                    viewModelScope.launch {
+                        val enriched = runCatchingApp { metadata.episodes(enrichedRef).sortedBy { it.number } }.getOrNull()
+                        if (!enriched.isNullOrEmpty()) {
+                            _state.update { cur ->
+                                val prev = (cur.episodes as? LoadState.Ok)?.value.orEmpty()
+                                val prevIncomplete = prev.isEmpty() || prev.any { it.title.isNullOrBlank() || it.image.isNullOrBlank() }
+                                if (prevIncomplete) cur.copy(episodes = LoadState.Ok(enriched)) else cur
+                            }
+                        }
+                    }
+                }
+            }
         }
         loadDetails()
         if (kind == MediaKind.ANIME) {
@@ -984,8 +1037,17 @@ class DetailsViewModel(
     private fun loadDetails() {
         viewModelScope.launch {
             val result = runCatchingApp { metadata.details(ref) }
-            _state.update {
-                it.copy(details = result.fold(onSuccess = { d -> LoadState.Ok(d) }, onFailure = { e -> LoadState.Err(e.toAppError()) }))
+            val synonyms = result.getOrNull()?.synonyms.orEmpty()
+            _state.update { cur ->
+                val updatedMedia = if (synonyms.isNotEmpty() && cur.media is LoadState.Ok) {
+                    LoadState.Ok(cur.media.value.withAltTitles(synonyms))
+                } else {
+                    cur.media
+                }
+                cur.copy(
+                    media = updatedMedia,
+                    details = result.fold(onSuccess = { d -> LoadState.Ok(d) }, onFailure = { e -> LoadState.Err(e.toAppError()) }),
+                )
             }
             updateAdultGate()
         }

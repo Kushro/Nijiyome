@@ -37,7 +37,7 @@ import app.nijiyome.model.SourcePrefs
 import app.nijiyome.model.SourceStatsStore
 import app.nijiyome.model.StreamSource
 import app.nijiyome.model.parseSourceKey
-import app.nijiyome.model.searchTitles
+import app.nijiyome.model.extensionSearchTitles
 import app.nijiyome.model.sourceKey
 import app.nijiyome.release.rank
 import kotlinx.coroutines.CancellationException
@@ -1283,7 +1283,7 @@ class ExtensionRepositoryImpl(
          * when a metadata fallback answered (BUG-143: Kitsu alone gave "Temppal: Item no Chikara" and no torrent matched).
          */
         internal fun streamParams(media: Media, episode: Int): JsonObject {
-            val titles = media.searchTitles()
+            val titles = media.extensionSearchTitles()
             return buildJsonObject {
                 put("anilistId", media.ref.anilistId ?: 0)
                 put("titles", JsonArray(titles.map { JsonPrimitive(it) }))

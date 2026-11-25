@@ -5,6 +5,9 @@
     <string name="ui_close">Close</string>
     <string name="ui_error_offline">No connection. Check your network and try again.</string>
     <string name="ui_error_rate_limited">%1$s is limiting requests. Try again in a moment.</string>
+    <string name="ui_rate_limit_fallback_soon">%1$s is rate-limited · Retrying with %2$s in %3$d…</string>
+    <string name="ui_rate_limit_fallback_active">%1$s is rate-limited · Using %2$s · Retrying %1$s in %3$s</string>
+    <string name="ui_rate_limit_retrying_in">%1$s is rate-limited · Retrying in %2$s…</string>
     <string name="ui_error_extension">The extension %1$s failed: %2$s</string>
     <string name="ui_error_http">The server answered with error %1$d.</string>
     <string name="ui_error_unknown">Something went wrong: %1$s</string>

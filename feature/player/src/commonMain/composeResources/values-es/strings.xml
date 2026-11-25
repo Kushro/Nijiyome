@@ -151,6 +151,16 @@
     <string name="src_filter_rel_mid">Media o más</string>
     <string name="src_filter_rel_high">Solo alta</string>
     <string name="src_filter_device">Compatible con este dispositivo</string>
+    <string name="src_filter_debrid">Solo en Debrid</string>
+    <string name="src_filter_sub">Sub</string>
+    <string name="src_filter_dub">Dub</string>
+    <string name="src_filter_multi_dub">Multi-dub</string>
+    <string name="src_filter_more">Idiomas y vídeo</string>
+    <string name="src_filter_more_count">Idiomas y vídeo (%1$d)</string>
+    <string name="src_filter_section_audio">Pistas de audio</string>
+    <string name="src_filter_section_subs">Idiomas de subtítulos</string>
+    <string name="src_filter_section_video">Calidad y origen</string>
+    <string name="src_tag_multi_dub">Multi-dub</string>
     <string name="src_filter_empty_title">Ninguna fuente cumple los filtros</string>
     <string name="src_filter_empty_body">Desactiva algunos filtros para ver más fuentes.</string>
     <string name="src_tag_seadex_best">Mejor de SeaDex</string>

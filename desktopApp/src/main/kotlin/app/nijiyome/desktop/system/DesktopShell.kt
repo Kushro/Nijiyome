@@ -2,7 +2,11 @@
 package app.nijiyome.desktop.system
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.window.ApplicationScope
+import com.kdroid.composetray.menu.api.TrayMenuBuilder
 import app.nijiyome.data.PendingOAuthRedirect
 import app.nijiyome.desktop.TorrentLinkEntry
 import app.nijiyome.extensionserver.PendingServerLink
@@ -155,6 +159,48 @@ fun trayIconFiles(dir: File): Pair<File, File>? = runCatching {
 }.getOrNull()
 
 /**
+ * Quantizes volatile telemetry (JVM RAM, cache sizes, torrent speeds/progress) into coarse buckets so ComposeNativeTray's
+ * D-Bus menu (`libdbusmenu` / KDE Plasma) is not torn down and rebuilt every few seconds while the user hovers a submenu.
+ */
+internal fun TrayLiveStatus.quantizedForTray(): TrayLiveStatus {
+    fun bucket(bytes: Long, stepBytes: Long): Long = if (bytes <= 0L) 0L else ((bytes + stepBytes / 2) / stepBytes) * stepBytes
+    val memStep = 32L * 1024L * 1024L // 32 MiB buckets
+    val speedStep = 512L * 1024L // 512 KiB/s buckets
+    val linkQuant = link?.let { l ->
+        l.copy(
+            totalCacheBytes = bucket(l.totalCacheBytes, memStep),
+            activeSessions = l.activeSessions.map { s ->
+                s.copy(
+                    positionSecs = 0.0,
+                    cachedBytes = bucket(s.cachedBytes, memStep),
+                    cachedSegments = 0,
+                    cachedFromSecs = null,
+                    cachedToSecs = null,
+                )
+            },
+        )
+    }
+    val torQuant = activeTorrents.map { t ->
+        t.copy(
+            progress = ((t.progress * 20.0).toInt() / 20.0).coerceIn(0.0, 1.0), // 5% steps
+            downBps = bucket(t.downBps, speedStep),
+            upBps = bucket(t.upBps, speedStep),
+            peers = 0,
+        )
+    }
+    return copy(
+        link = linkQuant,
+        activeTorrents = torQuant,
+        totalDownBps = bucket(totalDownBps, speedStep),
+        totalUpBps = bucket(totalUpBps, speedStep),
+        jvmUsedBytes = bucket(jvmUsedBytes, memStep),
+        diskCacheBytes = bucket(diskCacheBytes, memStep),
+        torrentStorageBytes = bucket(torrentStorageBytes, memStep),
+        torrentFreeBytes = 0L,
+    )
+}
+
+/**
  * The tray icon (ComposeNativeTray: StatusNotifierItem over D-Bus on Linux, the notification area on Windows) with Show and Quit;
  * a click on the icon shows the window too. The icon goes as image files: the library's Compose-rendered icons call a Skia API
  * that the Compose version of this app no longer has.
@@ -164,31 +210,42 @@ fun ApplicationScope.NijiyomeTray(
     icons: Pair<File, File>,
     texts: TrayTexts,
     live: TrayLiveStatus = TrayLiveStatus(),
+    onMenuOpened: () -> Unit = {},
     onShow: () -> Unit,
     onOpenMonitor: () -> Unit = onShow,
     onOpenTorrents: () -> Unit = onShow,
     onOpenSettings: () -> Unit = onShow,
     onQuit: () -> Unit,
 ) {
+    val stableShow by rememberUpdatedState(onShow)
+    val stableMonitor by rememberUpdatedState(onOpenMonitor)
+    val stableTorrents by rememberUpdatedState(onOpenTorrents)
+    val stableSettings by rememberUpdatedState(onOpenSettings)
+    val stableQuit by rememberUpdatedState(onQuit)
+    val stableMenuOpened by rememberUpdatedState(onMenuOpened)
+
+    // Keep lambda references stable across unrelated recompositions so ComposeNativeTray does not call
+    // nativeResetMenu() on D-Bus (which collapses/flickers hovered submenus on KDE Plasma).
+    val primaryAction = remember { { stableShow() } }
+    val menuOpenedAction = remember { { stableMenuOpened() } }
+
     val es = live.spanish
     val link = live.link
     val activeSessions = link?.activeSessions.orEmpty()
-    val tooltip = when {
-        activeSessions.isNotEmpty() -> {
-            val s = activeSessions.first()
-            val pipe = listOfNotNull(s.upscaleLabel, s.frameGenLabel).joinToString(" + ").ifBlank { s.encoder }
-            "Nijiyome · Link: ${s.deviceName} ($pipe)"
+    val tooltip = remember(live, texts) {
+        when {
+            activeSessions.isNotEmpty() -> {
+                val s = activeSessions.first()
+                val pipe = listOfNotNull(s.upscaleLabel, s.frameGenLabel).joinToString(" + ").ifBlank { s.encoder }
+                "Nijiyome · Link: ${s.deviceName} ($pipe)"
+            }
+            live.totalDownBps > 0 -> "Nijiyome · ↓ ${app.nijiyome.ui.format.formatRate(live.totalDownBps)}"
+            link?.running == true -> "Nijiyome · Link :${link.port}"
+            else -> "Nijiyome"
         }
-        live.totalDownBps > 0 -> "Nijiyome · ↓ ${app.nijiyome.ui.format.formatRate(live.totalDownBps)}"
-        link?.running == true -> "Nijiyome · Link :${link.port}"
-        else -> "Nijiyome"
     }
-    Tray(
-        iconPath = icons.first.absolutePath,
-        windowsIconPath = icons.second.absolutePath,
-        tooltip = tooltip,
-        primaryAction = onShow,
-        menuContent = {
+    val menuContent: TrayMenuBuilder.() -> Unit = remember(live, texts) {
+        {
             // 1. Live Link status section
             val linkHeader = when {
                 activeSessions.isNotEmpty() -> {
@@ -207,14 +264,14 @@ fun ApplicationScope.NijiyomeTray(
                 }
                 else -> if (es) "Link · Desactivado" else "Link · Stopped"
             }
-            Item(linkHeader) { onOpenMonitor() }
+            Item(linkHeader) { stableMonitor() }
 
             if (activeSessions.size > 1) {
                 SubMenu(if (es) "Sesiones Link (${activeSessions.size})" else "Link Sessions (${activeSessions.size})") {
                     activeSessions.forEach { s ->
                         val title = s.title?.take(24) ?: s.sourceKind
                         val pipe = listOfNotNull(s.upscaleLabel?.substringBefore(" ·"), s.frameGenLabel).joinToString(" + ")
-                        Item("${s.deviceName}: $title ${if (pipe.isNotBlank()) "($pipe)" else ""}".trim()) { onOpenMonitor() }
+                        Item("${s.deviceName}: $title ${if (pipe.isNotBlank()) "($pipe)" else ""}".trim()) { stableMonitor() }
                     }
                 }
             }
@@ -224,7 +281,7 @@ fun ApplicationScope.NijiyomeTray(
                 val n = live.activeTorrents.size
                 val down = app.nijiyome.ui.format.formatRate(live.totalDownBps)
                 val up = app.nijiyome.ui.format.formatRate(live.totalUpBps)
-                if (es) "Torrents ($n): ↓ $down · ↑ $up" else "Torrents ($n): ↓ $down · ↑ $up"
+                "Torrents ($n): ↓ $down · ↑ $up"
             } else {
                 if (es) "Torrents: sin descargas activas" else "Torrents: idle"
             }
@@ -233,20 +290,20 @@ fun ApplicationScope.NijiyomeTray(
                     live.activeTorrents.take(6).forEach { t ->
                         val shortName = if (t.name.length > 34) t.name.take(33) + "…" else t.name
                         val pct = (t.progress * 100).toInt()
-                        Item("$shortName · $pct% · ↓ ${app.nijiyome.ui.format.formatRate(t.downBps)}") { onOpenTorrents() }
+                        Item("$shortName · $pct% · ↓ ${app.nijiyome.ui.format.formatRate(t.downBps)}") { stableTorrents() }
                     }
                     Divider()
-                    Item(if (es) "Abrir biblioteca de Torrents" else "Open Torrents") { onOpenTorrents() }
+                    Item(if (es) "Abrir biblioteca de Torrents" else "Open Torrents") { stableTorrents() }
                 }
             } else {
-                Item(torrentLine) { onOpenTorrents() }
+                Item(torrentLine) { stableTorrents() }
             }
 
             // 3. Performance, RAM & Cache telemetry submenu
             SubMenu(if (es) "Rendimiento y caché" else "Performance & Cache") {
                 val ramUsed = app.nijiyome.ui.format.formatBytes(live.jvmUsedBytes)
                 val ramMax = app.nijiyome.ui.format.formatBytes(live.jvmMaxBytes)
-                Item(if (es) "RAM app: $ramUsed / $ramMax" else "App RAM: $ramUsed / $ramMax", isEnabled = false)
+                Item(if (es) "RAM app: ~$ramUsed / $ramMax" else "App RAM: ~$ramUsed / $ramMax", isEnabled = false)
                 val linkCache = app.nijiyome.ui.format.formatBytes(link?.totalCacheBytes ?: 0L)
                 val linkLimit = "${link?.cacheLimitMb ?: 1024} MB"
                 Item(if (es) "Caché Link (RAM): $linkCache / $linkLimit" else "Link cache (RAM): $linkCache / $linkLimit", isEnabled = false)
@@ -254,16 +311,24 @@ fun ApplicationScope.NijiyomeTray(
                 val torDisk = app.nijiyome.ui.format.formatBytes(live.torrentStorageBytes)
                 Item(if (es) "Caché disco: $disk · Torrents: $torDisk" else "Disk cache: $disk · Torrents: $torDisk", isEnabled = false)
                 Divider()
-                Item(if (es) "Abrir Monitor de Link y sistema" else "Open Link & System Monitor") { onOpenMonitor() }
+                Item(if (es) "Abrir Monitor de Link y sistema" else "Open Link & System Monitor") { stableMonitor() }
             }
 
             Divider()
-            Item(texts.show) { onShow() }
-            Item(if (es) "Monitor de Link y estado" else "Link & Status Monitor") { onOpenMonitor() }
-            Item(if (es) "Ajustes" else "Settings") { onOpenSettings() }
+            Item(texts.show) { stableShow() }
+            Item(if (es) "Monitor de Link y estado" else "Link & Status Monitor") { stableMonitor() }
+            Item(if (es) "Ajustes" else "Settings") { stableSettings() }
             Divider()
-            Item(texts.quit) { onQuit() }
-        },
+            Item(texts.quit) { stableQuit() }
+        }
+    }
+    Tray(
+        iconPath = icons.first.absolutePath,
+        windowsIconPath = icons.second.absolutePath,
+        tooltip = tooltip,
+        primaryAction = primaryAction,
+        onMenuOpened = menuOpenedAction,
+        menuContent = menuContent,
     )
 }
 

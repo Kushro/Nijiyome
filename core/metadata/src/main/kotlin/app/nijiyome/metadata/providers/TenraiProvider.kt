@@ -97,7 +97,17 @@ class TenraiProvider(
             if (!hasNext || list.isEmpty()) break
             page++
         }
-        return out.distinctBy { it.number }.sortedBy { it.number }
+        val merged = out.distinctBy { it.number }.sortedBy { it.number }
+        if (merged.isEmpty() || merged.none { it.image.isNullOrBlank() }) return merged
+        // Best-effort enrichment of episode thumbnails from `/anime/{malId}/videos/episodes` (never fails the call).
+        val thumbs = runCatching {
+            val vUrl = baseUrl.toHttpUrl().newBuilder()
+                .addPathSegment("anime").addPathSegment(malId.toString())
+                .addPathSegment("videos").addPathSegment("episodes").build()
+            ExtraMappers.jikanEpisodeThumbnails(get(vUrl))
+        }.getOrDefault(emptyMap())
+        if (thumbs.isEmpty()) return merged
+        return merged.map { ep -> if (ep.image.isNullOrBlank()) ep.copy(image = thumbs[ep.number]) else ep }
     }
 
     companion object {

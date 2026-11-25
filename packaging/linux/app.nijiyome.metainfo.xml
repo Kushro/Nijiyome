@@ -51,6 +51,13 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.2.1" date="2026-11-25">
+      <description>
+        <p>Metadata completeness and rate-limit resilience: full episode ladder with automatic MAL ID resolution via ani.zip so Tenrai/MAL episode titles and thumbnails enrich seasonal anime missing details on AniList/Kitsu, plus live animated fallback countdown banners and automatic recovery to the primary metadata provider when cooldown ends.</p>
+        <p>Torrent discovery and Source Picker filters: AniList synonyms and clean short/hyphen-safe query variants fix 0-result torrent searches for long light-novel titles; new multi-select filters for Debrid cached, Sub, Dub, Dual Audio, Multi-Dub, Multi-Sub, audio track languages, and subtitle languages.</p>
+        <p>Desktop polish: selectable Anime Details titles with one-click Copy Title and Open in AniList buttons, fixed Linux X11/XWayland _NET_WM_MOVERESIZE union bug and AWT pointer ungrab to eliminate window drag trails, and stabilized system tray menu telemetry with hover-freeze so submenus never flicker on KDE Plasma.</p>
+      </description>
+    </release>
     <release version="1.2.0" date="2026-11-25">
       <description>
         <p>UX/UI overhaul across Desktop and Android: true-black AMOLED (#000000 with subtle hairlines), searchable bilingual Settings with Desktop Master-Detail and Ctrl+P modal, Global Command Palette (Ctrl+K), horizontal scroll fading edges, Home and Anime Details polish, and unified navigation shell.</p>

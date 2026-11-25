@@ -150,7 +150,13 @@ val stageAppResources = tasks.register<Copy>("stageAppResources") {
 compose.desktop {
     application {
         mainClass = "app.nijiyome.desktop.MainKt"
-        jvmArgs += listOf("-Dfile.encoding=UTF-8")
+        jvmArgs += buildList {
+            add("-Dfile.encoding=UTF-8")
+            if (System.getProperty("os.name").orEmpty().contains("Linux", ignoreCase = true)) {
+                // Allow NativeWindowDrag to call XUngrabPointer on AWT's X11 Display before _NET_WM_MOVERESIZE.
+                add("--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED")
+            }
+        }
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi)
             packageName = "Nijiyome"

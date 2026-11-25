@@ -181,11 +181,11 @@ private fun <T> DiscoverRow(
         header()
         when (state) {
             LoadState.Loading -> SkeletonRow()
-            is LoadState.Err -> ErrorState(
-                message = state.cause.userMessage(),
-                retryLabel = stringResource(UiR.string.ui_retry),
+            is LoadState.Err -> app.nijiyome.ui.state.AppErrorState(
+                cause = state.cause,
                 onRetry = onRetry,
                 compact = true,
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
             is LoadState.Ok -> if (state.value.isEmpty()) {
                 if (emptyText != null) {

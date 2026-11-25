@@ -24,10 +24,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.outlined.Cast
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.Movie
@@ -39,9 +42,11 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -123,15 +128,17 @@ internal fun CompactHeader(
         ) {
             MediaCover(url = media.cover, modifier = Modifier.width(96.dp).overlapUp(POSTER_OVERLAP).then(blurModifier))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.semantics { heading() },
-                )
+                androidx.compose.foundation.text.selection.SelectionContainer {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                }
                 facts?.invoke()
-                if (adultBadge) AdultBadge()
+                TitleQuickActions(title = title, media = media, actions = actions, adultBadge = adultBadge)
             }
         }
     }
@@ -141,6 +148,93 @@ internal fun CompactHeader(
 @Composable
 internal fun AdultBadge(modifier: Modifier = Modifier) {
     Pill(stringResource(Res.string.details_adult_badge), tone = PillTone.ERR, modifier = modifier)
+}
+
+/**
+ * Compact action chips right under the Details title: copy the title to clipboard (with brief checkmark feedback) and
+ * open the anime/manga page directly on AniList (or MyAnimeList fallback) in the system's default browser.
+ */
+@Composable
+internal fun TitleQuickActions(
+    title: String,
+    media: Media,
+    actions: DetailsActions,
+    adultBadge: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    var copied by remember(title) { mutableStateOf(false) }
+    LaunchedEffect(copied) {
+        if (copied) {
+            kotlinx.coroutines.delay(1_800L)
+            copied = false
+        }
+    }
+    val externalUrl = remember(media.ref, media.kind) {
+        val kindPath = if (media.kind == app.nijiyome.model.MediaKind.ANIME) "anime" else "manga"
+        media.ref.anilistId?.let { "https://anilist.co/$kindPath/$it" }
+            ?: media.ref.malId?.let { "https://myanimelist.net/$kindPath/$it" }
+    }
+    val isAniList = media.ref.anilistId != null
+    Row(
+        modifier = modifier.padding(top = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (adultBadge) AdultBadge()
+        if (title.isNotBlank()) {
+            Surface(
+                onClick = {
+                    actions.onCopyTitle(title)
+                    copied = true
+                },
+                shape = RoundedCornerShape(999.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+                contentColor = if (copied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = if (copied) Icons.Outlined.Check else Icons.Outlined.ContentCopy,
+                        contentDescription = stringResource(Res.string.details_copy_title),
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = stringResource(if (copied) Res.string.details_title_copied else Res.string.details_copy_title),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        if (externalUrl != null) {
+            Surface(
+                onClick = { actions.onOpenUrl(externalUrl) },
+                shape = RoundedCornerShape(999.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                        contentDescription = stringResource(if (isAniList) Res.string.details_open_anilist else Res.string.details_open_mal),
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = if (isAniList) "AniList" else "MAL",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /** matureContent BLUR: "Toca para mostrar" over the blurred art. */

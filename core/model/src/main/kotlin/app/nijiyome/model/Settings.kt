@@ -115,7 +115,7 @@ data class AppSettings(
 ) {
     companion object {
         const val DEFAULT_PALETTE_ID = "nijiyome-violet"
-        val DEFAULT_PROVIDER_PRIORITY: List<String> = listOf("anilist", "anizip", "kitsu")
+        val DEFAULT_PROVIDER_PRIORITY: List<String> = listOf("anilist", "anizip", "kitsu", "tenrai")
 
         /**
          * parity wave B (16 §3.1, worker r, checklist settings.metadata.extra-providers): every metadata provider the app knows. Ids absent

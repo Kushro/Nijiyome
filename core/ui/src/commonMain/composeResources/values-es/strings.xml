@@ -5,6 +5,9 @@
     <string name="ui_close">Cerrar</string>
     <string name="ui_error_offline">Sin conexión. Revisa tu red e inténtalo de nuevo.</string>
     <string name="ui_error_rate_limited">%1$s limitó las solicitudes. Vuelve a intentarlo en un momento.</string>
+    <string name="ui_rate_limit_fallback_soon">%1$s limitó las solicitudes · Reintentando con %2$s en %3$d…</string>
+    <string name="ui_rate_limit_fallback_active">%1$s limitó las solicitudes · Usando %2$s · Reintentando %1$s en %3$s</string>
+    <string name="ui_rate_limit_retrying_in">%1$s limitó las solicitudes · Reintentando en %2$s…</string>
     <string name="ui_error_extension">La extensión %1$s falló: %2$s</string>
     <string name="ui_error_http">El servidor respondió con el error %1$d.</string>
     <string name="ui_error_unknown">Algo salió mal: %1$s</string>

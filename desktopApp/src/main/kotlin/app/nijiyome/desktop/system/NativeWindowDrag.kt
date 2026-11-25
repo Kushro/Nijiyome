@@ -4,6 +4,7 @@ package app.nijiyome.desktop.system
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
+import com.sun.jna.Pointer
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
@@ -20,7 +21,8 @@ private interface User32Ex : StdCallLibrary {
 }
 
 private interface X11Ex : Library {
-    fun XUngrabPointer(display: X11.Display, time: NativeLong): Int
+    fun XUngrabPointer(display: Pointer, time: NativeLong): Int
+    fun XSync(display: Pointer, discard: Boolean): Int
 
     companion object {
         val INSTANCE: X11Ex by lazy { Native.load("X11", X11Ex::class.java) }
@@ -91,9 +93,60 @@ internal object NativeWindowDrag {
         true
     }.getOrDefault(false)
 
+    /**
+     * Releases AWT's implicit Button1 active pointer grab on AWT's own X11 Display connection.
+     * Per EWMH `_NET_WM_MOVERESIZE`, the client holding the grab MUST call `XUngrabPointer` on the same
+     * Display connection before asking the window manager to begin an interactive move/resize; otherwise
+     * KWin/XWayland cannot grab the pointer.
+     */
+    private fun releaseAwtPointerGrab() {
+        runCatching {
+            val toolkit = Class.forName("sun.awt.X11.XToolkit")
+            val lock = toolkit.getDeclaredMethod("awtLock").apply { isAccessible = true }
+            val unlock = toolkit.getDeclaredMethod("awtUnlock").apply { isAccessible = true }
+            val getDisplay = toolkit.getDeclaredMethod("getDisplay").apply { isAccessible = true }
+            lock.invoke(null)
+            try {
+                val ptr = (getDisplay.invoke(null) as? Long) ?: 0L
+                if (ptr != 0L) {
+                    val awtDisplay = Pointer.createConstant(ptr)
+                    X11Ex.INSTANCE.XUngrabPointer(awtDisplay, NativeLong(0L))
+                    X11Ex.INSTANCE.XSync(awtDisplay, false)
+                }
+            } finally {
+                unlock.invoke(null)
+            }
+        }
+    }
+
+    internal fun buildMoveResizeEvent(
+        windowId: Long,
+        atom: X11.Atom,
+        rootX: Long,
+        rootY: Long,
+        direction: Long,
+    ): X11.XEvent {
+        val event = X11.XEvent()
+        event.type = X11.ClientMessage
+        event.setType(X11.XClientMessageEvent::class.java)
+        event.xclient.type = X11.ClientMessage
+        event.xclient.window = X11.Window(windowId)
+        event.xclient.message_type = atom
+        event.xclient.format = 32
+        // JNA XClientMessageEvent.Data union field `l` is NativeLong[] (NOT long[]), so select by field name `"l"`.
+        event.xclient.data.setType("l")
+        event.xclient.data.l[0] = NativeLong(rootX)
+        event.xclient.data.l[1] = NativeLong(rootY)
+        event.xclient.data.l[2] = NativeLong(direction)
+        event.xclient.data.l[3] = NativeLong(1L) // Button1
+        event.xclient.data.l[4] = NativeLong(1L) // Source: normal application
+        return event
+    }
+
     private fun startX11(window: Window, screenX: Int, screenY: Int, direction: Long): Boolean = runCatching {
         val xid = Native.getComponentID(window)
         if (xid == 0L) return false
+        releaseAwtPointerGrab()
         val x11 = X11.INSTANCE
         val display = x11.XOpenDisplay(null) ?: return false
         try {
@@ -104,23 +157,11 @@ internal object NativeWindowDrag {
             val rootX = if (tx != null && tx.scaleX > 0.0) (screenX * tx.scaleX).roundToInt().toLong() else screenX.toLong()
             val rootY = if (tx != null && tx.scaleY > 0.0) (screenY * tx.scaleY).roundToInt().toLong() else screenY.toLong()
 
-            X11Ex.INSTANCE.XUngrabPointer(display, NativeLong(0L))
-            val event = X11.XEvent()
-            event.type = X11.ClientMessage
-            event.setType(X11.XClientMessageEvent::class.java)
-            event.xclient.type = X11.ClientMessage
-            event.xclient.window = X11.Window(xid)
-            event.xclient.message_type = atom
-            event.xclient.format = 32
-            event.xclient.data.setType(LongArray::class.java)
-            event.xclient.data.l[0] = NativeLong(rootX)
-            event.xclient.data.l[1] = NativeLong(rootY)
-            event.xclient.data.l[2] = NativeLong(direction)
-            event.xclient.data.l[3] = NativeLong(1L) // Button1
-            event.xclient.data.l[4] = NativeLong(1L) // Source: normal application
+            X11Ex.INSTANCE.XUngrabPointer(display.pointer, NativeLong(0L))
+            val event = buildMoveResizeEvent(xid, atom, rootX, rootY, direction)
             val mask = NativeLong((X11.SubstructureRedirectMask or X11.SubstructureNotifyMask).toLong())
             val sent = x11.XSendEvent(display, root, 0, mask, event)
-            x11.XFlush(display)
+            X11Ex.INSTANCE.XSync(display.pointer, false)
             sent != 0
         } finally {
             x11.XCloseDisplay(display)

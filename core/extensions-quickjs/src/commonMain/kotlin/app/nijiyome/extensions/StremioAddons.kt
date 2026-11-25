@@ -11,7 +11,7 @@ import app.nijiyome.model.StremioAddon
 import app.nijiyome.model.StremioAddonRepository
 import app.nijiyome.model.TorrentInfo
 import app.nijiyome.model.WebInfo
-import app.nijiyome.model.searchTitles
+import app.nijiyome.model.extensionSearchTitles
 import app.nijiyome.release.parseRelease
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -462,7 +462,7 @@ class StremioCandidateSource(
 
     /** IMDb episode id through Cinemeta (exact title, cached per addon). */
     private suspend fun imdbTarget(addon: StremioAddon, media: Media, episode: Int): Pair<String, String>? {
-        val titles = media.searchTitles()
+        val titles = media.extensionSearchTitles()
         if (titles.isEmpty()) return null
         val key = (media.ref.anilistId?.let { "al:$it" } ?: StremioWire.normalizeTitle(titles.first())) + ":$episode"
         repository.cachedMatch(addon.id, key)?.let { return "series" to it }

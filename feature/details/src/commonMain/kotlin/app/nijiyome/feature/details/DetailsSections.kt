@@ -192,16 +192,25 @@ internal fun LazyListScope.detailsItems(
         val facts = headerFactsSlot(head, media, state)
         // B / D have no facts line: the "+18" goes beside the title instead
         val adultBadge = facts == null && (state.detailsOrNull?.isAdult == true || media.looksAdult())
-        when {
-            editorial -> Column {
-                EditorialHeader(media, state, actions, facts = facts, heightFraction = head.heroFraction(), adultBadge = adultBadge)
-                HeaderBody(head, media, state, actions)
+        Column {
+            when {
+                editorial -> Column {
+                    EditorialHeader(media, state, actions, facts = facts, heightFraction = head.heroFraction(), adultBadge = adultBadge)
+                    HeaderBody(head, media, state, actions)
+                }
+                phone -> Column {
+                    CompactHeader(media, state, actions, facts = facts?.let { f -> { Box(Modifier.padding(top = 2.dp)) { f() } } }, adultBadge = adultBadge)
+                    HeaderBody(head, media, state, actions)
+                }
+                else -> Header(media, state, actions, head, adultBadge)
             }
-            phone -> Column {
-                CompactHeader(media, state, actions, facts = facts?.let { f -> { Box(Modifier.padding(top = 2.dp)) { f() } } }, adultBadge = adultBadge)
-                HeaderBody(head, media, state, actions)
+            if (state.fallback != null) {
+                app.nijiyome.ui.state.MetadataFallbackBanner(
+                    state = state.fallback,
+                    onRetryPrimary = actions.onRetryPrimary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                )
             }
-            else -> Header(media, state, actions, head, adultBadge)
         }
     }
     item(key = TABS_KEY, contentType = "tabs") {
@@ -297,11 +306,15 @@ private fun Header(media: Media, state: DetailsUiState, actions: DetailsActions,
             ) {
                 MediaCover(url = media.cover, modifier = Modifier.width(114.dp).then(blurModifier))
                 Column(Modifier.weight(1f).padding(bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(title, style = MaterialTheme.typography.headlineSmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                    media.alternativeTitle(title)?.let {
-                        Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(title, style = MaterialTheme.typography.headlineSmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                            media.alternativeTitle(title)?.let {
+                                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                            }
+                        }
                     }
-                    if (adultBadge) AdultBadge()
+                    TitleQuickActions(title = title, media = media, actions = actions, adultBadge = adultBadge)
                 }
             }
         }

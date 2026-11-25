@@ -55,6 +55,8 @@ data class HomeUiState(
     val discover: HomeDiscoverState = HomeDiscoverState(),
     /** 0.3.2: ani.zip artwork of the hero titles by [mediaKey] (fanart / clear logo), filled in the background as it arrives. */
     val heroArt: Map<String, MediaArtwork> = emptyMap(),
+    /** v1.2.1: live rate-limit / fallback banner state when the primary metadata provider is cooling down. */
+    val fallback: app.nijiyome.model.MetadataFallbackState? = null,
 ) {
     /** Hero carousel = first 5 trending items. */
     val hero: LoadState<List<Media>>
@@ -125,10 +127,18 @@ class HomeViewModel(
         combine(feeds, heroArt) { f, a -> f to a },
         history.continueWatching(CONTINUE_LIMIT).catch { emit(emptyList()) },
         providers.catch { emit(AppSettings.DEFAULT_PROVIDER_PRIORITY) },
-        extensionRows,
+        combine(extensionRows, metadata.fallbackState) { e, fb -> e to fb },
         discover,
-    ) { (rows, art), continueWatching, providerIds, extRows, extra ->
-        HomeUiState(feeds = rows, continueWatching = continueWatching, providers = providerIds, extensionRows = extRows, discover = extra, heroArt = art)
+    ) { (rows, art), continueWatching, providerIds, (extRows, fb), extra ->
+        HomeUiState(
+            feeds = rows,
+            continueWatching = continueWatching,
+            providers = providerIds,
+            extensionRows = extRows,
+            discover = extra,
+            heroArt = art,
+            fallback = fb,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     private val adult: Boolean get() = settings?.settings?.value?.showAdult ?: false
@@ -164,6 +174,36 @@ class HomeViewModel(
                     .collect { a -> discover.update { it.copy(activity = a) } }
             }
         }
+        // v1.2.1: when the primary provider's rate-limit cooldown finishes, auto-recover to the top of the ladder.
+        viewModelScope.launch {
+            var wasLimited = false
+            metadata.fallbackState.collect { fb ->
+                if (fb != null) {
+                    wasLimited = true
+                } else if (wasLimited) {
+                    wasLimited = false
+                    recoverPrimaryProvider()
+                }
+            }
+        }
+    }
+
+    /** Clears provider cooldowns and immediately retries the primary metadata provider across Home rows. */
+    fun retryPrimaryProvider() {
+        metadata.resetProviderHealth()
+        recoverPrimaryProvider()
+    }
+
+    private fun recoverPrimaryProvider() {
+        HOME_FEEDS.forEach(::load)
+        val d = discover.value
+        if (d.followed is LoadState.Err) loadFollowed()
+        if (d.latest is LoadState.Err) loadLatest()
+        if (d.top10 is LoadState.Err) loadTop10(d.topWindow)
+        if (d.upcoming is LoadState.Err) loadUpcoming()
+        if (d.favourites is LoadState.Err) loadFavourites()
+        if (d.forYou is LoadState.Err) loadForYou()
+        if (d.because?.state is LoadState.Err) retryBecause()
     }
 
     // ---------------------------------------------------------------- parity wave B rows (16 §3.1)

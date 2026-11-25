@@ -89,9 +89,9 @@ class SettingsViewModelTest {
         val vm = SettingsViewModel(repo)
 
         vm.moveProvider("kitsu", -1)
-        assertEquals(listOf("anilist", "kitsu", "anizip"), repo.settings.value.providerPriority)
+        assertEquals(listOf("anilist", "kitsu", "anizip", "tenrai"), repo.settings.value.providerPriority)
         vm.moveProvider("anilist", -1)
-        assertEquals(listOf("anilist", "kitsu", "anizip"), repo.settings.value.providerPriority)
+        assertEquals(listOf("anilist", "kitsu", "anizip", "tenrai"), repo.settings.value.providerPriority)
         assertEquals(listOf("a", "b"), listOf("a", "b").moved("zzz", 1))
     }
 

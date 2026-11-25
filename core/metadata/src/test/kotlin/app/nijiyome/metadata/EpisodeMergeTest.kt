@@ -149,4 +149,33 @@ class EpisodeMergeTest {
         assertEquals("f", MetadataRouter(listOf(z), { listOf("anizip") }).artwork(MediaRef(anilistId = 1))?.fanart)
         assertNull(MetadataRouter(listOf(z), { listOf("kitsu") }).artwork(MediaRef(anilistId = 1)), "disabled provider")
     }
+
+    @Test
+    fun `rate limit on primary updates fallback state and clears on expiry`() = runBlocking<Unit> {
+        var nowMs = 10_000L
+        val anilist = object : MetadataProvider {
+            override val id = "anilist"
+            override val kinds = setOf(MediaKind.ANIME)
+            override val capabilities = setOf(Capability.MEDIA, Capability.FEED)
+            override suspend fun feed(kind: MediaKind, feed: app.nijiyome.model.FeedKind, page: Int) =
+                throw ProviderException("anilist", 429, "HTTP 429", retryAfterMs = 15_000L)
+        }
+        val kitsu = object : MetadataProvider {
+            override val id = "kitsu"
+            override val kinds = setOf(MediaKind.ANIME)
+            override val capabilities = setOf(Capability.MEDIA, Capability.FEED)
+            override suspend fun feed(kind: MediaKind, feed: app.nijiyome.model.FeedKind, page: Int) =
+                app.nijiyome.model.FeedPage(emptyList(), page, false)
+        }
+        val router = MetadataRouter(listOf(anilist, kitsu), { listOf("anilist", "kitsu") }, clock = { nowMs })
+        router.feed(MediaKind.ANIME, app.nijiyome.model.FeedKind.TRENDING, 1)
+        val fb = router.fallback.value
+        assertEquals("anilist", fb?.limitedProvider)
+        assertEquals("kitsu", fb?.fallbackProvider)
+        assertEquals(25_000L, fb?.cooldownUntilMs)
+        assertTrue(fb?.isRateLimited == true)
+        nowMs = 26_000L
+        router.clearExpiredFallback()
+        assertNull(router.fallback.value)
+    }
 }

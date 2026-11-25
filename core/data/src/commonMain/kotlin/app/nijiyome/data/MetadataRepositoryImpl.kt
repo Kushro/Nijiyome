@@ -2,6 +2,7 @@ package app.nijiyome.data
 
 import app.nijiyome.database.FeedCache
 import app.nijiyome.metadata.DiscoverProvider
+import app.nijiyome.metadata.EpisodeMerge
 import app.nijiyome.metadata.MetadataRouter
 import app.nijiyome.metadata.NoMetadataProviderException
 import app.nijiyome.metadata.ProviderException
@@ -26,6 +27,7 @@ import app.nijiyome.model.MediaRelation
 import app.nijiyome.model.MediaSearchQuery
 import app.nijiyome.model.MediaTag
 import app.nijiyome.model.MetadataCacheStats
+import app.nijiyome.model.MetadataFallbackState
 import app.nijiyome.model.MetadataRepository
 import app.nijiyome.model.ProviderStatus
 import app.nijiyome.model.Recommendation
@@ -36,12 +38,15 @@ import app.nijiyome.model.inBackground
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.KSerializer
@@ -71,6 +76,23 @@ class MetadataRepositoryImpl(
 
     /** 0.3.1: one lookup per key at a time (Details, episodes and the player asking for the same title at once share it). */
     private val inflight = ConcurrentHashMap<String, CompletableDeferred<Any?>>()
+
+    override val fallbackState: StateFlow<MetadataFallbackState?> = router.fallback
+
+    override fun resetProviderHealth() = router.resetHealth()
+
+    init {
+        // v1.2.1: clear fallback state as soon as the primary provider's rate-limit cooldown expires so screens auto-recover.
+        refreshScope?.launch {
+            router.fallback.collectLatest { st ->
+                if (st != null) {
+                    val waitMs = (st.cooldownUntilMs - System.currentTimeMillis()).coerceAtLeast(250L)
+                    delay(waitMs)
+                    router.clearExpiredFallback()
+                }
+            }
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
     internal suspend fun <T> shared(key: String, block: suspend () -> T): T {
@@ -107,8 +129,12 @@ class MetadataRepositoryImpl(
         if (scope != null) {
             cache.getFresh(key, SWR_MAX_AGE_MS)?.let { raw -> decodePage(raw) }?.let { stale ->
                 scope.launch {
-                    runCatching { shared("refresh:$key") { inBackground { fetch() } } }
-                        .onFailure { if (it is CancellationException) throw it }
+                    runCatching {
+                        shared("refresh:$key") {
+                            if (cache.getFresh(key, ttlMs) != null) return@shared
+                            inBackground { fetch() }
+                        }
+                    }.onFailure { if (it is CancellationException) throw it }
                 }
                 return stale
             }
@@ -254,16 +280,20 @@ class MetadataRepositoryImpl(
     }
 
     override suspend fun episodes(ref: MediaRef): List<Episode> {
-        // 0.3.2: `eps2:` = lists merged across providers (EpisodeMerge); the older `eps:` rows (Kitsu number-only lists) are left to
-        // the cache purge instead of being served for another day.
-        val key = "eps2:${ref.anilistId}:${ref.malId}:${ref.kitsuId}"
+        // v1.2.1: `eps3:` = full-ladder merged episodes (including MAL/Tenrai via AniZip ID mapping); incomplete lists
+        // (missing titles/thumbnails/summaries on aired episodes) use the short fallback TTL so new data is picked up quickly.
+        val key = "eps3:${ref.anilistId}:${ref.malId}:${ref.kitsuId}"
         val ser = ListSerializer(Episode.serializer())
-        cache.getFresh(key, detailTtlMs())?.let { raw ->
-            runCatching { json.decodeFromString(ser, raw) }.getOrNull()?.let { return it }
+        suspend fun freshEpisodes(): List<Episode>? {
+            val raw = cache.getFresh(key, detailTtlMs()) ?: return null
+            val list = runCatching { json.decodeFromString(ser, raw) }.getOrNull() ?: return null
+            if (list.isEmpty()) return null
+            if (EpisodeMerge.hasGaps(list, System.currentTimeMillis()) && cache.getFresh(key, FALLBACK_TTL_MS) == null) return null
+            return list
         }
+        freshEpisodes()?.let { return it }
         return shared(key) {
-            cache.getFresh(key, detailTtlMs())?.let { raw -> runCatching { json.decodeFromString(ser, raw) }.getOrNull() }
-                ?: fetchEpisodes(key, ref)
+            freshEpisodes() ?: fetchEpisodes(key, ref)
         }
     }
 
@@ -324,9 +354,21 @@ class MetadataRepositoryImpl(
             throw e
         } catch (e: NoMetadataProviderException) {
             if (e.errors.isNotEmpty()) cache.getStale(key)?.let { decodePage(it) }?.let { return it }
-            if (e.errors.isNotEmpty()) throw e.toAppException()
+            // v1.2.1: when the primary DISCOVER provider (AniList) hits a rate limit or is unavailable, immediately fall back
+            // to the next metadata provider in the ladder (e.g. Kitsu/Tenrai) via plain search / feed instead of stranding the UI.
             val text = query.query?.trim().orEmpty()
-            if (text.isNotEmpty()) search(kind, text, page) else feed(kind, FeedKind.POPULAR, page)
+            val fallbackFeed = when {
+                query.status == "NOT_YET_RELEASED" -> FeedKind.UPCOMING
+                query.sort == app.nijiyome.model.MediaSort.TRENDING -> FeedKind.TRENDING
+                query.sort == app.nijiyome.model.MediaSort.SCORE -> FeedKind.TOP_RATED
+                else -> FeedKind.POPULAR
+            }
+            val degraded = runCatching {
+                if (text.isNotEmpty()) search(kind, text, page) else feed(kind, fallbackFeed, page)
+            }.getOrNull()
+            if (degraded != null && degraded.items.isNotEmpty()) return degraded
+            if (e.errors.isNotEmpty()) throw e.toAppException()
+            degraded ?: FeedPage(emptyList(), page, false)
         } catch (e: Exception) {
             cache.getStale(key)?.let { decodePage(it) } ?: throw e.toAppException()
         }

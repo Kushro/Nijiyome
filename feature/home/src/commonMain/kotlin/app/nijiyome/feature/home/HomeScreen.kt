@@ -176,6 +176,7 @@ fun HomeScreen(
             onRetryBecause = viewModel::retryBecause,
             onNextGenreRow = viewModel::loadNextGenreRow,
             onRetryGenre = viewModel::retryGenre,
+            onRetryPrimary = viewModel::retryPrimaryProvider,
         ),
         modifier = modifier,
         unreadNotifications = rememberUnreadNotifications(),
@@ -213,6 +214,7 @@ internal data class HomeActions(
     val onRetryBecause: () -> Unit = {},
     val onNextGenreRow: (List<String>) -> Unit = {},
     val onRetryGenre: (String) -> Unit = {},
+    val onRetryPrimary: () -> Unit = {},
 )
 
 @Composable
@@ -271,6 +273,15 @@ internal fun HomeContent(
                 if (!wide) {
                     item(key = "search", contentType = "search") {
                         SearchEntry(onClick = actions.onSearchClick)
+                    }
+                }
+                if (state.fallback != null) {
+                    item(key = "metadata-fallback", contentType = "banner") {
+                        app.nijiyome.ui.state.MetadataFallbackBanner(
+                            state = state.fallback,
+                            onRetryPrimary = actions.onRetryPrimary,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        )
                     }
                 }
                 if (state.isEmpty) {
@@ -450,11 +461,11 @@ private fun HeroSection(
         } else {
             Box(Modifier.fillMaxWidth().height(HERO_HEIGHT))
         }
-        is LoadState.Err -> ErrorState(
-            message = hero.cause.userMessage(),
-            retryLabel = stringResource(UiR.string.ui_retry),
+        is LoadState.Err -> app.nijiyome.ui.state.AppErrorState(
+            cause = hero.cause,
             onRetry = onRetry,
             compact = true,
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
         is LoadState.Ok -> if (hero.value.isNotEmpty()) {
             HeroCarousel(
@@ -700,11 +711,11 @@ private fun FeedRowSection(row: FeedRow, gate: MatureGate, onMediaClick: (Media)
         SectionHeader(stringResource(row.kind.labelRes()), onSeeAll)
         when (val s = row.state) {
             LoadState.Loading -> SkeletonRow()
-            is LoadState.Err -> ErrorState(
-                message = s.cause.userMessage(),
-                retryLabel = stringResource(UiR.string.ui_retry),
+            is LoadState.Err -> app.nijiyome.ui.state.AppErrorState(
+                cause = s.cause,
                 onRetry = onRetry,
                 compact = true,
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
             is LoadState.Ok -> LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
