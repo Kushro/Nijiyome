@@ -1,111 +1,105 @@
 package app.nijiyome.feature.home
 
-import org.jetbrains.compose.resources.StringResource
-import app.nijiyome.feature.home.resources.Res
-import app.nijiyome.feature.home.resources.*
-import org.jetbrains.compose.resources.stringResource
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.DashboardCustomize
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.TravelExplore
-import androidx.compose.material3.AssistChip
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.layout.ContentScale
-import org.jetbrains.compose.resources.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.nijiyome.designsystem.components.EmptyState
-import app.nijiyome.designsystem.components.ErrorState
-import app.nijiyome.designsystem.components.HeroCarousel
-import app.nijiyome.designsystem.components.HorizontalScrollStrip
-import app.nijiyome.designsystem.components.InfoChip
-import app.nijiyome.designsystem.components.ListGroupHeader
-import app.nijiyome.designsystem.components.Pill
-import app.nijiyome.designsystem.components.PillTone
-import app.nijiyome.designsystem.components.SkeletonBox
-import app.nijiyome.designsystem.components.horizontalFadingEdge
-import app.nijiyome.designsystem.components.rememberAfterDelay
-import app.nijiyome.designsystem.theme.LocalReduceMotion
-import app.nijiyome.ui.labels.genreLabel
-import app.nijiyome.model.ExtensionHomeRow
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.EmptyArt
+import app.nijiyome.designsystem.direction.EmptyKind
+import app.nijiyome.designsystem.direction.LocalAccentFont
+import app.nijiyome.designsystem.direction.LocalSignalColors
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.LoadingPlaceholder
+import app.nijiyome.designsystem.motion.homeEntrance
+import app.nijiyome.feature.home.resources.Res
+import app.nijiyome.feature.home.resources.*
+import app.nijiyome.model.Density
 import app.nijiyome.model.FeedKind
 import app.nijiyome.model.HistoryEntry
+import app.nijiyome.model.HomeRowIds
+import app.nijiyome.model.HomeStructure
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.Media
 import app.nijiyome.model.PlayerArgs
-import app.nijiyome.ui.resources.Res as UiR
-import app.nijiyome.ui.resources.*
-import app.nijiyome.model.Density
-import app.nijiyome.model.HomeLayout
 import app.nijiyome.ui.look.LocalLook
-import app.nijiyome.ui.media.COVER_ASPECT_RATIO
-import app.nijiyome.ui.media.LocalTitleLanguage
-import app.nijiyome.ui.media.MediaCard
-import app.nijiyome.ui.media.MediaCover
-import app.nijiyome.ui.media.displayTitle
-import app.nijiyome.ui.media.mediaKey
-import app.nijiyome.ui.media.progressFraction
+import app.nijiyome.ui.look.structures
 import app.nijiyome.ui.media.toResumeArgs
+import app.nijiyome.ui.patterns.moved
+import app.nijiyome.ui.patterns.rememberShowUndo
+import app.nijiyome.ui.resources.Res as UiR
+import app.nijiyome.ui.resources.ui_retry
+import app.nijiyome.ui.state.rememberIsOnline
 import app.nijiyome.ui.state.screenInsets
-import app.nijiyome.ui.state.userMessage
-import coil3.compose.AsyncImage
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+/**
+ * Home (Sparkles redesign, lane S2). The structure the user picked in Ajustes › Apariencia (`structures.home`) decides the
+ * composition; the three share this view model, state and actions:
+ * - Esta noche: what to resume joined with what aired or airs today for the shows you track, the agenda of today with a "now" marker,
+ *   Link and downloads beside it, then the rows.
+ * - Escenario: the large stage (pausable autoplay) and every row below.
+ * - Estantes: the rows first, dense, with Editar Inicio.
+ * Rows are in the user's order and can be hidden (`LookPrefs.design.homeRowOrder` / `homeRowsHidden`).
+ */
 @Composable
 fun HomeScreen(
     onMediaClick: (Media) -> Unit,
@@ -140,16 +134,44 @@ fun HomeScreen(
     onResumeProviderItem: ((HistoryEntry) -> Unit)? = null,
     /** Continue watching: tap or long-press on a card opens its details; only the play button plays (2026-11 user request). */
     onOpenDetails: (anilistId: Int) -> Unit = {},
+    // --- Sparkles (S2): appended, wired by the integrator (see the lane report) ---
+    /** "Descargando" row, its items and the downloads panel -> Route.Downloads (Transferencias). */
+    onOpenDownloads: () -> Unit = {},
+    /** Link panel / strip -> Route.Linked. */
+    onOpenLink: () -> Unit = {},
+    /** "Monitor" of the Link panel (desktop) -> the Link monitor; defaults to the Link screen. */
+    onOpenLinkMonitor: (() -> Unit)? = null,
+    /** Empty Home: "Fuentes de metadatos" -> Ajustes › Metadatos y descubrir. */
+    onOpenMetadataSettings: () -> Unit = {},
+    /** "Administrar" of the extension rows -> Route.Extensions (Fuentes). */
+    onOpenExtensions: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val openEntry: (HistoryEntry) -> Unit = { entry ->
+        val provider = HomeLogic.parseProviderHistoryId(entry.animeId)
+        when {
+            provider != null -> onOpenProviderItem(provider.first, provider.second, provider.third)
+            else -> entry.anilistId?.takeIf { it > 0 }?.let(onOpenDetails) ?: onPlay(entry.toResumeArgs())
+        }
+    }
+    val resumeEntry: (HistoryEntry) -> Unit = { entry ->
+        val provider = HomeLogic.parseProviderHistoryId(entry.animeId)
+        when {
+            provider == null -> onPlay(entry.toResumeArgs())
+            onResumeProviderItem != null -> onResumeProviderItem(entry)
+            else -> onOpenProviderItem(provider.first, provider.second, provider.third)
+        }
+    }
     HomeContent(
         state = state,
         actions = HomeActions(
             onMediaClick = onMediaClick,
             onSearchClick = onSearchClick,
             onWatch = { media -> onPlay(PlayerArgs(media = media.ref, title = media.title, episode = 1)) },
-            onContinueClick = { onPlay(it.toResumeArgs()) },
-            onContinueDetails = { e -> e.anilistId?.takeIf { it > 0 }?.let(onOpenDetails) ?: onPlay(e.toResumeArgs()) },
+            onPlayEpisode = { media, episode -> onPlay(PlayerArgs(media = media.ref, title = media.title, episode = episode)) },
+            onContinueClick = resumeEntry,
+            onResumeEntry = resumeEntry,
+            onOpenEntry = openEntry,
             onRetry = viewModel::retry,
             onOpenFeed = onOpenFeed,
             onOpenGenre = onOpenGenre,
@@ -166,7 +188,6 @@ fun HomeScreen(
             onOpenNotifications = onOpenNotifications,
             onOpenProvider = onOpenProvider,
             onOpenProviderItem = onOpenProviderItem,
-            onResumeProviderItem = onResumeProviderItem,
             onTopWindow = viewModel::loadTop10,
             onRetryLatest = viewModel::loadLatest,
             onRetryUpcoming = viewModel::loadUpcoming,
@@ -174,9 +195,18 @@ fun HomeScreen(
             onRetryFollowed = viewModel::loadFollowed,
             onRetryForYou = viewModel::loadForYou,
             onRetryBecause = viewModel::retryBecause,
+            onRetryToday = viewModel::loadToday,
             onNextGenreRow = viewModel::loadNextGenreRow,
             onRetryGenre = viewModel::retryGenre,
             onRetryPrimary = viewModel::retryPrimaryProvider,
+            onRefreshAll = viewModel::refreshAll,
+            onToggleReminder = viewModel::toggleReminder,
+            onSetRowPrefs = viewModel::setRowPrefs,
+            onOpenDownloads = onOpenDownloads,
+            onOpenLink = onOpenLink,
+            onOpenLinkMonitor = onOpenLinkMonitor ?: onOpenLink,
+            onOpenMetadataSettings = onOpenMetadataSettings,
+            onOpenExtensions = onOpenExtensions,
         ),
         modifier = modifier,
         unreadNotifications = rememberUnreadNotifications(),
@@ -188,8 +218,12 @@ internal data class HomeActions(
     val onMediaClick: (Media) -> Unit = {},
     val onSearchClick: () -> Unit = {},
     val onWatch: (Media) -> Unit = {},
+    val onPlayEpisode: (Media, Int) -> Unit = { _, _ -> },
     val onContinueClick: (HistoryEntry) -> Unit = {},
-    val onContinueDetails: (HistoryEntry) -> Unit = {},
+    /** Plays a history entry (provider titles resume through their extension). */
+    val onResumeEntry: (HistoryEntry) -> Unit = {},
+    /** Opens the details of a history entry (provider item page for `ext:` ids). */
+    val onOpenEntry: (HistoryEntry) -> Unit = {},
     val onRetry: (FeedKind) -> Unit = {},
     val onOpenFeed: (FeedKind) -> Unit = {},
     val onOpenGenre: (String) -> Unit = {},
@@ -204,7 +238,6 @@ internal data class HomeActions(
     val onOpenNotifications: () -> Unit = {},
     val onOpenProvider: (String, String) -> Unit = { _, _ -> },
     val onOpenProviderItem: (String, String, String) -> Unit = { _, _, _ -> },
-    val onResumeProviderItem: ((HistoryEntry) -> Unit)? = null,
     val onTopWindow: (TopWindow) -> Unit = {},
     val onRetryLatest: () -> Unit = {},
     val onRetryUpcoming: () -> Unit = {},
@@ -212,9 +245,32 @@ internal data class HomeActions(
     val onRetryFollowed: () -> Unit = {},
     val onRetryForYou: () -> Unit = {},
     val onRetryBecause: () -> Unit = {},
+    val onRetryToday: () -> Unit = {},
     val onNextGenreRow: (List<String>) -> Unit = {},
     val onRetryGenre: (String) -> Unit = {},
     val onRetryPrimary: () -> Unit = {},
+    // Sparkles (S2)
+    val onRefreshAll: () -> Unit = {},
+    /** Bell of an episode; returns the bell's new state (null = no airing service). */
+    val onToggleReminder: (Media) -> Boolean? = { null },
+    val onSetRowPrefs: (order: List<String>, hidden: Set<String>) -> Unit = { _, _ -> },
+    val onOpenDownloads: () -> Unit = {},
+    val onOpenLink: () -> Unit = {},
+    val onOpenLinkMonitor: () -> Unit = {},
+    val onOpenMetadataSettings: () -> Unit = {},
+    val onOpenExtensions: () -> Unit = {},
+)
+
+/** What the three structures share about the window around them. */
+private class HomeFrame(
+    val topInset: Dp,
+    val wide: Boolean,
+    /** Wide enough for the side column of Esta noche. */
+    val aside: Boolean,
+    val online: Boolean,
+    val unread: Int,
+    val showGreeting: Boolean,
+    val onEdit: () -> Unit,
 )
 
 @Composable
@@ -225,594 +281,485 @@ internal fun HomeContent(
     unreadNotifications: Int = 0,
 ) {
     val gate = rememberMatureGate(state.discover.matureContent)
-    val discover = state.discover
-    // 2026-11 UI refresh: Diseño y estilo › Inicio (Destacado / Carrusel / Solo filas) and the greeting toggle.
     val look = LocalLook.current
-    val layout = look.homeLayout
-    val spotlight = layout == HomeLayout.SPOTLIGHT && !state.isEmpty && state.hero !is LoadState.Err
+    val prefs = look.design
+    val nowSec = rememberNowSec()
+    val online = rememberIsOnline()
+    var editing by rememberSaveable { mutableStateOf(false) }
+    var feedName by rememberSaveable { mutableStateOf(FeedKind.AIRING.name) }
+    val d = state.discover
+    val todayStart = remember(nowSec / 3600) { startOfDay(nowSec) }
+    val tonight = remember(state.continueWatching, d, nowSec, todayStart) {
+        HomeLogic.tonight(
+            continueWatching = state.continueWatching,
+            newSinceVisit = (d.followed as? LoadState.Ok)?.value.orEmpty(),
+            today = (d.today as? LoadState.Ok)?.value.orEmpty(),
+            tracked = d::isTracked,
+            progressOf = { ref -> d.entryFor(ref)?.progress },
+            nowSec = nowSec,
+            todayStartSec = todayStart,
+        )
+    }
+    val genres = d.genreCloud.ifEmpty { state.genres }
+    val structure = structures.home
+    // The stage already shows the trending titles; without it, Trending joins the catalogue (the former "Solo filas" layout).
+    val feedKinds = (if (structure == HomeStructure.STAGE) state.rows else state.feeds).map { it.kind }
+    val feed = feedKinds.firstOrNull { it.name == feedName } ?: feedKinds.firstOrNull() ?: FeedKind.AIRING
+    val rows = prefs.homeRows(state.availableRows(tonight.size, genres.isNotEmpty()))
+    val fullOrder = HomeLogic.fullRowOrder(prefs.homeRowOrder)
+    val because = d.because?.sourceTitle
+    val hiddenMessages = HomeRowIds.DEFAULT_ORDER.associateWith { id -> stringResource(Res.string.rd_s2_row_hidden_msg, homeRowTitle(id, because)) }
+    val resetMessage = stringResource(Res.string.rd_s2_edit_reset_msg)
+    val showUndo = rememberShowUndo()
+    val hide: (String) -> Unit = { id ->
+        val before = prefs.homeRowsHidden
+        actions.onSetRowPrefs(fullOrder, before + id)
+        showUndo(hiddenMessages[id].orEmpty()) { actions.onSetRowPrefs(fullOrder, before) }
+    }
     Scaffold(modifier = modifier, contentWindowInsets = screenInsets) { padding ->
-        val listState = rememberLazyListState()
-        val scrolled by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 } }
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            val wide = maxWidth >= 600.dp
-            val showGreetingRow = !wide || look.showGreeting || !spotlight
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = listState,
-                contentPadding = PaddingValues(
-                    // The spotlight is drawn under the status bar (full bleed); the other layouts start below it.
-                    top = if (spotlight) 0.dp else padding.calculateTopPadding(),
-                    bottom = 24.dp,
-                ),
-                verticalArrangement = Arrangement.spacedBy(if (look.density == Density.COMPACT) 4.dp else 8.dp),
-            ) {
-                if (spotlight) {
-                    item(key = "spotlight", contentType = "spotlight") {
-                        SpotlightSection(
-                            hero = state.hero,
-                            continueWatching = state.continueWatching,
-                            autoplayMs = look.heroAutoplayMs(),
-                            actions = actions,
-                            topPadding = padding.calculateTopPadding(),
-                            unread = unreadNotifications,
-                            art = state.heroArt,
-                        )
+            val wide = maxWidth >= WIDE_MIN
+            val ctx = HomeRowCtx(
+                state = state,
+                actions = actions,
+                gate = gate,
+                tonight = tonight,
+                genres = genres,
+                feedKinds = feedKinds,
+                feed = feed,
+                onFeed = { feedName = it.name },
+                editing = editing,
+                onHide = hide,
+                nowSec = nowSec,
+                compact = !wide,
+            )
+            val panelOpen = editing && wide
+            val frame = HomeFrame(
+                topInset = padding.calculateTopPadding(),
+                wide = wide,
+                aside = maxWidth - (if (panelOpen) EDIT_PANEL_WIDTH else 0.dp) >= ASIDE_MIN,
+                online = online,
+                unread = unreadNotifications,
+                showGreeting = look.showGreeting,
+                onEdit = { editing = !editing },
+            )
+            Row(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    when (structure) {
+                        HomeStructure.TONIGHT -> HomeTonightLayout(ctx, rows, frame)
+                        HomeStructure.STAGE -> HomeStageLayout(ctx, rows, frame)
+                        HomeStructure.SHELVES -> HomeShelvesLayout(ctx, rows, frame)
                     }
                 }
-                if (showGreetingRow) {
-                    item(key = "greeting", contentType = "greeting") {
-                        Greeting(
-                            unread = unreadNotifications,
-                            actions = actions,
-                            showGreeting = look.showGreeting,
-                            showBell = !spotlight,
-                            showQuickChips = !wide,
-                        )
-                    }
-                }
-                if (!wide) {
-                    item(key = "search", contentType = "search") {
-                        SearchEntry(onClick = actions.onSearchClick)
-                    }
-                }
-                if (state.fallback != null) {
-                    item(key = "metadata-fallback", contentType = "banner") {
-                        app.nijiyome.ui.state.MetadataFallbackBanner(
-                            state = state.fallback,
-                            onRetryPrimary = actions.onRetryPrimary,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                        )
-                    }
-                }
-                if (state.isEmpty) {
-                    item(key = "empty", contentType = "empty") {
-                        EmptyState(
-                            icon = Icons.Outlined.TravelExplore,
-                            title = stringResource(Res.string.home_empty_title),
-                            message = stringResource(Res.string.home_empty_body),
-                        )
-                    }
-                    return@LazyColumn
-                }
-                if (layout == HomeLayout.CAROUSEL || (layout == HomeLayout.SPOTLIGHT && !spotlight)) {
-                    item(key = "hero", contentType = "hero") {
-                        HeroSection(
-                            hero = state.hero,
-                            onMediaClick = actions.onMediaClick,
-                            onWatch = actions.onWatch,
-                            onRetry = { actions.onRetry(HERO_FEED) },
-                            autoplayMs = look.heroAutoplayMs(),
-                        )
-                    }
-                }
-                if (state.continueWatching.isNotEmpty()) {
-                    item(key = "continue", contentType = "continue") {
-                        ContinueWatchingRow(
-                            state.continueWatching,
-                            onDetails = { entry ->
-                                val provider = HomeLogic.parseProviderHistoryId(entry.animeId)
-                                if (provider != null) {
-                                    actions.onOpenProviderItem(provider.first, provider.second, provider.third)
-                                } else {
-                                    actions.onContinueDetails(entry)
-                                }
-                            },
-                            onClick = { entry ->
-                                val provider = HomeLogic.parseProviderHistoryId(entry.animeId)
-                                if (provider != null) {
-                                    actions.onResumeProviderItem?.invoke(entry)
-                                        ?: actions.onOpenProviderItem(provider.first, provider.second, provider.third)
-                                } else {
-                                    actions.onContinueClick(entry)
-                                }
-                            },
-                            onSeeAll = actions.onOpenLibrary,
-                        )
-                    }
-                }
-                discover.activity?.takeIf { it.total > 0 }?.let { activity ->
-                    item(key = "downloading", contentType = "downloading") { DownloadingRow(activity) }
-                }
-                homeDiscoverTop(discover, gate, actions)
-                val genres = discover.genreCloud.ifEmpty { state.genres }
-                if (genres.isNotEmpty()) {
-                    item(key = "genres", contentType = "genres") {
-                        GenreChips(genres, actions.onOpenGenre)
-                    }
-                }
-                // Solo filas: no hero, so the trending feed becomes the first row.
-                val rows = if (layout == HomeLayout.ROWS) state.feeds else state.rows
-                items(rows, key = { it.kind.name }, contentType = { "row" }) { row ->
-                    FeedRowSection(
-                        row = row,
-                        gate = gate,
-                        onMediaClick = actions.onMediaClick,
-                        onRetry = { actions.onRetry(row.kind) },
-                        onSeeAll = { actions.onOpenFeed(row.kind) },
+                if (editing) {
+                    HomeEditPanel(
+                        order = fullOrder,
+                        hidden = prefs.homeRowsHidden,
+                        because = because,
+                        onMove = { from, to -> actions.onSetRowPrefs(fullOrder.moved(from, to), prefs.homeRowsHidden) },
+                        onToggle = { id ->
+                            val h = prefs.homeRowsHidden
+                            actions.onSetRowPrefs(fullOrder, if (id in h) h - id else h + id)
+                        },
+                        onReset = {
+                            val order = prefs.homeRowOrder
+                            val hidden = prefs.homeRowsHidden
+                            actions.onSetRowPrefs(emptyList(), emptySet())
+                            showUndo(resetMessage) { actions.onSetRowPrefs(order, hidden) }
+                        },
+                        onDone = { editing = false },
+                        compact = !wide,
                     )
                 }
-                homeDiscoverBottom(discover, gate, actions)
-                val extRowsEmpty = state.extensionRows is LoadState.Ok && state.extensionRows.value.isEmpty()
-                if (!extRowsEmpty) {
-                    item(key = "extension-rows", contentType = "extension-rows") {
-                        // Composed only when scrolled into view: the lazy request of customHomeRows() (07 §1, prototype IntersectionObserver).
-                        LaunchedEffect(Unit) { actions.onLoadExtensionRows() }
-                        ExtensionRows(
-                            state.extensionRows,
-                            names = discover.extensionNames,
-                            onRetry = actions.onLoadExtensionRows,
-                            onOpenProvider = actions.onOpenProvider,
-                            onItemClick = actions.onOpenProviderItem,
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- Esta noche
+
+@Composable
+private fun HomeTonightLayout(ctx: HomeRowCtx, rows: List<String>, frame: HomeFrame) {
+    val rest = rows.filterNot { it == ROW_CONTINUE || it == ROW_DOWNLOADS }
+    val a = ctx.actions
+    Row(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f).fillMaxHeight()) {
+            HomeList(topPadding = frame.topInset) {
+                if (frame.wide) {
+                    item(key = "header", contentType = "header") {
+                        HomeHeader(
+                            title = stringResource(Res.string.rd_s2_tonight),
+                            subtitle = tonightSubtitle(ctx.tonight.size, frame.showGreeting),
+                            accent = true,
+                            frame = frame,
+                            actions = a,
                         )
                     }
+                } else {
+                    phoneTop(ctx, frame)
                 }
-                homeGenreRows(discover, gate, actions, fallbackGenres = genres)
+                notices(ctx, frame)
+                if (ctx.state.isEmpty) {
+                    emptyHome(ctx, frame)
+                    return@HomeList
+                }
+                item(key = "tonight", contentType = "tonight") {
+                    val m = Modifier.homeEntrance(0)
+                    when {
+                        ctx.tonight.isEmpty() -> TonightEmpty(a.onOpenCalendar, m)
+                        frame.wide -> Column(m.fillMaxWidth()) {
+                            TonightRow(ctx)
+                            // HOME-07 "Ver todo" -> Biblioteca › Continuar (the wide header has no row title to carry it).
+                            TextButton(onClick = a.onOpenLibrary, modifier = Modifier.align(Alignment.End).padding(end = 16.dp)) {
+                                Text(stringResource(Res.string.rd_s2_tonight_all))
+                            }
+                        }
+                        else -> HomeSection(stringResource(Res.string.rd_s2_tonight), m, onSeeAll = a.onOpenLibrary) { TonightRow(ctx) }
+                    }
+                }
+                item(key = "agenda", contentType = "agenda") { TodayAgenda(ctx, Modifier.homeEntrance(1)) }
+                if (!frame.aside) {
+                    item(key = "status", contentType = "status") {
+                        StatusBlock(ctx, frame.wide, Modifier.homeEntrance(2))
+                    }
+                }
+                homeRows(rest, ctx, firstIndex = 3)
+                item(key = "end", contentType = "end") { EndRow(frame.onEdit, a.onRefreshAll) }
             }
-            // BUG-062 (UX-03): once the list scrolls, the status bar gets the surface behind it ("ONE PIECE" under the clock).
-            AnimatedVisibility(scrolled, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.TopCenter)) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .windowInsetsTopHeight(WindowInsets.statusBars)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
-                )
+        }
+        if (frame.aside) {
+            Column(
+                Modifier
+                    .width(ASIDE_WIDTH)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = frame.topInset + 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                LinkPanel(a.onOpenLink, a.onOpenLinkMonitor)
+                TransfersPanel(ctx.discover.activity, a.onOpenDownloads)
+            }
+        }
+    }
+}
+
+/** Link and downloads when there is no side column: side by side on wide windows, a Link strip and the downloads row on phones. */
+@Composable
+private fun StatusBlock(ctx: HomeRowCtx, wide: Boolean, modifier: Modifier) {
+    val a = ctx.actions
+    val activity = ctx.discover.activity?.takeIf { it.total > 0 }
+    if (wide) {
+        Row(modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(Modifier.weight(1f)) { LinkPanel(a.onOpenLink, a.onOpenLinkMonitor) }
+            Box(Modifier.weight(1f)) { TransfersPanel(ctx.discover.activity, a.onOpenDownloads) }
+        }
+    } else {
+        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LinkPanel(a.onOpenLink, a.onOpenLinkMonitor, Modifier.padding(horizontal = 16.dp), compact = true)
+            if (activity != null) {
+                HomeSection(stringResource(Res.string.home_downloading, activity.total), onSeeAll = a.onOpenDownloads) {
+                    DownloadsStrip(activity, a.onOpenDownloads)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun Greeting(
-    unread: Int,
-    actions: HomeActions,
-    showGreeting: Boolean = true,
-    showBell: Boolean = true,
-    showQuickChips: Boolean = true,
-) {
+private fun TonightEmpty(onOpenCalendar: () -> Unit, modifier: Modifier) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp).decor(DecorRegion.EMPTY),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                stringResource(Res.string.rd_s2_tonight_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onOpenCalendar) { Text(stringResource(Res.string.rd_s2_open_calendar)) }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- Escenario
+
+@Composable
+private fun HomeStageLayout(ctx: HomeRowCtx, rows: List<String>, frame: HomeFrame) {
+    val hero = ctx.state.hero
+    val fullBleed = hero is LoadState.Ok && hero.value.isNotEmpty() || hero is LoadState.Loading
+    HomeList(topPadding = if (fullBleed) 0.dp else frame.topInset) {
+        item(key = "stage", contentType = "stage") { StageHero(ctx, frame, Modifier.homeEntrance(0)) }
+        if (!frame.wide) phoneTop(ctx, frame)
+        notices(ctx, frame)
+        if (ctx.state.isEmpty) {
+            emptyHome(ctx, frame)
+            return@HomeList
+        }
+        homeRows(rows, ctx, firstIndex = 1)
+        item(key = "end", contentType = "end") { EndRow(frame.onEdit, ctx.actions.onRefreshAll) }
+    }
+}
+
+/** The stage: the trending pager drawn under the status bar; a placeholder while it loads, a compact error with retry if it fails. */
+@Composable
+private fun StageHero(ctx: HomeRowCtx, frame: HomeFrame, modifier: Modifier) {
+    val a = ctx.actions
+    when (val hero = ctx.state.hero) {
+        is LoadState.Ok -> if (hero.value.isNotEmpty()) {
+            Spotlight(
+                items = hero.value,
+                art = ctx.state.heroArt,
+                continueWatching = ctx.state.continueWatching,
+                autoplayMs = LocalLook.current.heroAutoplayMs(),
+                onOpen = { media -> ctx.gate.open(media) { a.onMediaClick(media) } },
+                onWatch = a.onWatch,
+                onContinue = a.onResumeEntry,
+                modifier = modifier.decor(DecorRegion.HERO),
+                topEnd = { if (!frame.wide) NotificationBell(frame.unread, a.onOpenNotifications, onScrim = true) },
+            )
+        } else {
+            Box(modifier.fillMaxWidth().height(frame.topInset))
+        }
+        is LoadState.Err -> app.nijiyome.ui.state.AppErrorState(
+            cause = hero.cause,
+            onRetry = { a.onRetry(HERO_FEED) },
+            compact = true,
+            modifier = modifier.padding(horizontal = 16.dp),
+        )
+        LoadState.Loading -> LoadingPlaceholder(
+            modifier.fillMaxWidth().height(if (frame.wide) STAGE_HEIGHT_WIDE else STAGE_HEIGHT_PHONE).decor(DecorRegion.HERO),
+            shape = MaterialTheme.shapes.extraSmall,
+        )
+    }
+}
+
+// ---------------------------------------------------------------- Estantes
+
+@Composable
+private fun HomeShelvesLayout(ctx: HomeRowCtx, rows: List<String>, frame: HomeFrame) {
+    HomeList(topPadding = frame.topInset) {
+        item(key = "header", contentType = "header") {
+            if (frame.wide) {
+                HomeHeader(
+                    title = stringResource(Res.string.rd_s2_home_title),
+                    subtitle = listOfNotNull(
+                        greeting().takeIf { frame.showGreeting },
+                        stringResource(Res.string.rd_s2_shelves_sub),
+                    ).joinToString(" · "),
+                    accent = false,
+                    frame = frame,
+                    actions = ctx.actions,
+                )
+            } else {
+                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(Res.string.rd_s2_home_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+                    NotificationBell(frame.unread, ctx.actions.onOpenNotifications)
+                    IconButton(onClick = frame.onEdit) {
+                        Icon(Icons.Outlined.DashboardCustomize, contentDescription = stringResource(Res.string.rd_s2_edit_title))
+                    }
+                }
+            }
+        }
+        if (!frame.wide) phoneTop(ctx, frame, bell = false)
+        notices(ctx, frame)
+        if (ctx.state.isEmpty || rows.isEmpty()) {
+            emptyHome(ctx, frame)
+            return@HomeList
+        }
+        homeRows(rows, ctx)
+        item(key = "end", contentType = "end") { EndRow(frame.onEdit, ctx.actions.onRefreshAll) }
+    }
+}
+
+// ---------------------------------------------------------------- shared pieces
+
+/** The Home list with the status-bar scrim once it scrolls (BUG-062: the clock never sits on a poster). */
+@Composable
+private fun HomeList(topPadding: Dp, content: LazyListScope.() -> Unit) {
+    val listState = rememberLazyListState()
+    val scrolled by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 } }
+    val dense = LocalLook.current.density == Density.COMPACT
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(top = topPadding, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(if (dense) 12.dp else 24.dp),
+            content = content,
+        )
+        AnimatedVisibility(scrolled, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.TopCenter)) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsTopHeight(WindowInsets.statusBars)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
+            )
+        }
+    }
+}
+
+/** Wide header of Esta noche and Estantes: title, date line, Editar Inicio and Actualizar. */
+@Composable
+private fun HomeHeader(title: String, subtitle: String, accent: Boolean, frame: HomeFrame, actions: HomeActions) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            val font: FontFamily? = if (accent) LocalAccentFont.current else null
+            Text(title, style = MaterialTheme.typography.displaySmall, fontFamily = font, maxLines = 1)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        OutlinedButton(onClick = frame.onEdit) {
+            Icon(Icons.Outlined.DashboardCustomize, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(stringResource(Res.string.rd_s2_edit_title), modifier = Modifier.padding(start = 8.dp))
+        }
+        IconButton(onClick = actions.onRefreshAll) {
+            Icon(Icons.Outlined.Refresh, contentDescription = stringResource(Res.string.rd_s2_refresh))
+        }
+    }
+}
+
+/** Phones: search pill and bell, the quick chips, and the greeting when it is on. */
+private fun LazyListScope.phoneTop(ctx: HomeRowCtx, frame: HomeFrame, bell: Boolean = true) {
+    item(key = "phone-top", contentType = "phone-top") {
+        Column(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (frame.showGreeting) {
+                Text(greeting(), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(horizontal = 16.dp))
+            }
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                SearchPill(ctx.actions.onSearchClick, Modifier.weight(1f))
+                if (bell) NotificationBell(frame.unread, ctx.actions.onOpenNotifications)
+            }
+            QuickChips(ctx.actions)
+        }
+    }
+}
+
+@Composable
+private fun SearchPill(onClick: () -> Unit, modifier: Modifier) {
+    Surface(onClick = onClick, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = modifier.height(56.dp)) {
+        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(Icons.Outlined.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(Res.string.rd_s2_search_hint), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        }
+    }
+}
+
+/** Offline notice and the AniList rate-limit banner (live countdown, Retry the primary provider). */
+private fun LazyListScope.notices(ctx: HomeRowCtx, frame: HomeFrame) {
+    if (!frame.online) {
+        item(key = "offline", contentType = "notice") { OfflineNotice(ctx.actions.onRefreshAll) }
+    }
+    if (ctx.state.fallback != null) {
+        item(key = "metadata-fallback", contentType = "notice") {
+            app.nijiyome.ui.state.MetadataFallbackBanner(
+                state = ctx.state.fallback,
+                onRetryPrimary = ctx.actions.onRetryPrimary,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun OfflineNotice(onRetry: () -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    ) {
+        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(Icons.Outlined.CloudOff, contentDescription = null, tint = LocalSignalColors.current.warn)
+            Text(stringResource(Res.string.rd_s2_offline_notice), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            TextButton(onClick = onRetry) { Text(stringResource(UiR.string.ui_retry)) }
+        }
+    }
+}
+
+/** Empty Home: why (offline or no metadata), Retry and the way to the metadata sources. */
+private fun LazyListScope.emptyHome(ctx: HomeRowCtx, frame: HomeFrame) {
+    item(key = "empty", contentType = "empty") {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 32.dp).decor(DecorRegion.EMPTY),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            EmptyArt(if (frame.online) EmptyKind.GENERIC else EmptyKind.ERROR)
+            Icon(Icons.Outlined.CloudOff, contentDescription = null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                stringResource(if (frame.online) Res.string.home_empty_title else Res.string.rd_s2_offline_title),
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                stringResource(if (frame.online) Res.string.rd_s2_empty_body else Res.string.rd_s2_offline_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = ctx.actions.onRefreshAll) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(stringResource(UiR.string.ui_retry), modifier = Modifier.padding(start = 8.dp))
+                }
+                OutlinedButton(onClick = ctx.actions.onOpenMetadataSettings) {
+                    Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(stringResource(Res.string.home_sources), modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+        }
+    }
+}
+
+/** End of every structure: Editar Inicio and Actualizar (phones reach them here; the stage has no header). */
+@Composable
+private fun EndRow(onEdit: () -> Unit, onRefresh: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
+        OutlinedButton(onClick = onEdit) {
+            Icon(Icons.Outlined.DashboardCustomize, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(stringResource(Res.string.rd_s2_edit_title), modifier = Modifier.padding(start = 8.dp))
+        }
+        TextButton(onClick = onRefresh) {
+            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(stringResource(Res.string.rd_s2_refresh), modifier = Modifier.padding(start = 8.dp))
+        }
+    }
+}
+
+/** "Good evening" by the local hour (< 12, < 19). */
+@Composable
+private fun greeting(): String {
     val hour = remember { LocalTime.now().hour }
-    val greeting = stringResource(
+    return stringResource(
         when {
             hour < 12 -> Res.string.home_greeting_morning
             hour < 19 -> Res.string.home_greeting_afternoon
             else -> Res.string.home_greeting_evening
         },
     )
-    Column(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (showGreeting || showBell) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) {
-                    if (showGreeting) Text(greeting, style = MaterialTheme.typography.headlineMedium)
-                }
-                if (showBell) NotificationBell(unread, actions.onOpenNotifications)
-            }
-        }
-        if (showQuickChips) QuickChips(actions)
-    }
 }
 
+/** "Miércoles 25 de noviembre · 6 para ver", with the greeting first when it is on. */
 @Composable
-private fun providerLabel(id: String): String = when (id) {
-    "anilist" -> stringResource(Res.string.home_provider_anilist)
-    "kitsu" -> stringResource(Res.string.home_provider_kitsu)
-    "anizip" -> stringResource(Res.string.home_provider_anizip)
-    "mal" -> stringResource(Res.string.home_provider_mal)
-    "shikimori" -> stringResource(Res.string.home_provider_shikimori)
-    "tenrai" -> stringResource(Res.string.home_provider_tenrai)
-    else -> id
+private fun tonightSubtitle(count: Int, withGreeting: Boolean): String {
+    val date = remember { LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.getDefault())).replaceFirstChar { it.titlecase() } }
+    val line = stringResource(Res.string.rd_s2_tonight_sub, date, count)
+    return if (withGreeting) greeting() + " · " + line else line
 }
 
-@Composable
-private fun SearchEntry(onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(56.dp),
-    ) {
-        Row(
-            Modifier.padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Icon(Icons.Outlined.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(
-                stringResource(Res.string.home_search_hint),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+private fun startOfDay(nowSec: Long): Long {
+    val zone = ZoneId.systemDefault()
+    return Instant.ofEpochSecond(nowSec).atZone(zone).toLocalDate().atStartOfDay(zone).toEpochSecond()
 }
 
-@Composable
-private fun HeroSection(
-    hero: LoadState<List<Media>>,
-    onMediaClick: (Media) -> Unit,
-    onWatch: (Media) -> Unit,
-    onRetry: () -> Unit,
-    autoplayMs: Long? = HERO_AUTOPLAY_MS,
-) {
-    when (hero) {
-        LoadState.Loading -> if (rememberAfterDelay()) {
-            SkeletonBox(Modifier.fillMaxWidth().height(HERO_HEIGHT).padding(horizontal = 16.dp), MaterialTheme.shapes.extraLarge)
-        } else {
-            Box(Modifier.fillMaxWidth().height(HERO_HEIGHT))
-        }
-        is LoadState.Err -> app.nijiyome.ui.state.AppErrorState(
-            cause = hero.cause,
-            onRetry = onRetry,
-            compact = true,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        is LoadState.Ok -> if (hero.value.isNotEmpty()) {
-            HeroCarousel(
-                items = hero.value,
-                key = { mediaKey(it) },
-                modifier = Modifier.fillMaxWidth(),
-                // HeroCarousel already turns autoplay off with LocalReduceMotion; passing it here keeps the intent explicit.
-                // 2026-11 UI refresh: Diseño y estilo › Girar el banner / segundos por título.
-                autoplay = !LocalReduceMotion.current && autoplayMs != null,
-                autoplayMillis = autoplayMs ?: HERO_AUTOPLAY_MS,
-            ) { media, index ->
-                HeroSlide(media, index, onMediaClick, onWatch)
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeroSlide(media: Media, index: Int, onMediaClick: (Media) -> Unit, onWatch: (Media) -> Unit) {
-    val surface = MaterialTheme.colorScheme.surface
-    Box(
-        Modifier
-            .fillMaxSize()
-            .clip(MaterialTheme.shapes.extraLarge)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .clickable { onMediaClick(media) },
-    ) {
-        AsyncImage(
-            model = media.banner ?: media.cover,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(surface.copy(alpha = 0f), surface.copy(alpha = 0.94f)))),
-        )
-        Column(
-            Modifier.align(Alignment.BottomStart).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(Icons.Outlined.Bolt, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                Text(
-                    stringResource(Res.string.home_hero_kicker, index + 1),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                statusLabel(media.status)?.let { (label, tone) -> Pill(label, tone = tone) }
-            }
-            Text(
-                media.displayTitle(LocalTitleLanguage.current),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            media.synopsis?.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { onWatch(media) }) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(stringResource(Res.string.home_watch), modifier = Modifier.padding(start = 6.dp))
-                }
-                FilledTonalButton(onClick = { onMediaClick(media) }) {
-                    Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(stringResource(Res.string.home_details), modifier = Modifier.padding(start = 6.dp))
-                }
-            }
-        }
-    }
-}
-
-/** Destacado: skeleton under the status bar while loading, the pager once the trending feed answers (errors fall back to the carousel). */
-@Composable
-private fun SpotlightSection(
-    hero: LoadState<List<Media>>,
-    continueWatching: List<HistoryEntry>,
-    autoplayMs: Long?,
-    actions: HomeActions,
-    topPadding: androidx.compose.ui.unit.Dp,
-    unread: Int,
-    art: Map<String, app.nijiyome.model.MediaArtwork> = emptyMap(),
-) {
-    when (hero) {
-        is LoadState.Ok -> if (hero.value.isNotEmpty()) {
-            Spotlight(
-                items = hero.value,
-                art = art,
-                continueWatching = continueWatching,
-                autoplayMs = autoplayMs,
-                onOpen = actions.onMediaClick,
-                onWatch = actions.onWatch,
-                onContinue = actions.onContinueClick,
-                topEnd = { NotificationBell(unread, actions.onOpenNotifications, onScrim = true) },
-            )
-        } else {
-            Box(Modifier.fillMaxWidth().height(topPadding))
-        }
-        else -> if (rememberAfterDelay()) {
-            SkeletonBox(Modifier.fillMaxWidth().height(SPOTLIGHT_SKELETON_HEIGHT), MaterialTheme.shapes.extraSmall)
-        } else {
-            Box(Modifier.fillMaxWidth().height(SPOTLIGHT_SKELETON_HEIGHT))
-        }
-    }
-}
-
-/** Localized status pill of a provider status (`RELEASING`, `FINISHED`, `NOT_YET_RELEASED`, `CANCELLED`, `HIATUS`). */
-@Composable
-private fun statusLabel(status: String?): Pair<String, PillTone>? = when (status?.uppercase()) {
-    "RELEASING" -> stringResource(Res.string.home_status_releasing) to PillTone.OK
-    "FINISHED" -> stringResource(Res.string.home_status_finished) to PillTone.NEUTRAL
-    "NOT_YET_RELEASED" -> stringResource(Res.string.home_status_upcoming) to PillTone.WARN
-    "CANCELLED" -> stringResource(Res.string.home_status_cancelled) to PillTone.ERR
-    "HIATUS" -> stringResource(Res.string.home_status_hiatus) to PillTone.WARN
-    else -> null
-}
-
-@Composable
-internal fun SectionHeader(title: String, onSeeAll: (() -> Unit)?) {
-    Row(Modifier.fillMaxWidth().padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        ListGroupHeader(title, Modifier.weight(1f))
-        if (onSeeAll != null) {
-            TextButton(onClick = onSeeAll) { Text(stringResource(Res.string.home_see_all)) }
-        }
-    }
-}
-
-@Composable
-private fun ContinueWatchingRow(
-    entries: List<HistoryEntry>,
-    onDetails: (HistoryEntry) -> Unit,
-    onClick: (HistoryEntry) -> Unit,
-    onSeeAll: () -> Unit,
-) {
-    Column(Modifier.fillMaxWidth()) {
-        SectionHeader(stringResource(Res.string.home_continue_watching), onSeeAll)
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(entries, key = { it.episodeId }, contentType = { "continue" }) { entry ->
-                ContinueCard(entry, onPlay = { onClick(entry) }, onDetails = { onDetails(entry) })
-            }
-        }
-    }
-}
-
-/**
- * Prototype `.cont`: cover with progress, title, "Episodio N · Quedan M min", play button. 2026-11 user request: a tap or a long
- * press on the card opens the details; only the play button resumes the episode straight away.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ContinueCard(entry: HistoryEntry, onPlay: () -> Unit, onDetails: () -> Unit) {
-    val description = stringResource(Res.string.home_continue_play, entry.title, entry.episode)
-    val haptics = LocalHapticFeedback.current
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier
-            .width(CONTINUE_WIDTH)
-            .clip(MaterialTheme.shapes.large)
-            .combinedClickable(
-                onClick = onDetails,
-                onLongClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onDetails()
-                },
-            ),
-    ) {
-        Row(
-            Modifier.padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            MediaCover(url = entry.poster, modifier = Modifier.width(56.dp), shape = MaterialTheme.shapes.small)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(entry.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                val left = entry.durationSec?.let { d -> ((d - entry.progressSec).coerceAtLeast(0) + 59) / 60 }
-                // BUG-109: "Episodio N" and "Quedan M min" on their own lines: together they do not fit the ~150 dp text column of the
-                // card once the minutes have two digits ("Quedan 12 …").
-                val lines = listOfNotNull(
-                    stringResource(Res.string.home_continue_episode, entry.episode),
-                    if (left != null && !entry.completed) stringResource(Res.string.home_continue_left, left) else null,
-                )
-                lines.forEach { line ->
-                    Text(
-                        line,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                entry.progressFraction()?.takeIf { !entry.completed }?.let { p ->
-                    LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
-                }
-            }
-            Surface(
-                onClick = onPlay,
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(44.dp).semantics { contentDescription = description },
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun GenreChips(genres: List<String>, onGenre: (String) -> Unit) {
-    Column(Modifier.fillMaxWidth()) {
-        SectionHeader(stringResource(Res.string.home_genres), onSeeAll = null)
-        val scroll = rememberScrollState()
-        HorizontalScrollStrip(scrollState = scroll, showChevrons = true) {
-            Row(
-                Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                genres.forEach { genre ->
-                    AssistChip(onClick = { onGenre(genre) }, label = { Text(genreLabel(genre)) })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FeedRowSection(row: FeedRow, gate: MatureGate, onMediaClick: (Media) -> Unit, onRetry: () -> Unit, onSeeAll: () -> Unit) {
-    Column(Modifier.fillMaxWidth()) {
-        SectionHeader(stringResource(row.kind.labelRes()), onSeeAll)
-        when (val s = row.state) {
-            LoadState.Loading -> SkeletonRow()
-            is LoadState.Err -> app.nijiyome.ui.state.AppErrorState(
-                cause = s.cause,
-                onRetry = onRetry,
-                compact = true,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-            is LoadState.Ok -> LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(s.value, key = { mediaKey(it) }, contentType = { "media" }) { media ->
-                    GatedMediaCard(media = media, gate = gate, onClick = { onMediaClick(media) }, width = CARD_WIDTH)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun SkeletonRow() {
-    if (!rememberAfterDelay()) {
-        Box(Modifier.fillMaxWidth().height(homeCardHeight()))
-        return
-    }
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        userScrollEnabled = false,
-    ) {
-        items(SKELETON_COUNT, key = { it }, contentType = { "skeleton" }) {
-            SkeletonBox(Modifier.width(homeCardWidth()).height(homeCardHeight()))
-        }
-    }
-}
-
-/** The lazy `custom/home` rows of extensions: skeleton while loading, inline error + retry, nothing when no extension has one. */
-@Composable
-private fun ExtensionRows(
-    state: LoadState<List<ExtensionHomeRow>>?,
-    names: Map<String, String>,
-    onRetry: () -> Unit,
-    onOpenProvider: (String, String) -> Unit,
-    onItemClick: (String, String, String) -> Unit,
-) {
-    when (state) {
-        null, LoadState.Loading -> Column(Modifier.fillMaxWidth()) {
-            SectionHeader(stringResource(Res.string.home_ext_rows), onSeeAll = null)
-            SkeletonRow()
-        }
-        is LoadState.Err -> Column(Modifier.fillMaxWidth()) {
-            SectionHeader(stringResource(Res.string.home_ext_rows), onSeeAll = null)
-            ErrorState(
-                message = stringResource(Res.string.home_ext_rows_error) + " " + state.cause.userMessage(),
-                retryLabel = stringResource(UiR.string.ui_retry),
-                onRetry = onRetry,
-                compact = true,
-            )
-        }
-        is LoadState.Ok -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            state.value.forEach { row ->
-                Column(Modifier.fillMaxWidth()) {
-                    SectionHeader(row.title, onSeeAll = { onOpenProvider(row.extensionId, row.sourceId) })
-                    Text(
-                        stringResource(Res.string.home_ext_row_from, HomeLogic.extensionRowSubtitle(row, names)),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp),
-                    )
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(row.items, key = { it.id }, contentType = { "ext-item" }) { item ->
-                            MediaCard(
-                                title = item.title,
-                                coverUrl = item.poster,
-                                onClick = { onItemClick(row.extensionId, row.sourceId, item.id) },
-                                modifier = Modifier.width(CARD_WIDTH),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-internal fun Modifier.posterHeight(): Modifier = this.then(Modifier.height(CARD_WIDTH / COVER_ASPECT_RATIO))
-
-internal fun FeedKind.labelRes(): StringResource = when (this) {
-    FeedKind.TRENDING -> Res.string.home_feed_trending
-    FeedKind.POPULAR -> Res.string.home_feed_popular
-    FeedKind.TOP_RATED -> Res.string.home_feed_top_rated
-    FeedKind.AIRING -> Res.string.home_feed_airing
-    FeedKind.UPCOMING -> Res.string.home_feed_upcoming
-    FeedKind.SEASONAL -> Res.string.home_feed_seasonal
-    FeedKind.RECENTLY_COMPLETED -> Res.string.home_feed_completed
-}
-
-private val HERO_HEIGHT = 260.dp
-private val SPOTLIGHT_SKELETON_HEIGHT = 500.dp
-internal val CARD_WIDTH = 120.dp
-private val CONTINUE_WIDTH = 280.dp
-private const val SKELETON_COUNT = 6
-private const val HERO_AUTOPLAY_MS = 9_000L
+private val WIDE_MIN = 600.dp
+private val ASIDE_MIN = 1100.dp
+private val ASIDE_WIDTH = 340.dp
+private val EDIT_PANEL_WIDTH = 360.dp
+private val STAGE_HEIGHT_WIDE = 440.dp
+private val STAGE_HEIGHT_PHONE = 500.dp
