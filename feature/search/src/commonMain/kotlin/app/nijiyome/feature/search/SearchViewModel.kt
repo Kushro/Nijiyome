@@ -11,9 +11,13 @@ import app.nijiyome.model.ExtensionRepository
 import app.nijiyome.model.FeedKind
 import app.nijiyome.model.FeedPage
 import app.nijiyome.model.InstalledExtension
+import app.nijiyome.model.ListStatus
+import app.nijiyome.model.ListsRepository
+import app.nijiyome.model.LoadState
 import app.nijiyome.model.MatureContentMode
 import app.nijiyome.model.Media
 import app.nijiyome.model.MediaKind
+import app.nijiyome.model.MediaRef
 import app.nijiyome.model.MediaSearchQuery
 import app.nijiyome.model.MediaSort
 import app.nijiyome.model.MediaTag
@@ -71,6 +75,9 @@ sealed interface SearchResults {
  * AniList character search (`MetadataRepository.searchCharacters`).
  */
 enum class SearchType { ANIME, CHARACTERS }
+
+/** Sparkles Explorar "Qué buscar": anime and characters search here, manga and novels open their homes, extensions their catalogues. */
+enum class ExploreScope { ANIME, CHARACTERS, MANGA, NOVELS, EXTENSIONS }
 
 /**
  * Filters of the bottom sheet (classic `SearchPage` anime filters), applied SERVER-SIDE through [MediaSearchQuery]. [season] / [status]
@@ -171,14 +178,55 @@ data class SearchUiState(
     val genreOptions: List<String> = KNOWN_GENRES,
     val tagOptions: List<MediaTag> = emptyList(),
     val tagsLoading: Boolean = false,
+    /**
+     * Sparkles Explorar: the "Catálogo de extensión" scope is on. Normally [extensionId] says which catalogue; with no searchable
+     * extension installed the scope stays on with [extensionId] null and nothing is searched (the screen offers Fuentes).
+     */
+    val extensionScope: Boolean = false,
+    /** The user's list by `a<anilistId>` / `m<malId>`: the status the result cards show and the "Mi lista" facet filters on. */
+    val listStatuses: Map<String, ListStatus> = emptyMap(),
+    /** "Mi lista" facet, applied to the loaded results: [MY_LIST_OUT] and / or [ListStatus] names. Empty = off. */
+    val myList: Set<String> = emptySet(),
+    /** AniList refused the text search and the backup providers answered it: the banner says so and counts down to a retry. */
+    val degraded: AppError.RateLimited? = null,
+    /** Explorar › Lienzo "En tendencia" row (its own short list, by [trendWindow]); null until the canvas asks for it. */
+    val trendingRow: LoadState<List<Media>>? = null,
 ) {
-    /** The loaded anime results; with 18+ off, anything the provider still tags Hentai is dropped (the query already excludes isAdult). */
+    /**
+     * The loaded anime results; with 18+ off, anything the provider still tags Hentai is dropped (the query already excludes isAdult);
+     * then the "Mi lista" facet.
+     */
     val shown: List<Media>
-        get() = (results as? SearchResults.Ok)?.items?.filter { adult || !it.isProbablyAdult() }.orEmpty()
+        get() = (results as? SearchResults.Ok)?.items
+            ?.filter { adult || !it.isProbablyAdult() }
+            ?.filter { myList.isEmpty() || matchesMyList(listStatusOf(it.ref), myList) }
+            .orEmpty()
+
+    /** The list status of [ref], when the title is on the user's list. */
+    fun listStatusOf(ref: MediaRef): ListStatus? =
+        ref.anilistId?.let { listStatuses["a$it"] } ?: ref.malId?.let { listStatuses["m$it"] }
+
+    /** Every filter that narrows the results, "Mi lista" included (the empty state offers to drop them all). */
+    val narrowingCount: Int get() = filters.activeCount + (if (myList.isEmpty()) 0 else 1)
+
+    /** The scope tab the state is in. */
+    val scope: ExploreScope
+        get() = when {
+            extensionScope || extensionId != null -> ExploreScope.EXTENSIONS
+            type == SearchType.CHARACTERS -> ExploreScope.CHARACTERS
+            else -> ExploreScope.ANIME
+        }
 
     /** Something is browsed with an empty query (feed, filters, studio). */
     val browsing: Boolean get() = query.isBlank() && (feed != null || studio != null || !filters.isEmpty)
 }
+
+/** "Mi lista" option for titles that are not on the list. */
+const val MY_LIST_OUT = "out"
+
+/** A title with [status] (null = not on the list) passes the "Mi lista" facet [picked]. */
+internal fun matchesMyList(status: ListStatus?, picked: Set<String>): Boolean =
+    if (status == null) MY_LIST_OUT in picked else status.name in picked
 
 /** AniList's adult titles carry the Hentai genre ([Media] has no isAdult flag); used to mark / drop them. */
 fun Media.isProbablyAdult(): Boolean = genres.any { it.equals("Hentai", ignoreCase = true) }
@@ -193,9 +241,12 @@ internal data class SearchRequest(
     val studio: String?,
     val filters: SearchFilters,
     val adult: Boolean,
+    /** Catalogue scope with no catalogue picked: nothing to search. */
+    val extensionScope: Boolean = false,
 ) {
     val idle: Boolean
         get() = when {
+            extensionScope && extensionId == null -> true
             type == SearchType.CHARACTERS || extensionId != null -> query.isBlank()
             else -> query.isBlank() && feed == null && studio == null && filters.isEmpty
         }
@@ -214,6 +265,8 @@ class SearchViewModel(
     private val extensions: ExtensionRepository? = null,
     settings: SettingsRepository? = null,
     private val trending: TrendingSource? = null,
+    /** Sparkles: the user's list, for the status on each result card, the "Mi lista" facet and changing a status from a result. */
+    private val lists: ListsRepository? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -234,6 +287,9 @@ class SearchViewModel(
     private var appliedInitial: List<Any?>? = null
     private var tagsRequested = false
     private var lastShowAdult: Boolean? = settings?.settings?.value?.showAdult
+    /** The error that sent the last text search to the backup providers (BUG-146). */
+    private var fallbackCause: AppError? = null
+    private var trendingRowJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -251,7 +307,9 @@ class SearchViewModel(
                         val chips = list.filter { it.enabled }.map { ExtensionChip(it, searchable = it.type == CUSTOM_TYPE) }
                         _state.update { s ->
                             val keep = s.extensionId?.takeIf { id -> chips.any { it.extension.id == id && it.searchable } }
-                            s.copy(extensions = chips, extensionId = keep)
+                            // The catalogue scope picks the first searchable one when the extensions arrive after it was chosen.
+                            val pick = keep ?: if (s.extensionScope) chips.firstOrNull { it.searchable }?.extension?.id else null
+                            s.copy(extensions = chips, extensionId = pick)
                         }
                     }
             }
@@ -265,6 +323,20 @@ class SearchViewModel(
                     _state.update { it.copy(titleLanguage = s.titleLanguage, matureContent = s.matureContent, adult = if (adultChanged) s.showAdult else it.adult) }
                     if (adultChanged) refresh()
                 }
+            }
+        }
+        if (lists != null) {
+            viewModelScope.launch {
+                lists.entries(null)
+                    .catch { emit(emptyList()) }
+                    .collect { entries ->
+                        val byKey = HashMap<String, ListStatus>()
+                        entries.forEach { e ->
+                            e.ref.anilistId?.let { byKey["a$it"] = e.status }
+                            e.ref.malId?.let { byKey["m$it"] = e.status }
+                        }
+                        _state.update { it.copy(listStatuses = byKey) }
+                    }
             }
         }
         viewModelScope.launch {
@@ -291,9 +363,27 @@ class SearchViewModel(
                 studio = studio,
                 type = SearchType.ANIME,
                 extensionId = null,
+                extensionScope = false,
             )
         }
         queries.value = query.orEmpty()
+        refresh()
+    }
+
+    /** Explorar: a taste or genre chip browses that genre (query, feed and studio dropped; the other filters stay). */
+    fun browseGenre(genre: String) {
+        _state.update {
+            it.copy(
+                query = "",
+                feed = null,
+                studio = null,
+                filters = it.filters.copy(genres = listOf(genre)),
+                type = SearchType.ANIME,
+                extensionId = null,
+                extensionScope = false,
+            )
+        }
+        queries.value = ""
         refresh()
     }
 
@@ -341,6 +431,31 @@ class SearchViewModel(
     /** "Limpiar": every filter off, the search runs again. */
     fun resetFilters() = setFilters(SearchFilters())
 
+    /** Explorar empty state "Quitar los N filtros": the sheet's filters and the "Mi lista" facet. */
+    fun resetAllFilters() {
+        _state.update { it.copy(myList = emptySet()) }
+        resetFilters()
+    }
+
+    /** "Mi lista" facet: filters the loaded results locally (no new request). */
+    fun setMyList(picked: Set<String>) = _state.update { it.copy(myList = picked) }
+
+    /** The list can be edited from a result (a lists repository is bound). */
+    val canEditList: Boolean get() = lists != null
+
+    /**
+     * Context menu / status picker of a result: puts [media] on the list with [status] (null removes it). [onDone] gets the status
+     * it had before (for Undo) and whether it worked.
+     */
+    fun setListStatus(media: Media, status: ListStatus?, onDone: (previous: ListStatus?, ok: Boolean) -> Unit = { _, _ -> }) {
+        val repo = lists ?: return
+        val previous = _state.value.listStatusOf(media.ref)
+        viewModelScope.launch {
+            val ok = runCatchingApp { repo.setStatus(media, status).getOrThrow() }.isSuccess
+            onDone(previous, ok)
+        }
+    }
+
     fun setAdult(adult: Boolean) {
         if (adult == _state.value.adult) return
         _state.update { it.copy(adult = adult) }
@@ -355,7 +470,7 @@ class SearchViewModel(
 
     /** Explorar chip / Home "Ver todo": browse [feed] (query cleared, studio dropped). */
     fun selectFeed(feed: FeedKind) {
-        _state.update { it.copy(feed = feed, query = "", studio = null, type = SearchType.ANIME, extensionId = null) }
+        _state.update { it.copy(feed = feed, query = "", studio = null, type = SearchType.ANIME, extensionId = null, extensionScope = false) }
         queries.value = ""
         refresh()
     }
@@ -369,6 +484,47 @@ class SearchViewModel(
     fun setTrendWindow(window: TrendWindow) {
         if (window == _state.value.trendWindow) return
         _state.update { it.copy(trendWindow = window) }
+        if (_state.value.trendingRow != null) loadTrendingRow()
+        refresh()
+    }
+
+    /** Explorar › Lienzo: the "En tendencia" row, loaded once (again when the window changes, or after a failure). */
+    fun ensureTrendingRow() {
+        val row = _state.value.trendingRow
+        if (row == null || row is LoadState.Err) loadTrendingRow()
+    }
+
+    fun loadTrendingRow() {
+        val window = _state.value.trendWindow
+        val adult = _state.value.adult
+        _state.update { it.copy(trendingRow = LoadState.Loading) }
+        trendingRowJob?.cancel()
+        trendingRowJob = viewModelScope.launch {
+            val r = runCatchingApp {
+                val page = if (window != TrendWindow.TODAY && trending != null) {
+                    trending.page(window, 1, adult)
+                } else {
+                    metadata.feed(MediaKind.ANIME, FeedKind.TRENDING, 1)
+                }
+                page.items.distinctByKey().filter { adult || !it.isProbablyAdult() }.take(TRENDING_ROW_SIZE)
+            }
+            _state.update {
+                it.copy(trendingRow = r.fold(onSuccess = { v -> LoadState.Ok(v) }, onFailure = { e -> LoadState.Err(e.toAppError()) }))
+            }
+        }
+    }
+
+    /** Explorar scope tabs: anime (metadata), characters or an extension's own catalogue. Manga and novels navigate away. */
+    fun selectScope(scope: ExploreScope) {
+        when (scope) {
+            ExploreScope.ANIME -> _state.update { it.copy(type = SearchType.ANIME, extensionId = null, extensionScope = false) }
+            ExploreScope.CHARACTERS -> _state.update { it.copy(type = SearchType.CHARACTERS, extensionId = null, extensionScope = false) }
+            ExploreScope.EXTENSIONS -> _state.update { s ->
+                val id = s.extensionId ?: s.extensions.firstOrNull { it.searchable }?.extension?.id
+                s.copy(type = SearchType.ANIME, extensionId = id, extensionScope = true)
+            }
+            ExploreScope.MANGA, ExploreScope.NOVELS -> return
+        }
         refresh()
     }
 
@@ -387,13 +543,13 @@ class SearchViewModel(
     fun selectExtension(id: String?) {
         val chip = id?.let { i -> _state.value.extensions.firstOrNull { it.extension.id == i } }
         if (id != null && chip?.searchable != true) return
-        _state.update { it.copy(extensionId = id, type = SearchType.ANIME) }
+        _state.update { it.copy(extensionId = id, type = SearchType.ANIME, extensionScope = id != null) }
         refresh()
     }
 
     /** An extension result: look its title up in the metadata provider (back to the metadata source). */
     fun openExtensionItem(item: ExtensionHomeItem) {
-        _state.update { it.copy(extensionId = null, type = SearchType.ANIME, feed = null, studio = null) }
+        _state.update { it.copy(extensionId = null, type = SearchType.ANIME, feed = null, studio = null, extensionScope = false) }
         onQueryChange(item.title)
         submit()
     }
@@ -455,6 +611,7 @@ class SearchViewModel(
             studio = s.studio,
             filters = s.filters,
             adult = s.adult,
+            extensionScope = s.extensionScope,
         )
     }
 
@@ -481,18 +638,20 @@ class SearchViewModel(
         loadMoreJob?.cancel()
         lastRequest = request
         if (request.idle) {
-            _state.update { it.copy(results = SearchResults.Idle) }
+            _state.update { it.copy(results = SearchResults.Idle, degraded = null) }
             return
         }
         _state.update { it.copy(results = SearchResults.Loading) }
         val result = runCatchingApp { fetch(request, 1) }
         if (lastRequest != request) return
+        val degraded = (fallbackCause as? AppError.RateLimited)?.takeIf { fallbackRequest == request && result.isSuccess }
         _state.update {
             it.copy(
                 results = result.fold(
                     onSuccess = { ok -> if (ok.size == 0) SearchResults.Empty else ok },
                     onFailure = { e -> SearchResults.Err(e.toAppError()) },
                 ),
+                degraded = degraded,
             )
         }
     }
@@ -548,6 +707,7 @@ class SearchViewModel(
             }
             AppLog.i(TAG, "text search: filtered search failed (${e.toAppError()}), answered by the plain search (${plain.items.size} results)")
             fallbackRequest = request
+            fallbackCause = e.toAppError()
             return plain
         }
         if (fallbackRequest == request) fallbackRequest = null
@@ -556,6 +716,7 @@ class SearchViewModel(
 
     companion object {
         const val DEFAULT_DEBOUNCE_MS = 350L
+        const val TRENDING_ROW_SIZE = 12
         private const val TAG = "search"
         private const val CUSTOM_TYPE = "custom"
     }
