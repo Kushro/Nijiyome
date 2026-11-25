@@ -79,6 +79,7 @@ import app.nijiyome.designsystem.generated.ContrastLevel
 import app.nijiyome.designsystem.generated.NijiyomeTokens
 import app.nijiyome.designsystem.generated.PaletteInfo
 import app.nijiyome.designsystem.motion.rememberLowEndDevice
+import app.nijiyome.designsystem.motion.rememberLowRefreshRate
 import app.nijiyome.feature.settings.resources.Res
 import app.nijiyome.feature.settings.resources.*
 import app.nijiyome.model.AppLanguage
@@ -326,6 +327,7 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
         }
         SettingAnchor("design_perf_mode") {
             val lowEnd = rememberLowEndDevice()
+            val lowRefresh = rememberLowRefreshRate()
             SettingRow(stringResource(Res.string.rd_s10_design_perf), stringResource(Res.string.rd_s10_design_perf_hint), stack = true) {
                 Segmented(
                     options = listOf(
@@ -343,6 +345,14 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
                         stringResource(Res.string.rd_s10_perf_suggest),
                         style = MaterialTheme.typography.bodySmall,
                         color = LocalSignalColors.current.warn,
+                        modifier = Modifier.politeLiveRegion(),
+                    )
+                } else if (lowRefresh && design.perfMode != PerfMode.ON) {
+                    // A 60 Hz panel never turns the automatic mode on (only low RAM / software rendering do), so Auto counts as off here.
+                    Text(
+                        stringResource(Res.string.rd_s10_perf_suggest_60hz),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.politeLiveRegion(),
                     )
                 }
