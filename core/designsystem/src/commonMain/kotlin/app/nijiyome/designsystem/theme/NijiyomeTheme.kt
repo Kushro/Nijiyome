@@ -13,6 +13,16 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import app.nijiyome.designsystem.direction.CanonDirection
+import app.nijiyome.designsystem.direction.DirectionSpec
+import app.nijiyome.designsystem.direction.DirectionTrack
+import app.nijiyome.designsystem.direction.LocalAccentFont
+import app.nijiyome.designsystem.direction.LocalCoverAccent
+import app.nijiyome.designsystem.direction.LocalDirection
+import app.nijiyome.designsystem.direction.LocalSignalColors
+import app.nijiyome.designsystem.direction.LocalStatusColors
+import app.nijiyome.designsystem.direction.LocalThemeTone
+import app.nijiyome.designsystem.direction.ThemeTone
 import app.nijiyome.designsystem.generated.ContrastLevel
 import app.nijiyome.designsystem.generated.NijiyomeTokens
 import com.materialkolor.DynamicMaterialExpressiveTheme
@@ -32,8 +42,11 @@ val LocalNijiyomeAmoled = staticCompositionLocalOf { false }
 val LocalNijiyomeContrast = staticCompositionLocalOf { ContrastLevel.Standard }
 
 /**
- * App theme = `MaterialExpressiveTheme` + generated token palettes (paletteId / AMOLED / contrast level)
- * + optional system dynamic color (Android 12+) + `MotionScheme.expressive()` (01 §2, §5).
+ * App theme = `MaterialExpressiveTheme` + the active [direction] (Sparkles redesign: palettes, type, shapes, status colors and
+ * decoration) + optional system dynamic color (Android 12+) + `MotionScheme.expressive()` (01 §2, §5).
+ *
+ * Canon reads [paletteId] (the 20 generated token palettes); every other direction reads [directionPalette], an id of its own
+ * `DirectionSpec.palettes` (null = its default). Dynamic color, when on, replaces the scheme of any direction.
  */
 @Composable
 fun NijiyomeTheme(
@@ -42,32 +55,42 @@ fun NijiyomeTheme(
     contrast: ContrastLevel = ContrastLevel.Standard,
     dynamicColor: Boolean = false,
     darkTheme: Boolean = isSystemInDarkTheme(),
+    direction: DirectionSpec = CanonDirection,
+    directionPalette: String? = null,
     content: @Composable () -> Unit,
 ) {
+    val tone = when {
+        !darkTheme -> ThemeTone.LIGHT
+        amoled -> ThemeTone.OLED
+        else -> ThemeTone.DARK
+    }
+    val palette = remember(direction, paletteId, directionPalette) {
+        direction.palette(if (direction.track == DirectionTrack.CANON) paletteId else directionPalette)
+    }
     val systemScheme = if (dynamicColor) systemDynamicColorScheme(darkTheme) else null
-    val colorScheme = remember(paletteId, amoled, contrast, systemScheme, darkTheme) {
+    val colorScheme = remember(palette, tone, contrast, systemScheme) {
         if (systemScheme != null) {
-            if (darkTheme && amoled) systemScheme.toAmoled(contrast) else systemScheme
+            if (tone == ThemeTone.OLED) systemScheme.toAmoled(contrast) else systemScheme
         } else {
-            val schemes = NijiyomeTokens.palette(paletteId, contrast)
-                ?: checkNotNull(NijiyomeTokens.palette(NijiyomeTokens.DEFAULT_PALETTE, contrast)) { "default palette missing" }
-            when {
-                !darkTheme -> schemes.light
-                amoled -> schemes.amoled.toAmoled(contrast)
-                else -> schemes.dark
-            }
+            palette.scheme(tone, contrast)
         }
     }
-    val typography = remember { NijiyomeTokens.typography(NijiyomeFonts.families) }
+    val baseTypography = remember { NijiyomeTokens.typography(NijiyomeFonts.families) }
+    val typography = direction.typography(baseTypography)
     CompositionLocalProvider(
         LocalNijiyomeDarkTheme provides darkTheme,
         LocalNijiyomeAmoled provides (darkTheme && amoled),
         LocalNijiyomeContrast provides contrast,
+        LocalDirection provides direction,
+        LocalThemeTone provides tone,
+        LocalStatusColors provides palette.status(tone),
+        LocalSignalColors provides palette.signal(tone),
+        LocalAccentFont provides direction.accentFont(),
     ) {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,
             motionScheme = MotionScheme.expressive(),
-            shapes = NijiyomeTokens.shapes,
+            shapes = direction.shapes,
             typography = typography,
             content = content,
         )
@@ -90,6 +113,9 @@ fun NijiyomeSeedTheme(
     val reduceMotion = LocalReduceMotion.current
     if (seed == null) {
         content()
+    } else if (LocalDirection.current.track != DirectionTrack.CANON) {
+        // Sparkles: only Canon re-themes the page by its cover; the other directions keep their palette and read the cover color.
+        CompositionLocalProvider(LocalCoverAccent provides seed, content = content)
     } else {
         val contrastDouble = when (contrast) {
             ContrastLevel.Standard -> 0.0

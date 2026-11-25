@@ -92,6 +92,8 @@ internal fun PlayerScreenContent(
         contrast = settings.contrastLevel(),
         dynamicColor = settings.dynamicColor,
         darkTheme = true,
+        direction = app.nijiyome.designsystem.direction.Directions.byId(settings.look.design.direction.id),
+        directionPalette = settings.look.design.palette,
     ) {
         PlayerBody(
             vm = vm,

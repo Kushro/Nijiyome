@@ -250,12 +250,14 @@ data class LookPrefs(
     val headerLayout: HeaderLayout = HeaderLayout.FACTS_NEXT_UP,
     /** Schema revision of the stored look: 1 = the episode list default moved to LIST (absent in older stores). */
     val rev: Int = CURRENT_REV,
+    /** Sparkles redesign: direction, card, motion, navigation and per-screen structure (Design.kt). No preset changes it. */
+    val design: DesignPrefs = DesignPrefs(),
 ) {
     /**
      * The preset whose fields all equal these ([preset] itself ignored); null = custom. [headerLayout] is ignored too: no preset sets
      * it, so picking a header composition never turns the look into "Personalizado".
      */
-    fun matchingPreset(): LookPreset? = LookPreset.entries.firstOrNull { of(it).copy(preset = preset, headerLayout = headerLayout) == this }
+    fun matchingPreset(): LookPreset? = LookPreset.entries.firstOrNull { of(it).copy(preset = preset, headerLayout = headerLayout, design = design) == this }
 
     /** Clamped interval and the current [rev] (an older or unknown revision never reads as "Personalizado"). */
     fun sanitized(): LookPrefs = copy(heroIntervalSecs = heroIntervalSecs.coerceIn(HERO_INTERVAL_MIN, HERO_INTERVAL_MAX), rev = CURRENT_REV)

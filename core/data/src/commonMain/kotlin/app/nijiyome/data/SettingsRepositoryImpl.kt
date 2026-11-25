@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.nijiyome.model.AppSettings
+import app.nijiyome.model.DesignPrefs
 import app.nijiyome.model.DownloadSettings
 import app.nijiyome.model.FrameGenSettings
 import app.nijiyome.model.EpisodeView
@@ -204,7 +205,7 @@ internal object SettingsCodec {
             mangaTitleLanguage = enumOr(p[MANGA_TITLE_LANGUAGE], d.mangaTitleLanguage),
             socialNotifications = p[SOCIAL_NOTIFICATIONS] ?: d.socialNotifications,
             matureContent = enumOr(p[MATURE_CONTENT], d.matureContent),
-            look = decodeLook(p[LOOK]) ?: d.look,
+            look = decodeLook(p[LOOK], enumOr(p[PLAYER_CHROME_STYLE], d.playerChromeStyle)) ?: d.look,
             playerQuality = decode(p[PLAYER_QUALITY], PlayerQualityPrefs.serializer())?.sanitized() ?: d.playerQuality,
             frameGen = decode(p[FRAME_GEN], FrameGenSettings.serializer())?.sanitized() ?: d.frameGen,
             playerChromeStyle = enumOr(p[PLAYER_CHROME_STYLE], d.playerChromeStyle),
@@ -274,7 +275,7 @@ internal object SettingsCodec {
      * stored before `rev` existed moves its episode list from Tarjetas to Lista once (the new default of every preset); later
      * choices of Tarjetas are kept because the look is then stored with `rev`.
      */
-    private fun decodeLook(raw: String?): LookPrefs? {
+    private fun decodeLook(raw: String?, chromeStyle: PlayerChromeStyle): LookPrefs? {
         val look = decode(raw, LookPrefs.serializer()) ?: return null
         val keys = raw?.let { runCatching { json.parseToJsonElement(it).jsonObject.keys }.getOrNull() }
         fun has(key: String) = keys?.contains(key) ?: true
@@ -283,6 +284,8 @@ internal object SettingsCodec {
         if (!has("cardSize")) fixed = fixed.copy(cardSize = preset.cardSize)
         if (!has("pageStyle")) fixed = fixed.copy(pageStyle = preset.pageStyle)
         if (!has("rev") && fixed.episodeView == EpisodeView.CARDS) fixed = fixed.copy(episodeView = EpisodeView.LIST)
+        // Sparkles: a look stored before the redesign keeps the user's layout, calendar, motion and touch player choices.
+        if (!has("design")) fixed = fixed.copy(design = DesignPrefs.migratedFrom(fixed, chromeStyle))
         return fixed.sanitized()
     }
 

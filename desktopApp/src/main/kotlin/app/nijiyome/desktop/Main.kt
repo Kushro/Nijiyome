@@ -401,6 +401,8 @@ fun main(args: Array<String>) {
                                         contrast = contrast,
                                         dynamicColor = false,
                                         darkTheme = dark,
+                                        direction = app.nijiyome.designsystem.direction.Directions.byId(appSettings.look.design.direction.id),
+                                        directionPalette = appSettings.look.design.palette,
                                     ) {
                                         LinkMonitorDialog(
                                             status = liveStatus.copy(link = link, spanish = spanish),

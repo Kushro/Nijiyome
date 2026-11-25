@@ -9,7 +9,8 @@ data class AppSettings(
     val paletteId: String = DEFAULT_PALETTE_ID,
     val amoled: Boolean = false,
     val contrast: ContrastPref = ContrastPref.STANDARD,
-    val dynamicColor: Boolean = true,
+    /** Sparkles: off for new installs (it hid the chosen direction and palette); a stored `true` is kept. */
+    val dynamicColor: Boolean = false,
     val providerPriority: List<String> = DEFAULT_PROVIDER_PRIORITY,
     val playerHeadersDebug: Boolean = false,
     // --- android wave (12 §3.3); persisted by worker a (DataStore), defaults = prototype ui.js / 11 §2.4 ---

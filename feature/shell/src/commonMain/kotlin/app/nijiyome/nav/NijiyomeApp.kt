@@ -164,6 +164,9 @@ import app.nijiyome.model.torrent.TorrentServiceStatus
 import app.nijiyome.model.Motion
 import app.nijiyome.model.RailStyle
 import app.nijiyome.ui.look.LocalLook
+import app.nijiyome.ui.look.directionSpec
+import app.nijiyome.ui.look.rememberMotionChoices
+import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.ui.media.LocalTitleLanguage
 import app.nijiyome.ui.state.contrastLevel
 import app.nijiyome.ui.state.rememberIsOnline
@@ -222,6 +225,8 @@ fun NijiyomeApp(
         contrast = settings.contrastLevel(),
         dynamicColor = settings.dynamicColor,
         darkTheme = dark,
+        direction = settings.look.design.directionSpec(),
+        directionPalette = settings.look.design.palette,
     ) {
         // 2026-11 UI refresh: Diseño y estilo › Animaciones "Desactivadas" is the same as Reducir movimiento.
         val reduceMotion = rememberReduceMotion(settings.reduceMotion || settings.look.motion == Motion.OFF)
@@ -231,6 +236,7 @@ fun NijiyomeApp(
             LocalAppSnackbar provides snackbar,
             LocalTitleLanguage provides settings.titleLanguage,
             LocalLook provides settings.look,
+            LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion),
         ) {
             if (windowTopBar != null) {
                 Column(Modifier.fillMaxSize()) {

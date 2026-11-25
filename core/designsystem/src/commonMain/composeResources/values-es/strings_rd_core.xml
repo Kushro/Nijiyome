@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, integrator (rd_core_*). Each lane adds its own strings_rd_<lane>.xml with keys rd_<lane>_*. -->
+    <string name="rd_core_canon_name">Material</string>
+    <string name="rd_core_canon_tagline">Material 3 tal cual, con las 20 paletas</string>
+</resources>
