@@ -61,6 +61,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.nav.ShellCommandField
+import app.nijiyome.nav.ShellMediumSelector
+import app.nijiyome.nav.ShellNotificationsButton
+import app.nijiyome.nav.rememberTitleBarTexts
+import app.nijiyome.nav.shellCommandCentred
 import app.nijiyome.ui.platform.AppWindow
 import java.awt.Cursor
 import java.awt.MouseInfo
@@ -69,7 +76,7 @@ import java.awt.Rectangle
 import java.awt.Toolkit
 import kotlin.math.abs
 
-private val TITLE_BAR_HEIGHT = 36.dp
+private val TITLE_BAR_HEIGHT = 40.dp
 private val PIP_TITLE_BAR_HEIGHT = 28.dp
 private val BUTTON_WIDTH = 44.dp
 private val EDGE_THICKNESS = 5.dp
@@ -79,9 +86,10 @@ private const val DOUBLE_CLICK_MS = 350L
 private const val DRAG_SLOP_PX = 4
 
 /**
- * Frameless desktop title bar (after Tatakai Next `title_bar.rs`): app name, status chips (`Link :<port>` while the Link
- * server runs, `Sin conexión` / `Offline` when offline), drag-to-move, double-click to maximize/restore, and minimize /
- * maximize / close buttons. Hidden in fullscreen so players and readers stay edge-to-edge.
+ * Frameless desktop title bar, the Sparkles top bar (`.nj-topbar`): back, app name, the Link chip (`Link :<port>` while the Link
+ * server runs, the device and its pipeline while a phone streams), `Offline` when offline, the medium selector (navigation by medium),
+ * the command field (the centre with the command navigation), the bell, Settings and the window buttons; drag-to-move and double-click
+ * to maximize / restore. Hidden in fullscreen so players and readers stay edge-to-edge. Texts come from the shell's resources.
  */
 @Composable
 fun DesktopTitleBar(
@@ -90,7 +98,6 @@ fun DesktopTitleBar(
     appWindow: AppWindow,
     online: Boolean,
     linkPort: Int?,
-    spanish: Boolean,
     windows: Boolean,
     onClose: () -> Unit,
     canGoBack: Boolean = false,
@@ -104,6 +111,8 @@ fun DesktopTitleBar(
     val pip = appWindow.pictureInPicture
     val maximized = windowState.placement == WindowPlacement.Maximized
     val scheme = MaterialTheme.colorScheme
+    val texts = rememberTitleBarTexts()
+    val centred = shellCommandCentred
     val toggleMaximize: () -> Unit = {
         if (maximized) {
             windowState.placement = WindowPlacement.Floating
@@ -117,9 +126,9 @@ fun DesktopTitleBar(
     var lastClickPos by remember { mutableStateOf<Point?>(null) }
 
     Surface(
-        color = scheme.surfaceContainer,
+        color = Color.Transparent,
         contentColor = scheme.onSurface,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().background(scheme.background).decor(DecorRegion.TOP_BAR),
     ) {
         Column(Modifier.fillMaxWidth()) {
             Row(
@@ -206,7 +215,7 @@ fun DesktopTitleBar(
                     if (!pip && onGoBack != null) {
                         TitleBarIconButton(
                             icon = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
-                            contentDescription = if (spanish) "Atrás" else "Back",
+                            contentDescription = texts.back,
                             enabled = canGoBack,
                             onClick = onGoBack,
                         )
@@ -221,24 +230,23 @@ fun DesktopTitleBar(
                         LinkPortChip(
                             port = linkPort,
                             activeSessions = activeLinkSessions,
-                            spanish = spanish,
+                            activeLabel = texts.linkActive,
                             onClick = onOpenLinkMonitor,
                         )
                     }
                     if (!pip && !online) {
-                        OfflineChip(label = if (spanish) "Sin conexión" else "Offline")
+                        OfflineChip(label = texts.offline)
                     }
+                    if (!pip) ShellMediumSelector(Modifier.padding(start = 10.dp))
                     Spacer(Modifier.weight(1f))
-                    if (!pip && onOpenCommandPalette != null) {
-                        CommandPalettePill(
-                            label = if (spanish) "Buscar o comando…" else "Search or command…",
-                            onClick = onOpenCommandPalette,
-                        )
-                    }
+                    // The shell's command field (it opens the palette); the shell hides it during the first-run wizard and over viewers.
+                    if (!pip) ShellCommandField()
+                    if (!pip && centred) Spacer(Modifier.weight(1f))
+                    if (!pip) ShellNotificationsButton(Modifier.size(32.dp))
                     if (!pip && onOpenSettings != null) {
                         TitleBarIconButton(
                             icon = Icons.Outlined.Settings,
-                            contentDescription = if (spanish) "Configuración (Ctrl+P)" else "Settings (Ctrl+P)",
+                            contentDescription = texts.settings,
                             enabled = true,
                             onClick = onOpenSettings,
                         )
@@ -247,7 +255,7 @@ fun DesktopTitleBar(
 
                 if (!pip) {
                     WindowControlButton(
-                        contentDescription = if (spanish) "Minimizar" else "Minimize",
+                        contentDescription = texts.minimize,
                         onClick = { windowState.isMinimized = true },
                     ) { color ->
                         Canvas(Modifier.size(11.dp)) {
@@ -256,11 +264,7 @@ fun DesktopTitleBar(
                         }
                     }
                     WindowControlButton(
-                        contentDescription = if (maximized) {
-                            if (spanish) "Restaurar" else "Restore"
-                        } else {
-                            if (spanish) "Maximizar" else "Maximize"
-                        },
+                        contentDescription = if (maximized) texts.restore else texts.maximize,
                         onClick = toggleMaximize,
                     ) { color ->
                         Canvas(Modifier.size(11.dp)) {
@@ -277,7 +281,7 @@ fun DesktopTitleBar(
                     }
                 }
                 WindowControlButton(
-                    contentDescription = if (spanish) "Cerrar" else "Close",
+                    contentDescription = texts.close,
                     danger = true,
                     onClick = onClose,
                 ) { color ->
@@ -322,49 +326,17 @@ private fun TitleBarIconButton(
 }
 
 @Composable
-private fun CommandPalettePill(label: String, onClick: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(999.dp),
-        color = scheme.surfaceContainerHigh,
-        contentColor = scheme.onSurfaceVariant,
-        border = BorderStroke(1.dp, scheme.outlineVariant),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(13.dp))
-            Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-            Surface(
-                shape = RoundedCornerShape(4.dp),
-                color = scheme.surfaceContainerHighest,
-                contentColor = scheme.onSurfaceVariant,
-            ) {
-                Text(
-                    "Ctrl+K",
-                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun LinkPortChip(
     port: Int,
     activeSessions: List<app.nijiyome.model.LinkActiveSession> = emptyList(),
-    spanish: Boolean = true,
+    activeLabel: String,
     onClick: (() -> Unit)? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     val active = activeSessions.firstOrNull()
     val label = if (active != null) {
         val pipe = listOfNotNull(active.upscaleLabel?.substringBefore(" ·"), active.frameGenLabel).joinToString(" + ")
-        val detail = pipe.ifBlank { active.title?.take(18) ?: if (spanish) "Activo" else "Active" }
+        val detail = pipe.ifBlank { active.title?.take(18) ?: activeLabel }
         val extra = if (activeSessions.size > 1) " (+${activeSessions.size - 1})" else ""
         "${active.deviceName} · $detail$extra"
     } else {
