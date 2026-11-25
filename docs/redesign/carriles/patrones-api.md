@@ -200,13 +200,21 @@ ContextMenuButton(entries = { actionsFor(item) }, contentDescription = moreFor(i
 ## 9. Ajustes con vista previa en vivo (`sub`, `LivePreview.kt`)
 
 ```kotlin
-@Composable fun LivePreviewScaffold(preview: @Composable () -> Unit, modifier = Modifier, caption: String? = null, stacked = isCompactWindow(), controlsWidth: Dp = 360.dp, controls: @Composable ColumnScope.() -> Unit)
+@Composable fun LivePreviewScaffold(preview: @Composable () -> Unit, modifier = Modifier, caption: String? = null, stacked = isCompactWindow(), controlsWidth: Dp = 360.dp, embedded: Boolean = false, controls: @Composable ColumnScope.() -> Unit)
 @Composable fun ResetStyleButton(enabled: Boolean, modifier = Modifier, label: String = "Restablecer estilo", onReset: () -> Unit)
 ```
 Ancho: controles a la izquierda (se desplazan) y vista previa al lado, siempre visible. Teléfono: vista previa arriba fija y controles
 debajo.
 ```kotlin
 LivePreviewScaffold(preview = { SubtitlePreview(style) }, caption = unitsNote) { SizeSlider(style, vm::set); ResetStyleButton(style != Default) { reset() } }
+```
+`embedded`: con `false` (por defecto, pantalla completa) llena el alto disponible y desplaza los controles por su cuenta. Con `true`
+toma solo el alto de su contenido y no tiene desplazamiento propio: es el modo para ponerlo dentro de algo que ya se desplaza (una
+hoja, una columna con `verticalScroll`, un ítem de `LazyColumn`). Ahí la vista previa no queda fija: se desplaza con lo demás.
+```kotlin
+Column(Modifier.verticalScroll(rememberScrollState())) {
+    LivePreviewScaffold(preview = { ReaderPagePreview(prefs) }, embedded = true) { … }
+}
 ```
 
 ## 10. Selectores en lugar de campos crudos (`pk`, `Pickers.kt`)

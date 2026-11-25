@@ -41,6 +41,16 @@ import org.jetbrains.compose.resources.stringResource
  *     SliderRow(size, …); SliderRow(outline, …); ResetStyleButton(enabled = style != Default, onReset = { reset() })
  * }
  * ```
+ *
+ * [embedded] = false (default) is the full-screen form: it fills the available size and scrolls the controls itself. Pass true
+ * inside a parent that already scrolls (a sheet, a scrolling column, a lazy list item): then it takes only the height of its
+ * content and has no scroll of its own, so it never nests a scroll in the same direction nor asks for an unbounded height.
+ *
+ * ```kotlin
+ * Column(Modifier.verticalScroll(rememberScrollState())) {
+ *     LivePreviewScaffold(preview = { ReaderPagePreview(prefs) }, embedded = true) { … }
+ * }
+ * ```
  */
 @Composable
 fun LivePreviewScaffold(
@@ -49,6 +59,7 @@ fun LivePreviewScaffold(
     caption: String? = null,
     stacked: Boolean = isCompactWindow(),
     controlsWidth: Dp = 360.dp,
+    embedded: Boolean = false,
     controls: @Composable ColumnScope.() -> Unit,
 ) {
     val captionView: @Composable () -> Unit = {
@@ -61,7 +72,32 @@ fun LivePreviewScaffold(
             )
         }
     }
-    if (stacked) {
+    if (embedded) {
+        if (stacked) {
+            Column(modifier.fillMaxWidth()) {
+                Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) { preview() }
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    controls()
+                    captionView()
+                }
+            }
+        } else {
+            Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
+                Column(
+                    Modifier.width(controlsWidth).padding(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    content = controls,
+                )
+                Column(Modifier.weight(1f).padding(vertical = 8.dp), horizontalAlignment = Alignment.Start) {
+                    preview()
+                    captionView()
+                }
+            }
+        }
+    } else if (stacked) {
         Column(modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) { preview() }
             Column(
