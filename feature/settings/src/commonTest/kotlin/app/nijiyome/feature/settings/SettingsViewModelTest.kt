@@ -84,6 +84,44 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `dynamic color is off on a new install`() {
+        assertFalse(AppSettings().dynamicColor)
+    }
+
+    @Test
+    fun `a preset keeps the sparkles design and a direction starts on its own palette`() = runTest {
+        val repo = FakeSettings()
+        val vm = SettingsViewModel(repo)
+        vm.setDirection(app.nijiyome.model.DesignDirection.OBI)
+        vm.setDirectionPalette("noche")
+        vm.applyLookPreset(app.nijiyome.model.LookPreset.DENSE)
+        var design = repo.settings.value.look.design
+        assertEquals(app.nijiyome.model.DesignDirection.OBI, design.direction)
+        assertEquals("noche", design.palette)
+        vm.setDirection(app.nijiyome.model.DesignDirection.SUMI)
+        design = repo.settings.value.look.design
+        assertNull(design.palette)
+    }
+
+    @Test
+    fun `the player structure keeps the touch style in step`() = runTest {
+        val repo = FakeSettings()
+        val vm = SettingsViewModel(repo)
+        vm.setPlayerStructure(app.nijiyome.model.PlayerStructure.MINIMAL)
+        assertEquals(app.nijiyome.model.PlayerChromeStyle.MINIMAL, repo.settings.value.playerChromeStyle)
+        assertEquals(app.nijiyome.model.PlayerStructure.MINIMAL, repo.settings.value.look.design.structures.player)
+    }
+
+    @Test
+    fun `provider priority is set as a whole order`() = runTest {
+        val repo = FakeSettings()
+        val vm = SettingsViewModel(repo)
+        val before = repo.settings.value.providerPriority
+        vm.setProviderPriority(before.reversed() + "unknown")
+        assertEquals(before.reversed(), repo.settings.value.providerPriority)
+    }
+
+    @Test
     fun `provider priority moves and clamps`() = runTest {
         val repo = FakeSettings()
         val vm = SettingsViewModel(repo)
@@ -189,7 +227,9 @@ class SettingsViewModelTest {
         vm.events.test {
             vm.setAutoNext(false)
             assertEquals(SettingsEvent.Saved, awaitItem())
+            // one save model: every change is confirmed, the palette too
             vm.setPalette("sakura")
+            assertEquals(SettingsEvent.Saved, awaitItem())
             vm.setMinQuality(Quality.P480)
             assertEquals(SettingsEvent.Saved, awaitItem())
         }
