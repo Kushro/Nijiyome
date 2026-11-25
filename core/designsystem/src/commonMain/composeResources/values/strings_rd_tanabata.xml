@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, lane D1: the Tanabata direction (rd_tanabata_*). -->
+    <string name="rd_tanabata_name">Tanabata</string>
+    <string name="rd_tanabata_tagline">What you want to watch hangs like wishes on a bamboo branch; the rest is a clean night-time tool.</string>
+    <string name="rd_tanabata_palette_noche">Indigo night</string>
+    <string name="rd_tanabata_palette_festival">Festival</string>
+    <string name="rd_tanabata_palette_alba">Dawn</string>
+    <string name="rd_tanabata_palette_bambu">Bamboo</string>
+</resources>

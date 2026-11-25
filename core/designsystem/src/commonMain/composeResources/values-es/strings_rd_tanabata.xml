@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, carril D1: la dirección Tanabata (rd_tanabata_*). -->
+    <string name="rd_tanabata_name">Tanabata</string>
+    <string name="rd_tanabata_tagline">Lo que quieres ver cuelga como deseos de un bambú; el resto es una herramienta nocturna limpia.</string>
+    <string name="rd_tanabata_palette_noche">Noche índigo</string>
+    <string name="rd_tanabata_palette_festival">Festival</string>
+    <string name="rd_tanabata_palette_alba">Alba</string>
+    <string name="rd_tanabata_palette_bambu">Bambú</string>
+</resources>
