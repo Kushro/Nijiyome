@@ -717,6 +717,7 @@ internal fun ResultCard(
     actions: ExploreActions,
     context: CardContext,
     modifier: Modifier = Modifier,
+    index: Int = -1,
 ) {
     val key = mediaKey(media)
     val blurred = searchCoverBlurred(state.matureContent, media, key, revealed.toSet())
@@ -748,6 +749,7 @@ internal fun ResultCard(
             show = CardShow(score = true),
             onLongClick = menu::showSheet,
             modifier = Modifier.cardToDetailsSource(data.key),
+            index = index,
         )
     }
 }
