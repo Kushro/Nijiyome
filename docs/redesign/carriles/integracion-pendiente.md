@@ -107,11 +107,11 @@ S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4
 
 ## Fuentes y Link (S9), agregado tras su informe
 
-- `ExtensionsScreen(serversContent = { ExtensionServersContent() }, onOpenLink = { Route.Linked }, onOpenDebrid = { Route.Torrents(TorrentSection.DEBRID) })`.
-- `LinkedDeviceScreen(onOpenLogs → Ajustes › Acerca de › Registros, onOpenLinkSettings → Ajustes › Nijiyome Link, onOpenMonitor → LinkMonitorDialog de escritorio, onOpenTorrents)`.
+- `ExtensionsScreen(serversContent = { ExtensionServersContent() }, onOpenLink = { Route.Linked }, onOpenDebrid = { Route.Torrents(TorrentSection.DEBRID) })`. (hecho)
+- `LinkedDeviceScreen(onOpenLogs → Ajustes › Acerca de › Registros, onOpenLinkSettings → Ajustes › Nijiyome Link, onOpenMonitor → LinkMonitorDialog de escritorio, onOpenTorrents)`. (hecho)
 - `RouteAvailability.needs()`: `Route.Link` / `Route.Linked` deben ofrecerse cuando esté registrado `LinkRepository` **o**
-  `LinkServerController` (hoy es una lista «todos»; hace falta un caso «alguno»). Con eso Link aparece en el riel de escritorio.
-- `DebridRepository` no tiene `prefer(service)` en la interfaz (solo en `DebridRepositoryImpl`): agregarlo para reordenar cuentas desde Fuentes.
+  `LinkServerController` (hoy es una lista «todos»; hace falta un caso «alguno»). Con eso Link aparece en el riel de escritorio. (hecho; la página Tú sigue pidiendo `LinkRepository` porque `YouViewModel` lo toma con `get()`)
+- `DebridRepository` no tiene `prefer(service)` en la interfaz (solo en `DebridRepositoryImpl`): agregarlo para reordenar cuentas desde Fuentes. (hecho: en la interfaz con cuerpo vacío por defecto)
 - `feature/link` debe pasar `RegionData(connected = …)` a `decor(DecorRegion.LINK, data)` cuando exista.
 - S10: los interruptores de Debrid viven ahora en Fuentes › Debrid; `LinkServerSection` puede quedar como enlace a `Route.Linked`.
 
@@ -119,9 +119,9 @@ S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4
 
 - `MangaHomeScreen(onOpenNovels → Route.Novels, onOpenLibrary → Biblioteca en medio Manga)`;
   `NovelHomeScreen(onOpenManga → Route.Manga, onOpenLibrary → Biblioteca en medio Novela)`. Sin ellos el selector de medio y el
-  enlace «Biblioteca» quedan ocultos.
+  enlace «Biblioteca» quedan ocultos. (hecho: `Route.LibraryTab(MANGA)` / `(NOVELS)` eligen el medio)
 - `LivePreviewScaffold` (core/ui/patterns) hace scroll interno y llena la pantalla: falla dentro de una hoja o columna con scroll.
-  S11 usó un panel propio. Corregir el patrón (no debe imponer scroll ni alto) y revisar a quien lo use (S10, S6).
+  S11 usó un panel propio. Corregir el patrón (no debe imponer scroll ni alto) y revisar a quien lo use (S10, S6). (hecho: `embedded = true`; ver `patrones-api.md` §9)
 - B-OCULTA-01 (fuente de manga preferida global): falta un campo en `MangaPrefs` / `MangaCatalog` (core).
 - Zonas de toque alternativas del lector (L, bordes, ninguna): faltaría un campo en `ReaderSettings`; hoy solo los tercios.
 - Posibles errores de compilación: dos imports de `itemsIndexed` en `MangaHomeScreen.kt`; lambdas con nombre en `FilterChipMenu`.
