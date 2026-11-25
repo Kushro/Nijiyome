@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.LocalSignalColors
 import app.nijiyome.designsystem.direction.ProgressTrack
+import app.nijiyome.designsystem.direction.RegionData
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.feature.home.resources.Res
 import app.nijiyome.feature.home.resources.*
@@ -69,11 +70,11 @@ internal fun LinkPanel(onOpenLink: () -> Unit, onOpenMonitor: () -> Unit, modifi
 }
 
 @Composable
-private fun PanelSurface(modifier: Modifier, region: DecorRegion?, content: @Composable () -> Unit) {
+private fun PanelSurface(modifier: Modifier, region: DecorRegion?, data: RegionData = RegionData(), content: @Composable () -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = modifier.fillMaxWidth().then(if (region != null) Modifier.decor(region) else Modifier),
+        modifier = modifier.fillMaxWidth().then(if (region != null) Modifier.decor(region, data) else Modifier),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
     }
@@ -106,7 +107,7 @@ private fun ServerPanel(st: LinkServerState, onOpenLink: () -> Unit, onOpenMonit
         online.isNotEmpty() -> stringResource(Res.string.rd_s2_link_connected)
         else -> stringResource(Res.string.rd_s2_link_waiting)
     }
-    PanelSurface(modifier, DecorRegion.LINK) {
+    PanelSurface(modifier, DecorRegion.LINK, RegionData(connected = st.running && online.isNotEmpty())) {
         PanelHead(stringResource(Res.string.rd_s2_link_title), status, ok = st.running && online.isNotEmpty())
         val sessions = st.activeSessions
         if (!compact) {
@@ -186,7 +187,7 @@ private fun ClientPanel(st: LinkState, onOpenLink: () -> Unit, modifier: Modifie
         onClick = onOpenLink,
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).decor(DecorRegion.LINK),
+        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).decor(DecorRegion.LINK, RegionData(connected = ok)),
     ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             val signals = LocalSignalColors.current

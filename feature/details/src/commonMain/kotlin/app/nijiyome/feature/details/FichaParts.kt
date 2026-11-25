@@ -194,7 +194,7 @@ internal fun FichaHero(
     val key = media.toCardData().key
     val adult = state.detailsOrNull?.isAdult == true || media.looksAdult()
     if (compact && backdrop && LocalLook.current.pageStyle == PageStyle.EDITORIAL) {
-        Box(modifier.fillMaxWidth().decor(DecorRegion.HERO).cardToDetailsTarget(key)) {
+        Box(modifier.fillMaxWidth().decor(DecorRegion.HERO, rememberHeroRegion(media, state)).cardToDetailsTarget(key)) {
             EditorialHeader(media, state, actions, adultBadge = adult)
         }
         return
@@ -206,7 +206,7 @@ internal fun FichaHero(
     val art = headerBackdrop(media, state.artwork)
     val bannerHeight = if (compact) 176.dp else 248.dp
     val posterWidth = if (compact) 96.dp else 120.dp
-    Box(modifier.fillMaxWidth().decor(DecorRegion.HERO)) {
+    Box(modifier.fillMaxWidth().decor(DecorRegion.HERO, rememberHeroRegion(media, state))) {
         if (backdrop) {
             Box(Modifier.fillMaxWidth().height(bannerHeight)) {
                 AsyncImage(

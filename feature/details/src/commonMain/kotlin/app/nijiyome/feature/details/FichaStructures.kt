@@ -275,7 +275,7 @@ private fun RouteTitleRow(media: Media, state: DetailsUiState, actions: DetailsA
     Row(
         Modifier
             .fillMaxWidth()
-            .decor(DecorRegion.HERO)
+            .decor(DecorRegion.HERO, rememberHeroRegion(media, state))
             .statusBarsPadding()
             .padding(start = 8.dp, end = 16.dp, top = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -311,7 +311,7 @@ private fun FichaCinema(media: Media, state: DetailsUiState, actions: DetailsAct
 private fun CinemaBackdrop(media: Media, state: DetailsUiState, horizontal: Boolean, modifier: Modifier = Modifier) {
     val bg = MaterialTheme.colorScheme.background
     val art = headerBackdrop(media, state.artwork)
-    Box(modifier.decor(DecorRegion.HERO).cardToDetailsTarget(media.toCardData().key)) {
+    Box(modifier.decor(DecorRegion.HERO, rememberHeroRegion(media, state)).cardToDetailsTarget(media.toCardData().key)) {
         AsyncImage(
             model = art.url,
             contentDescription = null,

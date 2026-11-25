@@ -26,11 +26,13 @@ import androidx.compose.material.icons.outlined.NotificationAdd
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -255,16 +257,18 @@ private fun agendaLines(items: List<AiringEpisode>, nowSec: Long): List<AgendaLi
 @Composable
 private fun AgendaStrip(items: List<AiringEpisode>, ctx: HomeRowCtx) {
     val lines = remember(items, ctx.nowSec) { agendaLines(items, ctx.nowSec) }
-    LazyRow(
-        modifier = Modifier.fillMaxWidth().decor(DecorRegion.AIRING),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        items(lines, key = { line -> if (line is AgendaLine.Ep) "ag:" + mediaKey(line.episode.media) + ":" + line.episode.episode else "ag:now" }) { line ->
-            when (line) {
-                AgendaLine.Now -> NowTick(vertical = true, nowSec = ctx.nowSec)
-                is AgendaLine.Ep -> AgendaSlot(line.episode, ctx)
+    AiringContent {
+        LazyRow(
+            modifier = Modifier.fillMaxWidth().decor(DecorRegion.AIRING),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            items(lines, key = { line -> if (line is AgendaLine.Ep) "ag:" + mediaKey(line.episode.media) + ":" + line.episode.episode else "ag:now" }) { line ->
+                when (line) {
+                    AgendaLine.Now -> NowTick(vertical = true, nowSec = ctx.nowSec)
+                    is AgendaLine.Ep -> AgendaSlot(line.episode, ctx)
+                }
             }
         }
     }
@@ -308,14 +312,19 @@ private fun AgendaList(items: List<AiringEpisode>, ctx: HomeRowCtx) {
     val shown = items.drop(from).take(PHONE_MAX)
     val lines = remember(shown, ctx.nowSec) { agendaLines(shown, ctx.nowSec) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).decor(DecorRegion.AIRING), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        lines.forEach { line ->
-            when (line) {
-                AgendaLine.Now -> NowTick(vertical = false, nowSec = ctx.nowSec)
-                is AgendaLine.Ep -> AgendaListRow(line.episode, ctx)
+        AiringContent {
+            lines.forEach { line ->
+                when (line) {
+                    AgendaLine.Now -> NowTick(vertical = false, nowSec = ctx.nowSec)
+                    is AgendaLine.Ep -> AgendaListRow(line.episode, ctx)
+                }
             }
-        }
-        if (from > 0) {
-            TextButton(onClick = ctx.actions.onOpenCalendar) { Text(stringResource(Res.string.rd_s2_agenda_earlier, from)) }
+            if (from > 0) {
+                TextButton(
+                    onClick = ctx.actions.onOpenCalendar,
+                    colors = ButtonDefaults.textButtonColors(contentColor = onAiring(MaterialTheme.colorScheme.primary, LocalContentColor.current)),
+                ) { Text(stringResource(Res.string.rd_s2_agenda_earlier, from)) }
+            }
         }
     }
 }
@@ -376,7 +385,8 @@ private fun airStateLabel(state: AirState, ep: AiringEpisode, nowSec: Long): Str
 internal fun NowTick(vertical: Boolean, nowSec: Long) {
     val time = formatTime(nowSec)
     val label = stringResource(Res.string.rd_s2_now_at, time)
-    val color = MaterialTheme.colorScheme.error
+    // On a dark airing island of a light theme the light error container is the readable red.
+    val color = onAiring(MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.errorContainer)
     if (vertical) {
         Column(Modifier.semantics { contentDescription = label }, horizontalAlignment = Alignment.CenterHorizontally) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)

@@ -52,6 +52,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -544,15 +545,17 @@ private fun MonthGrid(days: List<CalendarDay>, selected: LocalDate, wide: Boolea
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp).decor(DecorRegion.AIRING),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Row(Modifier.fillMaxWidth()) {
-            days.take(7).forEach { d ->
-                Text(
-                    d.date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f),
-                )
+        AiringContent {
+            Row(Modifier.fillMaxWidth()) {
+                days.take(7).forEach { d ->
+                    Text(
+                        d.date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = airingSecondaryText(),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
         days.chunked(7).forEach { week ->
@@ -642,12 +645,14 @@ private fun LazyListScope.boardStructure(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp).decor(DecorRegion.AIRING),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            if (wide) BoardColumns()
-            episodes.forEachIndexed { i, ep ->
-                if (i == now) NowTick(vertical = false, nowSec = ctx.nowSec)
-                BoardRow(ep, ctx, wide)
+            AiringContent {
+                if (wide) BoardColumns()
+                episodes.forEachIndexed { i, ep ->
+                    if (i == now) NowTick(vertical = false, nowSec = ctx.nowSec)
+                    BoardRow(ep, ctx, wide)
+                }
+                if (now == episodes.size) NowTick(vertical = false, nowSec = ctx.nowSec)
             }
-            if (now == episodes.size) NowTick(vertical = false, nowSec = ctx.nowSec)
         }
     }
 }
@@ -699,7 +704,7 @@ private fun BoardHead(day: LocalDate, isToday: Boolean, ctx: CalendarCtx, onSele
 @Composable
 private fun BoardColumns() {
     val style = MaterialTheme.typography.labelMedium
-    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    val color = airingSecondaryText()
     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(Res.string.rd_s2_board_col_time), style = style, color = color, modifier = Modifier.width(BOARD_TIME_WIDTH))
         Text(stringResource(Res.string.rd_s2_board_col_title), style = style, color = color, modifier = Modifier.weight(1f))
@@ -707,7 +712,7 @@ private fun BoardColumns() {
         Text(stringResource(Res.string.rd_s2_board_col_state), style = style, color = color, modifier = Modifier.width(BOARD_STATE_WIDTH))
         Box(Modifier.width(48.dp))
     }
-    HorizontalDivider()
+    HorizontalDivider(color = onAiring(MaterialTheme.colorScheme.outlineVariant, LocalContentColor.current.copy(alpha = 0.3f)))
 }
 
 @Composable
@@ -808,11 +813,13 @@ private fun LazyListScope.eventItems(prefix: String, episodes: List<AiringEpisod
     val now = if (nowLine) CalendarLayout.nowIndex(episodes, ctx.nowSec) else -1
     item(key = "evs:$prefix", contentType = "events") {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp).decor(DecorRegion.AIRING), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            episodes.forEachIndexed { i, ep ->
-                if (i == now) NowTick(vertical = false, nowSec = ctx.nowSec)
-                EventRow(ep, ctx)
+            AiringContent {
+                episodes.forEachIndexed { i, ep ->
+                    if (i == now) NowTick(vertical = false, nowSec = ctx.nowSec)
+                    EventRow(ep, ctx)
+                }
+                if (now == episodes.size) NowTick(vertical = false, nowSec = ctx.nowSec)
             }
-            if (now == episodes.size) NowTick(vertical = false, nowSec = ctx.nowSec)
         }
     }
 }
