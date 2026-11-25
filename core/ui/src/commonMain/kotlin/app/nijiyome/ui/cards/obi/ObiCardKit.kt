@@ -99,24 +99,24 @@ internal fun <T> CardSize.pick(s: T, m: T, l: T, xl: T): T = when (step) {
 @Composable
 internal fun obiPosterWidth(size: CardSize): Dp {
     val compact = LocalLook.current.density == Density.COMPACT
-    val dp = when (size) {
+    val width = when (size) {
         CardSize.SMALL, CardSize.MEDIUM -> CardSizing.posterDp(size, compact)
         CardSize.LARGE -> CardSizing.MEDIUM_DP * 1.3f * (if (compact) CardSizing.COMPACT_FACTOR else 1f)
         CardSize.XL -> CardSizing.MEDIUM_DP * 1.63f * (if (compact) CardSizing.COMPACT_FACTOR else 1f)
     }
-    return dp.dp
+    return width.dp
 }
 
 /** Width of a "Continuar" card: the app's wide-card width (artifact 280 / 320 / 380 px). */
 @Composable
 internal fun obiContinueWidth(size: CardSize): Dp {
     val viewport = windowWidthDp()
-    val dp = when (size) {
+    val width = when (size) {
         CardSize.SMALL -> minOf(280f, CardSizing.wideCardDp(CardSize.LARGE, viewport))
         CardSize.MEDIUM, CardSize.LARGE -> CardSizing.wideCardDp(CardSize.LARGE, viewport)
         CardSize.XL -> CardSizing.wideCardDp(CardSize.XL, viewport)
     }
-    return dp.dp
+    return width.dp
 }
 
 internal fun StatusSlot.toListStatus(): ListStatus = when (this) {
