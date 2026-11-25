@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, lane D2: the three Obi card styles and the copy on their bands. -->
+    <string name="rd_obi_card_band">Obi · band</string>
+    <string name="rd_obi_card_spine">Obi · spine</string>
+    <string name="rd_obi_card_diagonal">Obi · diagonal</string>
+    <string name="rd_obi_resume">Resume</string>
+    <string name="rd_obi_completed">Completed</string>
+    <string name="rd_obi_completed_eps">Completed · %1$d eps</string>
+    <string name="rd_obi_dropped_at">Dropped at ep. %1$d</string>
+    <string name="rd_obi_paused_at">Paused at ep. %1$d</string>
+    <string name="rd_obi_ep_n">Ep. %1$d</string>
+    <string name="rd_obi_continue_ep">Continue with ep. %1$d</string>
+    <string name="rd_obi_eps">%1$d eps</string>
+    <string name="rd_obi_eps_unit">eps</string>
+    <string name="rd_obi_premiere">Premiere</string>
+    <string name="rd_obi_premiere_eps">Premiere · %1$d eps</string>
+    <string name="rd_obi_of">%1$d of %2$d</string>
+    <string name="rd_obi_watched_of">%1$d of %2$d watched</string>
+    <string name="rd_obi_score">score %1$s</string>
+    <string name="rd_obi_not_in_list">Not in list</string>
+</resources>
