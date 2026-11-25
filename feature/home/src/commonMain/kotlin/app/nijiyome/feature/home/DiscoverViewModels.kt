@@ -278,7 +278,12 @@ class ForYouViewModel(private val recs: RecsRepository) : ViewModel() {
 
     fun selectTab(tab: ForYouTab) {
         local.update { it.copy(tab = tab) }
-        if (tab == ForYouTab.ATLAS && (local.value.atlas == null || local.value.atlas is LoadState.Err)) loadAtlas()
+        if (tab == ForYouTab.ATLAS) ensureAtlas()
+    }
+
+    /** Sparkles Explorar › Lienzo shows the atlas beside the list: load it once (again after a failure). */
+    fun ensureAtlas() {
+        if (local.value.atlas == null || local.value.atlas is LoadState.Err) loadAtlas()
     }
 
     fun loadAtlas() {

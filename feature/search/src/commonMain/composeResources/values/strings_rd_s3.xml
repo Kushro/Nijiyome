@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign, lane S3: Explorar (Search + For you in one screen). -->
+<resources>
+    <string name="rd_s3_title">Explore</string>
+    <string name="rd_s3_tab_search">Search</string>
+    <string name="rd_s3_tab_for_you">For you</string>
+    <string name="rd_s3_keys_hint">Ctrl+F goes to the search field. Ctrl+K searches the whole app.</string>
+    <string name="rd_s3_scope_extensions">Extension catalogue</string>
+    <string name="rd_s3_scope_extensions_short">Extensions</string>
+    <string name="rd_s3_hint_extension">Search the %1$s catalogue</string>
+    <string name="rd_s3_recent">Recent</string>
+    <string name="rd_s3_recent_removed">Removed “%1$s” from recent searches.</string>
+    <string name="rd_s3_recent_cleared">Recent searches cleared.</string>
+    <string name="rd_s3_undo">Undo</string>
+    <string name="rd_s3_trend_of">Trending for</string>
+    <string name="rd_s3_see_all">See all</string>
+    <string name="rd_s3_trending_empty">Nothing is trending right now.</string>
+    <string name="rd_s3_more_filters">More filters</string>
+    <string name="rd_s3_more_filters_on">More filters: %1$d on</string>
+    <string name="rd_s3_done">Done</string>
+    <string name="rd_s3_facet_my_list">My list</string>
+    <string name="rd_s3_facet_my_list_out">Not on my list</string>
+    <string name="rd_s3_view_grid">Grid</string>
+    <string name="rd_s3_view_list">List</string>
+    <plurals name="rd_s3_filters_on">
+        <item quantity="one">You have 1 filter on.</item>
+        <item quantity="other">You have %1$d filters on.</item>
+    </plurals>
+    <plurals name="rd_s3_remove_filters">
+        <item quantity="one">Remove the filter</item>
+        <item quantity="other">Remove the %1$d filters</item>
+    </plurals>
+    <string name="rd_s3_search_extensions">Search your extensions</string>
+    <string name="rd_s3_search_metadata">Search the metadata instead</string>
+    <string name="rd_s3_characters_empty">No character is called “%1$s”</string>
+    <string name="rd_s3_characters_empty_body">Try the first name or the romaji spelling.</string>
+    <string name="rd_s3_extension_empty">Nothing for “%1$s” in %2$s</string>
+    <string name="rd_s3_extension_hint">These titles come from the extension’s catalogue. Tap one to look it up in your metadata.</string>
+    <string name="rd_s3_extension_failed">The %1$s catalogue did not answer</string>
+    <string name="rd_s3_no_catalogue_title">No extension has a catalogue to search</string>
+    <string name="rd_s3_no_catalogue_body">Install an extension with its own catalogue in Sources, then search again.</string>
+    <string name="rd_s3_open_sources">Open Sources</string>
+    <string name="rd_s3_offline_title">You are offline</string>
+    <string name="rd_s3_limited_title">AniList is limiting requests</string>
+    <string name="rd_s3_limited_banner">AniList is limiting requests. These results come from the backup providers.</string>
+    <string name="rd_s3_retry_in">You can retry in %1$s.</string>
+    <string name="rd_s3_retry_ready">You can retry now.</string>
+    <string name="rd_s3_retry_now">Retry now</string>
+    <string name="rd_s3_hide_notice">Hide notice</string>
+    <string name="rd_s3_menu_open">Open</string>
+    <string name="rd_s3_menu_add">Add to my list…</string>
+    <string name="rd_s3_menu_change">Change status…</string>
+    <string name="rd_s3_menu_planning">Add to %1$s</string>
+    <string name="rd_s3_status_sheet_title">Status in my list</string>
+    <string name="rd_s3_status_remove">Remove from my list</string>
+    <string name="rd_s3_status_set">%1$s is now in %2$s.</string>
+    <string name="rd_s3_status_removed">%1$s left your list.</string>
+    <string name="rd_s3_status_failed">Your list could not be updated.</string>
+</resources>

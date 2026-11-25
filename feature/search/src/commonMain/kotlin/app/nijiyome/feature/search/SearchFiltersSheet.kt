@@ -45,17 +45,21 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.nijiyome.model.MediaSort
 import app.nijiyome.model.MediaTag
+import app.nijiyome.ui.labels.genreLabel
 import java.time.Year
 import kotlin.math.roundToInt
 
-private val SEASONS = listOf("WINTER", "SPRING", "SUMMER", "FALL")
-private val STATUSES = listOf("RELEASING", "FINISHED", "NOT_YET_RELEASED", "CANCELLED", "HIATUS")
+internal val SEASONS = listOf("WINTER", "SPRING", "SUMMER", "FALL")
+internal val STATUSES = listOf("RELEASING", "FINISHED", "NOT_YET_RELEASED", "CANCELLED", "HIATUS")
 internal val FORMATS = listOf("TV", "TV_SHORT", "MOVIE", "OVA", "ONA", "SPECIAL", "MUSIC")
-private val SORTS = listOf(
+internal val SORTS = listOf(
     MediaSort.RELEVANCE, MediaSort.POPULARITY, MediaSort.TRENDING, MediaSort.SCORE, MediaSort.START_DATE, MediaSort.TITLE,
     MediaSort.FAVOURITES, MediaSort.EPISODES,
 )
-private const val YEARS = 12
+internal const val YEARS = 12
+
+/** The exact-year choices: next year down to [YEARS] chips. */
+internal fun yearChoices(thisYear: Int): List<Int> = ((thisYear + 1) downTo thisYear - YEARS + 2).toList()
 private const val TAGS_COLLAPSED = 24
 
 /** Slider bounds; a thumb at its bound means "no limit" on that side (the filter is not sent). */
@@ -84,11 +88,8 @@ internal fun SearchFiltersSheet(
 ) {
     var draft by remember(current) { mutableStateOf(current) }
     var draftAdult by remember(adult) { mutableStateOf(adult) }
-    var showSpoilers by remember { mutableStateOf(false) }
-    var tagQuery by remember { mutableStateOf("") }
-    var allTags by remember { mutableStateOf(false) }
     val thisYear = remember { Year.now().value }
-    val years = remember(thisYear) { ((thisYear + 1) downTo thisYear - YEARS + 2).toList() }
+    val years = remember(thisYear) { yearChoices(thisYear) }
     AdaptiveSheet(
         onDismissRequest = onDismiss,
     ) {
@@ -115,7 +116,7 @@ internal fun SearchFiltersSheet(
                     FilterChip(
                         selected = on,
                         onClick = { draft = draft.copy(genres = if (on) draft.genres - g else draft.genres + g) },
-                        label = { Text(g) },
+                        label = { Text(genreLabel(g)) },
                     )
                 }
             }
@@ -156,71 +157,7 @@ internal fun SearchFiltersSheet(
                     )
                 }
             }
-            RangeFilter(
-                title = stringResource(Res.string.search_year_range),
-                from = draft.yearFrom,
-                to = draft.yearTo,
-                min = YEAR_MIN,
-                max = thisYear + 1,
-                onChange = { f, t -> draft = draft.copy(yearFrom = f, yearTo = t) },
-            )
-            RangeFilter(
-                title = stringResource(Res.string.search_episodes),
-                from = draft.episodesFrom,
-                to = draft.episodesTo,
-                min = 0,
-                max = EPISODES_MAX,
-                onChange = { f, t -> draft = draft.copy(episodesFrom = f, episodesTo = t) },
-            )
-            RangeFilter(
-                title = stringResource(Res.string.search_score),
-                from = draft.scoreFrom,
-                to = draft.scoreTo,
-                min = 0,
-                max = SCORE_MAX,
-                steps = SCORE_MAX / 5 - 1,
-                onChange = { f, t -> draft = draft.copy(scoreFrom = f, scoreTo = t) },
-            )
-            // Tags: AniList catalogue, filtered by a text box; spoiler tags only with the switch on.
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(Res.string.search_tags), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                SwitchRow(stringResource(Res.string.search_tags_spoilers), showSpoilers) { showSpoilers = it }
-                when {
-                    tagsLoading -> Box(Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) { LoadingIndicator() }
-                    tagOptions.isEmpty() -> Text(
-                        stringResource(Res.string.search_tags_unavailable),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    else -> {
-                        OutlinedTextField(
-                            value = tagQuery,
-                            onValueChange = { tagQuery = it },
-                            singleLine = true,
-                            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                            placeholder = { Text(stringResource(Res.string.search_tags_filter)) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        val visible = visibleTags(tagOptions, draft.tags, tagQuery, showSpoilers)
-                        val shown = if (allTags || tagQuery.isNotBlank()) visible else visible.take(TAGS_COLLAPSED)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            shown.forEach { tag ->
-                                val on = tag.name in draft.tags
-                                FilterChip(
-                                    selected = on,
-                                    onClick = { draft = draft.copy(tags = if (on) draft.tags - tag.name else draft.tags + tag.name) },
-                                    label = { Text(tag.name) },
-                                )
-                            }
-                        }
-                        if (!allTags && tagQuery.isBlank() && visible.size > TAGS_COLLAPSED) {
-                            TextButton(onClick = { allTags = true }) {
-                                Text(stringResource(Res.string.search_tags_all, visible.size))
-                            }
-                        }
-                    }
-                }
-            }
+            RangeAndTagFilters(draft, onDraftChange = { draft = it }, tagOptions = tagOptions, tagsLoading = tagsLoading)
             SwitchRow(stringResource(Res.string.search_adult), draftAdult, supporting = stringResource(Res.string.search_adult_hint)) {
                 draftAdult = it
             }
@@ -230,6 +167,91 @@ internal fun SearchFiltersSheet(
                     onApply(SearchFilters(), draftAdult)
                 }) { Text(stringResource(Res.string.search_filters_clear)) }
                 Button(onClick = { onApply(draft, draftAdult) }) { Text(stringResource(Res.string.search_apply)) }
+            }
+        }
+    }
+}
+
+/**
+ * The year / episode / score ranges and the tag picker (spoiler switch, filter box, "Show all N tags"). Shared by the phone's whole
+ * filters sheet and the wide window's "Más filtros" facet.
+ */
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+internal fun RangeAndTagFilters(
+    draft: SearchFilters,
+    onDraftChange: (SearchFilters) -> Unit,
+    tagOptions: List<MediaTag>,
+    tagsLoading: Boolean,
+) {
+    var showSpoilers by remember { mutableStateOf(false) }
+    var tagQuery by remember { mutableStateOf("") }
+    var allTags by remember { mutableStateOf(false) }
+    val thisYear = remember { Year.now().value }
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        RangeFilter(
+            title = stringResource(Res.string.search_year_range),
+            from = draft.yearFrom,
+            to = draft.yearTo,
+            min = YEAR_MIN,
+            max = thisYear + 1,
+            onChange = { f, t -> onDraftChange(draft.copy(yearFrom = f, yearTo = t)) },
+        )
+        RangeFilter(
+            title = stringResource(Res.string.search_episodes),
+            from = draft.episodesFrom,
+            to = draft.episodesTo,
+            min = 0,
+            max = EPISODES_MAX,
+            onChange = { f, t -> onDraftChange(draft.copy(episodesFrom = f, episodesTo = t)) },
+        )
+        RangeFilter(
+            title = stringResource(Res.string.search_score),
+            from = draft.scoreFrom,
+            to = draft.scoreTo,
+            min = 0,
+            max = SCORE_MAX,
+            steps = SCORE_MAX / 5 - 1,
+            onChange = { f, t -> onDraftChange(draft.copy(scoreFrom = f, scoreTo = t)) },
+        )
+        // Tags: AniList catalogue, filtered by a text box; spoiler tags only with the switch on.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(Res.string.search_tags), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            SwitchRow(stringResource(Res.string.search_tags_spoilers), showSpoilers) { showSpoilers = it }
+            when {
+                tagsLoading -> Box(Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) { LoadingIndicator() }
+                tagOptions.isEmpty() -> Text(
+                    stringResource(Res.string.search_tags_unavailable),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                else -> {
+                    OutlinedTextField(
+                        value = tagQuery,
+                        onValueChange = { tagQuery = it },
+                        singleLine = true,
+                        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                        placeholder = { Text(stringResource(Res.string.search_tags_filter)) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    val visible = visibleTags(tagOptions, draft.tags, tagQuery, showSpoilers)
+                    val shown = if (allTags || tagQuery.isNotBlank()) visible else visible.take(TAGS_COLLAPSED)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        shown.forEach { tag ->
+                            val on = tag.name in draft.tags
+                            FilterChip(
+                                selected = on,
+                                onClick = { onDraftChange(draft.copy(tags = if (on) draft.tags - tag.name else draft.tags + tag.name)) },
+                                label = { Text(tag.name) },
+                            )
+                        }
+                    }
+                    if (!allTags && tagQuery.isBlank() && visible.size > TAGS_COLLAPSED) {
+                        TextButton(onClick = { allTags = true }) {
+                            Text(stringResource(Res.string.search_tags_all, visible.size))
+                        }
+                    }
+                }
             }
         }
     }
@@ -245,7 +267,7 @@ internal fun visibleTags(all: List<MediaTag>, selected: List<String>, query: Str
 }
 
 @Composable
-private fun SwitchRow(title: String, checked: Boolean, supporting: String? = null, onChange: (Boolean) -> Unit) {
+internal fun SwitchRow(title: String, checked: Boolean, supporting: String? = null, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign, lane S3 (Explorar): the Para ti and Atlas sections that Explorar embeds from this module. -->
+<resources>
+    <string name="rd_s3_for_you_local">Computed on this device</string>
+    <string name="rd_s3_atlas_title">Map of your taste</string>
+    <string name="rd_s3_atlas_show_names">Show names</string>
+    <string name="rd_s3_atlas_hide_names">Hide names</string>
+    <string name="rd_s3_atlas_description">Map of your taste with %1$d titles. Tap a dot to open it.</string>
+</resources>

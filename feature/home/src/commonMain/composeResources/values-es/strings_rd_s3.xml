@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rediseño Sparkles, carril S3 (Explorar): las secciones Para ti y Atlas que Explorar toma de este módulo. -->
+<resources>
+    <string name="rd_s3_for_you_local">Calculado en este equipo</string>
+    <string name="rd_s3_atlas_title">Atlas de tus gustos</string>
+    <string name="rd_s3_atlas_show_names">Mostrar nombres</string>
+    <string name="rd_s3_atlas_hide_names">Ocultar nombres</string>
+    <string name="rd_s3_atlas_description">Atlas de tus gustos con %1$d títulos. Toca un punto para abrirlo.</string>
+</resources>

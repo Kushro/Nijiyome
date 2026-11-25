@@ -1,6 +1,7 @@
 package app.nijiyome.feature.search
 
 import app.nijiyome.metadata.TrendingFeed
+import app.nijiyome.model.ListsRepository
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.scope.Scope
@@ -23,6 +24,8 @@ fun searchModule(history: Scope.() -> SearchHistoryStore, reader: Scope.() -> Im
             extensions = get(),
             settings = get(),
             trending = trending?.let { feed -> TrendingSource { window, page, adult -> feed.page(window, page, adult) } },
+            // Sparkles Explorar: list status on the result cards, the "Mi lista" facet and changing a status from a result.
+            lists = getOrNull<ListsRepository>(),
         )
     }
     viewModel { ImageSearchViewModel(metadata = get(), reader = get()) }
