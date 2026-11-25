@@ -92,6 +92,8 @@ internal fun BoxScope.MinimalChrome(model: PlayerChromeModel, actions: PlayerChr
             Modifier.fillMaxWidth().background(BottomShade).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, top = 28.dp, bottom = 6.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
+            // Parity PLA-07: what the bar's colours mean and the buffer / torrent speed line, as the previous minimal chrome showed.
+            PlayerSeekLegend(model, Modifier.padding(start = 4.dp, bottom = 2.dp))
             if (compact || touch) {
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(10.dp), Alignment.CenterVertically) {
                     PlayButton(model, actions, 40.dp)

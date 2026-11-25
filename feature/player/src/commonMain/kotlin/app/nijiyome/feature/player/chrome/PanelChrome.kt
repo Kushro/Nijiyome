@@ -145,10 +145,14 @@ internal fun BoxScope.MiniChrome(model: PlayerChromeModel, actions: PlayerChrome
         }
     }
     PlayerControlsTransition(visible, ControlsEdge.BOTTOM, Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().background(BottomShade).padding(start = 8.dp, end = 4.dp, top = 16.dp), Arrangement.spacedBy(4.dp), Alignment.CenterVertically) {
-            PlayerSeekBar(model, actions.onInteract, Modifier.weight(1f), thin = true)
-            PlayerTimeText(model, actions.onInteract)
-            FullscreenButton(model, actions)
+        Column(Modifier.fillMaxWidth().background(BottomShade).padding(start = 8.dp, end = 4.dp, top = 16.dp)) {
+            // Parity PLA-07: the legend and the buffer / torrent speed line stay on the vertical player too.
+            PlayerSeekLegend(model, Modifier.padding(start = 4.dp, bottom = 2.dp))
+            Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(4.dp), Alignment.CenterVertically) {
+                PlayerSeekBar(model, actions.onInteract, Modifier.weight(1f), thin = true)
+                PlayerTimeText(model, actions.onInteract)
+                FullscreenButton(model, actions)
+            }
         }
     }
 }
