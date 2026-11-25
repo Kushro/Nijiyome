@@ -7,4 +7,6 @@
     <string name="rd_transit_palette_anden">Andén</string>
     <string name="rd_transit_palette_yamanote">Línea Yamanote</string>
     <string name="rd_transit_palette_ultima">Última salida</string>
+    <!-- Letra antes del número de episodio en el rótulo de estación (E09). -->
+    <string name="rd_transit_prefix_episode">E</string>
 </resources>

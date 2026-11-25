@@ -52,7 +52,10 @@ import app.nijiyome.designsystem.direction.StatusSlot
 import app.nijiyome.designsystem.direction.ThemeTone
 import app.nijiyome.designsystem.motion.LocalMotion
 import app.nijiyome.designsystem.motion.MotionLevel
+import app.nijiyome.designsystem.resources.Res
+import app.nijiyome.designsystem.resources.rd_transit_prefix_episode
 import kotlin.math.roundToInt
+import org.jetbrains.compose.resources.stringResource
 
 // What Tránsito nocturno draws differently (dir-transit.js `decorate` and dir-transit.css "Regiones"): the TONIGHT track with one stop
 // per card, the AIRING departure board, the LINK transfer between the computer line and the phone line, episodes as stations,
@@ -188,13 +191,14 @@ internal object TransitDecor : DirectionDecor {
         val level = LocalMotion.current.level
         val fadeSpec: AnimationSpec<Color> = if (level == MotionLevel.OFF) snap() else tween(190, easing = TransitEase)
         if (number != null) {
+            val prefix = stringResource(Res.string.rd_transit_prefix_episode)
             val fill by animateColorAsState(if (state == EpisodeMarkState.WATCHED) line.ink else TransitInk.porcelain, fadeSpec, label = "stationFill")
             when (state) {
-                EpisodeMarkState.UNAIRED -> StationCode(number, "E", line.ink, modifier, size = 30.dp, pending = true, halo = colors.surface)
-                EpisodeMarkState.AIRED -> StationCode(number, "E", line.ink, modifier, size = 30.dp, halo = colors.surface)
+                EpisodeMarkState.UNAIRED -> StationCode(number, prefix, line.ink, modifier, size = 30.dp, pending = true, halo = colors.surface)
+                EpisodeMarkState.AIRED -> StationCode(number, prefix, line.ink, modifier, size = 30.dp, halo = colors.surface)
                 EpisodeMarkState.IN_PROGRESS -> StationCode(
                     number,
-                    "E",
+                    prefix,
                     line.ink,
                     modifier.drawBehind {
                         // The train around the plate: an outer ring in the raw line color.

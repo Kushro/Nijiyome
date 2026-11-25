@@ -7,4 +7,6 @@
     <string name="rd_transit_palette_anden">Platform</string>
     <string name="rd_transit_palette_yamanote">Yamanote Line</string>
     <string name="rd_transit_palette_ultima">Last Train</string>
+    <!-- Letter before an episode number on a station plate (E09). -->
+    <string name="rd_transit_prefix_episode">E</string>
 </resources>
