@@ -175,8 +175,6 @@ data class NovelDetailsUi(
     val query: String = "",
     val translator: String? = null,
     val lang: String? = null,
-    val selecting: Boolean = false,
-    val selected: Set<String> = emptySet(),
 ) {
     val shown: List<NovelChapter>
         get() {
@@ -279,7 +277,7 @@ class NovelDetailsViewModel(
     }
 
     fun selectSource(s: NovelSourceSummary) {
-        _ui.update { it.copy(source = s, translator = null, lang = null, selected = emptySet()) }
+        _ui.update { it.copy(source = s, translator = null, lang = null) }
         loadChapters(s, refresh = false)
     }
 
@@ -306,23 +304,56 @@ class NovelDetailsViewModel(
     fun setTranslator(t: String?) = _ui.update { it.copy(translator = t) }
     fun setLang(l: String?) = _ui.update { it.copy(lang = l) }
     fun toggleOrder() = _ui.update { it.copy(ascending = !it.ascending) }
-    fun setSelecting(on: Boolean) = _ui.update { it.copy(selecting = on, selected = if (on) it.selected else emptySet()) }
-    fun toggle(ch: NovelChapter) = _ui.update { ui ->
-        val id = NovelRepositoryImpl.downloadId(ch)
-        ui.copy(selected = if (id in ui.selected) ui.selected - id else ui.selected + id)
-    }
-    fun selectAll() = _ui.update { ui -> ui.copy(selected = ui.shown.map(NovelRepositoryImpl::downloadId).toSet()) }
-
-    fun downloadSelected() {
+    /** Queues the chapters with these download ids (the multi-selection of the details page). */
+    fun downloadChapters(ids: Set<String>) {
         val ui = _ui.value
         val media = media() ?: return
-        val list = ((ui.chapters as? LoadState.Ok)?.value ?: emptyList()).filter { NovelRepositoryImpl.downloadId(it) in ui.selected }
+        val list = ((ui.chapters as? LoadState.Ok)?.value ?: emptyList()).filter { NovelRepositoryImpl.downloadId(it) in ids }
         if (list.isEmpty()) return
         viewModelScope.launch {
             repo.downloadChapters(media, list)
                 .onSuccess { _events.tryEmit(NovelEvent.Queued(it)) }
                 .onFailure { _events.tryEmit(NovelEvent.Failed(it.toAppError())) }
-            _ui.update { it.copy(selecting = false, selected = emptySet()) }
+        }
+    }
+
+    /**
+     * Batch "Marcar leídos" / "Marcar no leídos" (same rules as the row toggle): read sets P = max(P, highest selected), not read sets
+     * P = min(P, lowest selected - 1). Returns how to undo it, or null when nothing changed.
+     */
+    fun markChapters(ids: Set<String>, read: Boolean): (() -> Unit)? {
+        val media = media() ?: return null
+        val numbers = ((_ui.value.chapters as? LoadState.Ok)?.value ?: emptyList())
+            .filter { NovelRepositoryImpl.downloadId(it) in ids }
+            .mapNotNull { ListProgress.chapterIndex(it.number) }
+        if (numbers.isEmpty()) return null
+        val current = entry.value
+        val before = current?.progress ?: 0
+        val target = if (read) {
+            ListProgress.toggledProgress(before, numbers.max(), watched = true, total = current?.totalChapters ?: media.episodes)
+        } else {
+            ListProgress.toggledProgress(before, numbers.min(), watched = false)
+        }
+        if (target == before && (read || current != null)) return null
+        viewModelScope.launch {
+            val status = when {
+                read && current == null -> repo.setReadStatus(media, ListStatus.WATCHING)
+                !read -> ListProgress.statusAfterUnmark(current?.status)?.let { repo.setReadStatus(media, it) } ?: Result.success(Unit)
+                else -> Result.success(Unit)
+            }
+            status.fold(onSuccess = { repo.setReadProgress(ref, target) }, onFailure = { Result.failure(it) })
+                .onFailure { _events.tryEmit(NovelEvent.Failed(it.toAppError())) }
+        }
+        return { restoreEntry(current) }
+    }
+
+    /** Puts the readlist entry back as it was (undo of a status, progress or batch change). */
+    fun restoreEntry(previous: ReadEntry?) {
+        val media = media() ?: return
+        viewModelScope.launch {
+            repo.setReadStatus(media, previous?.status)
+                .fold(onSuccess = { if (previous != null) repo.setReadProgress(ref, previous.progress) else Result.success(Unit) }, onFailure = { Result.failure(it) })
+                .onFailure { _events.tryEmit(NovelEvent.Failed(it.toAppError())) }
         }
     }
 
