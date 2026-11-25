@@ -95,7 +95,7 @@ El `LazyColumn` debe contener solo las filas reordenables (índice del ítem = �
 mueven mientras arrastras; una barra de 2 dp marca dónde cae y el cambio llega en `onMove` al soltar.
 ```kotlin
 val reorder = rememberReorderState(onMove = { from, to -> vm.setQueue(queue.moved(from, to)) })
-LazyColumn(state = reorder.listState, modifier = Modifier.reorderContainer(reorder)) { itemsIndexed(queue, key = { _, it -> it.id }) { i, it -> ReorderableRow(reorder, i, queue.size, it.name, Modifier.reorderPlacement(), supporting = it.meta) } }
+LazyColumn(state = reorder.listState, modifier = Modifier.reorderContainer(reorder)) { itemsIndexed(queue, key = { _, it -> it.id }) { i, it -> ReorderableRow(reorder, i, queue.size, it.name, reorderPlacement(), supporting = it.meta) } }
 ```
 
 ## 4. Soltar archivos en la ventana (`drop`, `FileDrop.kt`)

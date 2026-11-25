@@ -78,7 +78,7 @@ import org.jetbrains.compose.resources.stringResource
  * ```kotlin
  * val reorder = rememberReorderState(onMove = { from, to -> queue = queue.moved(from, to); save(queue) })
  * LazyColumn(state = reorder.listState, modifier = Modifier.reorderContainer(reorder)) {
- *     itemsIndexed(queue, key = { _, it -> it.id }) { i, it -> ReorderableRow(reorder, i, queue.size, it.name, Modifier.reorderPlacement()) }
+ *     itemsIndexed(queue, key = { _, it -> it.id }) { i, it -> ReorderableRow(reorder, i, queue.size, it.name, reorderPlacement()) }
  * }
  * ```
  */
@@ -272,7 +272,7 @@ fun Modifier.reorderableItem(state: ReorderState, index: Int, count: Int): Modif
 }
 
 /**
- * Placement animation of a reordered row, on the item of the `LazyColumn` (`Modifier.reorderPlacement()` inside `items { }`): it
+ * Placement animation of a reordered row, on the item of the `LazyColumn` (`reorderPlacement()` inside `items { }`): it
  * slides to its new place after the drop when travel is allowed, and simply appears there otherwise.
  */
 @Composable
@@ -284,7 +284,7 @@ fun LazyItemScope.reorderPlacement(): Modifier =
  * leading icon, title and supporting line, an optional trailing slot. Focusable with a visible focus ring.
  *
  * ```kotlin
- * ReorderableRow(reorder, i, rows.size, title = rowName(id), supporting = hiddenLabel, modifier = Modifier.reorderPlacement(),
+ * ReorderableRow(reorder, i, rows.size, title = rowName(id), supporting = hiddenLabel, modifier = reorderPlacement(),
  *     trailing = { Switch(checked = id !in hidden, onCheckedChange = { toggle(id) }) })
  * ```
  */
