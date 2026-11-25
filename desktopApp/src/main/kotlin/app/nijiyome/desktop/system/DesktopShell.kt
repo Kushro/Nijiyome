@@ -16,6 +16,7 @@ import app.nijiyome.model.NowPlaying
 import app.nijiyome.model.NowPlayingInfo
 import app.nijiyome.model.NowViewing
 import app.nijiyome.nav.Route
+import app.nijiyome.nav.TrayStrings
 import com.kdroid.composetray.tray.api.Tray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -208,7 +209,7 @@ internal fun TrayLiveStatus.quantizedForTray(): TrayLiveStatus {
 @Composable
 fun ApplicationScope.NijiyomeTray(
     icons: Pair<File, File>,
-    texts: TrayTexts,
+    texts: TrayStrings,
     live: TrayLiveStatus = TrayLiveStatus(),
     onMenuOpened: () -> Unit = {},
     onShow: () -> Unit,
@@ -229,7 +230,6 @@ fun ApplicationScope.NijiyomeTray(
     val primaryAction = remember { { stableShow() } }
     val menuOpenedAction = remember { { stableMenuOpened() } }
 
-    val es = live.spanish
     val link = live.link
     val activeSessions = link?.activeSessions.orEmpty()
     val tooltip = remember(live, texts) {
@@ -250,24 +250,18 @@ fun ApplicationScope.NijiyomeTray(
             val linkHeader = when {
                 activeSessions.isNotEmpty() -> {
                     val s = activeSessions.first()
-                    val title = s.title?.take(28)?.let { if ((s.title?.length ?: 0) > 28) "$it…" else it }
-                        ?: if (es) "Reproduciendo" else "Streaming"
+                    val title = s.title?.take(28)?.let { if ((s.title?.length ?: 0) > 28) "$it…" else it } ?: texts.streaming
                     val pipe = listOfNotNull(s.upscaleLabel?.substringBefore(" ·"), s.frameGenLabel).joinToString(" + ")
                     val suffix = if (pipe.isNotBlank()) " · $pipe" else ""
-                    if (es) "Link activo: ${s.deviceName} — $title$suffix"
-                    else "Link active: ${s.deviceName} — $title$suffix"
+                    texts.linkActive.format(s.deviceName, title, suffix)
                 }
-                link?.running == true -> {
-                    val devs = link.devices.size
-                    if (es) "Link :${link.port} · En espera ($devs disp.)"
-                    else "Link :${link.port} · Idle ($devs devices)"
-                }
-                else -> if (es) "Link · Desactivado" else "Link · Stopped"
+                link?.running == true -> texts.linkIdle.format(link.port.toString(), link.devices.size.toString())
+                else -> texts.linkStopped
             }
             Item(linkHeader) { stableMonitor() }
 
             if (activeSessions.size > 1) {
-                SubMenu(if (es) "Sesiones Link (${activeSessions.size})" else "Link Sessions (${activeSessions.size})") {
+                SubMenu(texts.linkSessions.format(activeSessions.size.toString())) {
                     activeSessions.forEach { s ->
                         val title = s.title?.take(24) ?: s.sourceKind
                         val pipe = listOfNotNull(s.upscaleLabel?.substringBefore(" ·"), s.frameGenLabel).joinToString(" + ")
@@ -281,9 +275,9 @@ fun ApplicationScope.NijiyomeTray(
                 val n = live.activeTorrents.size
                 val down = app.nijiyome.ui.format.formatRate(live.totalDownBps)
                 val up = app.nijiyome.ui.format.formatRate(live.totalUpBps)
-                "Torrents ($n): ↓ $down · ↑ $up"
+                texts.torrentsActive.format(n.toString(), down, up)
             } else {
-                if (es) "Torrents: sin descargas activas" else "Torrents: idle"
+                texts.torrentsIdle
             }
             if (live.activeTorrents.isNotEmpty()) {
                 SubMenu(torrentLine) {
@@ -293,31 +287,31 @@ fun ApplicationScope.NijiyomeTray(
                         Item("$shortName · $pct% · ↓ ${app.nijiyome.ui.format.formatRate(t.downBps)}") { stableTorrents() }
                     }
                     Divider()
-                    Item(if (es) "Abrir biblioteca de Torrents" else "Open Torrents") { stableTorrents() }
+                    Item(texts.openTransfers) { stableTorrents() }
                 }
             } else {
                 Item(torrentLine) { stableTorrents() }
             }
 
             // 3. Performance, RAM & Cache telemetry submenu
-            SubMenu(if (es) "Rendimiento y caché" else "Performance & Cache") {
+            SubMenu(texts.performance) {
                 val ramUsed = app.nijiyome.ui.format.formatBytes(live.jvmUsedBytes)
                 val ramMax = app.nijiyome.ui.format.formatBytes(live.jvmMaxBytes)
-                Item(if (es) "RAM app: ~$ramUsed / $ramMax" else "App RAM: ~$ramUsed / $ramMax", isEnabled = false)
+                Item(texts.appRam.format(ramUsed, ramMax), isEnabled = false)
                 val linkCache = app.nijiyome.ui.format.formatBytes(link?.totalCacheBytes ?: 0L)
                 val linkLimit = "${link?.cacheLimitMb ?: 1024} MB"
-                Item(if (es) "Caché Link (RAM): $linkCache / $linkLimit" else "Link cache (RAM): $linkCache / $linkLimit", isEnabled = false)
+                Item(texts.linkCache.format(linkCache, linkLimit), isEnabled = false)
                 val disk = app.nijiyome.ui.format.formatBytes(live.diskCacheBytes)
                 val torDisk = app.nijiyome.ui.format.formatBytes(live.torrentStorageBytes)
-                Item(if (es) "Caché disco: $disk · Torrents: $torDisk" else "Disk cache: $disk · Torrents: $torDisk", isEnabled = false)
+                Item(texts.diskCache.format(disk, torDisk), isEnabled = false)
                 Divider()
-                Item(if (es) "Abrir Monitor de Link y sistema" else "Open Link & System Monitor") { stableMonitor() }
+                Item(texts.openMonitor) { stableMonitor() }
             }
 
             Divider()
             Item(texts.show) { stableShow() }
-            Item(if (es) "Monitor de Link y estado" else "Link & Status Monitor") { stableMonitor() }
-            Item(if (es) "Ajustes" else "Settings") { stableSettings() }
+            Item(texts.monitor) { stableMonitor() }
+            Item(texts.settings) { stableSettings() }
             Divider()
             Item(texts.quit) { stableQuit() }
         }

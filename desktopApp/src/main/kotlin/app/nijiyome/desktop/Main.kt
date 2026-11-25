@@ -44,7 +44,6 @@ import app.nijiyome.desktop.system.TrayLiveStatus
 import app.nijiyome.extensionserver.PendingServerLink
 import app.nijiyome.desktop.system.NijiyomeTray
 import app.nijiyome.desktop.system.quantizedForTray
-import app.nijiyome.desktop.system.TrayTexts
 import app.nijiyome.desktop.system.connectDiscord
 import app.nijiyome.desktop.system.desktopSystemModule
 import app.nijiyome.desktop.system.discordEndpoints
@@ -61,6 +60,9 @@ import app.nijiyome.nav.Route
 import app.nijiyome.ui.platform.AppWindow
 import app.nijiyome.social.DesktopSocialPoller
 import app.nijiyome.nav.ShellShortcuts
+import app.nijiyome.nav.TrayStrings
+import app.nijiyome.nav.loadTrayStrings
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.InterceptPlatformTextInput
 import app.nijiyome.ui.platform.DesktopBackDispatcher
 import app.nijiyome.ui.platform.LocalAppWindow
@@ -201,7 +203,8 @@ fun main(args: Array<String>) {
             // The tray menu in the chosen language from the start and as soon as it changes (its texts are a parameter, so a new
             // language recomposes the menu; they never depend on when the default locale was last set).
             DesktopLocale.apply(appSettings.language)
-            val trayTexts = TrayTexts.forLocale(DesktopLocale.localeFor(appSettings.language))
+            // Read from the shell's resources once the process locale above is the chosen one.
+            val trayTexts by produceState(TrayStrings(), appSettings.language) { value = loadTrayStrings() }
             val spanish = DesktopLocale.localeFor(appSettings.language).language == "es"
 
             // Live telemetry for the Link Monitor dialog (sampled every 1.5-3s) and a coarse, freeze-guarded snapshot for
@@ -274,7 +277,8 @@ fun main(args: Array<String>) {
                 }
             }
             val openMonitor = { show(); linkMonitorOpen = true }
-            val openTorrents = { show(); router.routeLinks.value = app.nijiyome.nav.Route.Torrents() }
+            // Sparkles: the torrents live in Transferencias.
+            val openTorrents = { show(); router.routeLinks.value = app.nijiyome.nav.Route.Downloads() }
             val openSettingsModal = { show(); shortcuts.openSettingsModal(null) }
             if (trayOn && trayIcons != null) {
                 NijiyomeTray(
@@ -365,6 +369,8 @@ fun main(args: Array<String>) {
                                     accountLinks = router.accountLinks,
                                     routeLinks = router.routeLinks,
                                     shortcuts = shortcuts,
+                                    // Sparkles file drop: a magnet or a .torrent dropped on the window goes where the command line sends it.
+                                    openExternal = { raw -> LaunchArgs.targetOf(raw)?.let { router.open(it); true } ?: false },
                                     windowTopBar = if (nativeBar) null else ({
                                         DesktopTitleBar(
                                             window = window,
@@ -372,7 +378,6 @@ fun main(args: Array<String>) {
                                             appWindow = appWindow,
                                             online = online,
                                             linkPort = linkPort,
-                                            spanish = spanish,
                                             windows = windows,
                                             onClose = closeWindow,
                                             canGoBack = shortcuts.canGoBack,

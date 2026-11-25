@@ -20,7 +20,7 @@ sealed interface ShellShortcut {
     /** Ctrl+K: Command Palette (settings, commands, routes & catalog search). */
     data object FocusSearch : ShellShortcut
 
-    /** Ctrl+P / Ctrl+,: Settings modal overlay. */
+    /** Ctrl+, (Sparkles) and Ctrl+P (kept as its alias): Settings over the current screen. */
     data object OpenSettings : ShellShortcut
 
     /** Ctrl+B: the rail with labels / icons only. */
@@ -29,7 +29,7 @@ sealed interface ShellShortcut {
     /** Esc: back (the screen's own back first: a panel, a sheet). */
     data object Back : ShellShortcut
 
-    /** 1..9: the rail destination at [position] (1 = the first). */
+    /** 1..9: the visible rail destination at [position] (1 = the first), in rail order. */
     data class NavTo(val position: Int) : ShellShortcut
 }
 
