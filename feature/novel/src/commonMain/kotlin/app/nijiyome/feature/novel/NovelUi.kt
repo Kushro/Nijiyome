@@ -52,54 +52,6 @@ import java.io.File
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 
-internal val NOVEL_CARD_WIDTH = 120.dp
-
-@Composable
-internal fun NovelSectionHeader(text: String, action: (@Composable () -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).semantics { heading() })
-        action?.invoke()
-    }
-}
-
-@Composable
-internal fun NovelCard(title: String, cover: String?, subtitle: String?, onClick: () -> Unit, progress: Float? = null) {
-    Column(Modifier.width(NOVEL_CARD_WIDTH).clickable(onClick = onClick)) {
-        Box(contentAlignment = Alignment.BottomCenter) {
-            MediaCover(url = cover, modifier = Modifier.fillMaxWidth())
-            if (progress != null) LinearProgressIndicator(progress = { progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().padding(8.dp))
-        }
-        Text(title, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
-        subtitle?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
-    }
-}
-
-@Composable
-internal fun NovelRow(title: String, state: LoadState<List<Media>>, lang: TitleLanguage, onRetry: () -> Unit, onClick: (Media) -> Unit) {
-    when (state) {
-        LoadState.Loading -> {
-            NovelSectionHeader(title)
-            if (rememberAfterDelay()) {
-                Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    repeat(4) { SkeletonBox(Modifier.width(NOVEL_CARD_WIDTH).height(NOVEL_CARD_WIDTH / COVER_ASPECT_RATIO)) }
-                }
-            }
-        }
-        is LoadState.Err -> {
-            NovelSectionHeader(title)
-            ErrorState(message = state.cause.userMessage(), retryLabel = stringResource(UiR.string.ui_retry), onRetry = onRetry, compact = true)
-        }
-        is LoadState.Ok -> if (state.value.isNotEmpty()) {
-            NovelSectionHeader(title)
-            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(state.value, key = { it.ref.anilistId ?: it.title.hashCode() }) { m ->
-                    NovelCard(m.displayTitle(lang), m.cover, m.year?.toString(), onClick = { onClick(m) })
-                }
-            }
-        }
-    }
-}
-
 @Composable
 internal fun NovelError(cause: AppError, onRetry: () -> Unit, modifier: Modifier = Modifier) {
     ErrorState(message = cause.userMessage(), retryLabel = stringResource(UiR.string.ui_retry), onRetry = onRetry, modifier = modifier, title = stringResource(UiR.string.ui_error_title))

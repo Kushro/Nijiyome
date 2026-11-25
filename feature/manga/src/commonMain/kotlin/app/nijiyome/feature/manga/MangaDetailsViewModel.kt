@@ -45,6 +45,8 @@ data class ChapterTools(
     val query: String = "",
     val lang: String? = null,
     val byVolume: Boolean = false,
+    /** Scanlation group shown; null = every group. */
+    val group: String? = null,
 )
 
 data class MangaDetailsUi(
@@ -55,15 +57,18 @@ data class MangaDetailsUi(
     val source: MangaChapterSource? = null,
     val chapters: LoadState<List<MangaChapter>> = LoadState.Loading,
     val tools: ChapterTools = ChapterTools(),
-    val selecting: Boolean = false,
-    val selected: Set<String> = emptySet(),
     val opening: Boolean = false,
 ) {
     val shown: List<MangaChapter>
         get() {
             val list = (chapters as? LoadState.Ok)?.value ?: return emptyList()
-            return ChapterLists.filtered(ChapterLists.sorted(list, tools.order), tools.query, tools.lang)
+            val filtered = ChapterLists.filtered(ChapterLists.sorted(list, tools.order), tools.query, tools.lang)
+            return tools.group?.let { g -> filtered.filter { it.group == g } } ?: filtered
         }
+
+    /** Scanlation groups of the loaded chapters, for the group filter. */
+    val groups: List<String>
+        get() = (chapters as? LoadState.Ok)?.value.orEmpty().mapNotNull { it.group?.takeIf(String::isNotBlank) }.distinct().sorted()
 
     /** BUG-097: the sources answered and none of them found the title (nothing to read, nothing to preselect). */
     val noSourceFound: Boolean
@@ -149,7 +154,7 @@ class MangaDetailsViewModel(
     }
 
     fun selectSource(source: MangaChapterSource) {
-        _ui.update { it.copy(source = source, selected = emptySet(), tools = it.tools.copy(lang = null)) }
+        _ui.update { it.copy(source = source, tools = it.tools.copy(lang = null, group = null)) }
         loadChapters(source, refresh = false)
     }
 
@@ -198,25 +203,57 @@ class MangaDetailsViewModel(
 
     fun setTools(transform: (ChapterTools) -> ChapterTools) = _ui.update { it.copy(tools = transform(it.tools)) }
 
-    fun setSelecting(on: Boolean) = _ui.update { it.copy(selecting = on, selected = if (on) it.selected else emptySet()) }
-
-    fun toggle(chapter: MangaChapter) = _ui.update { ui ->
-        val id = MangaRepositoryImpl.downloadId(chapter)
-        ui.copy(selected = if (id in ui.selected) ui.selected - id else ui.selected + id)
-    }
-
-    fun selectAllShown() = _ui.update { ui -> ui.copy(selected = ui.shown.map(MangaRepositoryImpl::downloadId).toSet()) }
-
-    fun downloadSelected() {
+    /** Queues the chapters with these download ids (the multi-selection of the details page). */
+    fun downloadChapters(ids: Set<String>) {
         val ui = _ui.value
         val media = (ui.info as? LoadState.Ok)?.value?.media ?: return
-        val chosen = ((ui.chapters as? LoadState.Ok)?.value ?: emptyList()).filter { MangaRepositoryImpl.downloadId(it) in ui.selected }
+        val chosen = ((ui.chapters as? LoadState.Ok)?.value ?: emptyList()).filter { MangaRepositoryImpl.downloadId(it) in ids }
         if (chosen.isEmpty()) return
         viewModelScope.launch {
             repo.downloadChapters(media, chosen)
                 .onSuccess { n -> _events.tryEmit(DetailsEvent.Queued(n)) }
                 .onFailure { e -> _events.tryEmit(DetailsEvent.Failed(e.toAppError())) }
-            _ui.update { it.copy(selecting = false, selected = emptySet()) }
+        }
+    }
+
+    /**
+     * Batch "Marcar leídos" / "Marcar no leídos" (ListProgress, same rules as the row toggle): read sets P = max(P, highest selected),
+     * not read sets P = min(P, lowest selected - 1). Returns how to undo it (the previous status and progress), or null when nothing
+     * changed.
+     */
+    fun markChapters(ids: Set<String>, read: Boolean): (() -> Unit)? {
+        val media = (_ui.value.info as? LoadState.Ok)?.value?.media ?: return null
+        val numbers = ((_ui.value.chapters as? LoadState.Ok)?.value ?: emptyList())
+            .filter { MangaRepositoryImpl.downloadId(it) in ids }
+            .mapNotNull { ListProgress.chapterIndex(it.number) }
+        if (numbers.isEmpty()) return null
+        val current = entry.value
+        val before = current?.progress ?: 0
+        val target = if (read) {
+            ListProgress.toggledProgress(before, numbers.max(), watched = true, total = current?.totalChapters ?: media.episodes)
+        } else {
+            ListProgress.toggledProgress(before, numbers.min(), watched = false)
+        }
+        if (target == before && (read || current != null)) return null
+        viewModelScope.launch {
+            val status = when {
+                read && current == null -> repo.setReadStatus(media, ListStatus.WATCHING)
+                !read -> ListProgress.statusAfterUnmark(current?.status)?.let { repo.setReadStatus(media, it) } ?: Result.success(Unit)
+                else -> Result.success(Unit)
+            }
+            status.fold(onSuccess = { repo.setReadProgress(ref, target) }, onFailure = { Result.failure(it) })
+                .onFailure { e -> _events.tryEmit(DetailsEvent.Failed(e.toAppError())) }
+        }
+        return { restoreEntry(current) }
+    }
+
+    /** Puts the readlist entry back as it was (undo of a status, progress or batch change). */
+    fun restoreEntry(previous: ReadEntry?) {
+        val media = (_ui.value.info as? LoadState.Ok)?.value?.media ?: return
+        viewModelScope.launch {
+            repo.setReadStatus(media, previous?.status)
+                .fold(onSuccess = { if (previous != null) repo.setReadProgress(ref, previous.progress) else Result.success(Unit) }, onFailure = { Result.failure(it) })
+                .onFailure { e -> _events.tryEmit(DetailsEvent.Failed(e.toAppError())) }
         }
     }
 

@@ -20,6 +20,8 @@ import app.nijiyome.novel.NovelRepositoryImpl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +53,9 @@ data class NovelReaderUi(
     /** 0..1 read inside the current chapter. */
     val fraction: Float get() = paragraphs.size.let { n -> if (n <= 0) 0f else ((paragraph + 1).toFloat() / n).coerceIn(0f, 1f) }
 }
+
+/** Sleep timer of the narrator. */
+enum class SleepTimer(val minutes: Int?) { OFF(null), MIN_15(15), MIN_30(30), END_OF_CHAPTER(null) }
 
 sealed interface NovelReaderEvent {
     data class Replace(val args: NovelReaderArgs) : NovelReaderEvent
@@ -192,7 +197,45 @@ class NovelReaderViewModel(
         viewModelScope.launch { narratorApi.speak(text, fromParagraph.coerceIn(0, (text.paragraphs.size - 1).coerceAtLeast(0))) }
     }
 
+    /** The narrator, for the voice sheet of the reader (engines, voices, "Escuchar"). */
+    internal val narrator: Narrator get() = narratorApi
+
+    private val _sleep = MutableStateFlow(SleepTimer.OFF)
+
+    /** The narrator's sleep timer (artifact "Temporizador"): off, 15 / 30 min or at the end of the chapter. */
+    val sleep: StateFlow<SleepTimer> = _sleep.asStateFlow()
+    private var sleepJob: Job? = null
+
+    fun setSleepTimer(timer: SleepTimer) {
+        sleepJob?.cancel()
+        _sleep.value = timer
+        val minutes = timer.minutes ?: return
+        sleepJob = viewModelScope.launch {
+            delay(minutes * 60_000L)
+            if (narratorApi.state.value != TtsState.IDLE) stopNarration()
+            _sleep.value = SleepTimer.OFF
+        }
+    }
+
+    /** "Siguiente párrafo" while narrating. */
+    fun nextParagraph() {
+        val ui = _ui.value
+        val segment = ui.narrating ?: return
+        val paragraphs = (ui.segments.getOrNull(segment)?.text as? LoadState.Ok)?.value?.paragraphs ?: return
+        val next = (narratorApi.currentParagraph.value ?: ui.paragraph) + 1
+        if (next < paragraphs.size) speak(segment, next)
+    }
+
+    fun updateTts(transform: (app.nijiyome.model.TtsSettings) -> app.nijiyome.model.TtsSettings) {
+        viewModelScope.launch { settingsRepo.update { it.copy(tts = transform(it.tts).sanitized()) } }
+    }
+
     private fun continueNarration(finished: Int) {
+        if (_sleep.value == SleepTimer.END_OF_CHAPTER) {
+            _sleep.value = SleepTimer.OFF
+            _ui.update { it.copy(narrating = null) }
+            return
+        }
         val ui = _ui.value
         val next = finished + 1
         if (next < ui.segments.size) {
