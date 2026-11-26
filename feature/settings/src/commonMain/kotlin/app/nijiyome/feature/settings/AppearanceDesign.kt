@@ -49,6 +49,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -93,6 +94,7 @@ import app.nijiyome.feature.settings.resources.Res
 import app.nijiyome.feature.settings.resources.*
 import app.nijiyome.model.AppLanguage
 import app.nijiyome.model.AppSettings
+import app.nijiyome.model.HistoryRepository
 import app.nijiyome.model.CalendarStructure
 import app.nijiyome.model.ContrastPref
 import app.nijiyome.model.DesignDirection
@@ -131,7 +133,9 @@ import app.nijiyome.ui.patterns.rememberReorderState
 import app.nijiyome.ui.patterns.rememberShowUndo
 import app.nijiyome.ui.patterns.reorderContainer
 import app.nijiyome.ui.patterns.reorderPlacement
+import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.StringResource
+import org.koin.compose.getKoin
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.model.CardSize as ModelCardSize
 
@@ -925,11 +929,30 @@ private fun variantNameRes(variant: String): StringResource = when (variant) {
 
 // ---------------------------------------------------------------- live preview
 
-/** Live mini-preview reacting at once to direction, palette, tone, contrast, card style and density (all through the theme). */
+/**
+ * Live mini-preview reacting at once to direction, palette, tone, contrast, card style, card size and density (all through the
+ * theme). The cards carry the posters of the user's own recent titles when there are any (local history, no network), else the
+ * gallery samples.
+ */
 @Composable
 internal fun AppearanceLivePreview(s: AppSettings) {
     val scheme = MaterialTheme.colorScheme
-    val sample = gallerySampleCards().take(2)
+    val koin = getKoin()
+    val recentFlow = remember(koin) {
+        runCatching { koin.getOrNull<HistoryRepository>() }.getOrNull()?.continueWatching(4) ?: flowOf(emptyList())
+    }
+    val recent by recentFlow.collectAsState(initial = emptyList())
+    val posters = recent.filter { !it.poster.isNullOrBlank() }.distinctBy { it.animeId }
+    val sample = gallerySampleCards().take(2).mapIndexed { i, card ->
+        posters.getOrNull(i)?.let { h -> card.copy(key = "preview:${h.animeId}", title = h.title, coverUrl = h.poster) } ?: card
+    }
+    // The size the user picked, scaled to the preview (it is a miniature of a row, not the row itself).
+    val cardWidth = when (s.look.cardSize) {
+        ModelCardSize.SMALL -> 80.dp
+        ModelCardSize.MEDIUM -> 96.dp
+        ModelCardSize.LARGE -> 116.dp
+        ModelCardSize.XL -> 136.dp
+    }
     Surface(
         color = scheme.background,
         shape = MaterialTheme.shapes.medium,
@@ -959,7 +982,7 @@ internal fun AppearanceLivePreview(s: AppSettings) {
             if (s.look.showGreeting) Text(stringResource(Res.string.rd_s10_preview_greeting), style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.clearAndSetSemantics {}) {
                 sample.forEach { card ->
-                    Box(Modifier.width(96.dp)) { TitleCard(card, onClick = {}, context = CardContext.GRID) }
+                    Box(Modifier.width(cardWidth)) { TitleCard(card, onClick = {}, context = CardContext.GRID, size = s.look.cardSize) }
                 }
             }
             StatusMark(StatusSlot.WATCHING, stringResource(Res.string.rd_s10_preview_watching), selected = true)
