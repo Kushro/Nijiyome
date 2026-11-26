@@ -42,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -377,6 +378,12 @@ private fun ListDetailSettings(ctx: SettingsLayoutCtx) {
                                 selected = c == nav.current,
                                 onClick = { nav.select(c) },
                                 icon = { Icon(c.icon(), contentDescription = null) },
+                                // The open category is the accent's soft tone (artifact `--nj-accent-soft`), not the strongest fill.
+                                colors = NavigationDrawerItemDefaults.colors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                ),
                             )
                         }
                     }
@@ -585,7 +592,7 @@ private fun ResultRow(item: SettingCatalogItem, query: String, current: Boolean,
     val amoled = LocalNijiyomeAmoled.current
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = if (current) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+        color = if (current) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
         border = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
         modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(onClick = onClick),
     ) {
@@ -633,7 +640,7 @@ private fun CategoryCards(categories: List<SettingsCategory>, state: SettingsUiS
         categories.forEach { c ->
             Surface(
                 shape = MaterialTheme.shapes.large,
-                color = if (c == current) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                color = if (c == current) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
                 border = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
                 modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable { onSelect(c) },
             ) {
