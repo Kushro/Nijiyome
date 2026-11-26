@@ -255,8 +255,13 @@ private const val STATUS_SLOT = "\u0002"
 /** The list status picker of a result (pattern `stp`): six statuses, and "Quitar de mi lista" when it is on the list. */
 @Composable
 private fun ListStatusSheet(media: Media, current: ListStatus?, onPick: (ListStatus?) -> Unit, onDismiss: () -> Unit) {
-    AdaptiveSheet(onDismissRequest = onDismiss, modifier = Modifier.decor(DecorRegion.SHEET)) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // The sheet decor goes on the content inside the sheet's surface: on the sheet's outer modifier it drew outside the rounded
+    // surface and only its corners showed (stray marks, REP-04 pattern).
+    AdaptiveSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().decor(DecorRegion.SHEET).padding(horizontal = 24.dp).padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Text(
                 stringResource(Res.string.rd_s3_status_sheet_title),
                 style = MaterialTheme.typography.titleLarge,

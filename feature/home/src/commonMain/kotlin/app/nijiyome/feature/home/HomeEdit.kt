@@ -91,17 +91,18 @@ internal fun HomeEditPanel(
     modifier: Modifier = Modifier,
 ) {
     if (compact) {
-        ModalBottomSheet(onDismissRequest = onDone, modifier = modifier.decor(DecorRegion.SHEET)) {
-            Column(Modifier.fillMaxWidth().fillMaxHeight(SHEET_HEIGHT)) {
+        // The decor sits on the content inside the sheet's surface (on the sheet itself only its corners showed).
+        ModalBottomSheet(onDismissRequest = onDone, modifier = modifier) {
+            Column(Modifier.fillMaxWidth().fillMaxHeight(SHEET_HEIGHT).decor(DecorRegion.SHEET)) {
                 EditBody(order, hidden, because, onMove, onToggle, onReset, onDone, compact = true)
             }
         }
     } else {
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = modifier.width(PANEL_WIDTH).fillMaxHeight().decor(DecorRegion.SHEET),
+            modifier = modifier.width(PANEL_WIDTH).fillMaxHeight(),
         ) {
-            Column(Modifier.fillMaxHeight()) {
+            Column(Modifier.fillMaxHeight().decor(DecorRegion.SHEET)) {
                 EditBody(order, hidden, because, onMove, onToggle, onReset, onDone, compact = false)
             }
         }
