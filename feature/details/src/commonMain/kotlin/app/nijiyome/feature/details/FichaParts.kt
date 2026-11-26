@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -75,6 +76,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -261,24 +263,29 @@ internal fun FichaHero(
 // ---------------------------------------------------------------- facts
 
 /**
- * The facts in the composition of Diseño y estilo › Cabecera: a quiet line (Línea, Siguiente) or the labelled grid (Datos, Datos y
- * siguiente), then the series progress as a segmented track ("3 de 12 vistos").
+ * The facts in the composition of Diseño y estilo › Cabecera: a quiet line (Línea, Siguiente) or the labelled facts (Datos, Datos y
+ * siguiente: one line of label-over-value pairs from [FACTS_STRIP_MIN], the grid below it or at a large font), then the series
+ * progress as a segmented track ("3 de 12 vistos", the words left out when the Episodios fact already says them).
  */
 @Composable
 internal fun FichaFacts(head: HeadModel, media: Media, state: DetailsUiState, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (head.layout.usesFacts) {
-            FactsGrid(head)
-        } else {
-            FactsLine(head.facts, adult = state.detailsOrNull?.isAdult == true || media.looksAdult(), nextLast = head.layout == HeaderLayout.NEXT_UP)
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val strip = head.layout.usesFacts && maxWidth >= FACTS_STRIP_MIN && fontScale < 1.3f
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            when {
+                strip -> FactsStrip(head, media, state)
+                head.layout.usesFacts -> FactsGrid(head)
+                else -> FactsLine(head.facts, adult = state.detailsOrNull?.isAdult == true || media.looksAdult(), nextLast = head.layout == HeaderLayout.NEXT_UP)
+            }
+            SeriesProgress(state, showLabel = !(strip && head.facts.any { it is HeadFact.Episodes }))
         }
-        SeriesProgress(state)
     }
 }
 
 /** "3 de 12 vistos" over the direction's track, one segment per episode when the total is known. */
 @Composable
-internal fun SeriesProgress(state: DetailsUiState, modifier: Modifier = Modifier) {
+internal fun SeriesProgress(state: DetailsUiState, modifier: Modifier = Modifier, showLabel: Boolean = true) {
     val total = state.totalEpisodes
     val watched = remember(state.progress, state.listProgress, total) { watchedCount(state.progress, state.listProgress, total) }
     if (watched == 0 && total == null) return
@@ -288,12 +295,15 @@ internal fun SeriesProgress(state: DetailsUiState, modifier: Modifier = Modifier
         stringResource(Res.string.rd_s4_series_progress_open, watched)
     }
     Column(modifier.widthIn(max = 480.dp).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (showLabel) Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (total != null && total > 0) {
             ProgressTrack(progress = (watched.toFloat() / total).coerceIn(0f, 1f), segments = total.takeIf { it <= MAX_TRACK_SEGMENTS })
         }
     }
 }
+
+/** From this width the labelled facts fit on one line. */
+private val FACTS_STRIP_MIN = 560.dp
 
 // ---------------------------------------------------------------- list status
 
@@ -340,13 +350,30 @@ internal fun FichaStatusRow(media: Media, state: DetailsUiState, actions: Detail
             picker(Modifier.fillMaxWidth())
         }
     } else {
-        Row(modifier.fillMaxWidth().semantics { isTraversalGroup = true }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            picker(Modifier.weight(1f, fill = false))
-            tools()
+        // The six statuses are named, never cut to icons: beside the label and tools only where the row really has the room
+        // (Panel at full width); narrower (Cine's column, a pane beside a list) the picker takes a full line under them.
+        BoxWithConstraints(modifier.fillMaxWidth()) {
+            if (maxWidth >= STATUS_ONE_ROW) {
+                Row(Modifier.fillMaxWidth().semantics { isTraversalGroup = true }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    picker(Modifier.weight(1f))
+                    tools()
+                }
+            } else {
+                Column(Modifier.fillMaxWidth().semantics { isTraversalGroup = true }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        tools()
+                    }
+                    picker(Modifier.fillMaxWidth())
+                }
+            }
         }
     }
 }
+
+/** From this width the status label, the six named statuses and the tools share one row. */
+private val STATUS_ONE_ROW = 860.dp
 
 // ---------------------------------------------------------------- actions
 
