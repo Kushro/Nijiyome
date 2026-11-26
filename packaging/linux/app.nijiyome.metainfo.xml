@@ -51,6 +51,13 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.3.0" date="2026-11-26">
+      <description>
+        <p>Full visual redesign across Desktop and Android: five independent visual directions (Tanabata, Obi, Night Transit, Sumi &amp; Hanko, and Material), 16 card styles, curated palettes per direction (light, dark, OLED), and per-screen customizable layouts (Tonight / Stage / Shelves for Home; Panel / Route / Cinema for Details; Week / Departure Board / Agenda / Month for Calendar; Cinema / Panel / Minimal for the player).</p>
+        <p>Motion system and interaction patterns: configurable motion profiles (Full, Calm, Performance), card-to-Details transitions, optional resting tilt for hanging tanzaku strips, multi-selection with batch actions, live Design Gallery, and five-tab Appearance settings with live poster preview.</p>
+        <p>Refinements and fixes: bundled jdk.localedata with explicit 24-hour times across Home and Calendar, full multi-page Month calendar loading, full-width Details from Explore/Calendar/Library, compact Cinema episode drawer, in-place Ctrl+K jump inside Settings, and direction-matched control shapes across screens.</p>
+      </description>
+    </release>
     <release version="1.2.1" date="2026-11-25">
       <description>
         <p>Metadata completeness and rate-limit resilience: full episode ladder with automatic MAL ID resolution via ani.zip so Tenrai/MAL episode titles and thumbnails enrich seasonal anime missing details on AniList/Kitsu, plus live animated fallback countdown banners and automatic recovery to the primary metadata provider when cooldown ends.</p>
