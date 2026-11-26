@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,12 +36,17 @@ const val SIDE_SHEET_MIN_WIDTH_DP = 600
 /**
  * Bottom sheet on compact windows, custom side sheet (anchored surface + scrim) on medium/expanded.
  * `ModalSideSheet` does not exist in material3 1.5.0-alpha15 (review E11).
+ * [sideSheetWidth]: the side sheet's width (capped by the window); a wide table asks for more than the default.
+ * [scrimAlpha]: how much the scrim darkens what is behind (null = the default of each branch); a sheet that adjusts the picture
+ * behind it (the player's Imagen / Mejoras) passes 0 so the effect stays visible.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdaptiveSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    sideSheetWidth: Dp = 400.dp,
+    scrimAlpha: Float? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // v1.1: an open sheet turns the desktop window's app-wide keys off (no tracker on Android).
@@ -53,7 +59,7 @@ fun AdaptiveSheet(
             onDismissRequest = onDismissRequest,
             modifier = modifier,
             containerColor = sheetColor,
-            scrimColor = Color.Black.copy(alpha = 0.64f),
+            scrimColor = Color.Black.copy(alpha = scrimAlpha ?: 0.64f),
         ) {
             Column(Modifier.padding(bottom = 16.dp), content = content)
         }
@@ -65,14 +71,14 @@ fun AdaptiveSheet(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.56f))
+                    .background(Color.Black.copy(alpha = scrimAlpha ?: 0.56f))
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismissRequest),
             ) {
                 Surface(
                     modifier = modifier
                         .align(Alignment.CenterEnd)
                         .fillMaxHeight()
-                        .width(400.dp)
+                        .width(sideSheetWidth)
                         // swallow clicks so tapping inside the sheet does not hit the scrim
                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {}),
                     // BUG-079: it touches the right edge of the screen, so only the inner corners are rounded.
