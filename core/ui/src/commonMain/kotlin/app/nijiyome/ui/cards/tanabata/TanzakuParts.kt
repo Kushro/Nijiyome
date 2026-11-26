@@ -121,6 +121,14 @@ internal fun continueWidth(size: CardSize): Dp = when (size) {
     CardSize.XL -> 340.dp
 }
 
+/** Width of a hanging Continuar strip: the wide sizes hang too, one step wider (artifact `[data-region="tonight"]` 140 / 138 / 160 px). */
+internal fun hangingContinueWidth(size: CardSize): Dp = when (size) {
+    CardSize.SMALL -> 128.dp
+    CardSize.MEDIUM -> 138.dp
+    CardSize.LARGE -> 160.dp
+    CardSize.XL -> 180.dp
+}
+
 /** Whether the cards hang from a rod here: only under Tanabata, whose decor draws the rod over rows (elsewhere the paper shows its hole). */
 @Composable
 internal fun tzHangs(): Boolean = LocalDirection.current.id == TanabataDirection.id
@@ -425,7 +433,11 @@ internal enum class TzContinueVariant {
     PANEL,
 }
 
-/** Continuar: a tall hanging strip for SMALL / MEDIUM (every style), the wide strip for LARGE / XL. */
+/**
+ * Continuar: a tall hanging strip for SMALL / MEDIUM (every style), the wide strip for LARGE / XL. Under a rod (Tanabata) every size
+ * hangs as a tall strip: a wide strip has no thread to hang by and read as a bar stuck to the rod ("Extra grande" lost the tanzaku
+ * of "Esta noche", with its thread and stamps).
+ */
 @Composable
 internal fun TzContinue(
     data: TitleCardData,
@@ -436,7 +448,7 @@ internal fun TzContinue(
     onLongClick: (() -> Unit)?,
     modifier: Modifier,
 ) {
-    if (size.isWide) TzContinueWide(data, size, show, variant, onClick, onLongClick, modifier)
+    if (size.isWide && !tzHangs()) TzContinueWide(data, size, show, variant, onClick, onLongClick, modifier)
     else TzContinueTall(data, size, show, onClick, onLongClick, modifier)
 }
 
@@ -484,7 +496,7 @@ private fun TzContinueTall(
     val thread = if (kind == TzTonightKind.NEW) TZ_NEW_THREAD else null
     Column(
         modifier
-            .width(continueWidth(size).dense())
+            .width(hangingContinueWidth(size).dense())
             .tzClickable(interaction, onClick, onLongClick, description)
             .then(if (hangs) Modifier.tzThread(threadH, color = thread, dashed = kind == TzTonightKind.SOON) else Modifier)
             .padding(top = threadH),
