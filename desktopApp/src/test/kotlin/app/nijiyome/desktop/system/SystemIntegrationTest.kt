@@ -2,6 +2,7 @@
 package app.nijiyome.desktop.system
 
 import app.nijiyome.feature.settings.DesktopSystemPrefs
+import app.nijiyome.model.NoticeDestination
 import app.nijiyome.model.NowPlayingInfo
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -145,8 +146,42 @@ class SystemIntegrationTest {
         assertEquals(listOf("notify-send", "--app-name=Nijiyome", "--icon=app.nijiyome", "--", "Frieren · episode 3 downloaded", "it's \\ here"), commands[1])
         assertEquals("'a b'", DesktopNotifier.gvariantString("a\nb"))
         val balloons = mutableListOf<Pair<String, String>>()
-        DesktopNotifier(windows = true, run = { error("no commands on Windows") }, windowsBalloon = { t, b -> balloons += t to b }).post("T", "B")
+        DesktopNotifier(windows = true, run = { error("no commands on Windows") }, windowsBalloon = { t, b, _ -> balloons += t to b }).post("T", "B")
         assertEquals(listOf("T" to "B"), balloons)
+    }
+
+    @Test
+    fun aClickedNotificationOpensItsDestination() {
+        val commands = mutableListOf<List<String>>()
+        val opened = mutableListOf<NoticeDestination>()
+        val notifier = DesktopNotifier(
+            windows = false,
+            run = { commands += it; 0 },
+            call = { commands += it; "(uint32 42,)\n" },
+            startMonitor = { null },
+        )
+        notifier.onOpen = { opened += it }
+        notifier.post("Frieren", "Episode 3 ready", NoticeDestination.Torrent("abc"))
+        assertTrue(commands.single().contains("['default', '']"), commands.toString())
+        assertEquals(setOf(42L), notifier.pendingIds())
+        notifier.onSignalLine("/org/freedesktop/Notifications: org.freedesktop.Notifications.ActionInvoked (uint32 41, 'default')")
+        assertTrue(opened.isEmpty())
+        notifier.onSignalLine("/org/freedesktop/Notifications: org.freedesktop.Notifications.ActionInvoked (uint32 42, 'default')")
+        assertEquals(listOf<NoticeDestination>(NoticeDestination.Torrent("abc")), opened)
+        assertTrue(notifier.pendingIds().isEmpty())
+        // A notice closed without a click is forgotten.
+        notifier.post("Frieren", "Episode 4 ready", NoticeDestination.Transfers)
+        notifier.onSignalLine("/org/freedesktop/Notifications: org.freedesktop.Notifications.NotificationClosed (uint32 42, uint32 2)")
+        assertTrue(notifier.pendingIds().isEmpty())
+        // Windows: the balloon gets a click handler only when there is somewhere to go.
+        val handlers = mutableListOf<(() -> Unit)?>()
+        val win = DesktopNotifier(windows = true, windowsBalloon = { _, _, onClick -> handlers += onClick })
+        win.onOpen = { opened += it }
+        win.post("T", "B")
+        win.post("T", "B", NoticeDestination.Calendar)
+        assertEquals(null, handlers[0])
+        handlers[1]?.invoke()
+        assertEquals(NoticeDestination.Calendar, opened.last())
     }
 
     /**

@@ -51,14 +51,32 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.EmptyArt
+import app.nijiyome.designsystem.direction.EmptyKind
+import app.nijiyome.designsystem.direction.SectionHeader
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.LoadingPlaceholder
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -104,6 +122,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.1, worker r). Signatures FINAL (the shell and Details
 // wire them).
@@ -166,33 +185,170 @@ internal fun CalendarRow(ep: AiringEpisode, time: String, tracked: Boolean, foll
  */
 @Composable
 fun ForYouScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifier: Modifier = Modifier) {
-    val vm: ForYouViewModel = koinViewModel()
-    val state by vm.state.collectAsStateWithLifecycle()
-    val snackbar = LocalAppSnackbar.current
-    val undoLabel = stringResource(Res.string.home_recs_undo)
-    val dismissedMsg = stringResource(Res.string.home_recs_dismissed)
     Scaffold(
         modifier = modifier,
         contentWindowInsets = screenInsets,
         topBar = { DiscoverTopBar(stringResource(Res.string.home_for_you_title), onBack) },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
-            Column(Modifier.widthIn(max = 840.dp).fillMaxSize()) {
-                Segmented(
-                    options = listOf(
-                        SegmentedOption(ForYouTab.LIST, stringResource(Res.string.home_recs_tab_list), icon = Icons.Outlined.Explore),
-                        SegmentedOption(ForYouTab.ATLAS, stringResource(Res.string.home_recs_tab_atlas), icon = Icons.Outlined.Hub),
-                    ),
-                    selected = state.tab,
-                    onSelect = vm::selectTab,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        ForYouPanel(onMediaClick = onMediaClick, modifier = Modifier.fillMaxSize().padding(padding))
+    }
+}
+
+/**
+ * Sparkles Explorar › Para ti (FYOU-01 / FYOU-02): the whole "Para ti" page without its own top bar, so Explorar (lane S3) shows it as
+ * a tab: List / Atlas switch, taste chips ([onGenre] browses that genre; null keeps them as plain labels), recommendations with
+ * affinity and reasons, "No me interesa" with Undo, and the atlas. [ForYouScreen] wraps it with a top bar.
+ */
+@Composable
+fun ForYouPanel(
+    onMediaClick: (Media) -> Unit,
+    modifier: Modifier = Modifier,
+    onGenre: ((String) -> Unit)? = null,
+    startOnAtlas: Boolean = false,
+) {
+    val vm: ForYouViewModel = koinViewModel()
+    val state by vm.state.collectAsStateWithLifecycle()
+    val notInterested = rememberNotInterested(vm)
+    LaunchedEffect(startOnAtlas) { if (startOnAtlas) vm.selectTab(ForYouTab.ATLAS) }
+    Box(modifier, contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 840.dp).fillMaxSize()) {
+            Segmented(
+                options = listOf(
+                    SegmentedOption(ForYouTab.LIST, stringResource(Res.string.home_recs_tab_list), icon = Icons.Outlined.Explore),
+                    SegmentedOption(ForYouTab.ATLAS, stringResource(Res.string.home_recs_tab_atlas), icon = Icons.Outlined.Hub),
+                ),
+                selected = state.tab,
+                onSelect = vm::selectTab,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+            when (state.tab) {
+                ForYouTab.LIST -> RecsList(state, onMediaClick, onRetry = vm::load, onNotInterested = notInterested, onGenre = onGenre)
+                ForYouTab.ATLAS -> AtlasTab(state.atlas, onMediaClick, onRetry = vm::loadAtlas)
+            }
+        }
+    }
+}
+
+/**
+ * Sparkles Explorar › Lienzo, "Para ti" section: header ("Calculado en este equipo"), taste chips that browse a genre, the first
+ * [limit] recommendations with affinity, reasons and "No me interesa" (Undo), and [onSeeAll] to the full Para ti tab. Not lazy: it
+ * sits inside the canvas' own scrolling list.
+ */
+@Composable
+fun ForYouPreview(
+    onMediaClick: (Media) -> Unit,
+    onSeeAll: () -> Unit,
+    onGenre: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    limit: Int = 6,
+) {
+    val vm: ForYouViewModel = koinViewModel()
+    val state by vm.state.collectAsStateWithLifecycle()
+    val notInterested = rememberNotInterested(vm)
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(
+            stringResource(Res.string.home_for_you_title),
+            trailing = { TextButton(onClick = onSeeAll, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_see_all)) } },
+        )
+        Text(
+            stringResource(Res.string.rd_s3_for_you_local),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        state.profile?.let { p -> TasteChips(p.sampleSize, p.genres, onGenre) }
+        when (val items = state.visible) {
+            LoadState.Loading -> repeat(3) {
+                LoadingPlaceholder(Modifier.fillMaxWidth().height(96.dp))
+            }
+            is LoadState.Err -> ErrorState(
+                message = items.cause.userMessage(),
+                retryLabel = stringResource(UiR.string.ui_retry),
+                onRetry = vm::load,
+                compact = true,
+            )
+            is LoadState.Ok -> if (items.value.isEmpty()) {
+                Column(Modifier.fillMaxWidth().decor(DecorRegion.EMPTY), horizontalAlignment = Alignment.CenterHorizontally) {
+                    EmptyArt(EmptyKind.GENERIC)
+                    Text(stringResource(Res.string.home_recs_empty), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(Res.string.home_recs_empty_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                items.value.take(limit).forEach { item ->
+                    RecRow(item, onClick = { onMediaClick(item.media) }, onNotInterested = { notInterested(item) }, inset = 0.dp)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Sparkles Explorar › Lienzo, "Atlas de tus gustos": every dot a title, close dots alike, ringed dots recommendations; tap opens the
+ * title. "Mostrar nombres" prints the short titles beside the dots.
+ */
+@Composable
+fun TasteAtlas(onMediaClick: (Media) -> Unit, modifier: Modifier = Modifier) {
+    val vm: ForYouViewModel = koinViewModel()
+    val state by vm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { vm.ensureAtlas() }
+    var names by rememberSaveable { mutableStateOf(false) }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(
+            stringResource(Res.string.rd_s3_atlas_title),
+            trailing = {
+                TextButton(onClick = { names = !names }, shape = NijiyomeControls.shape) {
+                    Text(stringResource(if (names) Res.string.rd_s3_atlas_hide_names else Res.string.rd_s3_atlas_show_names))
+                }
+            },
+        )
+        when (val atlas = state.atlas) {
+            null, LoadState.Loading -> LoadingPlaceholder(Modifier.fillMaxWidth().height(280.dp))
+            is LoadState.Err -> ErrorState(
+                message = atlas.cause.userMessage(),
+                retryLabel = stringResource(UiR.string.ui_retry),
+                onRetry = vm::loadAtlas,
+                compact = true,
+            )
+            is LoadState.Ok -> if (atlas.value.isEmpty()) {
+                Text(
+                    stringResource(Res.string.home_recs_atlas_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                when (state.tab) {
-                    ForYouTab.LIST -> RecsList(state, onMediaClick, onRetry = vm::load, onNotInterested = { item ->
-                        vm.notInterested(item.media.ref)
-                        snackbar.show(dismissedMsg, undoLabel) { vm.undo(item.media.ref) }
-                    })
-                    ForYouTab.ATLAS -> AtlasTab(state.atlas, onMediaClick, onRetry = vm::loadAtlas)
+            } else {
+                AtlasCanvas(atlas.value, onMediaClick, names = names, modifier = Modifier.fillMaxWidth().height(360.dp))
+            }
+        }
+    }
+}
+
+/** "No me interesa": hides it at once and offers Undo (FYOU-01). */
+@Composable
+private fun rememberNotInterested(vm: ForYouViewModel): (RecommendationItem) -> Unit {
+    val snackbar = LocalAppSnackbar.current
+    val undoLabel = stringResource(Res.string.home_recs_undo)
+    val dismissedMsg = stringResource(Res.string.home_recs_dismissed)
+    return { item ->
+        vm.notInterested(item.media.ref)
+        snackbar.show(dismissedMsg, undoLabel) { vm.undo(item.media.ref) }
+    }
+}
+
+/** "Tus gustos, a partir de N títulos" and the top six genres; with [onGenre] each one browses that genre in Explorar. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TasteChips(sampleSize: Int, genres: Map<String, Float>, onGenre: ((String) -> Unit)?) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(Res.string.home_recs_profile, sampleSize), style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            genres.entries.sortedByDescending { it.value }.take(6).forEach { g ->
+                if (onGenre != null) {
+                    AssistChip(onClick = { onGenre(g.key) }, label = { Text(genreLabel(g.key)) })
+                } else {
+                    InfoChip(genreLabel(g.key))
                 }
             }
         }
@@ -200,7 +356,13 @@ fun ForYouScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifier:
 }
 
 @Composable
-private fun RecsList(state: ForYouUiState, onMediaClick: (Media) -> Unit, onRetry: () -> Unit, onNotInterested: (RecommendationItem) -> Unit) {
+private fun RecsList(
+    state: ForYouUiState,
+    onMediaClick: (Media) -> Unit,
+    onRetry: () -> Unit,
+    onNotInterested: (RecommendationItem) -> Unit,
+    onGenre: ((String) -> Unit)? = null,
+) {
     when (val items = state.visible) {
         LoadState.Loading -> if (rememberAfterDelay()) LoadingState()
         is LoadState.Err -> ErrorState(message = items.cause.userMessage(), retryLabel = stringResource(UiR.string.ui_retry), onRetry = onRetry)
@@ -210,16 +372,7 @@ private fun RecsList(state: ForYouUiState, onMediaClick: (Media) -> Unit, onRetr
             LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                 state.profile?.let { p ->
                     item(key = "profile") {
-                        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(stringResource(Res.string.home_recs_profile, p.sampleSize), style = MaterialTheme.typography.titleSmall)
-                            val scroll = rememberScrollState()
-                            Row(
-                                Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                p.genres.entries.sortedByDescending { it.value }.take(6).forEach { InfoChip(genreLabel(it.key)) }
-                            }
-                        }
+                        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { TasteChips(p.sampleSize, p.genres, onGenre) }
                     }
                 }
                 items(items.value, key = { "r:" + (it.media.ref.anilistId ?: it.media.ref.malId) }) { item ->
@@ -240,9 +393,9 @@ internal fun reasonLabel(reason: RecReason): String = when (reason.kind) {
 }
 
 @Composable
-private fun RecRow(item: RecommendationItem, onClick: () -> Unit, onNotInterested: () -> Unit) {
+private fun RecRow(item: RecommendationItem, onClick: () -> Unit, onNotInterested: () -> Unit, inset: Dp = 16.dp) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = inset, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         MediaCover(url = item.media.cover, modifier = Modifier.width(64.dp))
@@ -256,7 +409,7 @@ private fun RecRow(item: RecommendationItem, onClick: () -> Unit, onNotIntereste
             ) {
                 item.reasons.forEach { InfoChip(reasonLabel(it)) }
             }
-            TextButton(onClick = onNotInterested, contentPadding = PaddingValues(horizontal = 0.dp)) { Text(stringResource(Res.string.home_recs_not_interested)) }
+            TextButton(onClick = onNotInterested, contentPadding = PaddingValues(horizontal = 0.dp), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_recs_not_interested)) }
         }
     }
 }
@@ -269,23 +422,30 @@ private fun AtlasTab(atlas: LoadState<List<AtlasPoint>>?, onMediaClick: (Media) 
         is LoadState.Ok -> if (atlas.value.isEmpty()) {
             EmptyState(icon = Icons.Outlined.Hub, title = stringResource(Res.string.home_recs_atlas_empty), message = stringResource(Res.string.home_recs_empty_body))
         } else {
-            AtlasCanvas(atlas.value, onMediaClick)
+            AtlasCanvas(atlas.value, onMediaClick, modifier = Modifier.fillMaxSize().padding(16.dp))
         }
     }
 }
 
 @Composable
-private fun AtlasCanvas(points: List<AtlasPoint>, onMediaClick: (Media) -> Unit) {
+private fun AtlasCanvas(points: List<AtlasPoint>, onMediaClick: (Media) -> Unit, modifier: Modifier = Modifier, names: Boolean = false) {
     val palette = listOf(
         MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.secondary,
         MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.inversePrimary, MaterialTheme.colorScheme.outline,
     )
     val ring = MaterialTheme.colorScheme.onSurface
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val measurer = rememberTextMeasurer()
+    val labelStyle = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val language = LocalTitleLanguage.current
+    val labels = if (names) points.map { it.media.displayTitle(language).take(16) } else emptyList()
+    val description = stringResource(Res.string.rd_s3_atlas_description, points.size)
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(Res.string.home_recs_atlas_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Box(Modifier.weight(1f).fillMaxWidth().heightIn(max = 520.dp), contentAlignment = Alignment.Center) {
             Canvas(
-                Modifier.fillMaxSize().aspectRatio(1f, matchHeightConstraintsFirst = true).pointerInput(points) {
+                Modifier.fillMaxSize().aspectRatio(1f, matchHeightConstraintsFirst = true)
+                    .semantics { contentDescription = description }
+                    .pointerInput(points) {
                     detectTapGestures { tap ->
                         val pad = 20.dp.toPx()
                         val hitRadius = 28.dp.toPx()
@@ -299,11 +459,14 @@ private fun AtlasCanvas(points: List<AtlasPoint>, onMediaClick: (Media) -> Unit)
                 val pad = 20.dp.toPx()
                 val w = size.width - 2 * pad
                 val h = size.height - 2 * pad
-                points.forEach { p ->
+                points.forEachIndexed { i, p ->
                     val c = Offset(pad + p.x * w, pad + p.y * h)
                     val color = palette[p.cluster.mod(palette.size)]
                     drawCircle(color = color, radius = if (p.recommended) 5.dp.toPx() else 7.dp.toPx(), center = c)
                     if (p.recommended) drawCircle(color = ring, radius = 7.dp.toPx(), center = c, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()))
+                    labels.getOrNull(i)?.let { label ->
+                        drawText(measurer, label, topLeft = Offset(c.x + 10.dp.toPx(), c.y - 6.dp.toPx()), style = labelStyle)
+                    }
                 }
             }
         }
@@ -340,7 +503,7 @@ fun FollowShowRow(media: Media, modifier: Modifier = Modifier) {
                     Text(stringResource(Res.string.home_follow_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (following) {
-                    OutlinedButton(onClick = { scope.launch { runCatching { airing.unfollow(media.ref) } } }) {
+                    OutlinedButton(onClick = { scope.launch { runCatching { airing.unfollow(media.ref) } } }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.NotificationsActive, contentDescription = null)
                         Text(stringResource(Res.string.home_following), Modifier.padding(start = 6.dp))
                     }
@@ -348,7 +511,7 @@ fun FollowShowRow(media: Media, modifier: Modifier = Modifier) {
                     FilledTonalButton(onClick = {
                         if (platformPostsNotifications) askPermission()
                         scope.launch { runCatching { airing.follow(media, remind = platformPostsNotifications) } }
-                    }) {
+                    }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.NotificationAdd, contentDescription = null)
                         Text(stringResource(Res.string.home_follow), Modifier.padding(start = 6.dp))
                     }

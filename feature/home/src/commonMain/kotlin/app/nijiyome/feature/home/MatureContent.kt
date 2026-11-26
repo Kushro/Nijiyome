@@ -47,6 +47,11 @@ import app.nijiyome.ui.media.LocalTitleLanguage
 import app.nijiyome.ui.media.MediaCard
 import app.nijiyome.ui.media.displayTitle
 import app.nijiyome.ui.media.mediaKey
+import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardShow
+import app.nijiyome.ui.cards.TitleCard
+import app.nijiyome.ui.cards.TitleCardData
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Parity wave B (worker r, checklist settings.privacy.mature-content): how Home presents adult titles once `showAdult` lets them in.
@@ -91,9 +96,9 @@ fun rememberMatureGate(mode: MatureContentMode): MatureGate {
                     gate.accept(media)
                     pending = null
                     open()
-                }) { Text(stringResource(Res.string.home_mature_continue)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_mature_continue)) }
             },
-            dismissButton = { TextButton(onClick = { pending = null }) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { pending = null }, shape = NijiyomeControls.shape) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
         )
     }
     return gate
@@ -148,6 +153,45 @@ fun GatedMediaCard(
                 statusDot = mediaStatusKind(media.status)?.dotColor(),
             )
         }
+        if (hidden) {
+            Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Outlined.NoAdultContent, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(Res.string.home_mature_tap), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+            }
+        }
+    }
+}
+
+/**
+ * Sparkles (S2): the [TitleCard] of a [media] behind [gate], with the same behaviour as [GatedMediaCard]: in BLUR mode the card is
+ * blurred with the "Mature · tap to show" label until the first tap; in WARN mode the tap asks first; SHOW opens directly.
+ */
+@Composable
+fun GatedTitleCard(
+    data: TitleCardData,
+    media: Media,
+    gate: MatureGate,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    context: CardContext = CardContext.ROW,
+    show: CardShow = CardShow(),
+    onLongClick: (() -> Unit)? = null,
+    /** Play / resume from the card's play disc (CONTINUE, HERO); goes through the gate like a tap. */
+    onPlay: (() -> Unit)? = null,
+    index: Int = -1,
+) {
+    val hidden = gate.isHidden(media) && gate.mode == MatureContentMode.BLUR
+    Box(modifier) {
+        TitleCard(
+            data = data,
+            onClick = { gate.open(media, onClick) },
+            modifier = if (hidden) Modifier.blur(18.dp) else Modifier,
+            context = context,
+            show = show,
+            onLongClick = onLongClick,
+            onPlay = onPlay?.let { play -> { gate.open(media, play) } },
+            index = index,
+        )
         if (hidden) {
             Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Outlined.NoAdultContent, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)

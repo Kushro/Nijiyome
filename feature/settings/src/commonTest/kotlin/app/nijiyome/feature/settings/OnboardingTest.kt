@@ -79,5 +79,37 @@ class OnboardingTest {
         vm.finish { done = true }
         assertTrue(done)
         assertTrue(repo.settings.value.onboardingDone)
+        // a new install chose its style here: it never sees the post-update notice
+        assertTrue(repo.settings.value.look.design.introSeen)
+    }
+
+    @Test
+    fun `the steps are shown as four pages`() {
+        val phone = onboardingPages(onboardingSteps(notificationsNeedPermission = true))
+        assertEquals(
+            listOf(OnboardingPage.LOOK, OnboardingPage.LIST, OnboardingPage.SOURCES, OnboardingPage.LINK_SYSTEM),
+            phone.map { it.first },
+        )
+        assertEquals(listOf(OnboardingStep.LINK, OnboardingStep.PERMISSIONS), phone.last().second)
+        // nothing of Link y sistema on this device: three pages
+        val bare = onboardingPages(onboardingSteps(notificationsNeedPermission = false, linkAvailable = false))
+        assertEquals(listOf(OnboardingPage.LOOK, OnboardingPage.LIST, OnboardingPage.SOURCES), bare.map { it.first })
+        val desktop = onboardingPages(onboardingSteps(false, platformSteps = PLATFORM_ONBOARDING_STEPS))
+        assertEquals(listOf(OnboardingStep.DOWNLOADS), desktop.first { it.first == OnboardingPage.SOURCES }.second)
+        assertTrue(OnboardingStep.SYSTEM in desktop.last().second)
+    }
+
+    @Test
+    fun `the style step writes direction, tone and palette`() = runTest {
+        val repo = FakeSettings()
+        val vm = OnboardingViewModel(repo)
+        vm.setDirection(app.nijiyome.model.DesignDirection.TRANSIT)
+        vm.setTone(app.nijiyome.model.ThemeMode.DARK, oled = true)
+        vm.setDirectionPalette("linea")
+        val s = repo.settings.value
+        assertEquals(app.nijiyome.model.DesignDirection.TRANSIT, s.look.design.direction)
+        assertEquals("linea", s.look.design.palette)
+        assertTrue(s.amoled)
+        assertEquals(app.nijiyome.model.ThemeMode.DARK, s.themeMode)
     }
 }

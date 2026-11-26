@@ -42,6 +42,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // 1.1 F4: Settings › Reproductor on desktop, above "Fuentes embed": which Chrome / Edge / Chromium the hidden browser uses, a path to
 // set by hand (validated: it must exist, be executable and not be a Flatpak / Snap launcher) and "Probar". The embed rows show only
@@ -104,6 +105,7 @@ internal actual fun EmbedSourcesRows(rows: @Composable () -> Unit) {
                             )
                         }
                     },
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.settings_hbrowser_test)) }
                 when (val p = probe) {
                     ProbeState.Idle -> Unit

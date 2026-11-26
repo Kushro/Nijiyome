@@ -12,6 +12,7 @@ import app.nijiyome.model.LinkState
 import app.nijiyome.model.LinkedAccount
 import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.LoadState
+import app.nijiyome.model.SocialRepository
 import app.nijiyome.model.torrent.TorrentRepository
 import app.nijiyome.model.torrent.TorrentServiceStatus
 import app.nijiyome.ui.state.runCatchingApp
@@ -51,6 +52,10 @@ data class YouOverview(
     val activeDownloads: Int,
     val torrentCount: Int,
     val linked: LinkedSummary,
+    /** false where this build is not a Link client (desktop): the Link row of Tú is hidden. */
+    val linkClient: Boolean = true,
+    /** Sparkles S7: unread AniList notifications (badge of the Notificaciones row). */
+    val unreadNotifications: Int = 0,
 )
 
 data class YouUiState(
@@ -72,13 +77,16 @@ class YouViewModel(
     private val lists: ListsRepository,
     private val history: HistoryRepository,
     private val extensions: ExtensionRepository,
-    private val link: LinkRepository,
+    /** The Link client; null where the build is not one (desktop), which hides the Link row. */
+    private val link: LinkRepository?,
     private val torrents: TorrentRepository? = null,
     /**
      * parity wave B (16 §2, worker r): web downloads of :core:download, added to [YouOverview.activeDownloads]. Read from Koin when the
      * module is loaded (youFeatureModule is closed and does not pass it); null in tests / previews.
      */
     private val downloads: DownloadRepository? = runCatching { GlobalContext.getOrNull()?.getOrNull<DownloadRepository>() }.getOrNull(),
+    /** Sparkles S7: AniList notifications for the unread badge; null without the social layer (tests, previews). */
+    private val social: SocialRepository? = null,
 ) : ViewModel() {
 
     private val reload = MutableStateFlow(0)
@@ -104,21 +112,26 @@ class YouViewModel(
         combine(torrentOnly, repo.summary) { (active, total), web -> (active + web.active) to total }
     } ?: torrentOnly
 
-    private val linked: Flow<LinkedSummary> = combine(link.state, link.linkedDevice) { state, device ->
-        when (state) {
-            is LinkState.Paired -> LinkedSummary.Paired(device?.serverName ?: state.pc.serverName, state.reachable)
-            is LinkState.Failed -> LinkedSummary.Problem
-            LinkState.Pairing, LinkState.Unpaired -> LinkedSummary.None
+    private val linked: Flow<LinkedSummary> = link?.let { repo ->
+        combine(repo.state, repo.linkedDevice) { state, device ->
+            when (state) {
+                is LinkState.Paired -> LinkedSummary.Paired(device?.serverName ?: state.pc.serverName, state.reachable)
+                is LinkState.Failed -> LinkedSummary.Problem
+                LinkState.Pairing, LinkState.Unpaired -> LinkedSummary.None
+            }
         }
-    }
+    } ?: flowOf(LinkedSummary.None)
+
+    private val unread: Flow<Int> = social?.unreadCount?.catch { emit(0) } ?: flowOf(0)
 
     private val overview: Flow<LoadState<YouOverview>> = combine(
         combine(lists.accounts, history.lastSyncedAt) { accounts, synced -> accounts to synced },
         historyCount,
         extensions.installed,
-        torrentFacts,
+        combine(torrentFacts, unread) { facts, n -> facts to n },
         linked,
-    ) { (accounts, synced), count, installed, (active, total), linkedSummary ->
+    ) { (accounts, synced), count, installed, (facts, unreadCount), linkedSummary ->
+        val (active, total) = facts
         when (count) {
             LoadState.Loading -> LoadState.Loading
             is LoadState.Err -> count
@@ -131,6 +144,8 @@ class YouViewModel(
                     activeDownloads = active,
                     torrentCount = total,
                     linked = linkedSummary,
+                    linkClient = link != null,
+                    unreadNotifications = unreadCount,
                 ),
             )
         }
@@ -143,12 +158,19 @@ class YouViewModel(
         reload.value++
     }
 
-    /** "Sincronizar ahora": push dirty history rows to the paired PC and pull its recent ones; the result goes to the global snackbar. */
+    /**
+     * "Sincronizar ahora": push dirty history rows to the paired PC and pull its recent ones, then sync the AniList / MAL lists (a
+     * no-op success without accounts); the result goes to the global snackbar, with a retry on failure.
+     */
     fun syncNow() {
         if (syncing.value) return
         syncing.value = true
         viewModelScope.launch {
-            val result = runCatchingApp { history.syncNow().getOrThrow() }
+            val result = runCatchingApp {
+                history.syncNow().getOrThrow()
+                lists.syncNow().getOrThrow()
+                Unit
+            }
             syncing.value = false
             _events.trySend(result.fold(onSuccess = { YouEvent.Synced }, onFailure = { YouEvent.SyncFailed(it.toAppError()) }))
         }

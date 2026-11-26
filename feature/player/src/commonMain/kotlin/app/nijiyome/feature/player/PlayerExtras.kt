@@ -74,8 +74,11 @@ import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
 import app.nijiyome.designsystem.components.rememberAfterDelay
 import app.nijiyome.designsystem.theme.NijiyomeFonts
-import app.nijiyome.model.PlayerChromeStyle
+import app.nijiyome.model.PlayerStructure
 import app.nijiyome.model.SubtitleStyle
+import app.nijiyome.ui.look.structures
+import androidx.compose.material.icons.rounded.Settings
+import kotlinx.coroutines.launch
 import app.nijiyome.player.CueTimeline
 import app.nijiyome.player.PlaybackState
 import app.nijiyome.player.PlayerKeymap
@@ -92,6 +95,7 @@ import kotlinx.coroutines.delay
 import java.io.File
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // parity wave A (docs/redesign/15 §3.2 / §5 p, worker p): the player's new sheets, panels and helpers. Pure UI over PlayerViewModel.
 
@@ -225,7 +229,7 @@ internal fun PretranslateOverlay(progress: Pair<Int, Int>, onSkip: () -> Unit, m
                 progress = { if (progress.second > 0) progress.first.toFloat() / progress.second else 0f },
                 modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(onClick = onSkip) { Text(stringResource(Res.string.player_pretranslate_skip)) }
+            TextButton(onClick = onSkip, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_pretranslate_skip)) }
         }
     }
 }
@@ -235,171 +239,6 @@ internal fun PretranslateOverlay(progress: Pair<Int, Int>, onSkip: () -> Unit, m
 @Composable
 private fun SheetTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-}
-
-@Composable
-private fun CheckRow(text: String, selected: Boolean, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        trailingContent = { if (selected) Icon(Icons.Rounded.Check, contentDescription = null) },
-        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.clickable(onClick = onClick),
-    )
-}
-
-/**
- * Subtitles sheet: tracks (+ the loaded file), "Load file…", 0.4.1 "Estilo" (size, background, position, ASS, "Más opciones"), delay
- * ±0.1 s, secondary track, translation toggle and "Pre-translate".
- */
-@Composable
-internal fun SubtitlesSheetContent(
-    vm: PlayerViewModel,
-    session: PlayerSession,
-    ps: PlaybackState,
-    state: PlayerUiState,
-    /** "Load file…"; null where the platform cannot pick one (the row is not shown). */
-    onLoadFile: (() -> Unit)?,
-    onDone: () -> Unit,
-    onOpenStyle: () -> Unit = {},
-) {
-    val transparentRow = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent)
-    Column {
-        if (!ps.fullAss && ps.subtitles.any { it.ass }) {
-            ListItem(headlineContent = { Text(stringResource(Res.string.player_ass_simplified), style = MaterialTheme.typography.bodySmall) }, colors = transparentRow)
-        }
-        val custom = state.customSubtitle
-        CheckRow(stringResource(Res.string.player_subtitles_off), !ps.subtitlesEnabled && custom == null) { vm.selectSubtitle(null); onDone() }
-        ps.subtitles.forEach { o -> CheckRow(o.label, o.selected && custom == null) { vm.selectSubtitle(o.groupIndex); onDone() } }
-        if (custom != null) CheckRow(stringResource(Res.string.player_sub_custom, custom.name), true) {}
-        if (onLoadFile != null) {
-            ListItem(
-                headlineContent = { Text(stringResource(Res.string.player_sub_load)) },
-                leadingContent = { Icon(Icons.Rounded.UploadFile, contentDescription = null) },
-                colors = transparentRow,
-                modifier = Modifier.clickable { onLoadFile() },
-            )
-        }
-        ListItem(
-            headlineContent = { Text(stringResource(Res.string.sub_style_entry)) },
-            supportingContent = { Text(stringResource(Res.string.sub_style_entry_hint)) },
-            leadingContent = { Icon(Icons.Rounded.FormatSize, contentDescription = null) },
-            colors = transparentRow,
-            modifier = Modifier.clickable { onOpenStyle() },
-        )
-        HorizontalDivider()
-        SheetTitle(stringResource(Res.string.player_sub_delay))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FilledTonalIconButton(onClick = { vm.stepSubtitleDelay(-1) }) { Icon(Icons.Rounded.Remove, stringResource(Res.string.player_sub_delay_earlier)) }
-            Text(stringResource(Res.string.player_sub_delay_value, SubtitleDelay.format(ps.subtitleDelayMs)), style = MaterialTheme.typography.titleMedium)
-            FilledTonalIconButton(onClick = { vm.stepSubtitleDelay(1) }) { Icon(Icons.Rounded.Add, stringResource(Res.string.player_sub_delay_later)) }
-            IconButton(onClick = { vm.stepSubtitleDelay(0) }, enabled = ps.subtitleDelayMs != 0L) {
-                Icon(Icons.Rounded.Restore, stringResource(Res.string.player_sub_delay_reset))
-            }
-        }
-        if (session.isMedia3 && ps.subtitleDelayMs < 0) {
-            Text(
-                stringResource(Res.string.player_sub_delay_media3_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-        }
-        HorizontalDivider(Modifier.padding(top = 8.dp))
-        SheetTitle(stringResource(Res.string.player_sub_secondary))
-        if (session.supportsSecondaryTracks) {
-            CheckRow(stringResource(Res.string.player_sub_secondary_off), ps.secondarySubtitleId == null) { vm.selectSecondary(null, null) }
-            ps.subtitles.forEach { o -> CheckRow(o.label, ps.secondarySubtitleId == o.groupIndex) { vm.selectSecondary(o.groupIndex, null) } }
-        } else if (state.externalSubtitles.isEmpty()) {
-            Text(
-                stringResource(Res.string.player_sub_secondary_none),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-        } else {
-            CheckRow(stringResource(Res.string.player_sub_secondary_off), state.secondaryExternal == null) { vm.selectSecondary(null, null) }
-            state.externalSubtitles.forEachIndexed { i, t ->
-                CheckRow(t.label.ifBlank { t.lang }, state.secondaryExternal == i) { vm.selectSecondary(null, i) }
-            }
-        }
-        if (state.translation.available) {
-            HorizontalDivider(Modifier.padding(top = 8.dp))
-            ListItem(
-                headlineContent = { Text(stringResource(Res.string.player_sub_translate)) },
-                supportingContent = {
-                    val t = state.settings.subtitleTranslation
-                    Text(state.translation.error ?: stringResource(Res.string.player_sub_translate_hint, providerLabel(t.provider), t.targetLang.uppercase()))
-                },
-                leadingContent = { Icon(Icons.Rounded.Translate, contentDescription = null) },
-                trailingContent = { Switch(checked = state.translation.enabled, onCheckedChange = vm::setTranslationEnabled) },
-                colors = transparentRow,
-            )
-            if (state.translation.enabled) {
-                TextButton(onClick = { vm.pretranslate(); onDone() }, modifier = Modifier.padding(horizontal = 8.dp)) {
-                    Text(stringResource(Res.string.player_sub_pretranslate))
-                }
-            }
-        }
-    }
-}
-
-/** "More" sheet: player chrome style (touch), sleep timer, loop, stable volume. */
-@Composable
-internal fun MoreSheetContent(vm: PlayerViewModel, state: PlayerUiState) {
-    val transparentRow = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent)
-    Column {
-        if (playerCapabilities.touchFirst) {
-            SheetTitle("Estilo de controles")
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                Segmented(
-                    options = listOf(
-                        SegmentedOption(PlayerChromeStyle.CINEMA, "Cine"),
-                        SegmentedOption(PlayerChromeStyle.MINIMAL, "Minimalista"),
-                    ),
-                    selected = state.settings.playerChromeStyle,
-                    onSelect = vm::setPlayerChromeStyle,
-                    fillWidth = true,
-                    small = true,
-                )
-            }
-            HorizontalDivider(Modifier.padding(top = 8.dp))
-        }
-        SheetTitle(stringResource(Res.string.player_sleep))
-        val sleep = state.sleep
-        SleepOption.entries.forEach { o ->
-            val label = when (o) {
-                SleepOption.OFF -> stringResource(Res.string.player_sleep_off)
-                SleepOption.END_OF_EPISODE -> stringResource(Res.string.player_sleep_end)
-                else -> stringResource(Res.string.player_sleep_minutes, o.minutes ?: 0)
-            }
-            val selected = if (o == SleepOption.OFF) sleep == null else sleep?.option == o
-            ListItem(
-                headlineContent = { Text(label) },
-                supportingContent = if (selected && sleep?.remainingMs != null) {
-                    { Text(stringResource(Res.string.player_sleep_remaining, formatDuration((sleep.remainingMs ?: 0) / 1000))) }
-                } else {
-                    null
-                },
-                leadingContent = { Icon(Icons.Rounded.Bedtime, contentDescription = null) },
-                trailingContent = { if (selected) Icon(Icons.Rounded.Check, contentDescription = null) },
-                colors = transparentRow,
-                modifier = Modifier.clickable { vm.setSleepTimer(o) },
-            )
-        }
-        HorizontalDivider()
-        ListItem(
-            headlineContent = { Text(stringResource(Res.string.player_loop)) },
-            supportingContent = { Text(stringResource(Res.string.player_loop_hint)) },
-            trailingContent = { Switch(checked = state.loop, onCheckedChange = vm::setLoop) },
-            colors = transparentRow,
-        )
-        ListItem(
-            headlineContent = { Text(stringResource(Res.string.player_stable_volume)) },
-            supportingContent = { Text(stringResource(Res.string.player_stable_volume_hint)) },
-            trailingContent = { Switch(checked = state.settings.stableVolume, onCheckedChange = vm::setStableVolume) },
-            colors = transparentRow,
-        )
-    }
 }
 
 /** Episode list over the player (player.jump-to-episode): loading / error / empty states, the current one marked. */
@@ -454,7 +293,7 @@ internal fun LockOverlay(visible: Boolean, onShow: () -> Unit, onUnlock: () -> U
     ) {
         if (visible) {
             Column(Modifier.padding(start = 32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(onClick = onUnlock) {
+                FilledTonalButton(onClick = onUnlock, shape = NijiyomeControls.shape) {
                     Icon(Icons.Rounded.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.player_unlock), Modifier.padding(start = 8.dp))
                 }

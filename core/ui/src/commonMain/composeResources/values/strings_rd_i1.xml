@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign, lane I1: interaction patterns (core/ui/.../patterns) and the design gallery. -->
+<resources>
+    <!-- Multi-selection -->
+    <plurals name="rd_i1_sel_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="rd_i1_sel_exit">Leave selection</string>
+    <string name="rd_i1_sel_open">Open</string>
+    <string name="rd_i1_sel_select">Select</string>
+    <string name="rd_i1_sel_select_all">Select all</string>
+    <string name="rd_i1_sel_select_span">Select the range between the first and the last</string>
+    <string name="rd_i1_sel_select_unwatched">Select unwatched</string>
+
+    <!-- Drag to a list or status -->
+    <string name="rd_i1_dnd_ghost_idle">Drop on a status or a list</string>
+    <string name="rd_i1_dnd_drop_here">Drop here</string>
+    <string name="rd_i1_dnd_picked">%1$s picked. Choose a target with Tab and Enter.</string>
+    <string name="rd_i1_dnd_cancel">Cancel</string>
+    <string name="rd_i1_dnd_where">%1$s in %2$s</string>
+    <string name="rd_i1_dnd_move">Move</string>
+    <string name="rd_i1_dnd_move_hint">Leaves %1$s</string>
+    <string name="rd_i1_dnd_copy">Copy</string>
+    <string name="rd_i1_dnd_copy_hint">Stays in both</string>
+    <string name="rd_i1_dnd_remember">Do not ask again</string>
+    <string name="rd_i1_dnd_keys_hint">Ctrl copies · Shift moves</string>
+
+    <!-- Reorder -->
+    <string name="rd_i1_reo_up">Move up</string>
+    <string name="rd_i1_reo_down">Move down</string>
+    <string name="rd_i1_reo_top">Move to the top</string>
+    <string name="rd_i1_reo_position">Position %1$d of %2$d</string>
+    <string name="rd_i1_reo_handle">Drag to reorder</string>
+
+    <!-- Drop files on the window -->
+    <string name="rd_i1_drop_kind_extension">.kai extension</string>
+    <string name="rd_i1_drop_kind_torrent">Torrent file</string>
+    <string name="rd_i1_drop_kind_magnet">Magnet link</string>
+    <string name="rd_i1_drop_kind_video">Local video</string>
+    <string name="rd_i1_drop_kind_subtitle">Subtitle</string>
+    <string name="rd_i1_drop_kind_unsupported">Not supported</string>
+    <string name="rd_i1_drop_kind_unknown">File</string>
+    <string name="rd_i1_drop_verb_extension">Drop to install the extension</string>
+    <string name="rd_i1_drop_verb_torrent">Drop to add the torrent</string>
+    <string name="rd_i1_drop_verb_magnet">Drop to add the link</string>
+    <string name="rd_i1_drop_verb_video">Drop to play</string>
+    <string name="rd_i1_drop_verb_subtitle">Drop to load the subtitle</string>
+    <string name="rd_i1_drop_verb_unsupported">Nijiyome does not open this type of file</string>
+    <string name="rd_i1_drop_verb_unknown">Drop to see what to do with it</string>
+    <string name="rd_i1_drop_title_extension">Install the extension</string>
+    <string name="rd_i1_drop_title_torrent">Add torrent</string>
+    <string name="rd_i1_drop_title_magnet">Add magnet link</string>
+    <string name="rd_i1_drop_title_video">Play local file</string>
+    <string name="rd_i1_drop_title_subtitle">Load subtitle</string>
+    <string name="rd_i1_drop_title_unsupported">This file cannot be opened</string>
+    <string name="rd_i1_drop_detail_extension">A .kai extension package. It is active once installed; review or turn it off in Sources.</string>
+    <string name="rd_i1_drop_detail_torrent">You can choose files before it starts. It streams while it downloads.</string>
+    <string name="rd_i1_drop_detail_magnet">The metadata comes from the peers; the files show as soon as they arrive.</string>
+    <string name="rd_i1_drop_detail_video">Matching it to a title saves the progress in your list.</string>
+    <string name="rd_i1_drop_detail_subtitle">Nothing is playing. It is saved for the matched episode and loads when you open it.</string>
+    <string name="rd_i1_drop_detail_unsupported">Nijiyome opens .kai, .torrent, magnet links, video (.mkv, .mp4, .webm) and subtitles (.ass, .srt, .vtt).</string>
+    <string name="rd_i1_drop_cancel">Cancel</string>
+    <string name="rd_i1_drop_ok">Got it</string>
+
+    <!-- List status picker -->
+    <string name="rd_i1_stp_status">Status in your list</string>
+    <string name="rd_i1_stp_episode">Episode</string>
+    <string name="rd_i1_stp_minus">One episode less</string>
+    <string name="rd_i1_stp_plus">One episode more</string>
+    <string name="rd_i1_stp_of_total">of %1$d</string>
+    <string name="rd_i1_stp_remove">Remove from list</string>
+    <string name="rd_i1_stp_not_in_list">Not in your list</string>
+
+    <!-- Facets -->
+    <string name="rd_i1_fac_any">Any</string>
+    <string name="rd_i1_fac_clear">Clear</string>
+    <string name="rd_i1_fac_no_match">No matches.</string>
+    <string name="rd_i1_fac_remove">Remove filter %1$s</string>
+    <string name="rd_i1_fac_search">Search %1$s</string>
+    <plurals name="rd_i1_fac_show">
+        <item quantity="one">Show %1$d title</item>
+        <item quantity="other">Show %1$d titles</item>
+    </plurals>
+
+    <!-- Source rules -->
+    <string name="rd_i1_src_by_rules">Chosen by your rules</string>
+    <string name="rd_i1_src_by_hand">Chosen by hand</string>
+    <string name="rd_i1_src_fails">Does not meet: %1$s</string>
+    <string name="rd_i1_src_differs">Differs from the chosen source</string>
+
+    <!-- Context menu -->
+    <string name="rd_i1_ctx_more">More actions</string>
+    <string name="rd_i1_ctx_back">Back</string>
+
+    <!-- Live preview -->
+    <string name="rd_i1_sub_reset">Reset style</string>
+
+    <!-- Pickers -->
+    <string name="rd_i1_pk_minus">Decrease</string>
+    <string name="rd_i1_pk_plus">Increase</string>
+    <string name="rd_i1_pk_range">Enter a value from %1$d to %2$d</string>
+    <string name="rd_i1_pk_test">Test</string>
+    <string name="rd_i1_pk_testing">Testing…</string>
+    <string name="rd_i1_pk_default">Default</string>
+    <string name="rd_i1_pk_use_default">Use the default %1$d</string>
+    <string name="rd_i1_pk_use">Use %1$d</string>
+    <string name="rd_i1_pk_port_privileged">Ports below 1024 need administrator rights.</string>
+    <string name="rd_i1_pk_change_folder">Change folder…</string>
+    <string name="rd_i1_pk_folder_none">No folder chosen</string>
+    <string name="rd_i1_pk_internal_storage">Internal storage</string>
+    <string name="rd_i1_pk_hour_minus">One hour earlier</string>
+    <string name="rd_i1_pk_hour_plus">One hour later</string>
+    <string name="rd_i1_pk_minute_minus">Earlier</string>
+    <string name="rd_i1_pk_minute_plus">Later</string>
+    <string name="rd_i1_pk_range_from">From</string>
+    <string name="rd_i1_pk_range_to">To</string>
+    <string name="rd_i1_pk_range_empty">The start and the end are the same: the range is empty.</string>
+    <string name="rd_i1_pk_range_overnight">Ends the next day.</string>
+    <string name="rd_i1_pk_range_invalid">The end must be after the start.</string>
+    <string name="rd_i1_pk_unit_kibs">KiB/s</string>
+    <string name="rd_i1_pk_unit_mibs">MiB/s</string>
+    <string name="rd_i1_pk_unit_mb">MB</string>
+    <string name="rd_i1_pk_unit_gb">GB</string>
+    <string name="rd_i1_pk_unit_sec">s</string>
+    <string name="rd_i1_pk_unit_min">min</string>
+    <string name="rd_i1_pk_unit_hour">h</string>
+
+    <!-- Undo -->
+    <string name="rd_i1_undo_action">Undo</string>
+    <string name="rd_i1_undo_undone">Undone: %1$s</string>
+    <string name="rd_i1_undo_older">Older (%1$d)</string>
+    <string name="rd_i1_undo_recent">Undo recent (%1$d)</string>
+    <string name="rd_i1_undo_recent_title">Recent actions</string>
+    <string name="rd_i1_undo_each">Each one is undone on its own</string>
+    <string name="rd_i1_undo_done">Undone</string>
+    <string name="rd_i1_undo_close">Close</string>
+    <string name="rd_i1_undo_dismiss">Dismiss</string>
+
+    <!-- Design gallery -->
+    <string name="rd_i1_gal_title">Design gallery</string>
+    <string name="rd_i1_gal_back">Back</string>
+    <string name="rd_i1_gal_intro">Everything below is drawn with your current direction, palette, theme, card and motion. Change them in Settings › Appearance to compare.</string>
+    <string name="rd_i1_gal_active">Active</string>
+    <string name="rd_i1_gal_directions">Directions and palettes</string>
+    <string name="rd_i1_gal_directions_hint">Each palette shows primary, secondary, tertiary and two surfaces for the current theme; the dots are the six list statuses.</string>
+    <string name="rd_i1_gal_cards">Card styles</string>
+    <string name="rd_i1_gal_cards_hint">Every style in the six places a card appears, at your card size.</string>
+    <string name="rd_i1_gal_decor">Decoration</string>
+    <string name="rd_i1_gal_decor_section">Section header</string>
+    <string name="rd_i1_gal_decor_episode">Episode mark</string>
+    <string name="rd_i1_gal_decor_status">List status mark</string>
+    <string name="rd_i1_gal_decor_progress">Progress track</string>
+    <string name="rd_i1_gal_decor_empty">Empty state art</string>
+    <string name="rd_i1_gal_sample_section">Continue watching</string>
+    <string name="rd_i1_gal_see_all">See all</string>
+    <string name="rd_i1_gal_motion">Motion</string>
+    <string name="rd_i1_gal_motion_level">Motion level: %1$s. Each moment plays the variant you chose.</string>
+    <string name="rd_i1_gal_variant">%1$s: %2$s</string>
+    <string name="rd_i1_gal_play">Play</string>
+    <string name="rd_i1_gal_m_inicio">Home entrance</string>
+    <string name="rd_i1_gal_m_tanzaku">Hanging card sway</string>
+    <string name="rd_i1_gal_m_ficha">Card to details</string>
+    <string name="rd_i1_gal_m_visto">Mark as watched</string>
+    <string name="rd_i1_gal_m_controles">Player controls</string>
+    <string name="rd_i1_gal_m_carga">Loading</string>
+    <string name="rd_i1_gal_m_estado">List status change</string>
+    <string name="rd_i1_gal_m_snack">Snackbar with undo</string>
+    <string name="rd_i1_gal_snack_msg">Episode 4 marked as watched</string>
+    <string name="rd_i1_gal_sample_next">Ep. %1$d</string>
+    <string name="rd_i1_gal_sample_synopsis">A sample title to preview the cards. Its cover is left empty on purpose.</string>
+    <string name="rd_i1_gal_patterns">Interaction patterns</string>
+    <string name="rd_i1_gal_demo_eps">Episode multi-selection</string>
+    <string name="rd_i1_gal_demo_stp">List status picker</string>
+    <string name="rd_i1_gal_demo_dnd">Drag a title to a status</string>
+    <string name="rd_i1_gal_demo_reo">Reorder</string>
+    <string name="rd_i1_gal_demo_fac">Facets</string>
+    <string name="rd_i1_gal_demo_ctx">Context menu</string>
+    <string name="rd_i1_gal_demo_src">Source rules</string>
+    <string name="rd_i1_gal_demo_sub">Settings with live preview</string>
+    <string name="rd_i1_gal_demo_pk">Pickers</string>
+    <string name="rd_i1_gal_demo_drop">Drop files on the window</string>
+    <string name="rd_i1_gal_episode">Episode</string>
+    <string name="rd_i1_gal_mark_watched">Mark as watched</string>
+    <string name="rd_i1_gal_download">Download</string>
+    <string name="rd_i1_gal_remove_download">Remove download</string>
+    <string name="rd_i1_gal_done_msg">Done</string>
+    <string name="rd_i1_gal_only_completed">Only after completing it</string>
+    <string name="rd_i1_gal_move_to">Move to %1$s</string>
+    <string name="rd_i1_gal_already_in">Already in %1$s</string>
+    <string name="rd_i1_gal_status">Status</string>
+    <string name="rd_i1_gal_format">Format</string>
+    <string name="rd_i1_gal_results">%1$d of %2$d titles</string>
+    <string name="rd_i1_gal_play_ep">Play next episode</string>
+    <string name="rd_i1_gal_change_status">Change status</string>
+    <string name="rd_i1_gal_remove_from_list">Remove from list</string>
+    <string name="rd_i1_gal_quality">Minimum quality</string>
+    <string name="rd_i1_gal_fails_res">720p, you asked for %1$s or more</string>
+    <string name="rd_i1_gal_size">Size: %1$d</string>
+    <string name="rd_i1_gal_preview_text">I do not run because I want to.</string>
+    <string name="rd_i1_gal_port">Nijiyome Link port</string>
+    <string name="rd_i1_gal_port_free">The port is free on this device.</string>
+    <string name="rd_i1_gal_port_used">In use: the extension server already listens on 8099.</string>
+    <string name="rd_i1_gal_downloads_folder">Downloads folder</string>
+    <string name="rd_i1_gal_schedule">Speed limit hours</string>
+    <string name="rd_i1_gal_limit">Speed limit</string>
+    <string name="rd_i1_gal_simulate">Simulate a drop:</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign, lane S8 (Transferencias): texts of :feature:torrents that point to the new places. -->
+<resources>
+    <string name="rd_s8_tor_background_locked">Accept the background downloads notice in Transfers first.</string>
+    <string name="rd_s8_tor_background_off">Background downloads are off. Turn them on in Transfers or in Settings › Torrents and downloads.</string>
+    <string name="rd_s8_tor_android_warn_note">You can turn background downloads off at any time in Settings › Torrents and downloads. With Wi-Fi only on, nothing downloads in the background on mobile data.</string>
+    <string name="rd_s8_tor_desktop_warn_note">You can turn background downloads off at any time in Settings › Torrents and downloads.</string>
+    <string name="rd_s8_tor_debrid_cached_hint">Download on a cached torrent fetches the episode over HTTPS with the web downloads (rules in Settings › Torrents and downloads) instead of P2P.</string>
+    <string name="rd_s8_tor_debrid_services">TorBox is the recommended, tested service. Real-Debrid, AllDebrid and Premiumize are experimental and untested. Link an account in Sources › Debrid.</string>
+    <string name="rd_s8_tor_untitled">Torrent</string>
+    <string name="rd_s8_tor_add_from_clipboard">Paste</string>
+</resources>

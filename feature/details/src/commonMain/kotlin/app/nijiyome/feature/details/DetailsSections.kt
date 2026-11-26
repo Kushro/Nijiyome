@@ -147,6 +147,12 @@ import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.ui.format.formatDuration
 import app.nijiyome.ui.media.MediaCard
+import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.TitleCard
+import app.nijiyome.ui.cards.toCardData
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.cardToDetailsSource
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.alternativeTitle
 import app.nijiyome.ui.media.displayTitle
@@ -155,78 +161,13 @@ import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
 import java.util.Locale
 import kotlinx.coroutines.delay
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Episode rows built once per data change (not in every pass of the list builder): all of them and the search matches. */
 internal data class EpisodeLists(val all: List<EpisodeItem>, val filtered: List<EpisodeItem>)
 
 /** Key of the tabs item: the pinned copy in the top bar shows once it went under the bar. */
 internal const val TABS_KEY = "tabs"
-
-/** Index of [TABS_KEY] in [detailsItems]: header (the source line is part of it), tabs. */
-internal const val TABS_INDEX = 1
-
-/**
- * The scrolling column of Details. Phone ([phone]): compact (or editorial) header with one row of actions, the source as one line, the
- * tabs and the selected tab. Wide: the full header (the source / send panels are on the side).
- */
-internal fun LazyListScope.detailsItems(
-    media: Media,
-    state: DetailsUiState,
-    actions: DetailsActions,
-    tab: DetailsTab,
-    onTab: (DetailsTab) -> Unit,
-    range: Int,
-    onRange: (Int) -> Unit,
-    phone: Boolean,
-    editorial: Boolean,
-    episodeLists: EpisodeLists?,
-    showEarlier: Boolean,
-    onShowEarlier: () -> Unit,
-    tabsPinned: Boolean,
-    /** "Cabecera de la ficha": the composition under the title. */
-    head: HeadModel,
-    /** 2026-11 UI refresh: episode cards per row (1 on phones, 2 on wide windows). */
-    cardColumns: Int = 1,
-) {
-    item(key = "header", contentType = "header") {
-        val facts = headerFactsSlot(head, media, state)
-        // B / D have no facts line: the "+18" goes beside the title instead
-        val adultBadge = facts == null && (state.detailsOrNull?.isAdult == true || media.looksAdult())
-        Column {
-            when {
-                editorial -> Column {
-                    EditorialHeader(media, state, actions, facts = facts, heightFraction = head.heroFraction(), adultBadge = adultBadge)
-                    HeaderBody(head, media, state, actions)
-                }
-                phone -> Column {
-                    CompactHeader(media, state, actions, facts = facts?.let { f -> { Box(Modifier.padding(top = 2.dp)) { f() } } }, adultBadge = adultBadge)
-                    HeaderBody(head, media, state, actions)
-                }
-                else -> Header(media, state, actions, head, adultBadge)
-            }
-            if (state.fallback != null) {
-                app.nijiyome.ui.state.MetadataFallbackBanner(
-                    state = state.fallback,
-                    onRetryPrimary = actions.onRetryPrimary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                )
-            }
-        }
-    }
-    item(key = TABS_KEY, contentType = "tabs") {
-        // While the top bar shows its pinned copy, TalkBack sees only that one (no extra top padding so pinning never jumps 4 dp).
-        DetailsTabs(tab, onTab, modifier = if (tabsPinned) Modifier.clearAndSetSemantics {} else Modifier)
-    }
-    when (tab) {
-        DetailsTab.EPISODES -> {
-            episodeItems(media, state, actions, range, onRange, episodeLists, showEarlier, onShowEarlier, cardColumns)
-            item(key = "wave-b-episodes", contentType = "slot") { WaveBSlots(media) }
-        }
-        DetailsTab.INFO -> item(key = "info", contentType = "info") { InfoTab(media, state, actions) }
-        DetailsTab.CHARACTERS -> charactersItems(state, actions)
-        DetailsTab.RELATED -> item(key = "related", contentType = "related") { RelatedTab(media, state, actions) }
-    }
-}
 
 /**
  * Mount points of wave B in Details (checklist `details.download-season-mount`, `details.comments-mount`): rendered under the
@@ -240,7 +181,7 @@ internal fun WaveBSlots(media: Media) {
 }
 
 @Composable
-private fun rememberSocialAvailable(): Boolean {
+internal fun rememberSocialAvailable(): Boolean {
     val koin = getKoin()
     return remember(koin) { koin.getOrNull<SocialRepository>() != null }
 }
@@ -258,128 +199,6 @@ internal fun rememberNowSec(): Long {
     return now
 }
 
-// ---------------------------------------------------------------- header
-
-@Composable
-private fun Header(media: Media, state: DetailsUiState, actions: DetailsActions, head: HeadModel, adultBadge: Boolean) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    val background = MaterialTheme.colorScheme.background
-    val title = media.displayTitle(state.titleLanguage)
-    Column(Modifier.fillMaxWidth()) {
-        // matureContent BLUR: banner and cover stay blurred until the first tap on either.
-        val blurred = state.coverBlurred
-        val blurModifier = if (blurred) Modifier.blur(24.dp).clickable(onClick = actions.onRevealCover) else Modifier
-        // 0.3.2: ani.zip fanart (1920x1080) first; AniList's 1900x400 banner / the cover are cropped from the bottom / center under a
-        // stronger scrim instead of looking stretched.
-        val backdrop = headerBackdrop(media, state.artwork)
-        Box(Modifier.fillMaxWidth()) {
-            Box(Modifier.fillMaxWidth().height(216.dp)) {
-                AsyncImage(
-                    model = backdrop.url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alignment = if (backdrop.lowRes && media.banner != null) Alignment.BottomCenter else Alignment.Center,
-                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest).then(blurModifier),
-                )
-                Box(
-                    Modifier.fillMaxSize().background(
-                        Brush.verticalGradient(
-                            listOf(background.copy(alpha = if (backdrop.lowRes) 0.35f else 0f), background.copy(alpha = if (backdrop.lowRes) 0.72f else 0.55f), background),
-                        ),
-                    ),
-                )
-                if (blurred) {
-                    Row(
-                        Modifier.align(Alignment.Center).clickable(onClick = actions.onRevealCover).padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Outlined.NoAdultContent, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(Res.string.details_mature_tap), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-            }
-            Row(
-                Modifier.padding(top = 148.dp, start = 16.dp, end = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                MediaCover(url = media.cover, modifier = Modifier.width(114.dp).then(blurModifier))
-                Column(Modifier.weight(1f).padding(bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    androidx.compose.foundation.text.selection.SelectionContainer {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(title, style = MaterialTheme.typography.headlineSmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                            media.alternativeTitle(title)?.let {
-                                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
-                            }
-                        }
-                    }
-                    TitleQuickActions(title = title, media = media, actions = actions, adultBadge = adultBadge)
-                }
-            }
-        }
-        headerFactsSlot(head, media, state)?.let { facts -> Box(Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)) { facts() } }
-        HeaderBody(head, media, state, actions, Modifier.padding(top = 4.dp))
-        val synopsis = media.synopsis?.takeIf { it.isNotBlank() }
-        Text(
-            synopsis ?: stringResource(Res.string.details_no_synopsis),
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = if (expanded) Int.MAX_VALUE else SYNOPSIS_LINES,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
-        )
-        if (synopsis != null && synopsis.length > SYNOPSIS_TOGGLE_CHARS) {
-            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.padding(horizontal = 8.dp)) {
-                Text(stringResource(if (expanded) Res.string.details_less else Res.string.details_more))
-            }
-        }
-    }
-}
-
-/** Download icon with its menu: "Descargar episodio N" and, when the best torrent is a batch, "Descargar temporada". */
-@Composable
-internal fun DownloadMenuButton(state: DetailsUiState, actions: DetailsActions, icon: ImageVector, outlined: Boolean = false) {
-    var open by remember { mutableStateOf(false) }
-    val description = stringResource(Res.string.details_download)
-    Box {
-        if (outlined) {
-            OutlinedIconButton(onClick = { open = true }) { Icon(icon, contentDescription = description) }
-        } else {
-            IconButton(onClick = { open = true }) { Icon(icon, contentDescription = description) }
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            val panel = state.panel
-            val best = state.bestTorrent
-            if (panel != null && best != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_episode, panel.episode)) },
-                    onClick = {
-                        open = false
-                        actions.onDownloadSource(best, panel.episode)
-                    },
-                    leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                )
-                if (state.canDownloadSeason) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.details_download_season)) },
-                        onClick = {
-                            open = false
-                            actions.onDownloadSeason()
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.Movie, contentDescription = null) },
-                    )
-                }
-            } else {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_none)) },
-                    onClick = { open = false },
-                    enabled = false,
-                )
-            }
-        }
-    }
-}
-
 // ---------------------------------------------------------------- source panel
 
 /** sources.js `summary`: mode + Settings link, the chosen row (SourceRow of :feature:player), who chose it, "Ver todas (n)". */
@@ -395,7 +214,7 @@ internal fun SourcePanelCard(state: DetailsUiState, actions: DetailsActions, mod
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { actions.onOpenSettings(SettingsSection.PLAYER) }) {
+            TextButton(onClick = { actions.onOpenSettings(SettingsSection.PLAYER) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.details_src_settings), modifier = Modifier.padding(start = 4.dp))
             }
@@ -450,7 +269,7 @@ internal fun SourcePanelCard(state: DetailsUiState, actions: DetailsActions, mod
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        FilledTonalButton(onClick = { actions.onOpenPicker(false) }, modifier = Modifier.fillMaxWidth()) {
+                        FilledTonalButton(onClick = { actions.onOpenPicker(false) }, modifier = Modifier.fillMaxWidth(), shape = NijiyomeControls.shape) {
                             Text(stringResource(Res.string.details_src_all, sources.value.size), modifier = Modifier.weight(1f))
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                         }
@@ -472,7 +291,7 @@ internal fun SendToDevicePanel(state: DetailsUiState, actions: DetailsActions, m
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = actions.onOpenLinked) { Text(stringResource(Res.string.details_send_pair)) }
+            TextButton(onClick = actions.onOpenLinked, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_send_pair)) }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Outlined.Computer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -484,7 +303,7 @@ internal fun SendToDevicePanel(state: DetailsUiState, actions: DetailsActions, m
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Button(onClick = actions.onSendToDevice, enabled = !state.sending) {
+                Button(onClick = actions.onSendToDevice, enabled = !state.sending, shape = NijiyomeControls.shape) {
                     if (state.sending) CircularProgressIndicator(Modifier.size(16.dp).padding(end = 4.dp), strokeWidth = 2.dp)
                     Text(stringResource(if (state.sending) Res.string.details_send_sending else Res.string.details_send_action))
                 }
@@ -511,9 +330,15 @@ internal fun SendToPhonePanel(state: DetailsUiState, actions: DetailsActions, mo
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Button(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable) {
+                // an offline phone keeps its button, but quiet: full emphasis is for the one that will receive at once
+                val sendContent: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
                     if (state.sending) CircularProgressIndicator(Modifier.size(16.dp).padding(end = 4.dp), strokeWidth = 2.dp)
                     Text(stringResource(if (state.sending) Res.string.details_send_sending else Res.string.details_send_action))
+                }
+                if (phone.online) {
+                    Button(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable, content = sendContent, shape = NijiyomeControls.shape)
+                } else {
+                    OutlinedButton(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable, content = sendContent, shape = NijiyomeControls.shape)
                 }
             }
         }
@@ -578,202 +403,7 @@ private fun DetailsTab.labelRes(): StringResource = when (this) {
     DetailsTab.INFO -> Res.string.details_info
     DetailsTab.CHARACTERS -> Res.string.details_characters
     DetailsTab.RELATED -> Res.string.details_related
-}
-
-/** Episode search field + list / compact toggle (classic AnimePage episode toolbar). */
-@Composable
-private fun EpisodeToolbar(state: DetailsUiState, actions: DetailsActions) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        OutlinedTextField(
-            value = state.episodeQuery,
-            onValueChange = actions.onEpisodeQuery,
-            singleLine = true,
-            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-            trailingIcon = if (state.episodeQuery.isNotEmpty()) {
-                {
-                    IconButton(onClick = { actions.onEpisodeQuery("") }) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.details_episode_search_clear))
-                    }
-                }
-            } else {
-                null
-            },
-            placeholder = { Text(stringResource(Res.string.details_episode_search), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-            modifier = Modifier.weight(1f),
-        )
-        Segmented(
-            options = listOf(
-                SegmentedOption(EpisodeView.CARDS, stringResource(Res.string.details_view_cards), icon = Icons.Outlined.ViewAgenda),
-                SegmentedOption(EpisodeView.LIST, stringResource(Res.string.details_view_list), icon = Icons.AutoMirrored.Outlined.ViewList),
-                SegmentedOption(EpisodeView.COMPACT, stringResource(Res.string.details_view_compact), icon = Icons.Outlined.GridView),
-            ),
-            selected = state.episodeView,
-            onSelect = actions.onEpisodeView,
-            small = true,
-            // BUG-053: with words the selector took half the row and the placeholder wrapped into 4 lines on a 393 dp phone.
-            iconOnly = true,
-        )
-    }
-}
-
-private fun LazyListScope.episodeItems(
-    media: Media,
-    state: DetailsUiState,
-    actions: DetailsActions,
-    range: Int,
-    onRange: (Int) -> Unit,
-    lists: EpisodeLists?,
-    showEarlier: Boolean,
-    onShowEarlier: () -> Unit,
-    cardColumns: Int = 1,
-) {
-    val fallbackArt = state.artwork?.fanart ?: media.banner ?: media.cover
-    when (val eps = state.episodes) {
-        LoadState.Loading -> item(key = "episodes-loading", contentType = "loading") { DelayedLoading() }
-        is LoadState.Err -> item(key = "episodes-error", contentType = "error") {
-            ErrorState(
-                message = eps.cause.userMessage(),
-                retryLabel = stringResource(UiR.string.ui_retry),
-                onRetry = actions.onRetry,
-                compact = true,
-            )
-        }
-        is LoadState.Ok -> {
-            val all = lists?.all.orEmpty()
-            if (all.isEmpty()) {
-                item(key = "episodes-empty", contentType = "empty") {
-                    EmptyState(
-                        icon = Icons.Outlined.Movie,
-                        title = stringResource(Res.string.details_no_episodes_title),
-                        message = stringResource(Res.string.details_no_episodes),
-                    )
-                }
-                return
-            }
-            item(key = "episode-toolbar", contentType = "toolbar") { EpisodeToolbar(state, actions) }
-            val searching = state.episodeQuery.isNotBlank()
-            val filtered = lists?.filtered.orEmpty()
-            if (filtered.isEmpty()) {
-                item(key = "episodes-no-match", contentType = "empty") {
-                    EmptyState(
-                        icon = Icons.Outlined.Search,
-                        title = stringResource(Res.string.details_episode_search_empty_title),
-                        message = stringResource(Res.string.details_episode_search_empty, state.episodeQuery.trim()),
-                    )
-                }
-                return
-            }
-            // While searching, every match shows (no ranges).
-            val ranges = if (searching) 1 else (filtered.size + RANGE_SIZE - 1) / RANGE_SIZE
-            val selected = range.coerceIn(0, ranges - 1)
-            if (ranges > 1) {
-                item(key = "ranges", contentType = "ranges") {
-                    val scroll = rememberScrollState()
-                    HorizontalScrollStrip(scrollState = scroll, showChevrons = cardColumns > 1) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .horizontalFadingEdge(scroll)
-                                .horizontalScroll(scroll)
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            repeat(ranges) { i ->
-                                val from = filtered[i * RANGE_SIZE].episode.number
-                                val to = filtered[minOf((i + 1) * RANGE_SIZE, filtered.size) - 1].episode.number
-                                FilterChip(
-                                    selected = i == selected,
-                                    onClick = { onRange(i) },
-                                    label = { Text(stringResource(Res.string.details_range, from, to)) },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            val fullPage = if (searching) filtered else filtered.drop(selected * RANGE_SIZE).take(RANGE_SIZE)
-            // Ficha "Primero el episodio": "Siguiente" only marks the episode Continuar plays (not Ver ep. 1 / Volver a ver / Al día).
-            val current = state.continueEpisode.takeIf { state.watchAction == WatchAction.CONTINUE }
-            // The list opens on the episode to continue: the ones before the previous fold behind one row.
-            val hidden = if (searching || showEarlier) 0 else hiddenLeading(fullPage, current)
-            if (hidden > 0) {
-                val from = fullPage.first().episode.number
-                val to = fullPage[hidden - 1].episode.number
-                item(key = "episodes-earlier", contentType = "earlier") { EarlierEpisodesRow(from, to, onShowEarlier) }
-            }
-            val page = if (hidden > 0) fullPage.drop(hidden) else fullPage
-            if (state.episodeView == EpisodeView.COMPACT) {
-                val columns = cardColumns + 1
-                page.chunked(columns).forEachIndexed { rowIndex, rowItems ->
-                    item(key = "epc-$selected-${rowItems.first().episode.number}", contentType = "episode-compact") {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            rowItems.forEach { item ->
-                                CompactEpisodeLine(
-                                    item = item,
-                                    watched = state.isWatched(item.episode.number),
-                                    current = item.episode.number == current,
-                                    onClick = { actions.onEpisodeClick(item.episode.number) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            repeat(columns - rowItems.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
-                }
-            } else if (state.episodeView == EpisodeView.CARDS) {
-                page.chunked(cardColumns.coerceAtLeast(1)).forEach { rowItems ->
-                    item(key = "epcard-${rowItems.first().episode.number}", contentType = "episode-card") {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            rowItems.forEach { item ->
-                                val number = item.episode.number
-                                EpisodeCard(
-                                    episode = item.episode,
-                                    unaired = item.unaired,
-                                    progress = state.progress[number],
-                                    watched = state.isWatched(number),
-                                    current = number == current,
-                                    downloaded = number in state.downloaded,
-                                    fallbackArt = fallbackArt,
-                                    onClick = { actions.onEpisodeClick(number) },
-                                    onDownload = { actions.onDownloadEpisode(number) },
-                                    onToggleWatched = actions.onToggleWatched?.let { toggle -> { toggle(number) } },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            repeat(cardColumns - rowItems.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
-                }
-            } else {
-                items(page, key = { "ep-${it.episode.number}" }, contentType = { "episode" }) { item ->
-                    val number = item.episode.number
-                    DetailsEpisodeRow(
-                        episode = item.episode,
-                        unaired = item.unaired,
-                        progress = state.progress[number],
-                        watched = state.isWatched(number),
-                        current = number == current,
-                        downloaded = number in state.downloaded,
-                        onClick = { actions.onEpisodeClick(number) },
-                        onDownload = { actions.onDownloadEpisode(number) },
-                        onToggleWatched = actions.onToggleWatched?.let { toggle -> { toggle(number) } },
-                        fallbackArt = fallbackArt,
-                        resumeEntry = state.resumeEntry?.takeIf { number == current },
-                    )
-                }
-            }
-        }
-    }
+    DetailsTab.REVIEWS -> Res.string.rd_s4_tab_reviews
 }
 
 /**
@@ -781,7 +411,7 @@ private fun LazyListScope.episodeItems(
  * per title and range).
  */
 @Composable
-private fun EarlierEpisodesRow(from: Int, to: Int, onShow: () -> Unit) {
+internal fun EarlierEpisodesRow(from: Int, to: Int, onShow: () -> Unit) {
     val description = stringResource(Res.string.details_earlier_show, from, to)
     Row(
         Modifier
@@ -802,145 +432,11 @@ private fun EarlierEpisodesRow(from: Int, to: Int, onShow: () -> Unit) {
     }
 }
 
-/**
- * Compact episode row (≤ 72 dp): 80×45 thumbnail with the progress bar, "N. title" and one meta line (filler / downloaded / date /
- * length / rating, or "Retomar en 12:34" on the current one), then "Siguiente" on the episode to continue or a check when watched, and
- * one menu with "Marcar como visto / no visto" and "Descargar episodio".
- */
-@Composable
-private fun DetailsEpisodeRow(
-    episode: Episode,
-    unaired: Boolean,
-    progress: HistoryEntry?,
-    current: Boolean,
-    onClick: () -> Unit,
-    onDownload: () -> Unit,
-    /** parity wave B (r): a completed download exists (plays offline). */
-    downloaded: Boolean = false,
-    /** Within the list progress or completed in the history (ListProgress.isEpisodeWatched). */
-    watched: Boolean = progress?.completed == true,
-    /** "Marcar como visto / no visto"; null hides the menu item. */
-    onToggleWatched: (() -> Unit)? = null,
-    /** 2026-11 UI refresh: series art behind the number when the episode has no thumbnail. */
-    fallbackArt: String? = null,
-    /** [DetailsUiState.resumeEntry] on the current row: the same "Retomar en" the Watch button resumes, never recomputed. */
-    resumeEntry: HistoryEntry? = null,
-) {
-    var menu by remember { mutableStateOf(false) }
-    val scheme = MaterialTheme.colorScheme
-    val rowModifier = if (current) Modifier.background(scheme.secondaryContainer.copy(alpha = 0.55f)) else Modifier
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 64.dp)
-            .then(rowModifier)
-            .then(if (unaired) Modifier.alpha(UNAIRED_ALPHA) else Modifier.clickable(onClick = onClick))
-            .padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.width(80.dp)) {
-            EpisodeThumb(episode, fallbackArt, Modifier.fillMaxWidth())
-            val fraction = progress?.takeIf { !it.completed && !watched }?.progressFraction()
-            if (fraction != null) {
-                LinearProgressIndicator(
-                    progress = { fraction },
-                    modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(horizontal = 4.dp, vertical = 3.dp),
-                )
-            }
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            val title = episode.title?.takeIf { it.isNotBlank() }
-            Text(
-                if (title != null) {
-                    stringResource(Res.string.details_episode_title, episode.number, title)
-                } else {
-                    stringResource(UiR.string.ui_episode_number, episode.number)
-                },
-                style = MaterialTheme.typography.titleSmall,
-                color = if (current) scheme.onSecondaryContainer else scheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            // 2026-11 UI refresh: relative date ("hace 1 semana", "en 6 días"), length and rating; the exact date for TalkBack.
-            // BUG-015 still holds: a future date reads "en N días", never "Aired <future date>". BUG-073: each state once.
-            val resume = resumeEntry
-            val flags = buildList {
-                if (unaired && episode.airDate == null) add(stringResource(Res.string.details_unaired))
-                if (episode.isFiller) add(stringResource(Res.string.details_filler))
-                if (downloaded) add(stringResource(Res.string.details_downloaded))
-            }
-            val meta = if (resume != null) {
-                stringResource(Res.string.details_resume_at, formatDuration(resume.progressSec.toLong()))
-            } else {
-                (flags + listOfNotNull(episodeMeta(episode, withRating = true))).joinToString(" · ").takeIf { it.isNotEmpty() }
-            }
-            meta?.let {
-                val exact = episode.airDate?.let { date ->
-                    stringResource(if (unaired) Res.string.details_airs_on else Res.string.details_aired, formatAirDate(date))
-                }
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = scheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = if (exact != null) Modifier.semantics { contentDescription = "$exact · $it" } else Modifier,
-                )
-            }
-        }
-        when {
-            current -> Text(
-                stringResource(Res.string.details_next_tag),
-                style = MaterialTheme.typography.labelMedium,
-                color = scheme.primary,
-                modifier = Modifier.padding(start = 4.dp),
-            )
-            watched -> Icon(
-                Icons.Filled.CheckCircle,
-                contentDescription = stringResource(Res.string.details_watched),
-                tint = scheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-        if (!unaired) Box {
-            IconButton(onClick = { menu = true }) {
-                Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.details_episode_menu, episode.number))
-            }
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                if (onToggleWatched != null) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(stringResource(if (watched) Res.string.details_mark_unwatched else Res.string.details_mark_watched, episode.number))
-                        },
-                        onClick = {
-                            menu = false
-                            onToggleWatched()
-                        },
-                        leadingIcon = {
-                            Icon(if (watched) Icons.Outlined.CheckCircle else Icons.Filled.CheckCircle, contentDescription = null)
-                        },
-                    )
-                }
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_episode, episode.number)) },
-                    onClick = {
-                        menu = false
-                        onDownload()
-                    },
-                    leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                )
-            }
-        }
-        if (unaired) Spacer(Modifier.width(48.dp))
-    }
-}
-
 // ---------------------------------------------------------------- info
 
 /** Technical sheet (classic AnimeDetailLayout facts), tags with relevance, trailer, external links, ids and titles. */
 @Composable
-private fun InfoTab(media: Media, state: DetailsUiState, actions: DetailsActions) {
+internal fun InfoTab(media: Media, state: DetailsUiState, actions: DetailsActions) {
     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SectionCard(title = stringResource(Res.string.details_synopsis)) {
             Text(
@@ -1057,7 +553,7 @@ private fun FactsCards(details: MediaDetails, actions: DetailsActions) {
     if (details.externalLinks.isNotEmpty()) {
         SectionCard(title = stringResource(Res.string.details_links)) {
             details.externalLinks.forEach { (label, url) ->
-                TextButton(onClick = { actions.onOpenUrl(url) }) {
+                TextButton(onClick = { actions.onOpenUrl(url) }, shape = NijiyomeControls.shape) {
                     Text(label, modifier = Modifier.weight(1f, fill = false))
                     Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.padding(start = 6.dp).size(16.dp))
                 }
@@ -1094,7 +590,7 @@ private fun TagsCard(tags: List<MediaTag>) {
             }
         }
         if (!all && visible.size > TAGS_COLLAPSED) {
-            TextButton(onClick = { all = true }) { Text(stringResource(Res.string.details_tags_all, visible.size)) }
+            TextButton(onClick = { all = true }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_tags_all, visible.size)) }
         }
     }
 }
@@ -1117,7 +613,7 @@ private fun KeyValue(key: String, value: String, mono: Boolean = true) {
 // ---------------------------------------------------------------- characters
 
 /** Characters tab: AniList character edges (paged, infinite scroll) with the Japanese voice actor, then the staff. */
-private fun LazyListScope.charactersItems(state: DetailsUiState, actions: DetailsActions) {
+internal fun LazyListScope.charactersItems(state: DetailsUiState, actions: DetailsActions) {
     item(key = "characters-start", contentType = "trigger") {
         LaunchedEffect(Unit) { if (state.characters == null) actions.onLoadCharacters() }
     }
@@ -1150,7 +646,7 @@ private fun LazyListScope.charactersItems(state: DetailsUiState, actions: Detail
                         if (c.loading) {
                             DelayedLoading()
                         } else {
-                            OutlinedButton(onClick = actions.onLoadCharacters) { Text(stringResource(Res.string.details_characters_more)) }
+                            OutlinedButton(onClick = actions.onLoadCharacters, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_characters_more)) }
                         }
                     }
                 }
@@ -1218,7 +714,7 @@ private fun StaffSection(staff: LoadState<List<StaffEdge>>?) {
 
 /** Seasons / watch order (current highlighted), AniList relations by type and recommendations; every card opens its Details. */
 @Composable
-private fun RelatedTab(media: Media, state: DetailsUiState, actions: DetailsActions) {
+internal fun RelatedTab(media: Media, state: DetailsUiState, actions: DetailsActions) {
     LaunchedEffect(Unit) { actions.onLoadRelated() }
     Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         SeasonsSection(media, state.seasons, state.titleLanguage, actions)
@@ -1256,7 +752,7 @@ private fun RelatedTab(media: Media, state: DetailsUiState, actions: DetailsActi
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
+    app.nijiyome.designsystem.direction.SectionHeader(text, Modifier.padding(horizontal = 16.dp))
 }
 
 @Composable
@@ -1275,14 +771,13 @@ private fun SeasonsSection(media: Media, seasons: LoadState<List<Media>>?, langu
                 SectionTitle(stringResource(Res.string.details_seasons))
                 val scroll = rememberScrollState()
                 Row(
-                    Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth().decor(DecorRegion.ROW).horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     seasons.value.forEachIndexed { index, season ->
                         val isCurrent = season.ref == media.ref
                         Column(
                             Modifier
-                                .width(GRID_CARD_WIDTH)
                                 .then(
                                     if (isCurrent) {
                                         Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
@@ -1297,11 +792,11 @@ private fun SeasonsSection(media: Media, seasons: LoadState<List<Media>>?, langu
                                 style = MaterialTheme.typography.labelMedium,
                                 color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            MediaCard(
-                                title = season.displayTitle(language),
-                                coverUrl = season.cover,
+                            TitleCard(
+                                data = season.toCardData(language).copy(subtitle = season.year?.toString()),
                                 onClick = { if (!isCurrent) actions.onOpenMedia(season) },
-                                subtitle = season.year?.toString(),
+                                context = CardContext.ROW,
+                                modifier = Modifier.cardToDetailsSource(season.toCardData(language).key),
                             )
                         }
                     }
@@ -1338,23 +833,24 @@ private fun RelationsSection(
                 if (showTitle) SectionTitle(stringResource(Res.string.details_related))
                 val scroll = rememberScrollState()
                 Row(
-                    Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth().decor(DecorRegion.ROW).horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     relations.value.forEach { rel ->
-                        Column(Modifier.width(GRID_CARD_WIDTH)) {
+                        Column {
                             Text(
                                 relationLabel(rel.relation),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                             )
-                            MediaCard(
-                                title = rel.media.displayTitle(language),
-                                coverUrl = rel.media.cover,
+                            val data = rel.media.toCardData(language)
+                            TitleCard(
+                                data = data.copy(subtitle = listOfNotNull(mediaKindLabel(rel.media), rel.media.year?.toString()).joinToString(" · ")),
                                 // Manga / novels open their Details too (AniList ids); reading them is wave B.
                                 onClick = { actions.onOpenMedia(rel.media) },
-                                subtitle = listOfNotNull(mediaKindLabel(rel.media), rel.media.year?.toString()).joinToString(" · "),
+                                context = CardContext.ROW,
+                                modifier = Modifier.cardToDetailsSource(data.key),
                             )
                         }
                     }
@@ -1380,16 +876,18 @@ private fun RecommendationsSection(recs: LoadState<List<Recommendation>>?, langu
                 SectionTitle(stringResource(Res.string.details_recommendations))
                 val scroll = rememberScrollState()
                 Row(
-                    Modifier.fillMaxWidth().horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth().decor(DecorRegion.ROW).horizontalFadingEdge(scroll).horizontalScroll(scroll).padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     recs.value.forEach { rec ->
-                        MediaCard(
-                            title = rec.media.displayTitle(language),
-                            coverUrl = rec.media.cover,
+                        val data = rec.media.toCardData(language)
+                        TitleCard(
+                            data = data.copy(
+                                subtitle = if (rec.rating > 0) stringResource(Res.string.details_recommendation_votes, rec.rating) else rec.media.year?.toString(),
+                            ),
                             onClick = { actions.onOpenMedia(rec.media) },
-                            subtitle = if (rec.rating > 0) stringResource(Res.string.details_recommendation_votes, rec.rating) else rec.media.year?.toString(),
-                            modifier = Modifier.width(GRID_CARD_WIDTH),
+                            context = CardContext.ROW,
+                            modifier = Modifier.cardToDetailsSource(data.key),
                         )
                     }
                 }
@@ -1399,7 +897,7 @@ private fun RecommendationsSection(recs: LoadState<List<Recommendation>>?, langu
 }
 
 @Composable
-private fun DelayedLoading() {
+internal fun DelayedLoading() {
     Box(Modifier.fillMaxWidth().height(120.dp)) {
         if (rememberAfterDelay()) LoadingState()
     }

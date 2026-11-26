@@ -14,6 +14,12 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import app.nijiyome.model.CardStyle
+import app.nijiyome.model.TitleCardIds
+import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardShow
+import app.nijiyome.ui.cards.TitleCardData
+import app.nijiyome.ui.cards.TitleCards
+import app.nijiyome.ui.look.effectiveCardId
 import app.nijiyome.model.Density
 import app.nijiyome.ui.look.LocalLook
 import app.nijiyome.ui.look.pressScale
@@ -41,6 +47,35 @@ import java.util.Locale
  */
 @Composable
 fun MediaCard(
+    title: String,
+    coverUrl: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    progress: Float? = null,
+    style: CardStyle = LocalLook.current.cardStyle,
+    statusDot: Color? = null,
+) {
+    // Sparkles: every existing call site follows the card style picked in Diseño. A Material style keeps the caller's [style].
+    val cardId = LocalLook.current.effectiveCardId()
+    if (TitleCardIds.isMaterial(cardId)) {
+        MaterialPosterCard(title, coverUrl, onClick, modifier, subtitle, progress, style, statusDot)
+    } else {
+        TitleCards.byId(cardId).Card(
+            data = TitleCardData(key = title, title = title, coverUrl = coverUrl, subtitle = subtitle, progress = progress),
+            context = CardContext.ROW,
+            size = LocalLook.current.cardSize,
+            show = CardShow(),
+            onClick = onClick,
+            modifier = modifier,
+            onLongClick = null,
+        )
+    }
+}
+
+/** The Material poster card (the three previous `CardStyle`s). Drawn by `MaterialCard`; screens call [MediaCard] or `TitleCard`. */
+@Composable
+internal fun MaterialPosterCard(
     title: String,
     coverUrl: String?,
     onClick: () -> Unit,

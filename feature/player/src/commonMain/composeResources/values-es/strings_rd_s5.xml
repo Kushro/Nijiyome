@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Carril S5 (cromo del reproductor: estructuras, controles, gestos). -->
+<resources>
+    <string name="rd_s5_aspect_fit">Ajustar</string>
+    <string name="rd_s5_aspect_fill">Rellenar</string>
+    <string name="rd_s5_aspect_stretch">Estirar</string>
+    <string name="rd_s5_aspect_16_9">16:9</string>
+    <string name="rd_s5_aspect_4_3">4:3</string>
+    <string name="rd_s5_seg_opening">Opening</string>
+    <string name="rd_s5_seg_ending">Ending</string>
+    <string name="rd_s5_seg_recap">Resumen</string>
+    <string name="rd_s5_tracks">Pistas</string>
+    <string name="rd_s5_picture">Imagen</string>
+    <string name="rd_s5_speed">Velocidad</string>
+    <string name="rd_s5_audio_lang">Audio %1$s</string>
+    <string name="rd_s5_sub_lang">Sub %1$s</string>
+    <string name="rd_s5_sub_none">Sin subs</string>
+    <string name="rd_s5_tracks_summary">%1$s · %2$s</string>
+    <string name="rd_s5_buffer_ahead">Búfer +%1$d s</string>
+    <string name="rd_s5_legend_marks">OP/ED</string>
+    <string name="rd_s5_seek_label">Posición del episodio</string>
+    <string name="rd_s5_seek_value">%1$s de %2$s</string>
+    <string name="rd_s5_seek_value_chapter">%1$s de %2$s, %3$s</string>
+    <string name="rd_s5_time_toggle">Cambiar entre tiempo total y restante</string>
+    <string name="rd_s5_hint_brightness">Desliza: brillo</string>
+    <string name="rd_s5_hint_volume">Desliza: volumen</string>
+    <string name="rd_s5_hint_double_tap">Doble toque</string>
+    <string name="rd_s5_panel_label">Pistas y mejoras</string>
+    <string name="rd_s5_send_to">Enviar a %1$s</string>
+</resources>

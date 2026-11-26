@@ -46,6 +46,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Parity wave A (docs/redesign/15-parity-wave-a-contract-android.md §3.4, 2026-11-09 amendment; checklist system.reset-app,
@@ -84,7 +85,7 @@ internal fun ResetAppRow(vm: SettingsViewModel) {
 
     SettingRow(stringResource(Res.string.settings_data_history), stringResource(platformHint(Res.string.settings_data_history_hint)), stack = true) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = system::exportHistory, enabled = !sys.exportingHistory) {
+            OutlinedButton(onClick = system::exportHistory, enabled = !sys.exportingHistory, shape = NijiyomeControls.shape) {
                 if (sys.exportingHistory) {
                     LoadingIndicator(Modifier.size(20.dp))
                 } else {
@@ -92,7 +93,7 @@ internal fun ResetAppRow(vm: SettingsViewModel) {
                 }
                 Text(stringResource(Res.string.settings_data_history_export), modifier = Modifier.padding(start = 8.dp))
             }
-            OutlinedButton(onClick = { confirmClear = true }, enabled = !sys.clearingHistory) {
+            OutlinedButton(onClick = { confirmClear = true }, enabled = !sys.clearingHistory, shape = NijiyomeControls.shape) {
                 if (sys.clearingHistory) {
                     LoadingIndicator(Modifier.size(20.dp))
                 } else {
@@ -108,6 +109,7 @@ internal fun ResetAppRow(vm: SettingsViewModel) {
             onClick = { confirmReset = true },
             enabled = !state.resetting,
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            shape = NijiyomeControls.shape,
         ) {
             if (state.resetting) {
                 LoadingIndicator(Modifier.size(20.dp))
@@ -148,9 +150,10 @@ internal fun ResetAppRow(vm: SettingsViewModel) {
                         system.clearHistory(includeRemote = alsoPc && state.linkPaired)
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.settings_data_history_clear)) }
             },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
 
@@ -173,9 +176,10 @@ internal fun ResetAppRow(vm: SettingsViewModel) {
                             vm.resetApp()
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        shape = NijiyomeControls.shape,
                     ) { Text(stringResource(Res.string.settings_data_reset_confirm)) }
                 },
-                dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+                dismissButton = { TextButton(onClick = { confirmReset = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
             )
         }
     }
@@ -234,8 +238,9 @@ private fun TypedResetDialog(onDismiss: () -> Unit, onConfirm: (keepTorrents: Bo
                 onClick = { onConfirm(keepTorrents) },
                 enabled = matches,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                shape = NijiyomeControls.shape,
             ) { Text(stringResource(Res.string.settings_data_reset_confirm)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }

@@ -72,7 +72,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.nijiyome.feature.player.sheets.Caption
+import app.nijiyome.feature.player.sheets.ToggleRow
+import app.nijiyome.feature.player.sheets.ValueSlider
 import app.nijiyome.designsystem.components.SectionCard
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
@@ -87,6 +91,7 @@ import org.koin.compose.getKoin
 import java.io.File
 import java.util.Locale
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // ---- drawing ------------------------------------------------------------------------------------------------------------------------------
 
@@ -316,8 +321,9 @@ private fun Float.oneDecimal(): String = String.format(Locale.getDefault(), "%.1
 // ---- in-player quick panel ----------------------------------------------------------------------------------------------------------
 
 /**
- * Player › Subtítulos › Estilo: the controls people touch most (size, background and its transparency, position, ASS), live on the
- * video while dragging ([onPreview]) and saved when the finger lifts ([onChange]); "Más opciones" opens [SubtitleStyleEditor].
+ * Player > Subtitulos > Estilo: the controls people touch most (size, background and its transparency, position, ASS), live on the
+ * video while dragging ([onPreview]) and saved when the finger lifts ([onChange]); "Mas opciones" opens [SubtitleStyleEditor].
+ * Sparkles redesign (lane S6): the body is [SubtitleQuickStyleBody], shared with the tracks sheet.
  */
 @Composable
 internal fun SubtitleStyleQuickPanel(
@@ -328,52 +334,84 @@ internal fun SubtitleStyleQuickPanel(
     onClose: () -> Unit,
     showAss: Boolean,
 ) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PanelHeader(stringResource(Res.string.sub_style_title), onClose)
+        SubtitleQuickStyleBody(style, onPreview, onChange, onMore, showAss)
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+/**
+ * The quick subtitle style with its live preview (artifact pattern `sub`): a stand-in frame with two lines in the draft style, size
+ * in percent, background box and its transparency, vertical position, how ASS subtitles are drawn, more style options ([onMore])
+ * and reset. Every slider step goes to [onPreview] (the video shows it too); a finished change to [onChange] (saved).
+ */
+@Composable
+internal fun SubtitleQuickStyleBody(
+    style: SubtitleStyle,
+    onPreview: (SubtitleStyle) -> Unit,
+    onChange: (SubtitleStyle) -> Unit,
+    onMore: () -> Unit,
+    showAss: Boolean,
+) {
     var draft by remember(style) { mutableStateOf(style) }
     val live: (SubtitleStyle) -> Unit = { draft = it; onPreview(it) }
     val commit: (SubtitleStyle) -> Unit = { draft = it; onChange(it) }
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        PanelHeader(stringResource(Res.string.sub_style_title), onClose)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SubtitleStylePreview(draft)
-        SectionCard {
-            StyleSlider(
-                stringResource(Res.string.sub_style_size, (draft.scale * 100).roundToInt()),
-                draft.scale,
-                SubtitleStyle.MIN_SCALE..SubtitleStyle.MAX_SCALE,
-                { live(draft.copy(scale = (it * 20).roundToInt() / 20f)) },
-                { commit(draft) },
-            )
-            SwitchLine(stringResource(Res.string.sub_style_background), draft.background, { commit(draft.copy(background = it)) })
-            StyleSlider(
-                stringResource(Res.string.sub_style_transparency, ((1f - draft.backgroundOpacity) * 100).roundToInt()),
-                1f - draft.backgroundOpacity,
-                0f..1f,
-                { live(draft.copy(backgroundOpacity = 1f - it)) },
-                { commit(draft) },
-                enabled = draft.background,
-            )
-            StyleSlider(
-                stringResource(Res.string.sub_style_position, draft.positionPct),
-                draft.positionPct.toFloat(),
-                0f..100f,
-                { live(draft.copy(positionPct = it.roundToInt())) },
-                { commit(draft) },
-            )
-        }
+        val minPct = (SubtitleStyle.MIN_SCALE * 100).roundToInt()
+        val maxPct = (SubtitleStyle.MAX_SCALE * 100).roundToInt()
+        val sizePct = (draft.scale * 100).roundToInt()
+        ValueSlider(
+            label = stringResource(Res.string.rd_s6_sub_size),
+            value = sizePct,
+            range = minPct..maxPct,
+            step = 5,
+            valueText = stringResource(Res.string.player_fx_percent, sizePct),
+            onChange = { live(draft.copy(scale = it / 100f)) },
+            onDone = { commit(draft) },
+        )
+        ToggleRow(
+            title = stringResource(Res.string.sub_style_background_on),
+            checked = draft.background,
+            onChange = { commit(draft.copy(background = it)) },
+            hint = stringResource(Res.string.sub_style_background_hint),
+        )
+        val transparency = ((1f - draft.backgroundOpacity) * 100).roundToInt()
+        ValueSlider(
+            label = stringResource(Res.string.rd_s6_sub_transparency),
+            value = transparency,
+            range = 0..100,
+            step = 5,
+            valueText = stringResource(Res.string.player_fx_percent, transparency),
+            onChange = { live(draft.copy(backgroundOpacity = 1f - it / 100f)) },
+            onDone = { commit(draft) },
+            enabled = draft.background,
+        )
+        ValueSlider(
+            label = stringResource(Res.string.rd_s6_sub_position),
+            value = draft.positionPct,
+            range = 0..100,
+            step = 1,
+            valueText = stringResource(Res.string.player_fx_percent, draft.positionPct),
+            onChange = { live(draft.copy(positionPct = it)) },
+            onDone = { commit(draft) },
+        )
         if (showAss) {
-            SectionCard(title = stringResource(Res.string.sub_style_ass)) { AssModeRow(draft, commit) }
+            Caption(stringResource(Res.string.sub_style_ass))
+            AssModeRow(draft, commit)
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { commit(SubtitleStyle()) }) {
+            FilledTonalButton(onClick = onMore, shape = NijiyomeControls.shape) {
+                Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(Res.string.rd_s6_sub_more_style), Modifier.padding(start = 6.dp))
+            }
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = { commit(SubtitleStyle()) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Rounded.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.sub_style_reset), Modifier.padding(start = 6.dp))
             }
-            Spacer(Modifier.weight(1f))
-            FilledTonalButton(onClick = onMore) {
-                Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text(stringResource(Res.string.sub_style_more), Modifier.padding(start = 6.dp))
-            }
         }
-        Spacer(Modifier.height(8.dp))
     }
 }
 
@@ -401,13 +439,17 @@ fun SubtitleStyleEditor(
     onPreview: (SubtitleStyle) -> Unit = {},
     onClose: (() -> Unit)? = null,
     title: String? = null,
+    /** Sparkles redesign (lane S6): false inside a sheet that already shows the title (the tracks sheet's style step). */
+    showHeader: Boolean = true,
+    /** The side padding of the editor; 0 when the container already pads it. */
+    horizontalPadding: Dp = 16.dp,
 ) {
     var draft by remember(style) { mutableStateOf(style) }
     val live: (SubtitleStyle) -> Unit = { draft = it; onPreview(it) }
     val commit: (SubtitleStyle) -> Unit = { draft = it; onChange(it) }
     val done: () -> Unit = { commit(draft) }
-    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        PanelHeader(title ?: stringResource(Res.string.sub_style_title), onClose)
+    Column(modifier.fillMaxWidth().padding(horizontal = horizontalPadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (showHeader) PanelHeader(title ?: stringResource(Res.string.sub_style_title), onClose)
         SubtitleStylePreview(draft)
         Note(stringResource(Res.string.sub_style_engines))
 
@@ -579,7 +621,7 @@ fun SubtitleStyleEditor(
             Note(stringResource(Res.string.sub_style_ass_media3))
         }
 
-        TextButton(onClick = { commit(SubtitleStyle()) }) {
+        TextButton(onClick = { commit(SubtitleStyle()) }, shape = NijiyomeControls.shape) {
             Icon(Icons.Rounded.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.sub_style_reset_all), Modifier.padding(start = 6.dp))
         }
@@ -648,7 +690,7 @@ private fun FontPicker(draft: SubtitleStyle, commit: (SubtitleStyle) -> Unit) {
         }
     }
     if (tools != null) {
-        TextButton(onClick = importFonts) {
+        TextButton(onClick = importFonts, shape = NijiyomeControls.shape) {
             Text(stringResource(Res.string.player_settings_fonts_import))
         }
         Note(stringResource(Res.string.player_settings_fonts_hint) + " " + stringResource(Res.string.sub_style_fonts_mpv_note))

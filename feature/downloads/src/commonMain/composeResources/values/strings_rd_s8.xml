@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign, lane S8: Transfers (web downloads, torrents, debrid, chapters and the local library in one page). -->
+<resources>
+    <string name="rd_s8_title">Transfers</string>
+    <string name="rd_s8_settings">Torrent and download settings</string>
+    <string name="rd_s8_more_settings">More torrent and download settings</string>
+    <string name="rd_s8_add_torrent">Add torrent</string>
+    <string name="rd_s8_setup_debrid">Set up debrid</string>
+    <string name="rd_s8_search">Search transfers</string>
+    <string name="rd_s8_search_clear">Clear search</string>
+    <string name="rd_s8_search_anilist">Search AniList</string>
+    <string name="rd_s8_search_none">No title matches.</string>
+    <string name="rd_s8_retry">Retry</string>
+    <string name="rd_s8_open_details">Open title page</string>
+    <string name="rd_s8_read_offline">Read offline</string>
+
+    <plurals name="rd_s8_meta_moving">
+        <item quantity="one">%1$d downloading</item>
+        <item quantity="other">%1$d downloading</item>
+    </plurals>
+    <string name="rd_s8_meta_no_limit">no download limit</string>
+    <string name="rd_s8_meta_limited">download limited to %1$s</string>
+
+    <string name="rd_s8_section_queue">In progress</string>
+    <string name="rd_s8_done">Downloaded</string>
+    <string name="rd_s8_section_local">Local</string>
+    <string name="rd_s8_in_progress">In progress · %1$d</string>
+    <string name="rd_s8_queue_hint">Each kind keeps its own order · click or Ctrl+click to select</string>
+    <string name="rd_s8_queue_hint_touch">Press and hold to select</string>
+    <string name="rd_s8_queue_filtered">Showing what matches “%1$s”.</string>
+    <string name="rd_s8_queue_empty_body">Choose Download on an episode or in its sources, or add a torrent.</string>
+    <string name="rd_s8_queue_empty_stored">See the %1$d complete torrents</string>
+    <string name="rd_s8_select">Select</string>
+    <string name="rd_s8_select_done">Done</string>
+    <string name="rd_s8_select_all">Select all</string>
+    <string name="rd_s8_select_hint">Click rows to select them</string>
+    <plurals name="rd_s8_batch_delete">
+        <item quantity="one">Delete %1$d…</item>
+        <item quantity="other">Delete %1$d…</item>
+    </plurals>
+
+    <string name="rd_s8_kind_web">Web</string>
+    <string name="rd_s8_kind_debrid">Debrid (cached)</string>
+    <string name="rd_s8_kind_torrent">Torrent</string>
+    <string name="rd_s8_kind_manga">Manga chapter</string>
+    <string name="rd_s8_kind_novel">Novel chapter</string>
+    <plurals name="rd_s8_files">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
+
+    <string name="rd_s8_phase_starting">Starting</string>
+    <string name="rd_s8_phase_downloading">Downloading</string>
+    <string name="rd_s8_phase_queued">Queued</string>
+    <string name="rd_s8_phase_paused">Paused</string>
+    <string name="rd_s8_phase_failed">Failed</string>
+    <string name="rd_s8_phase_seeding">Seeding</string>
+    <string name="rd_s8_phase_complete">Complete</string>
+
+    <string name="rd_s8_row_not_kept">Deleted after watching</string>
+    <string name="rd_s8_row_left">%1$s left</string>
+    <string name="rd_s8_row_pct">%1$d%</string>
+    <string name="rd_s8_row_pct_of">%1$d% of %2$s</string>
+    <string name="rd_s8_row_waits">Waits its turn</string>
+    <string name="rd_s8_more_for">More actions for %1$s</string>
+
+    <string name="rd_s8_menu_open">Open</string>
+    <string name="rd_s8_menu_play">Play</string>
+    <string name="rd_s8_menu_keep">Keep after watching</string>
+    <string name="rd_s8_menu_unkeep">Do not keep after watching</string>
+    <string name="rd_s8_menu_copy_magnet">Copy magnet link</string>
+    <string name="rd_s8_menu_share_magnet">Share magnet link</string>
+    <string name="rd_s8_magnet_copied">Magnet link copied</string>
+    <string name="rd_s8_menu_cancel_download">Cancel download…</string>
+    <string name="rd_s8_menu_delete">Delete…</string>
+
+    <plurals name="rd_s8_delete_title">
+        <item quantity="one">Delete this torrent?</item>
+        <item quantity="other">Delete %1$d transfers?</item>
+    </plurals>
+    <string name="rd_s8_delete_body">%1$s leaves the list and stops downloading and seeding.</string>
+    <string name="rd_s8_delete_files">Also delete the downloaded files</string>
+    <string name="rd_s8_delete_files_kept">The video files stay in the download folder.</string>
+    <plurals name="rd_s8_delete_confirm">
+        <item quantity="one">Delete</item>
+        <item quantity="other">Delete %1$d</item>
+    </plurals>
+    <plurals name="rd_s8_cancel_title">
+        <item quantity="one">Cancel the download?</item>
+        <item quantity="other">Cancel %1$d downloads?</item>
+    </plurals>
+    <string name="rd_s8_cancel_body">What already downloaded of %1$s is deleted.</string>
+    <string name="rd_s8_cancel_confirm">Cancel download</string>
+    <string name="rd_s8_keep_downloading">Keep downloading</string>
+    <string name="rd_s8_delete_all">Delete all</string>
+    <string name="rd_s8_delete_episode">Delete episode</string>
+    <string name="rd_s8_delete_chapter">Delete chapter</string>
+    <string name="rd_s8_delete_chapters_title">Delete all chapters</string>
+    <plurals name="rd_s8_delete_chapters_body">
+        <item quantity="one">Delete the downloaded chapter of %2$s?</item>
+        <item quantity="other">Delete the %1$d downloaded chapters of %2$s?</item>
+    </plurals>
+    <string name="rd_s8_undo_episode">Deleted %1$s · episode %2$d</string>
+    <string name="rd_s8_undo_chapter">Deleted %1$s · %2$s</string>
+    <string name="rd_s8_undo_local">%1$s left the library</string>
+    <string name="rd_s8_broken">Damaged file</string>
+
+    <string name="rd_s8_err_torrent_missing">This torrent is no longer in the library.</string>
+    <string name="rd_s8_err_torrent_moved">The download folder moved or is not available. Choose it again in Settings › Torrents and downloads.</string>
+    <string name="rd_s8_err_no_space">Not enough free space: %1$s more are needed.</string>
+    <string name="rd_s8_err_torrent_no_file">This file of the torrent was not found.</string>
+    <string name="rd_s8_err_background_off">Background downloads are off. Turn them on here in Transfers.</string>
+    <string name="rd_s8_err_torrent_incomplete">The file is not complete yet.</string>
+    <string name="rd_s8_err_torrent_invalid">That is not a valid magnet link, info-hash or .torrent file.</string>
+
+    <string name="rd_s8_bg_title">Background downloads use your phone</string>
+    <string name="rd_s8_bg_title_desktop">Background downloads use your computer</string>
+    <string name="rd_s8_bg_body">Saved torrents keep downloading and seeding even when you are not watching anything. That means:</string>
+    <string name="rd_s8_bg_cpu">CPU and battery use, also with the screen off.</string>
+    <string name="rd_s8_bg_disk">Space and writes in the download folder.</string>
+    <string name="rd_s8_bg_network">Network traffic, which counts on mobile or capped data.</string>
+    <string name="rd_s8_bg_upload">Uploading to other peers: your IP address is visible to them.</string>
+    <string name="rd_s8_bg_notification">Android shows a permanent notification while there are transfers.</string>
+    <string name="rd_s8_bg_note">With Wi-Fi only on, nothing downloads in the background on mobile data. You can turn it off at any time in Settings › Torrents and downloads.</string>
+    <string name="rd_s8_bg_note_desktop">They download while the app is open. You can turn it off at any time here or in Settings › Torrents and downloads.</string>
+    <string name="rd_s8_bg_accept">Got it, turn on</string>
+    <string name="rd_s8_bg_not_now">Not now</string>
+    <string name="rd_s8_bg_on">Background downloads on</string>
+    <string name="rd_s8_bg_off">Background downloads off</string>
+    <string name="rd_s8_bg_turn_on">Turn on</string>
+    <string name="rd_s8_bg_wifi">Waiting for Wi-Fi</string>
+    <string name="rd_s8_bg_battery">Paused: low battery</string>
+    <string name="rd_s8_bg_system">Paused by the system</string>
+    <string name="rd_s8_bg_resume_all">Resume</string>
+    <string name="rd_s8_bg_panel">Background</string>
+    <string name="rd_s8_bg_switch">Keep downloading while the app is open</string>
+    <string name="rd_s8_bg_switch_hint">Saved torrents download and seed even when you are not watching anything. Your IP is visible to other peers.</string>
+
+    <string name="rd_s8_storage">Storage</string>
+    <string name="rd_s8_auto_checking">Checking…</string>
+    <string name="rd_s8_auto_add">Add %1$s</string>
+    <string name="rd_s8_auto_more">Show %1$d more</string>
+    <string name="rd_s8_auto_fewer">Show fewer</string>
+
+    <string name="rd_s8_local_folders">Watched folders</string>
+    <plurals name="rd_s8_local_unmatched">
+        <item quantity="one">%1$d not matched</item>
+        <item quantity="other">%1$d not matched</item>
+    </plurals>
+    <string name="rd_s8_local_match_title">Match video</string>
+    <string name="rd_s8_local_match_for">Match %1$s with a title</string>
+
+    <string name="rd_s8_limits">Limits</string>
+    <string name="rd_s8_limits_title">Quick limits</string>
+    <string name="rd_s8_limits_zero">0 means no limit.</string>
+    <string name="rd_s8_limits_none">No limit</string>
+    <string name="rd_s8_limits_down">Torrent download</string>
+    <string name="rd_s8_limits_up">Torrent upload</string>
+    <string name="rd_s8_limits_web">Web downloads</string>
+    <string name="rd_s8_limits_schedule">Other limits by schedule</string>
+    <string name="rd_s8_limits_schedule_hint">For example, 1 MiB/s by day and no limit at night. It can cross midnight.</string>
+    <string name="rd_s8_limits_schedule_hours">Hours</string>
+    <string name="rd_s8_limits_schedule_down">Download in those hours</string>
+    <string name="rd_s8_limits_schedule_up">Upload in those hours</string>
+
+    <string name="rd_s8_history_title">History</string>
+    <string name="rd_s8_history_sub">What you played, downloaded or added. Clearing it does not touch what is downloaded.</string>
+    <string name="rd_s8_history_all">All</string>
+    <string name="rd_s8_history_empty_body">Every torrent and download you play or fetch shows here with its date.</string>
+    <string name="rd_s8_history_removed">Removed</string>
+    <string name="rd_s8_history_readd">Add again</string>
+    <string name="rd_s8_history_clear">Clear history…</string>
+    <string name="rd_s8_history_clear_title">Clear the history?</string>
+    <string name="rd_s8_history_clear_body">Only the list is cleared. The torrents of the library and the downloaded files stay.</string>
+    <string name="rd_s8_history_clear_confirm">Clear</string>
+    <string name="rd_s8_origin_play">Played</string>
+    <string name="rd_s8_origin_download">Download</string>
+    <string name="rd_s8_origin_manual">Added</string>
+    <string name="rd_s8_origin_magnet">Magnet</string>
+
+    <string name="rd_s8_filter_all">All</string>
+    <string name="rd_s8_filter_downloading">Downloading</string>
+    <string name="rd_s8_filter_seeding">Seeding</string>
+    <string name="rd_s8_filter_paused">Paused</string>
+    <string name="rd_s8_filter_error">With error</string>
+    <string name="rd_s8_sort_by">Order: %1$s</string>
+    <string name="rd_s8_sort_added">Date added</string>
+    <string name="rd_s8_sort_name">Name</string>
+    <string name="rd_s8_sort_size">Size</string>
+    <string name="rd_s8_sort_progress">Progress</string>
+    <string name="rd_s8_sort_state">State</string>
+    <string name="rd_s8_sort_asc">Ascending</string>
+    <string name="rd_s8_sort_desc">Descending</string>
+    <string name="rd_s8_md_pick">Choose a transfer</string>
+    <string name="rd_s8_md_pick_body">Its files, peers, trackers and speed show here.</string>
+    <string name="rd_s8_md_none">Nothing with that filter</string>
+    <string name="rd_s8_md_none_body">Try another state or clear the search.</string>
+    <string name="rd_s8_md_all">See all</string>
+    <string name="rd_s8_md_gone">This transfer is no longer here</string>
+    <string name="rd_s8_info_done">Downloaded</string>
+    <string name="rd_s8_info_source">Source</string>
+    <string name="rd_s8_info_container">Format</string>
+    <string name="rd_s8_info_added">Added</string>
+</resources>

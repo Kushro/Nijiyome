@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.nijiyome.designsystem.components.SectionCard
 import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
 import app.nijiyome.framegen.FgProfile
@@ -27,7 +26,14 @@ import app.nijiyome.framegen.FrameGenText
 import app.nijiyome.framegen.FrameGenUiState
 import app.nijiyome.player.PlayerSession
 import app.nijiyome.player.mpv.MpvPlayerSession
+import app.nijiyome.feature.player.sheets.Caption
+import app.nijiyome.feature.player.sheets.Hint
+import app.nijiyome.feature.player.sheets.NoteTone
+import app.nijiyome.feature.player.sheets.SheetSection
+import app.nijiyome.feature.player.sheets.StateNote
+import app.nijiyome.feature.player.sheets.ToggleRow
 import app.nijiyome.framegen.R as FgR
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Milestone 4: the phone frame generation of the player screen (:core:framegen is an Android-only module and its texts are its
 // Android resources): the "Mejoras" card and the statistics line, moved verbatim from EnhancementPanel.kt / EnhancementStats.kt, and
@@ -83,15 +89,16 @@ internal actual fun phoneFrameGenReason(detail: String): PhoneFrameGenReason? {
 internal actual fun frameGenNoticeReason(notice: PlayerNotice.FrameGen): String =
     stringResource(FrameGenText.reason(notice.reason as FgUnavailableReason, notice.noInput))
 
-// d. Phone frame generation (the "Mejoras" card) ---------------------------------------------------------------------------------------
+// d. Phone frame generation (the "Mejoras" sheet's section) -----------------------------------------------------------------------------
 
+// Sparkles redesign (lane S6): a section of the grouped "Mejoras" sheet (SheetSection) instead of a card at the bottom of a long panel.
 @Composable
 private fun FrameGenSection(fg: FrameGenController, s: FrameGenUiState, onOpenFgSettings: () -> Unit) {
-    // the expensive eligibility facts (library, imported shaders) are probed when the card is shown
+    // the expensive eligibility facts (library, imported shaders) are probed when the section is shown
     LaunchedEffect(fg) { fg.refresh() }
     val reason = s.unavailable
     val ineligible = reason?.kind == FgUnavailableReason.Kind.INELIGIBLE
-    SectionCard(title = stringResource(Res.string.player_fx_fg_title)) {
+    SheetSection(stringResource(Res.string.player_fx_fg_title)) {
         val status = when {
             s.active -> stringResource(FgR.string.fg_state_active, s.multiplier)
             !s.eligibilityKnown && reason == null -> stringResource(FgR.string.fg_state_checking)
@@ -99,16 +106,16 @@ private fun FrameGenSection(fg: FrameGenController, s: FrameGenUiState, onOpenFg
             s.enabled -> stringResource(FgR.string.fg_state_ready)
             else -> stringResource(FgR.string.fg_state_off)
         }
-        SwitchRow(
+        ToggleRow(
             title = stringResource(FgR.string.fg_enabled),
-            hint = status,
             checked = s.enabled,
-            enabled = !ineligible || s.enabled,
             onChange = fg::setEnabled,
-            warning = reason != null && reason.kind != FgUnavailableReason.Kind.SUSPENDED,
+            hint = status,
+            enabled = !ineligible || s.enabled,
+            hintIsWarning = reason != null && reason.kind != FgUnavailableReason.Kind.SUSPENDED,
         )
         if (reason == FgUnavailableReason.SHADERS || s.shadersImported == false) {
-            TextButton(onClick = onOpenFgSettings) { Text(stringResource(Res.string.player_fx_fg_import)) }
+            TextButton(onClick = onOpenFgSettings, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_fx_fg_import)) }
         }
         if (s.active) {
             val view = FgStatsView.from(s, s.liveFps)
@@ -119,11 +126,11 @@ private fun FrameGenSection(fg: FrameGenController, s: FrameGenUiState, onOpenFg
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-            if (view.overloaded) WarningLine(stringResource(FgR.string.fg_state_overloaded))
+            if (view.overloaded) StateNote(stringResource(FgR.string.fg_state_overloaded), NoteTone.WARN)
         }
-        if (s.experimental) InfoLine(stringResource(FgR.string.fg_state_experimental))
+        if (s.experimental) Hint(stringResource(FgR.string.fg_state_experimental))
         if (!ineligible) {
-            LabelText(stringResource(FgR.string.fg_multiplier))
+            Caption(stringResource(FgR.string.fg_multiplier))
             val selectedMultiplier = if (s.auto) FrameGenMultiplier.AUTO else FrameGenMultiplier.of(s.multiplier)
             Segmented(
                 options = FrameGenMultiplier.entries.map { m ->
@@ -134,8 +141,8 @@ private fun FrameGenSection(fg: FrameGenController, s: FrameGenUiState, onOpenFg
                 fillWidth = true,
                 small = true,
             )
-            InfoLine(stringResource(FgR.string.fg_multiplier_hint))
-            LabelText(stringResource(FgR.string.fg_profile))
+            Hint(stringResource(FgR.string.fg_multiplier_hint))
+            Caption(stringResource(FgR.string.fg_profile))
             // CUSTOM is set up in Settings; it only shows here while it is the one in use
             val profiles = listOf(FgProfile.SAVER, FgProfile.BALANCED, FgProfile.QUALITY) + listOfNotNull(FgProfile.CUSTOM.takeIf { s.profile == it })
             Segmented(
@@ -145,7 +152,7 @@ private fun FrameGenSection(fg: FrameGenController, s: FrameGenUiState, onOpenFg
                 fillWidth = true,
                 small = true,
             )
-            InfoLine(stringResource(FgR.string.fg_profile_hint))
+            Hint(stringResource(FgR.string.fg_profile_hint))
         }
     }
 }

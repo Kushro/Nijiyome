@@ -62,10 +62,13 @@ import app.nijiyome.designsystem.components.TrackModal
 import app.nijiyome.model.LinkActiveSession
 import app.nijiyome.model.LinkServerController
 import app.nijiyome.model.LinkServerState
+import app.nijiyome.nav.LinkMonitorTexts
+import app.nijiyome.nav.rememberLinkMonitorTexts
 import app.nijiyome.ui.format.formatBytes
 import app.nijiyome.ui.format.formatDuration
 import app.nijiyome.ui.format.formatRate
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Live torrent entry summary shown in the Link Monitor and the Desktop system tray. */
 data class ActiveTorrentSummary(
@@ -104,9 +107,9 @@ fun LinkMonitorDialog(
     onDismiss: () -> Unit,
     onOpenLinkSettings: () -> Unit,
     onOpenTorrents: () -> Unit,
+    texts: LinkMonitorTexts = rememberLinkMonitorTexts(),
 ) {
     TrackModal()
-    val es = status.spanish
     val scheme = MaterialTheme.colorScheme
     val link = status.link
 
@@ -146,29 +149,27 @@ fun LinkMonitorDialog(
                     )
                     Column(Modifier.weight(1f)) {
                         Text(
-                            if (es) "Monitor de Nijiyome Link y sistema" else "Nijiyome Link & System Monitor",
+                            texts.title,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         )
                         val subtitle = when {
-                            link == null -> if (es) "Servidor Link no disponible" else "Link server unavailable"
-                            !link.running -> if (es) "Servidor Link detenido" else "Link server stopped"
+                            link == null -> texts.unavailable
+                            !link.running -> texts.stopped
                             link.activeSessions.isNotEmpty() -> {
                                 val n = link.activeSessions.size
-                                if (es) "Puerto :${link.port} · $n ${if (n == 1) "sesión activa" else "sesiones activas"}"
-                                else "Port :${link.port} · $n active ${if (n == 1) "session" else "sessions"}"
+                                (if (n == 1) texts.sessionsOne else texts.sessionsOther).format(link.port, n)
                             }
-                            else -> if (es) "Puerto :${link.port} · En espera · ${link.devices.size} dispositivos vinculados"
-                            else "Port :${link.port} · Idle · ${link.devices.size} paired devices"
+                            else -> texts.idle.format(link.port, link.devices.size)
                         }
                         Text(subtitle, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                     }
-                    TextButton(onClick = { onDismiss(); onOpenLinkSettings() }) {
+                    TextButton(onClick = { onDismiss(); onOpenLinkSettings() }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(if (es) "Ajustes Link" else "Link Settings")
+                        Text(texts.linkSettings)
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Outlined.Close, contentDescription = if (es) "Cerrar" else "Close")
+                        Icon(Icons.Outlined.Close, contentDescription = texts.close)
                     }
                 }
                 HorizontalDivider(color = scheme.outlineVariant)
@@ -185,13 +186,12 @@ fun LinkMonitorDialog(
                     // ---- Section 1: Active Link sessions ----
                     SectionHeader(
                         icon = Icons.Outlined.Devices,
-                        title = if (es) "Dispositivos usando esta PC (Link)" else "Devices using this PC (Link)",
+                        title = texts.devices,
                     )
                     if (link == null || !link.running) {
                         MonitorCard {
                             Text(
-                                if (es) "El servidor de Nijiyome Link está apagado. Actívalo en Ajustes › Nijiyome Link para escalar y generar fotogramas para tus dispositivos."
-                                else "Nijiyome Link server is turned off. Enable it in Settings › Nijiyome Link to upscale and generate frames for your devices.",
+                                texts.serverOff,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = scheme.onSurfaceVariant,
                             )
@@ -200,8 +200,7 @@ fun LinkMonitorDialog(
                         MonitorCard {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
-                                    if (es) "Ningún dispositivo está reproduciendo a través de esta PC ahora mismo."
-                                    else "No device is currently streaming through this PC.",
+                                    texts.noStreaming,
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                                 Text(
@@ -221,7 +220,7 @@ fun LinkMonitorDialog(
                             ActiveLinkSessionCard(
                                 session = session,
                                 cacheLimitMb = link.cacheLimitMb,
-                                spanish = es,
+                                texts = texts,
                                 onStop = { linkServer?.stopSession(session.sessionId) },
                             )
                         }
@@ -232,7 +231,7 @@ fun LinkMonitorDialog(
                         Box(Modifier.weight(1f)) {
                             SectionHeader(
                                 icon = Icons.Outlined.Download,
-                                title = if (es) "Torrents activos" else "Active Torrents",
+                                title = texts.torrents,
                             )
                         }
                         if (status.totalDownBps > 0 || status.totalUpBps > 0) {
@@ -243,15 +242,14 @@ fun LinkMonitorDialog(
                                 color = scheme.primary,
                             )
                         }
-                        TextButton(onClick = { onDismiss(); onOpenTorrents() }) {
-                            Text(if (es) "Abrir Torrents" else "Open Torrents")
+                        TextButton(onClick = { onDismiss(); onOpenTorrents() }, shape = NijiyomeControls.shape) {
+                            Text(texts.openTransfers)
                         }
                     }
                     if (status.activeTorrents.isEmpty()) {
                         MonitorCard {
                             Text(
-                                if (es) "Sin torrents descargando o transmitiendo en este momento."
-                                else "No torrents downloading or streaming right now.",
+                                texts.noTorrents,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = scheme.onSurfaceVariant,
                             )
@@ -277,7 +275,7 @@ fun LinkMonitorDialog(
                                         )
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(
-                                                "${t.stateLabel} · ${t.peers} peers",
+                                                texts.peers.format(t.stateLabel, t.peers),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = scheme.onSurfaceVariant,
                                             )
@@ -297,7 +295,7 @@ fun LinkMonitorDialog(
                     // ---- Section 3: Memory & Cache ----
                     SectionHeader(
                         icon = Icons.Outlined.Memory,
-                        title = if (es) "Memoria y caché" else "Memory & Cache",
+                        title = texts.memory,
                     )
                     MonitorCard {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -305,7 +303,7 @@ fun LinkMonitorDialog(
                             val linkCacheLimitBytes = (link?.cacheLimitMb ?: 1024).toLong() * 1024L * 1024L
                             val linkCacheUsed = link?.totalCacheBytes ?: 0L
                             UsageBarRow(
-                                label = if (es) "Caché de segmentos Link (RAM)" else "Link Segment Cache (RAM)",
+                                label = texts.linkCache,
                                 detail = "${formatBytes(linkCacheUsed)} / ${formatBytes(linkCacheLimitBytes)}",
                                 fraction = if (linkCacheLimitBytes > 0) (linkCacheUsed.toFloat() / linkCacheLimitBytes.toFloat()).coerceIn(0f, 1f) else 0f,
                                 barColor = scheme.primary,
@@ -313,7 +311,7 @@ fun LinkMonitorDialog(
                             if (linkServer != null && link != null) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Text(
-                                        if (es) "Límite por sesión (rewind sin reprocesar):" else "Per-session budget (instant rewind):",
+                                        texts.budget,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = scheme.onSurfaceVariant,
                                         modifier = Modifier.weight(1f),
@@ -332,7 +330,7 @@ fun LinkMonitorDialog(
                             // JVM memory
                             val jvmFrac = (status.jvmUsedBytes.toFloat() / status.jvmMaxBytes.coerceAtLeast(1L).toFloat()).coerceIn(0f, 1f)
                             UsageBarRow(
-                                label = if (es) "Memoria RAM de la app (JVM)" else "App RAM Usage (JVM)",
+                                label = texts.appRam,
                                 detail = "${formatBytes(status.jvmUsedBytes)} / ${formatBytes(status.jvmMaxBytes)}",
                                 fraction = jvmFrac,
                                 barColor = scheme.secondary,
@@ -343,19 +341,19 @@ fun LinkMonitorDialog(
                                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Icon(Icons.Outlined.Storage, contentDescription = null, modifier = Modifier.size(16.dp), tint = scheme.onSurfaceVariant)
                                     Column {
-                                        Text(if (es) "Caché de disco" else "Disk cache", style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
+                                        Text(texts.diskCache, style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
                                         Text(formatBytes(status.diskCacheBytes), style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
                                     }
                                 }
                                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(16.dp), tint = scheme.onSurfaceVariant)
                                     Column {
-                                        Text(if (es) "Torrents en disco" else "Torrent storage", style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
+                                        Text(texts.torrentStorage, style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
                                         Text(
                                             buildString {
                                                 append(formatBytes(status.torrentStorageBytes))
                                                 if (status.torrentFreeBytes > 0) {
-                                                    append(if (es) " (${formatBytes(status.torrentFreeBytes)} libres)" else " (${formatBytes(status.torrentFreeBytes)} free)")
+                                                    append(" (" + texts.free.format(formatBytes(status.torrentFreeBytes)) + ")")
                                                 }
                                             },
                                             style = MaterialTheme.typography.bodyMedium,
@@ -377,12 +375,12 @@ fun LinkMonitorDialog(
 private fun ActiveLinkSessionCard(
     session: LinkActiveSession,
     cacheLimitMb: Int,
-    spanish: Boolean,
+    texts: LinkMonitorTexts,
     onStop: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val displayTitle = buildString {
-        append(session.title?.takeIf { it.isNotBlank() } ?: if (spanish) "Reproducción en curso" else "Active playback")
+        append(session.title?.takeIf { it.isNotBlank() } ?: texts.activePlayback)
         session.episode?.let { append(" · Ep $it") }
     }
     MonitorCard(highlighted = true) {
@@ -393,9 +391,9 @@ private fun ActiveLinkSessionCard(
                         StatusChip(session.deviceName, scheme.primaryContainer, scheme.onPrimaryContainer)
                         StatusChip(
                             when {
-                                session.paused -> if (spanish) "Pausado" else "Paused"
-                                session.throttled -> if (spanish) "Buffer lleno" else "Buffer full"
-                                else -> if (spanish) "Procesando" else "Processing"
+                                session.paused -> texts.paused
+                                session.throttled -> texts.bufferFull
+                                else -> texts.processing
                             },
                             scheme.secondaryContainer,
                             scheme.onSecondaryContainer,
@@ -403,7 +401,7 @@ private fun ActiveLinkSessionCard(
                         StatusChip(
                             when (session.sourceKind) {
                                 "torrent" -> "Torrent"
-                                "library" -> if (spanish) "Biblioteca" else "Library"
+                                "library" -> texts.library
                                 else -> "Web"
                             },
                             scheme.surfaceContainerHigh,
@@ -418,10 +416,10 @@ private fun ActiveLinkSessionCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                OutlinedButton(onClick = onStop) {
+                OutlinedButton(onClick = onStop, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.StopCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(if (spanish) "Detener" else "Stop")
+                    Text(texts.stop)
                 }
             }
 
@@ -434,7 +432,7 @@ private fun ActiveLinkSessionCard(
                     StatusChip(it, scheme.primaryContainer, scheme.onPrimaryContainer, icon = Icons.Outlined.Speed)
                 }
                 if (session.upscaleLabel == null && session.frameGenLabel == null) {
-                    StatusChip(if (spanish) "Sin escalado (directo)" else "No upscaling", scheme.surfaceContainerHigh, scheme.onSurfaceVariant)
+                    StatusChip(texts.noUpscaling, scheme.surfaceContainerHigh, scheme.onSurfaceVariant)
                 }
                 StatusChip(session.encoder, scheme.surfaceContainerHigh, scheme.onSurfaceVariant)
             }
@@ -472,8 +470,7 @@ private fun ActiveLinkSessionCard(
                         val fromSecs = session.cachedFromSecs
                         val toSecs = session.cachedToSecs
                         val cachedWindowText = if (fromSecs != null && toSecs != null) {
-                            val label = if (spanish) "En caché RAM" else "Cached in RAM"
-                            "$label: ${formatDuration(fromSecs.toLong())}–${formatDuration(toSecs.toLong())}"
+                            texts.cachedRam.format("${formatDuration(fromSecs.toLong())}–${formatDuration(toSecs.toLong())}")
                         } else ""
                         Text(
                             cachedWindowText,
@@ -488,20 +485,20 @@ private fun ActiveLinkSessionCard(
             // Numeric telemetry row
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 MetricItem(
-                    label = if (spanish) "Caché RAM" else "RAM Cache",
+                    label = texts.ramCache,
                     value = "${formatBytes(session.cachedBytes)} / ${cacheLimitMb} MB",
                 )
                 MetricItem(
-                    label = if (spanish) "Adelanto" else "Lead ahead",
+                    label = texts.lead,
                     value = "+${session.leadSecs.roundToInt()} s",
                 )
                 MetricItem(
-                    label = if (spanish) "Segmentos" else "Segments",
+                    label = texts.segments,
                     value = "${session.cachedSegments}",
                 )
                 session.segIntervalMs?.takeIf { it > 0 }?.let { ms ->
                     MetricItem(
-                        label = if (spanish) "Velocidad" else "Render pace",
+                        label = texts.pace,
                         value = String.format("%.1f s/seg", ms / 1000.0),
                     )
                 }

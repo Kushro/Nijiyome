@@ -31,6 +31,7 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // android wave contract (docs/redesign/12 §3.11). Owner: worker d. Name and signature FIXED.
 
@@ -87,17 +88,17 @@ internal fun ExternalPlayerContent(
             )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onStop) {
+                Button(onClick = onStop, shape = NijiyomeControls.shape) {
                     Icon(Icons.Rounded.Stop, contentDescription = null)
                     Text(stringResource(Res.string.player_external_stop), Modifier.padding(start = 8.dp))
                 }
-                OutlinedButton(onClick = onBack) {
+                OutlinedButton(onClick = onBack, shape = NijiyomeControls.shape) {
                     Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
                     Text(stringResource(Res.string.player_back), Modifier.padding(start = 8.dp))
                 }
             }
             if (onReopen != null) {
-                TextButton(onClick = onReopen) {
+                TextButton(onClick = onReopen, shape = NijiyomeControls.shape) {
                     Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.player_external_reopen), Modifier.padding(start = 8.dp))
                 }

@@ -137,73 +137,6 @@ internal fun headerFactsSlot(head: HeadModel, media: Media, state: DetailsUiStat
 /** The editorial hero is 0.4 of the height; B / D give it up to 0.36 on shorter phones so the grid and the card fit. */
 internal fun HeadModel.heroFraction(): Float = if (layout.usesFacts && fit != HeadFit.FULL) 0.36f else 0.4f
 
-// ---------------------------------------------------------------- body
-
-/** The part of the header under the title: the composition of [HeadModel.layout] and "Enviando…" while a Link session starts. */
-@Composable
-internal fun HeaderBody(head: HeadModel, media: Media, state: DetailsUiState, actions: DetailsActions, modifier: Modifier = Modifier) {
-    val pad = Modifier.padding(horizontal = 16.dp)
-    val side = head.place == CardPlace.SIDE_COLUMN
-    // >= 840 dp the source panel is beside the list: A / B keep a reading-width button and no source line
-    val buttonWidth = if (side) Modifier.widthIn(max = 420.dp) else Modifier
-    val next = head.nextUp
-    val sub = next.progress?.let { resumeSub(it) }
-    Column(modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        when (head.layout) {
-            HeaderLayout.LINE -> {
-                WatchButton(state, actions, pad.then(buttonWidth), height = 56.dp, sub = sub, progress = next.progress?.fraction)
-                if (!side) SourceLine(state, actions)
-                HeadActions(media, state, actions, HeadActionStyle.BOXED_ICONS)
-            }
-            HeaderLayout.FACTS -> {
-                FactsGrid(head, pad)
-                WatchButton(state, actions, pad.then(buttonWidth), height = 56.dp, sub = sub, progress = next.progress?.fraction)
-                HeadActions(media, state, actions, HeadActionStyle.CHIPS)
-                if (!side) SourceLine(state, actions, withEpisode = true)
-            }
-            HeaderLayout.NEXT_UP -> {
-                // 600-839 dp: the icons span the same reading width as the card
-                HeadActions(
-                    media, state, actions, HeadActionStyle.PLAIN_ICONS,
-                    modifier = if (head.place == CardPlace.BESIDE) Modifier.widthIn(max = 552.dp) else Modifier,
-                )
-                if (!side) {
-                    val width = if (head.place == CardPlace.BESIDE) Modifier.widthIn(max = 520.dp) else Modifier.fillMaxWidth()
-                    NextUpCard(head, media, state, actions, footer = true, modifier = pad.then(width))
-                }
-            }
-            HeaderLayout.FACTS_NEXT_UP -> if (head.place == CardPlace.BESIDE) {
-                Row(pad.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column(Modifier.weight(1f).semantics { isTraversalGroup = true }, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        FactsGrid(head)
-                        HeadActions(media, state, actions, HeadActionStyle.CHIPS, edge = 0.dp)
-                    }
-                    NextUpCard(head, media, state, actions, footer = true, modifier = Modifier.width(340.dp).semantics { isTraversalGroup = true })
-                }
-            } else {
-                FactsGrid(head, pad)
-                HeadActions(media, state, actions, HeadActionStyle.CHIPS)
-                if (!side) NextUpCard(head, media, state, actions, footer = true, modifier = pad.fillMaxWidth())
-            }
-        }
-        // BUG-023: a visible "Enviando…" while the sources resolve and the PC opens the session.
-        if (state.sending) {
-            Row(
-                pad.heightIn(min = 32.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                Text(
-                    stringResource(Res.string.details_send_sending),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
 // ---------------------------------------------------------------- facts
 
 /** "2 d 5 h" / "5 h 12 min" / "12 min" until the next episode. */
@@ -352,6 +285,94 @@ internal fun FactsGrid(head: HeadModel, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Labelled facts on a wide pane (B, D): one quiet line of label-over-value pairs, as the artifact draws them (Estado · Próximo ·
+ * Episodios · Temporada · Puntuación · Estudio), about 40 dp tall where the grid took rows of large numbers. The line wraps between
+ * facts, never inside one; each fact is one TalkBack node.
+ */
+@Composable
+internal fun FactsStrip(head: HeadModel, media: Media, state: DetailsUiState, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    val season = media.season?.let { seasonLabel(it) }
+    val studio = state.detailsOrNull?.studios?.firstOrNull()?.takeIf { it.isNotBlank() }
+    val cells = mutableListOf<@Composable () -> Unit>()
+    head.facts.forEach { fact ->
+        when (fact) {
+            is HeadFact.Status -> cells += {
+                val label = stringResource(Res.string.details_info_status)
+                val value = statusPill(fact.raw)?.first ?: fact.raw
+                StripCell(label, value, stringResource(Res.string.details_fact_cd, label, value), lead = if (fact.raw == "RELEASING") ({ LiveDot() }) else null)
+            }
+            is HeadFact.Next -> cells += {
+                val label = stringResource(Res.string.details_fact_next)
+                StripCell(
+                    label,
+                    stringResource(Res.string.rd_s4_fact_next_when, fact.episode, whenText(fact.left)),
+                    stringResource(Res.string.details_fact_cd, label, stringResource(Res.string.details_next_short_cd, fact.episode, spokenWhen(fact.left))),
+                )
+            }
+            is HeadFact.Episodes -> cells += {
+                val label = stringResource(Res.string.details_episodes)
+                val total = fact.total
+                when {
+                    total != null && fact.watched > 0 -> StripCell(
+                        label,
+                        stringResource(Res.string.rd_s4_series_progress, fact.watched, total),
+                        stringResource(Res.string.details_fact_episodes_cd, fact.watched, total),
+                    )
+                    total != null -> StripCell(label, total.toString(), stringResource(Res.string.details_fact_episodes_total_cd, total))
+                    else -> {
+                        val value = "${fact.watched} ${pluralStringResource(Res.plurals.details_fact_watched, fact.watched)}"
+                        StripCell(label, value, stringResource(Res.string.details_fact_cd, label, value))
+                    }
+                }
+            }
+            is HeadFact.Year -> cells += {
+                // "Otoño 2026" says more than "2026" in the same room
+                val label = stringResource(if (season != null) Res.string.details_info_season else Res.string.details_fact_year)
+                val value = if (season != null) "$season ${fact.year}" else fact.year.toString()
+                StripCell(label, value, stringResource(Res.string.details_fact_cd, label, value))
+            }
+            is HeadFact.Score -> cells += {
+                val label = stringResource(Res.string.details_fact_score)
+                val value = formatScore(fact.score)
+                StripCell(
+                    label,
+                    value,
+                    stringResource(Res.string.details_fact_cd, label, value),
+                    lead = { Icon(Icons.Filled.Star, null, tint = scheme.primary, modifier = Modifier.size(14.dp)) },
+                )
+            }
+        }
+    }
+    if (studio != null) {
+        cells += {
+            val label = stringResource(Res.string.rd_s4_fact_studio)
+            StripCell(label, studio, stringResource(Res.string.details_fact_cd, label, studio))
+        }
+    }
+    if (cells.isEmpty()) return
+    FlowRow(
+        modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(28.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        cells.forEach { it() }
+    }
+}
+
+@Composable
+private fun StripCell(label: String, value: String, spoken: String, lead: (@Composable () -> Unit)? = null) {
+    val scheme = MaterialTheme.colorScheme
+    Column(Modifier.clearAndSetSemantics { contentDescription = spoken }, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant, maxLines = 1, softWrap = false)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            lead?.invoke()
+            Text(value, style = MaterialTheme.typography.titleSmall, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
 @Composable
 private fun FactCell(fact: HeadFact, first: Boolean, modifier: Modifier) {
     val scheme = MaterialTheme.colorScheme
@@ -440,190 +461,6 @@ private fun FactCell(fact: HeadFact, first: Boolean, modifier: Modifier) {
                 autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.bodySmall.fontSize),
             )
         }
-    }
-}
-
-// ---------------------------------------------------------------- actions
-
-internal enum class HeadActionStyle { BOXED_ICONS, PLAIN_ICONS, CHIPS }
-
-/**
- * The title's tools in a fixed order: Lista, Favorito, Seguir, Tráiler, Más. Icons in an even row (A boxed, C plain) or named chips
- * that slide sideways to the screen edge (B, D). Favorito, Seguir and Tráiler are left out when they do not apply.
- */
-@Composable
-internal fun HeadActions(
-    media: Media,
-    state: DetailsUiState,
-    actions: DetailsActions,
-    style: HeadActionStyle,
-    modifier: Modifier = Modifier,
-    /** Chips: the start / end inset of the sliding row (the screen margin). */
-    edge: Dp = 16.dp,
-) {
-    val scheme = MaterialTheme.colorScheme
-    val listWord = stringResource(Res.string.details_action_list)
-    // null = no lists layer (desktop): the Lista tool is left out
-    val lists = rememberListsRepository()
-    val accounts = lists?.accounts?.collectAsState()?.value.orEmpty()
-    val online = rememberIsOnline()
-    val snackbar = LocalAppSnackbar.current
-    val queuedOffline = stringResource(UiR.string.list_queued_offline)
-    val follow = rememberFollowControl(media)
-    val trailer = state.detailsOrNull?.trailer
-    val content: @Composable () -> Unit = {
-        if (lists != null) {
-            ListButton(
-                media = media,
-                anchor = { label, entry, open ->
-                    HeadAction(
-                        style,
-                        icon = if (entry != null) Icons.Filled.Bookmark else Icons.Outlined.BookmarkAdd,
-                        label = if (entry != null) label else listWord,
-                        on = entry != null,
-                        onClick = open,
-                        // "Lista: Viendo" / "Lista: Añadir a lista" (the visible word first)
-                        description = stringResource(Res.string.details_fact_cd, listWord, label),
-                    )
-                },
-            )
-        }
-        actions.onToggleFavorite?.let { toggle ->
-            val fav = state.favorite
-            HeadAction(
-                style,
-                icon = if (fav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                label = stringResource(Res.string.details_action_favorite),
-                on = fav,
-                checked = fav,
-                onClick = {
-                    toggle()
-                    // like the list menu: a linked account offline syncs later
-                    if (accounts.isNotEmpty() && !online) snackbar.show(queuedOffline)
-                },
-            )
-        }
-        follow?.let { f ->
-            HeadAction(
-                style,
-                icon = if (f.following) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationAdd,
-                label = stringResource(if (f.following) Res.string.details_action_following else Res.string.details_action_follow),
-                on = f.following,
-                checked = f.following,
-                onClick = f.toggle,
-            )
-        }
-        trailer?.let { t ->
-            HeadAction(style, icon = Icons.Outlined.Theaters, label = stringResource(Res.string.details_trailer), on = false, onClick = { actions.onOpenUrl(t.url) })
-        }
-        if (style == HeadActionStyle.BOXED_ICONS) VerticalDivider(Modifier.height(24.dp), color = scheme.outlineVariant)
-        MoreActionsButton(media, state, actions) { open ->
-            HeadAction(
-                style,
-                icon = Icons.Filled.MoreVert,
-                label = stringResource(Res.string.details_action_more),
-                on = false,
-                onClick = open,
-                description = stringResource(Res.string.details_more_actions),
-            )
-        }
-    }
-    val group = Modifier.semantics { isTraversalGroup = true }
-    when (style) {
-        HeadActionStyle.CHIPS -> {
-            val scroll = rememberScrollState()
-            HorizontalScrollStrip(scrollState = scroll, showChevrons = edge >= 16.dp, modifier = modifier.then(group)) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .horizontalFadingEdge(scroll)
-                        .horizontalScroll(scroll)
-                        .padding(horizontal = edge),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) { content() }
-            }
-        }
-        HeadActionStyle.PLAIN_ICONS -> Row(
-            modifier.then(group).fillMaxWidth().padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) { content() }
-        HeadActionStyle.BOXED_ICONS -> Row(
-            modifier
-                .then(group)
-                .padding(horizontal = 16.dp)
-                .fillMaxWidth()
-                .border(1.dp, scheme.outlineVariant, CircleShape)
-                .background(scheme.surfaceContainerHigh.copy(alpha = 0.6f), CircleShape)
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) { content() }
-    }
-}
-
-/** One tool: an icon button (48 dp target) or a 40 dp chip; [checked] != null makes it a toggle (Favorito, Seguir). */
-@Composable
-private fun HeadAction(
-    style: HeadActionStyle,
-    icon: ImageVector,
-    label: String,
-    on: Boolean,
-    onClick: () -> Unit,
-    checked: Boolean? = null,
-    description: String = label,
-) {
-    val scheme = MaterialTheme.colorScheme
-    val tint = when {
-        on -> scheme.primary
-        style == HeadActionStyle.BOXED_ICONS -> scheme.onSurface
-        else -> scheme.onSurfaceVariant
-    }
-    if (style != HeadActionStyle.CHIPS) {
-        if (checked != null) {
-            IconToggleButton(checked = checked, onCheckedChange = { onClick() }, modifier = Modifier.semantics { role = Role.Switch }) {
-                Icon(icon, contentDescription = description, tint = tint)
-            }
-        } else {
-            IconButton(onClick = onClick) { Icon(icon, contentDescription = description, tint = tint) }
-        }
-        return
-    }
-    val border = BorderStroke(1.dp, if (on) scheme.primary.copy(alpha = 0.6f) else scheme.outlineVariant)
-    val color = if (on) scheme.primary else scheme.onSurface
-    val chip: @Composable () -> Unit = {
-        Row(
-            Modifier.height(40.dp).padding(start = 12.dp, end = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false)
-        }
-    }
-    val chipModifier = if (description != label) Modifier.semantics { contentDescription = description } else Modifier
-    if (checked != null) {
-        Surface(
-            checked = checked,
-            onCheckedChange = { onClick() },
-            shape = CircleShape,
-            color = Color.Transparent,
-            contentColor = color,
-            border = border,
-            modifier = chipModifier.semantics { role = Role.Switch },
-            content = chip,
-        )
-    } else {
-        Surface(
-            onClick = onClick,
-            shape = CircleShape,
-            color = Color.Transparent,
-            contentColor = color,
-            border = border,
-            modifier = chipModifier,
-            content = chip,
-        )
     }
 }
 

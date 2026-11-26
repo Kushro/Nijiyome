@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import app.nijiyome.designsystem.components.LocalAppSnackbar
+import app.nijiyome.feature.player.sheets.ActionRow
 import app.nijiyome.model.Container
 import app.nijiyome.model.DownloadRepository
 import app.nijiyome.model.DownloadRequest
@@ -49,6 +50,8 @@ fun DownloadAction(
     /** BUG-060: render as an item of the compact top bar's overflow menu ([onDone] closes it). */
     asMenuItem: Boolean = false,
     onDone: () -> Unit = {},
+    /** Sparkles redesign (lane S6): render as a row of the player's "Más" sheet, saying why it is off when it is. */
+    asRow: Boolean = false,
 ) {
     if (args.localUri != null || args.torrentId != null || args.remoteSessionId != null) return
     if (current == null || current.container == Container.DASH) return
@@ -86,7 +89,15 @@ fun DownloadAction(
     }
     val icon = if (done) Icons.Rounded.DownloadDone else Icons.Rounded.Download
     val text = stringResource(if (done) UiR.string.download_state_completed else UiR.string.download_episode)
-    if (asMenuItem) {
+    if (asRow) {
+        ActionRow(
+            icon = icon,
+            title = text,
+            onClick = start,
+            enabled = enabled,
+            supporting = if (inQueue) stringResource(UiR.string.download_queued) else null,
+        )
+    } else if (asMenuItem) {
         DropdownMenuItem(text = { Text(text) }, onClick = start, enabled = enabled, leadingIcon = { Icon(icon, contentDescription = null) })
     } else {
         IconButton(enabled = enabled, onClick = start) { Icon(icon, contentDescription = text, tint = on) }

@@ -85,6 +85,7 @@ import app.nijiyome.ui.state.userMessage
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.4, worker t). Signatures FINAL.
 
@@ -390,14 +391,14 @@ private fun ItemHeader(
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (item.entries.isNotEmpty()) {
-                Button(onClick = onStart) {
+                Button(onClick = onStart, shape = NijiyomeControls.shape) {
                     Icon(if (kind == "watch") Icons.Outlined.PlayArrow else Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
                     val label = continueEntry?.let { stringResource(Res.string.extensions_provider_continue, it.number?.let(::formatNumber) ?: (it.title ?: "")) }
                         ?: stringResource(if (kind == "watch") Res.string.extensions_provider_start_watch else Res.string.extensions_provider_start_read)
                     Text(label, modifier = Modifier.padding(start = 8.dp))
                 }
             }
-            OutlinedButton(onClick = onToggleBookmark) {
+            OutlinedButton(onClick = onToggleBookmark, shape = NijiyomeControls.shape) {
                 Icon(if (saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(if (saved) Res.string.extensions_provider_unsave else Res.string.extensions_provider_save), modifier = Modifier.padding(start = 8.dp))
             }
@@ -412,7 +413,7 @@ private fun ItemHeader(
                 },
             )
             if (onOpenDetails != null) {
-                OutlinedButton(onClick = onOpenDetails) {
+                OutlinedButton(onClick = onOpenDetails, shape = NijiyomeControls.shape) {
                     Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.extensions_provider_open_details), modifier = Modifier.padding(start = 8.dp))
                 }

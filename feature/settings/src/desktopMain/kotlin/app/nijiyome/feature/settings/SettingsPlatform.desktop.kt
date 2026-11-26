@@ -20,6 +20,8 @@ import kotlinx.coroutines.launch
 // The desktop side of SettingsPlatform.kt. Each pending marker below is a capability desktop does not have yet.
 
 /** Desktop has no wallpaper colors: the switch is hidden, the palette applies. */
+internal actual val systemCategoryOffered: Boolean = true
+
 internal actual val dynamicColorSupported: Boolean = false
 
 /** Android packages of external players: desktop has none (its External engine is mpv, see ExternalPlayerSettings.desktop.kt). */

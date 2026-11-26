@@ -87,6 +87,7 @@ import app.nijiyome.extensionserver.ServerStatus
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * "PC extension server" (docs/redesign/13 §3.10, D8): connect this phone to the extension server of Nijiyome on a Windows / Linux PC
@@ -133,35 +134,63 @@ fun ExtensionServersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(
-                    stringResource(platformHint(Res.string.extserver_intro)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                state.error?.let { ErrorBanner(errorText(it), onDismiss = viewModel::clearError) }
-                ConnectPanel(
-                    connecting = state.connecting,
-                    isPlausible = viewModel::isPlausibleLink,
-                    onLink = viewModel::connectWithText,
-                    onManual = viewModel::connectManual,
-                )
-                ServersPanel(
-                    state = state,
-                    onEnabled = viewModel::setEnabled,
-                    onRemove = viewModel::remove,
-                )
-                InfoPanel()
+                ExtensionServersBody(viewModel, state)
             }
         }
     }
+}
+
+/**
+ * Sparkles S9: the extension-server content without its own scaffold or scroll, so Fuentes › Servidores en tu PC can embed it (the shell
+ * passes `serversContent = { ExtensionServersContent() }` to `ExtensionsScreen`). Connect (QR, pasted link, address and viewer password),
+ * the linked servers (enable, remove with confirmation, state), the folded "Más información" and the confirmation of an incoming
+ * `nijiyome://` link.
+ */
+@Composable
+fun ExtensionServersContent(modifier: Modifier = Modifier) {
+    val viewModel: ExtensionServersViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbar = LocalAppSnackbar.current
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ExtensionServersEvent.Connected -> snackbar.show(getString(Res.string.extserver_connected, event.name))
+            }
+        }
+    }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ExtensionServersBody(viewModel, state)
+    }
+}
+
+@Composable
+private fun ExtensionServersBody(viewModel: ExtensionServersViewModel, state: ExtensionServersUiState) {
+    Text(
+        stringResource(platformHint(Res.string.extserver_intro)),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    state.error?.let { ErrorBanner(errorText(it), onDismiss = viewModel::clearError) }
+    ConnectPanel(
+        connecting = state.connecting,
+        isPlausible = viewModel::isPlausibleLink,
+        onLink = viewModel::connectWithText,
+        onManual = viewModel::connectManual,
+    )
+    ServersPanel(
+        state = state,
+        onEnabled = viewModel::setEnabled,
+        onRemove = viewModel::remove,
+    )
+    InfoPanel()
     state.pendingLink?.let { link ->
         AlertDialog(
             onDismissRequest = viewModel::dismissPending,
             icon = { Icon(Icons.Outlined.Shield, contentDescription = null) },
             title = { Text(stringResource(Res.string.extserver_confirm_title)) },
             text = { Text(stringResource(platformHint(Res.string.extserver_confirm_body), link.server)) },
-            confirmButton = { TextButton(onClick = viewModel::confirmPending) { Text(stringResource(Res.string.extserver_connect)) } },
-            dismissButton = { TextButton(onClick = viewModel::dismissPending) { Text(stringResource(UiR.string.ui_cancel)) } },
+            confirmButton = { TextButton(onClick = viewModel::confirmPending, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extserver_connect)) } },
+            dismissButton = { TextButton(onClick = viewModel::dismissPending, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
 }
@@ -196,7 +225,7 @@ private fun ConnectPanel(
                 },
                 modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.large),
             )
-            TextButton(onClick = { scanning = false }) { Text(stringResource(Res.string.extserver_scan_cancel)) }
+            TextButton(onClick = { scanning = false }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extserver_scan_cancel)) }
         } else {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (qrCameraAvailable) {
@@ -205,6 +234,7 @@ private fun ConnectPanel(
                             if (permission.isGranted()) scanning = true else permission.request()
                         },
                         enabled = !connecting,
+                        shape = NijiyomeControls.shape,
                     ) {
                         if (connecting) {
                             LoadingIndicator(Modifier.size(20.dp))
@@ -216,13 +246,13 @@ private fun ConnectPanel(
                             modifier = Modifier.padding(start = 8.dp),
                         )
                     }
-                    FilledTonalButton(onClick = { pasting = true }, enabled = !connecting) {
+                    FilledTonalButton(onClick = { pasting = true }, enabled = !connecting, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         Text(stringResource(Res.string.extserver_paste_link), modifier = Modifier.padding(start = 8.dp))
                     }
                 } else {
                     // no camera (desktop without a webcam): pasting the link is the main way in
-                    Button(onClick = { pasting = true }, enabled = !connecting) {
+                    Button(onClick = { pasting = true }, enabled = !connecting, shape = NijiyomeControls.shape) {
                         if (connecting) {
                             LoadingIndicator(Modifier.size(20.dp))
                         } else {
@@ -271,6 +301,7 @@ private fun ConnectPanel(
                 password = ""
             },
             enabled = !connecting && url.isNotBlank(),
+            shape = NijiyomeControls.shape,
         ) { Text(stringResource(if (connecting) Res.string.extserver_connecting else Res.string.extserver_connect)) }
         Hint(stringResource(Res.string.extserver_lan_only_http))
         Hint(stringResource(Res.string.extserver_away_from_home))
@@ -323,9 +354,10 @@ private fun PasteLinkDialog(isPlausible: (String) -> Boolean, onDismiss: () -> U
             TextButton(
                 onClick = { if (isPlausible(text)) onConnect(text.trim()) else showError = true },
                 enabled = text.isNotBlank(),
+                shape = NijiyomeControls.shape,
             ) { Text(stringResource(Res.string.extserver_connect)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }
 
@@ -413,9 +445,10 @@ private fun ServerItem(row: ServerRow, othersOnline: Boolean, onEnabled: (Boolea
                         onRemove()
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.extserver_remove)) }
             },
-            dismissButton = { TextButton(onClick = { confirming = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { confirming = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
 }
@@ -442,7 +475,24 @@ private fun StatusPill(enabled: Boolean, status: ServerStatus) {
 
 @Composable
 private fun InfoPanel() {
-    Panel(icon = Icons.Outlined.Info, title = stringResource(platformHint(Res.string.extserver_benefits_title))) {
+    // Sparkles S9 (LNK-16): the long fixed text is folded under "Más información".
+    var open by rememberSaveable { mutableStateOf(false) }
+    Panel(
+        icon = Icons.Outlined.Info,
+        title = stringResource(platformHint(Res.string.extserver_benefits_title)),
+        trailing = {
+            TextButton(onClick = { open = !open }, shape = NijiyomeControls.shape) {
+                Text(stringResource(if (open) Res.string.rd_s9_less_info else Res.string.rd_s9_more_info))
+            }
+        },
+    ) {
+        if (open) InfoBody()
+    }
+}
+
+@Composable
+private fun InfoBody() {
+    run {
         InfoList(
             stringResource(Res.string.extserver_pros_title),
             listOf(
@@ -517,36 +567,7 @@ private fun ErrorBanner(text: String, onDismiss: () -> Unit) {
     ) {
         Row(Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) }
+            TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) }
         }
     }
 }
-
-/** Prototype `.panel` with a titled header (same look as the Linked device screen). */
-@Composable
-private fun Panel(icon: ImageVector, title: String, content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.semantics { heading() },
-                )
-            }
-            content()
-        }
-    }
-}
-
-@Composable
-private fun Hint(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-

@@ -93,6 +93,10 @@ import app.nijiyome.designsystem.components.NijiyomeFloatingToolbar
 import app.nijiyome.designsystem.theme.NijiyomeSeedTheme
 import app.nijiyome.designsystem.theme.parseHexColor
 import app.nijiyome.feature.library.ListButton
+import app.nijiyome.designsystem.direction.StatusSlot
+import app.nijiyome.ui.patterns.label
+import app.nijiyome.ui.patterns.rememberShowUndo
+import app.nijiyome.ui.patterns.toListStatus
 import app.nijiyome.feature.player.sources.SourcePickerSheet
 import app.nijiyome.feature.torrents.rememberDownloadGate
 import app.nijiyome.model.AppError
@@ -114,6 +118,7 @@ import app.nijiyome.ui.state.LoadStateContent
 import app.nijiyome.ui.state.providerLabel
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 @Composable
 fun DetailsScreen(
@@ -237,6 +242,28 @@ fun DetailsScreen(
     var sendDialog by rememberSaveable { mutableStateOf(false) }
     // desktop: the paired phone picked in "Enviar a dispositivo", waiting for the confirmation
     var phoneTarget by remember { mutableStateOf<PhoneTarget?>(null) }
+    // Sparkles redesign: list changes from the Ficha are undoable (status picker, remove, watched marks).
+    val showUndo = rememberShowUndo()
+    val undoScope = rememberCoroutineScope()
+    val statusMessages = StatusSlot.entries.associateWith { stringResource(Res.string.rd_s4_status_changed, it.label()) }
+    val removedMessage = stringResource(Res.string.rd_s4_removed)
+    val markEpisodes: ((Set<Int>, Boolean) -> Unit)? = if (viewModel.canToggleWatched) {
+        { episodes, watched ->
+            viewModel.setEpisodesWatched(episodes, watched)?.let { before ->
+                undoScope.launch {
+                    val message = when {
+                        episodes.size == 1 && watched -> getString(Res.string.rd_s4_marked_one_watched, episodes.first())
+                        episodes.size == 1 -> getString(Res.string.rd_s4_marked_one_unwatched, episodes.first())
+                        watched -> getString(Res.string.rd_s4_marked_watched, episodes.size)
+                        else -> getString(Res.string.rd_s4_marked_unwatched, episodes.size)
+                    }
+                    showUndo(message) { viewModel.restoreList(before) }
+                }
+            }
+        }
+    } else {
+        null
+    }
     val actions = DetailsActions(
         onBack = onBack,
         onRetry = viewModel::retry,
@@ -283,15 +310,29 @@ fun DetailsScreen(
         onRelationsView = viewModel::setRelationsView,
         onAcceptAdult = viewModel::acceptAdult,
         onRevealCover = viewModel::revealCover,
-        onToggleWatched = viewModel::toggleWatched.takeIf { viewModel.canToggleWatched },
+        onToggleWatched = markEpisodes?.let { mark -> { n: Int -> mark(setOf(n), !viewModel.state.value.isWatched(n)) } },
         onToggleFavorite = viewModel::toggleFavorite.takeIf { viewModel.canToggleWatched },
+        onSetStatus = if (viewModel.canToggleWatched) {
+            { slot ->
+                viewModel.setListStatus(slot.toListStatus())?.let { before ->
+                    showUndo(statusMessages.getValue(slot)) { viewModel.restoreList(before) }
+                }
+            }
+        } else {
+            null
+        },
+        onRemoveFromList = {
+            viewModel.removeFromList()?.let { before -> showUndo(removedMessage) { viewModel.restoreList(before) } }
+        },
+        onMarkEpisodes = markEpisodes,
+        onDownloadEpisodes = { episodes -> gate.launch { viewModel.downloadEpisodes(episodes) } },
     )
     val seed = parseHexColor((state.media as? LoadState.Ok)?.value?.color)
     NijiyomeSeedTheme(seed = seed) {
         // The minute ticker drives the "Al día" -> "Continuar" switch and the unaired marks (no clock reads in getters).
         val nowSec = rememberNowSec()
         val clocked = remember(state, nowSec) { state.copy(clockSec = nowSec) }
-        DetailsContent(state = clocked, actions = actions, modifier = modifier)
+        DetailsContent(state = clocked, actions = actions, targetKey = "${kind.name.lowercase()}:$anilistId", modifier = modifier)
         state.picker?.let { request ->
             val panel = state.panel?.takeIf { it.episode == request.episode }
             SourcePickerSheet(
@@ -311,6 +352,11 @@ fun DetailsScreen(
                     actions.onDownloadSource(source, request.episode)
                 },
                 rememberedPick = panel?.rememberedPick,
+                onOpenExtensions = {
+                    viewModel.dismissPicker()
+                    onOpenExtensions()
+                },
+                episode = request.episode,
             )
         }
         if (sendDialog) {
@@ -392,6 +438,15 @@ internal data class DetailsActions(
     val onToggleWatched: ((Int) -> Unit)? = null,
     /** Header "Favorito"; null = no lists layer (the action is hidden). */
     val onToggleFavorite: (() -> Unit)? = null,
+    // --- Sparkles redesign (lane S4) ---
+    /** Header status picker (one tap, undoable); null = no lists layer (the picker is hidden). */
+    val onSetStatus: ((StatusSlot) -> Unit)? = null,
+    /** Header "Quitar de la lista" (undoable). */
+    val onRemoveFromList: () -> Unit = {},
+    /** Batch bar "Marcar N como vistos / no vistos" (undoable); null = no lists layer. */
+    val onMarkEpisodes: ((Set<Int>, Boolean) -> Unit)? = null,
+    /** Batch bar "Descargar N" (through the download gate). */
+    val onDownloadEpisodes: (Collection<Int>) -> Unit = {},
 )
 
 @Composable
@@ -399,115 +454,14 @@ internal fun DetailsContent(
     state: DetailsUiState,
     actions: DetailsActions,
     modifier: Modifier = Modifier,
+    targetKey: String? = null,
 ) {
-    val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    // BUG-062 / BUG-078: the list scrolled past the header (title + "Continuar" button).
-    val pastHeader by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
-    val scrolled by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 } }
-    val density = LocalDensity.current
-    var toolbarHeight by remember { mutableStateOf(0.dp) }
-    // Ficha "Primero el episodio": the tab lives here so the copy pinned in the top bar and the one in the list are the same.
-    var tab by rememberSaveable { mutableIntStateOf(DetailsTab.EPISODES.ordinal) }
-    val selectedTab = DetailsTab.entries[tab]
-    // Status bar + bar row: where the list's tabs count as "under the bar".
-    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val barRowPx = with(density) { (statusTop + 56.dp).roundToPx() }
-    BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        val wide = maxWidth >= WIDE_BREAKPOINT
-        val phone = !wide
-        val tabsAt = TABS_INDEX
-        // The list's tabs went under the top bar: the bar shows its own copy (never both visible). layoutInfo is read only here.
-        val tabsPinned by remember(tabsAt, barRowPx) {
-            derivedStateOf {
-                val info = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == TABS_KEY }
-                if (info == null) listState.firstVisibleItemIndex > tabsAt else info.offset <= barRowPx + 1
-            }
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        LoadStateContent(state = state.media, onRetry = actions.onRetry, loading = { FichaLoading(state, actions, targetKey = targetKey) }) { media ->
+            if (state.adultGate) AdultGate(actions) else FichaRoot(media, state, actions)
         }
-        val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        LoadStateContent(state = state.media, onRetry = actions.onRetry) { media ->
-            if (state.adultGate) {
-                AdultGate(actions)
-            } else {
-                // Phones have the watch CTA in the pinned top bar; wide windows already have the sticky right sidebar.
-                val bottom = navBottom + 24.dp
-                DetailsBody(media, state, actions, listState, bottom, wide, maxWidth, selectedTab, tabsPinned) { tab = it.ordinal }
-            }
-        }
-        val loaded = (state.media as? LoadState.Ok)?.value
-        // BUG-062 (UX-03) / BUG-108: once the list scrolls, an opaque top bar (status bar + back + title) replaces the floating back
-        // button. Ficha "Primero el episodio": `surface` (pure black on AMOLED, no seed tint), a tonal "▶ Ep. N" on phones and the
-        // pinned tabs once the list's ones passed under it.
-        // Wide: the bar spans the list column only, so it never covers the side source / send panels.
-        val barWidth = if (wide) Modifier.width(maxWidth - SIDE_WIDTH) else Modifier.fillMaxWidth()
-        AnimatedVisibility(scrolled, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.TopStart).then(barWidth)) {
-            Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.statusBarsPadding()) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .padding(start = 4.dp, end = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(onClick = actions.onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
-                        }
-                        Text(
-                            // the header's title (same title-language choice), not the raw provider title
-                            loaded?.displayTitle(state.titleLanguage).orEmpty(),
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f).padding(start = 4.dp),
-                        )
-                        if (phone && loaded != null && !state.adultGate && state.playable) {
-                            // "Ep. 4: Continuar episodio 4": the visible text first (label in name)
-                            val long = stringResource(Res.string.details_fact_cd, stringResource(Res.string.details_bar_ep, state.continueEpisode), watchLabels(state).long)
-                            FilledTonalButton(
-                                onClick = actions.onWatch,
-                                modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = long },
-                                contentPadding = PaddingValues(start = 12.dp, end = 16.dp),
-                                // primaryContainer / onPrimaryContainer: the seeded secondary pair read as disabled in dark mode
-                                colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                ),
-                            ) {
-                                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text(
-                                    stringResource(Res.string.details_bar_ep, state.continueEpisode),
-                                    modifier = Modifier.padding(start = 6.dp),
-                                    maxLines = 1,
-                                )
-                            }
-                        }
-                    }
-                    if (loaded != null && !state.adultGate && tabsPinned) {
-                        DetailsTabs(
-                            selectedTab,
-                            onTab = { t ->
-                                tab = t.ordinal
-                                // back to the top of the new tab's content, the tabs right under the bar row
-                                scope.launch { listState.scrollToItem(tabsAt, scrollOffset = -barRowPx) }
-                            },
-                            modifier = Modifier,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                        )
-                    }
-                }
-            }
-        }
-        // The back arrow has its own container, readable on a light banner (only over the header, before scrolling).
-        AnimatedVisibility(!scrolled, enter = fadeIn(), exit = fadeOut()) {
-            FilledTonalIconButton(
-                onClick = actions.onBack,
-                modifier = Modifier.statusBarsPadding().padding(4.dp),
-                colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f)),
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))
-            }
-        }
+        // Loading, error and the 18+ gate have no header of their own: only the back button.
+        if (state.media !is LoadState.Ok || state.adultGate) FloatingBack(actions.onBack, Modifier.align(Alignment.TopStart))
     }
 }
 
@@ -517,77 +471,6 @@ internal fun watchLabel(state: DetailsUiState): String = when (state.watchAction
     WatchAction.CONTINUE -> stringResource(Res.string.details_continue, state.continueEpisode)
     WatchAction.REWATCH -> stringResource(Res.string.details_rewatch)
     WatchAction.UP_TO_DATE -> stringResource(if (state.hasProgress) Res.string.details_up_to_date else Res.string.details_coming_soon)
-}
-
-/** Phone: one column (header, source line, tabs). Wide (≥ 840 dp): tabs on the left, source + send panels on the right. */
-@Composable
-private fun DetailsBody(
-    media: Media,
-    state: DetailsUiState,
-    actions: DetailsActions,
-    listState: LazyListState,
-    bottomPadding: Dp,
-    wide: Boolean,
-    /** Width of the content: from 600 dp C caps its card to a reading width, from 720 dp D puts it beside the facts. */
-    bodyWidth: Dp,
-    selectedTab: DetailsTab,
-    /** The top bar shows its copy of the tabs: the list's one is hidden from TalkBack. */
-    tabsPinned: Boolean,
-    onTab: (DetailsTab) -> Unit,
-) {
-    var range by rememberSaveable(media.ref) { mutableIntStateOf((state.continueEpisode - 1).coerceAtLeast(0) / RANGE_SIZE) }
-    var showEarlier by rememberSaveable(media.ref, range) { mutableStateOf(false) }
-    val look = LocalLook.current
-    val editorial = look.pageStyle == PageStyle.EDITORIAL
-    val layout = look.headerLayout
-    val place = when {
-        wide -> CardPlace.SIDE_COLUMN
-        layout == HeaderLayout.NEXT_UP && bodyWidth >= MEDIUM_BREAKPOINT -> CardPlace.BESIDE
-        // under ~720 dp the grid beside a 340 dp card has ~50 dp cells
-        layout == HeaderLayout.FACTS_NEXT_UP && bodyWidth >= BESIDE_BREAKPOINT -> CardPlace.BESIDE
-        else -> CardPlace.STACKED
-    }
-    val head = rememberHeadModel(media, state, layout, editorial, place)
-    // Built once per data change, not in every pass of the list builder (scroll jank in long series).
-    val eps = (state.episodes as? LoadState.Ok)?.value
-    val nextAiring = state.detailsOrNull?.nextAiring
-    val nowSec = state.clockSec ?: (System.currentTimeMillis() / 1000)
-    val all = remember(eps, nextAiring, media.episodes, nowSec) { eps?.let { buildEpisodeItems(it, nextAiring, media.episodes, nowSec) } }
-    val lists = remember(all, state.episodeQuery) { all?.let { EpisodeLists(it, filterEpisodes(it, state.episodeQuery)) } }
-    if (wide) {
-        Row(Modifier.fillMaxSize()) {
-            LazyColumn(Modifier.weight(1f).fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = bottomPadding)) {
-                detailsItems(
-                    media, state, actions, selectedTab, onTab, range, { range = it },
-                    phone = false, editorial = editorial, episodeLists = lists,
-                    showEarlier = showEarlier, onShowEarlier = { showEarlier = true }, tabsPinned = tabsPinned, head = head, cardColumns = 2,
-                )
-            }
-            Column(
-                Modifier
-                    .width(SIDE_WIDTH)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .statusBarsPadding()
-                    .padding(16.dp)
-                    .padding(bottom = bottomPadding),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                // C / D: the next-episode card heads the side column (the panel below already shows the source)
-                if (layout.hasCard) NextUpCard(head, media, state, actions, footer = false, modifier = Modifier.fillMaxWidth())
-                SourcePanelCard(state, actions)
-                if (state.sendAvailable) SendToDevicePanel(state, actions) else if (state.phones.isNotEmpty()) SendToPhonePanel(state, actions)
-            }
-        }
-    } else {
-        LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = bottomPadding)) {
-            detailsItems(
-                media, state, actions, selectedTab, onTab, range, { range = it },
-                phone = true, editorial = editorial, episodeLists = lists,
-                showEarlier = showEarlier, onShowEarlier = { showEarlier = true }, tabsPinned = tabsPinned, head = head,
-            )
-        }
-    }
 }
 
 @Composable
@@ -620,14 +503,14 @@ private fun SendToDeviceDialog(
         // BUG-039: no "Enviar" while the PC does not answer (the send would fail); check again instead
         confirmButton = {
             if (reachable) {
-                TextButton(onClick = onConfirm) { Text(stringResource(Res.string.details_send_action)) }
+                TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_send_action)) }
             } else {
-                TextButton(onClick = onRecheck, enabled = !checking) {
+                TextButton(onClick = onRecheck, enabled = !checking, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (checking) Res.string.details_send_checking else Res.string.details_send_recheck), maxLines = 1)
                 }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.details_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_cancel)) } },
     )
 }
 
@@ -639,8 +522,8 @@ private fun SendToPhoneDialog(media: Media, episode: Int, phone: PhoneTarget, on
         icon = { Icon(Icons.Outlined.Cast, contentDescription = null) },
         title = { Text(stringResource(Res.string.details_send_device)) },
         text = { Text(stringResource(Res.string.details_send_body, media.title, episode, phone.name)) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(Res.string.details_send_action)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.details_cancel)) } },
+        confirmButton = { TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_send_action)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_cancel)) } },
     )
 }
 
@@ -680,16 +563,12 @@ private fun AdultGate(actions: DetailsActions) {
             message = stringResource(Res.string.details_adult_body),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = actions.onBack) { Text(stringResource(Res.string.details_adult_back)) }
-            Button(onClick = actions.onAcceptAdult) { Text(stringResource(Res.string.details_adult_show)) }
+            OutlinedButton(onClick = actions.onBack, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_adult_back)) }
+            Button(onClick = actions.onAcceptAdult, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_adult_show)) }
         }
     }
 }
 
-internal enum class DetailsTab { EPISODES, INFO, CHARACTERS, RELATED }
+internal enum class DetailsTab { EPISODES, INFO, CHARACTERS, RELATED, REVIEWS }
 
 internal const val RANGE_SIZE = 100
-private val WIDE_BREAKPOINT = 840.dp
-private val MEDIUM_BREAKPOINT = 600.dp
-private val BESIDE_BREAKPOINT = 720.dp
-private val SIDE_WIDTH = 380.dp

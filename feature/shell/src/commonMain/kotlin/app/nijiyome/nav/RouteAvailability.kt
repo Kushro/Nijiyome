@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import app.nijiyome.extensionserver.ExtensionServerRepository
 import app.nijiyome.model.DownloadRepository
 import app.nijiyome.model.LinkRepository
+import app.nijiyome.model.LinkServerController
 import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.SettingsSection
 import app.nijiyome.model.SocialRepository
@@ -22,7 +23,12 @@ import kotlin.reflect.KClass
 class RouteAvailability(private val has: (KClass<*>) -> Boolean) {
     private val known = mutableMapOf<KClass<*>, Boolean>()
 
-    fun offers(route: Route): Boolean = route.needs().all { service -> known.getOrPut(service) { has(service) } }
+    fun offers(route: Route): Boolean {
+        val anyOf = route.needsAnyOf()
+        return route.needs().all(::present) && (anyOf.isEmpty() || anyOf.any(::present))
+    }
+
+    private fun present(service: KClass<*>): Boolean = known.getOrPut(service) { has(service) }
 
     /** Looks at what is registered in [koin]; nothing is created by asking. */
     constructor(koin: Koin) : this(koin::declares)
@@ -38,17 +44,25 @@ internal fun rememberRouteAvailability(): RouteAvailability {
  * The services a destination cannot open without: the ones its ViewModel asks the dependency graph for with a plain `get()`.
  * Everything else a screen uses is optional there and the screen hides what depends on it.
  */
-// Desktop (by design): Enlace y Dispositivo enlazado (cliente de Link) y la página "Tú": escritorio no es cliente de Link, no se
-// ofrecen. Con esos servicios registrados vuelven solas (Descargas, Perfil, notificaciones de AniList, Listas y cuentas y los
+// Desktop: Link se ofrece por [needsAnyOf] (el servidor) y "Tú" ya no pide el cliente de Link. Con esos servicios registrados vuelven solas (Descargas, Perfil, notificaciones de AniList, Listas y cuentas y los
 // servidores de extensiones, a los que escritorio entra desde Extensiones, ya volvieron).
 internal fun Route.needs(): List<KClass<*>> = when (this) {
     is Route.Downloads -> listOf(DownloadRepository::class)
-    Route.Link, Route.Linked -> listOf(LinkRepository::class)
     Route.ExtensionServers -> listOf(ExtensionServerRepository::class)
-    Route.You -> listOf(ListsRepository::class, LinkRepository::class)
+    // The Link client is optional there (its row hides without it).
+    Route.You -> listOf(ListsRepository::class)
     // Settings itself always opens; its "Listas y cuentas" section exists only with the lists service.
     is Route.SettingsSection -> if (section == SettingsSection.ACCOUNTS) listOf(ListsRepository::class) else emptyList()
     is Route.Profile, is Route.ActivityThread, Route.Notifications -> listOf(SocialRepository::class)
+    else -> emptyList()
+}
+
+/**
+ * Services of which one is enough: the screen picks the side it finds. Link: the client (`LinkRepository`, Android) or the
+ * server (`LinkServerController`, desktop); `LinkedDeviceScreen` draws whichever is registered.
+ */
+internal fun Route.needsAnyOf(): List<KClass<*>> = when (this) {
+    Route.Link, Route.Linked -> listOf(LinkRepository::class, LinkServerController::class)
     else -> emptyList()
 }
 

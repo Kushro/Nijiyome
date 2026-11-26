@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, carril D2: los tres estilos de tarjeta Obi y el texto de sus fajas. -->
+    <string name="rd_obi_card_band">Obi · faja</string>
+    <string name="rd_obi_card_spine">Obi · lomo</string>
+    <string name="rd_obi_card_diagonal">Obi · diagonal</string>
+    <string name="rd_obi_resume">Reanudar</string>
+    <string name="rd_obi_completed">Completado</string>
+    <string name="rd_obi_completed_eps">Completado · %1$d eps</string>
+    <string name="rd_obi_dropped_at">Dejado en el Ep. %1$d</string>
+    <string name="rd_obi_paused_at">En pausa en el Ep. %1$d</string>
+    <string name="rd_obi_ep_n">Ep. %1$d</string>
+    <string name="rd_obi_continue_ep">Sigue con el Ep. %1$d</string>
+    <string name="rd_obi_eps">%1$d eps</string>
+    <string name="rd_obi_eps_unit">eps</string>
+    <string name="rd_obi_premiere">Estreno</string>
+    <string name="rd_obi_premiere_eps">Estreno · %1$d eps</string>
+    <string name="rd_obi_of">%1$d de %2$d</string>
+    <string name="rd_obi_watched_of">%1$d de %2$d vistos</string>
+    <string name="rd_obi_score">puntaje %1$s</string>
+    <string name="rd_obi_not_in_list">Sin lista</string>
+</resources>

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -86,6 +87,7 @@ import app.nijiyome.ui.resources.*
 import app.nijiyome.ui.format.formatBytes
 import app.nijiyome.ui.format.formatRate
 import app.nijiyome.ui.labels.labelRes
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // The four per-torrent tabs of 11 §3.3 (desktop C screens of 10 §5.4). Each one: loading / empty / error.
 
@@ -119,9 +121,14 @@ private fun OverviewBody(s: TorrentStats, item: TorrentLibraryItem?, onPersist: 
             Banner(s.error ?: stringResource(Res.string.torrent_overview_error), error = true)
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                WavyProgress(progress = s.progress.toFloat(), modifier = Modifier.size(96.dp), circular = true)
-                Text(percentText(s.progress), style = monoStyle(MaterialTheme.typography.titleMedium))
+            // Sparkles: the big figure over the direction's progress track (the pieces map of the artifact, in segments).
+            Column(Modifier.width(120.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(percentText(s.progress), style = monoStyle(MaterialTheme.typography.headlineMedium))
+                app.nijiyome.designsystem.direction.ProgressTrack(
+                    progress = s.progress.toFloat().coerceIn(0f, 1f),
+                    modifier = Modifier.fillMaxWidth(),
+                    segments = s.pieces.takeIf { it in 2..48 },
+                )
             }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(Res.string.torrent_overview_progress), style = MaterialTheme.typography.labelLarge)
@@ -295,7 +302,7 @@ internal fun FilesTab(viewModel: TorrentDetailViewModel, item: TorrentLibraryIte
                 },
             )
             // parity wave A (worker q, torrent.episode-alignment)
-            TextButton(onClick = { aligning = true }, modifier = Modifier.padding(horizontal = 8.dp)) {
+            TextButton(onClick = { aligning = true }, modifier = Modifier.padding(horizontal = 8.dp), shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.torrent_align_title))
             }
             val selected = files.count { it.selected }
@@ -386,7 +393,7 @@ private fun FileRow(file: TorrentFile, onClick: () -> Unit) {
                         Text(stringResource(Res.string.torrent_files_skipped), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                WavyProgress(progress = file.progress.toFloat(), modifier = Modifier.fillMaxWidth(), thin = true)
+                app.nijiyome.designsystem.direction.ProgressTrack(progress = file.progress.toFloat().coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth())
             }
         },
         trailingContent = if (file.streams > 0) {
@@ -462,7 +469,7 @@ internal fun PeersTab(viewModel: TorrentDetailViewModel) {
                         Text(stringResource(flagLabel(letter)), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-                TextButton(onClick = { legend = false }, modifier = Modifier.align(Alignment.End)) {
+                TextButton(onClick = { legend = false }, modifier = Modifier.align(Alignment.End), shape = NijiyomeControls.shape) {
                     Text(stringResource(UiR.string.ui_close))
                 }
             }

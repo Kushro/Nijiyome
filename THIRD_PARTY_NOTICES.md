@@ -70,6 +70,24 @@ Space Grotesk, Outfit and JetBrains Mono are licensed under the **SIL Open Font 
 
 Files are unmodified (renamed only, Android resource names). `Fonts.kt` pins the `wght` axis per weight with `FontVariation.Settings`.
 
+Sparkles directions (Tanabata, Obi, Transit, Sumi): Latin subsets of the upstream files (static instances where upstream is variable,
+except M PLUS 1, which keeps its `wght` axis), all under the **SIL Open Font License 1.1**. Modified versions under the same licence;
+Japanese titles fall back to the system font. M PLUS Rounded 1c has no `OFL.txt` upstream: its text is the standard OFL 1.1 with the
+copyright line of its `METADATA.pb`.
+
+| Font file (`core/designsystem/src/commonMain/composeResources/font/`) | Family / upstream | Source | License text in the APK |
+|---|---|---|---|
+| `rd_tanabata_mplus_regular.ttf`, `_medium`, `_bold`, `_extrabold` | M PLUS Rounded 1c, 400 / 500 / 700 / 800 (Coji Morishita, M+ Fonts Project) | `github.com/google/fonts` `ofl/mplusrounded1c/MPLUSRounded1c-*.ttf` (main) | `assets/licenses/OFL-MPLUSRounded1c.txt` |
+| `rd_tanabata_yuji_syuku.ttf` | Yuji Syuku (Kinuta Font Factory) | `github.com/google/fonts` `ofl/yujisyuku/YujiSyuku-Regular.ttf` (main) | `assets/licenses/OFL-YujiSyuku.txt` |
+| `rd_obi_dela_gothic_one.ttf` | Dela Gothic One (artakana) | `github.com/google/fonts` `ofl/delagothicone/DelaGothicOne-Regular.ttf` (main) | `assets/licenses/OFL-DelaGothicOne.txt` |
+| `rd_obi_mplus1.ttf` | M PLUS 1, variable `[wght]` (Coji Morishita) | `github.com/google/fonts` `ofl/mplus1/MPLUS1[wght].ttf` (main) | `assets/licenses/OFL-MPLUS1.txt` |
+| `rd_transit_atkinson_400.ttf`, `_600`, `_700` | Atkinson Hyperlegible Next, 400 / 600 / 700 (Braille Institute, Applied Design Works) | `github.com/google/fonts` `ofl/atkinsonhyperlegiblenext/AtkinsonHyperlegibleNext[wght].ttf` (main) | `assets/licenses/OFL-AtkinsonHyperlegibleNext.txt` |
+| `rd_transit_overpass_700.ttf`, `_800`, `_900` | Overpass, 700 / 800 / 900 (Delve Withrington, Dave Bailey, Thomas Jockin) | `github.com/google/fonts` `ofl/overpass/Overpass[wght].ttf` (main) | `assets/licenses/OFL-Overpass.txt` |
+| `rd_sumi_zen_kaku_regular.ttf`, `_medium`, `_bold` | Zen Kaku Gothic New, 400 / 500 / 700 (Yoshimichi Ohira) | `github.com/google/fonts` `ofl/zenkakugothicnew/ZenKakuGothicNew-*.ttf` (main) | `assets/licenses/OFL-ZenKakuGothicNew.txt` |
+| `rd_sumi_yuji_boku.ttf` | Yuji Boku (Kinuta Font Factory) | `github.com/google/fonts` `ofl/yujiboku/YujiBoku-Regular.ttf` (main) | `assets/licenses/OFL-YujiBoku.txt` |
+
+License texts fetched from `github.com/google/fonts` (main, 2026-11-25).
+
 0.4.1 (subtitle settings): libmpv / libass draws a variable font at its default instance (Outfit Thin, Space Grotesk Light), so
 `core/player-mpv/src/main/assets/subfonts/` ships static instances generated from the two files above with fontTools
 (`fontTools.varLib.instancer`, `wght` 500 and 700). The Medium instance's family / subfamily names are set to "Outfit" / "Space Grotesk"
@@ -80,7 +98,7 @@ family), same licence texts as above.
 |---|---|
 | `nijiyome_outfit_medium.ttf`, `nijiyome_outfit_bold.ttf` | `outfit.ttf` at `wght` 500 / 700 |
 | `nijiyome_space_grotesk_medium.ttf`, `nijiyome_space_grotesk_bold.ttf` | `space_grotesk.ttf` at `wght` 500 / 700 |
-Settings > About > Licenses shows this file (copied into the APK assets as `licenses/THIRD_PARTY_NOTICES.md` by `:app`) and the three OFL texts.
+Settings > About > Licenses shows this file (copied into the APK assets as `licenses/THIRD_PARTY_NOTICES.md` by `:app`) and the OFL texts of every bundled family.
 
 ## 4. Services
 

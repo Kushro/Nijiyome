@@ -69,6 +69,7 @@ import app.nijiyome.ui.format.formatRate
 import app.nijiyome.ui.platform.rememberNotificationPermission
 import kotlinx.coroutines.flow.catch
 import org.koin.compose.koinInject
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * The "Entiendo / Ahora no" warning (11 §3.4): full screen, not a dismissable dialog. Explains CPU, battery, storage and data use,
@@ -133,15 +134,15 @@ internal fun BackgroundWarning(onAccept: () -> Unit, onNotNow: () -> Unit, modif
                 )
             }
             Text(
-                stringResource(if (desktopTorrentUi) Res.string.torrent_desktop_warn_note else Res.string.torrent_android_warn_note),
+                stringResource(if (desktopTorrentUi) Res.string.rd_s8_tor_desktop_warn_note else Res.string.rd_s8_tor_android_warn_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Button(onClick = onAccept, modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp)) {
+        Button(onClick = onAccept, modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp), shape = NijiyomeControls.shape) {
             Text(stringResource(Res.string.torrent_downloads_warn_accept))
         }
-        TextButton(onClick = onNotNow) { Text(stringResource(Res.string.torrent_android_not_now)) }
+        TextButton(onClick = onNotNow, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_android_not_now)) }
     }
 }
 
@@ -156,7 +157,7 @@ internal fun DownloadsBody(
     onOpenTorrent: (String) -> Unit,
     onPause: (String) -> Unit,
     onResume: (String) -> Unit,
-    onRemove: (String) -> Unit,
+    onRemove: (id: String, deleteFiles: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val permission = rememberNotificationPermission()
@@ -239,18 +240,15 @@ internal fun DownloadsBody(
             }
         }
     }
+    // Sparkles (TOR-18): the same confirmation as removing a torrent, with "also delete the files".
     confirmRemove?.let { id ->
-        AlertDialog(
-            onDismissRequest = { confirmRemove = null },
-            title = { Text(stringResource(Res.string.torrent_downloads_remove_title)) },
-            text = { Text(stringResource(Res.string.torrent_library_delete_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    onRemove(id)
-                    confirmRemove = null
-                }) { Text(stringResource(Res.string.torrent_downloads_remove)) }
+        DeleteDialog(
+            count = 1,
+            onConfirm = { deleteFiles ->
+                onRemove(id, deleteFiles)
+                confirmRemove = null
             },
-            dismissButton = { TextButton(onClick = { confirmRemove = null }) { Text(stringResource(UiR.string.ui_close)) } },
+            onDismiss = { confirmRemove = null },
         )
     }
 }
@@ -294,7 +292,7 @@ private fun DownloadRow(
                 IconButton(onClick = onRemove) { Icon(Icons.Outlined.Delete, stringResource(Res.string.torrent_downloads_remove)) }
             }
             val progress = stats?.progress ?: item.progress
-            WavyProgress(progress = progress.toFloat(), modifier = Modifier.fillMaxWidth(), thin = true)
+            app.nijiyome.designsystem.direction.ProgressTrack(progress = progress.toFloat().coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth())
             val s = stats
             val line = buildList {
                 add(

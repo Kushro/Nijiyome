@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rediseño Sparkles, carril S8 (Transferencias): textos de :feature:torrents que apuntan a los lugares nuevos. -->
+<resources>
+    <string name="rd_s8_tor_background_locked">Primero acepta el aviso de descargas en segundo plano en Transferencias.</string>
+    <string name="rd_s8_tor_background_off">Las descargas en segundo plano están desactivadas. Actívalas en Transferencias o en Ajustes › Torrents y descargas.</string>
+    <string name="rd_s8_tor_android_warn_note">Puedes desactivar las descargas en segundo plano cuando quieras en Ajustes › Torrents y descargas. Con Solo Wi-Fi activado no se descarga nada en segundo plano con datos móviles.</string>
+    <string name="rd_s8_tor_desktop_warn_note">Puedes desactivar las descargas en segundo plano cuando quieras en Ajustes › Torrents y descargas.</string>
+    <string name="rd_s8_tor_debrid_cached_hint">Descargar un torrent en caché baja el episodio por HTTPS con las descargas web (reglas en Ajustes › Torrents y descargas) en lugar de P2P.</string>
+    <string name="rd_s8_tor_debrid_services">TorBox es el servicio recomendado y probado. Real-Debrid, AllDebrid y Premiumize son experimentales y no están probados. Las cuentas se vinculan en Fuentes › Debrid.</string>
+    <string name="rd_s8_tor_untitled">Torrent</string>
+    <string name="rd_s8_tor_add_from_clipboard">Pegar</string>
+</resources>

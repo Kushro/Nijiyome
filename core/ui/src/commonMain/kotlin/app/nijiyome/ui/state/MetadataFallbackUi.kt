@@ -52,6 +52,7 @@ import app.nijiyome.ui.resources.ui_rate_limit_retrying_in
 import app.nijiyome.ui.resources.ui_retry
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Formats remaining seconds cleanly (`5s`, `0:42`, `1:15`). */
 internal fun formatCountdown(remainingSec: Int): String {
@@ -133,7 +134,7 @@ fun MetadataFallbackBanner(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = onRetryPrimary) {
+                    TextButton(shape = NijiyomeControls.shape, onClick = onRetryPrimary) {
                         Text(stringResource(Res.string.ui_retry))
                     }
                 }
@@ -239,7 +240,7 @@ fun AppErrorState(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = onRetry) {
+                TextButton(shape = NijiyomeControls.shape, onClick = onRetry) {
                     Text(stringResource(Res.string.ui_retry))
                 }
             }

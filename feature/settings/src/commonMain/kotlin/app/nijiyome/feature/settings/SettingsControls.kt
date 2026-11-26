@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.feature.settings
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -31,11 +34,28 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.theme.LocalNijiyomeAmoled
-import app.nijiyome.model.SettingsSection
+import app.nijiyome.feature.settings.resources.Res
+import app.nijiyome.feature.settings.resources.*
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.PendingActions
+import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
-/** Prototype `.panel` of one settings section: icon + title header, then the rows. */
+/**
+ * One group of a category (artifact `.nj-b-group`): a titled card with its rows. [commit] marks a group whose changes apply with a
+ * button (credentials, a connection that restarts): it shows "Se aplica con botón" next to the title.
+ */
 @Composable
-internal fun SectionPanel(section: SettingsSection, content: @Composable ColumnScope.() -> Unit) {
+internal fun SettingsGroup(
+    title: String,
+    icon: ImageVector? = null,
+    hint: String? = null,
+    commit: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val amoled = LocalNijiyomeAmoled.current
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -47,24 +67,86 @@ internal fun SectionPanel(section: SettingsSection, content: @Composable ColumnS
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(bottom = 8.dp),
+                modifier = Modifier.padding(bottom = 4.dp),
             ) {
-                Icon(section.icon(), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                if (icon != null) Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 Text(
-                    section.title(),
+                    title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.semantics { heading() },
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f).semantics { heading() },
                 )
+                if (commit) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Outlined.PendingActions, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                        Text(stringResource(Res.string.rd_s10_commit_tag), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
+            if (hint != null) SectionHint(hint)
             content()
         }
     }
 }
 
+/** A sub-heading inside a group (the screen a block of Apariencia options belongs to). */
+@Composable
+internal fun SubHeading(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.padding(top = 16.dp, bottom = 4.dp).semantics { heading() },
+    )
+}
+
+/**
+ * The one explicit-save pattern of Settings ("Probar y guardar"): shown under a group whose changes need a test or restart a
+ * connection. "Cambios sin aplicar" while [dirty], Descartar and the apply button (which tests first when the caller does), and the
+ * outcome line.
+ */
+@Composable
+internal fun CommitBar(
+    dirty: Boolean,
+    busy: Boolean,
+    canApply: Boolean,
+    onDiscard: () -> Unit,
+    onApply: () -> Unit,
+    applyLabel: String = stringResource(Res.string.rd_s10_commit_apply),
+    result: (@Composable () -> Unit)? = null,
+) {
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Row(
+            Modifier.fillMaxWidth().padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                if (dirty) Icons.Outlined.EditNote else Icons.Outlined.Check,
+                contentDescription = null,
+                tint = if (dirty) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                stringResource(if (dirty) Res.string.rd_s10_commit_dirty else Res.string.rd_s10_commit_applied),
+                style = MaterialTheme.typography.labelLarge,
+                color = if (dirty) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).politeLiveRegion(),
+            )
+            if (dirty) {
+                TextButton(onClick = onDiscard, enabled = !busy, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s10_commit_discard)) }
+                Button(onClick = onApply, enabled = canApply && !busy, shape = NijiyomeControls.shape) { Text(if (busy) stringResource(Res.string.rd_s10_commit_testing) else applyLabel) }
+            }
+        }
+        if (result != null) result()
+    }
+}
+
 /**
  * Prototype `.setting`: label + optional hint, control on the right; [stack] puts the control under the text (wide segmented,
- * swatches). Rows are separated by a hairline like the prototype.
+ * swatches). [inline] (with [stack]): a short segmented control that sits compact at the right of its label when the row is wide
+ * enough, as in the artifact, and drops under the text on narrow panes. Rows are separated by a hairline like the prototype.
  */
 @Composable
 internal fun SettingRow(
@@ -72,11 +154,30 @@ internal fun SettingRow(
     hint: String? = null,
     stack: Boolean = false,
     divider: Boolean = true,
+    inline: Boolean = false,
     control: @Composable () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
         if (divider) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        if (stack) {
+        if (stack && inline) {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                if (maxWidth >= INLINE_ROW_MIN_WIDTH) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Column(Modifier.weight(1f)) { SettingText(label, hint) }
+                        Box(Modifier.weight(INLINE_CONTROL_WEIGHT)) { control() }
+                    }
+                } else {
+                    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SettingText(label, hint)
+                        control()
+                    }
+                }
+            }
+        } else if (stack) {
             Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SettingText(label, hint)
                 control()
@@ -93,6 +194,12 @@ internal fun SettingRow(
         }
     }
 }
+
+/** Below this row width an [SettingRow] `inline` control goes under its label. */
+private val INLINE_ROW_MIN_WIDTH = 520.dp
+
+/** The control's share of an inline row (the label column has 1). */
+private const val INLINE_CONTROL_WEIGHT = 1.3f
 
 @Composable
 private fun SettingText(label: String, hint: String?) {

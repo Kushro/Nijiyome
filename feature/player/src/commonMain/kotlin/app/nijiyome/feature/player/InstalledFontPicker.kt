@@ -35,6 +35,7 @@ import app.nijiyome.feature.player.resources.sub_style_font_installed_search
 
 import app.nijiyome.feature.player.resources.player_cancel
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Hito 6 (desktop, Tatakai Next's `font_families`): a chip with the chosen installed font, and the list of the [families] installed
@@ -60,7 +61,7 @@ internal fun InstalledFontChooser(families: List<String>, selected: String?, onP
     AlertDialog(
         onDismissRequest = { open = false },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = { open = false }) { Text(stringResource(Res.string.player_cancel)) } },
+        dismissButton = { TextButton(onClick = { open = false }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_cancel)) } },
         title = { Text(stringResource(Res.string.sub_style_font_installed_choose)) },
         text = {
             Column {

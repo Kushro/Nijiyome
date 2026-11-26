@@ -34,6 +34,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.SendToMobile
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Slider
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import app.nijiyome.feature.player.resources.player_pause
+import app.nijiyome.feature.player.resources.player_play
+import app.nijiyome.feature.player.resources.rd_s5_seek_label
+import app.nijiyome.feature.player.resources.rd_s5_send_to
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -62,6 +75,7 @@ import app.nijiyome.player.mpv.external.ExternalMpvMode
 import app.nijiyome.player.mpv.external.ExternalMpvPlayerSession
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Hito 4, paso D: what the Nijiyome window shows while mpv plays in its own window, as in Tatakai Next (tk-ui/src/screens/player/
 // mod.rs, the `tk-xmpv` card, and flow.rs `pump_external`): the title, how mpv runs (its config, frame generation), the time and a
@@ -119,9 +133,18 @@ internal fun ExternalMpvBranch(
         )
         return
     }
+    // Sparkles S5 (PLY-27): "Enviar a dispositivo" from the card; the result line shows under the buttons for a few seconds.
+    var sendMessage by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(sendMessage) { if (sendMessage != null) { kotlinx.coroutines.delay(4_000); sendMessage = null } }
+    val send = rememberSendToDevice(vm, LocalDownloadArgs.current, session) { sendMessage = it }
     ExternalMpvCard(
         title = title,
         playback = ps,
+        // B-OCULTA-02: mpv's own window keeps its controls; the card can pause / resume and seek it too (mpv IPC through the session)
+        onTogglePlay = session::togglePlay,
+        onSeek = { session.seekTo(it) },
+        send = send,
+        sendMessage = sendMessage,
         mode = mode,
         torrentLine = state.torrent?.let { torrentLine(it) },
         canPickSource = state.sources.isNotEmpty(),
@@ -138,6 +161,10 @@ internal fun ExternalMpvBranch(
 private fun ExternalMpvCard(
     title: String,
     playback: PlaybackState,
+    onTogglePlay: () -> Unit,
+    onSeek: (Long) -> Unit,
+    send: SendToDevice?,
+    sendMessage: String?,
     mode: ExternalMpvMode,
     torrentLine: String?,
     canPickSource: Boolean,
@@ -148,6 +175,7 @@ private fun ExternalMpvCard(
     onFrameGenSettings: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val seekLabel = stringResource(Res.string.rd_s5_seek_label)
     Surface(Modifier.fillMaxSize(), color = scheme.background, contentColor = scheme.onBackground) {
         Column(
             Modifier.fillMaxSize().padding(24.dp),
@@ -177,7 +205,11 @@ private fun ExternalMpvCard(
                         Text(stringResource(Res.string.player_xmpv_starting), style = MaterialTheme.typography.bodyMedium)
                     }
                 } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        val playLabel = stringResource(if (playback.isPlaying) Res.string.player_pause else Res.string.player_play)
+                        FilledTonalIconButton(onClick = onTogglePlay) {
+                            Icon(if (playback.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = playLabel)
+                        }
                         Text(
                             "${clock(playback.positionMs)} / ${clock(playback.durationMs)}",
                             style = MaterialTheme.typography.bodyMedium,
@@ -188,8 +220,16 @@ private fun ExternalMpvCard(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    val fraction = if (playback.durationMs > 0) (playback.positionMs.toFloat() / playback.durationMs).coerceIn(0f, 1f) else 0f
-                    LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
+                    var dragging by remember { mutableStateOf<Float?>(null) }
+                    val duration = playback.durationMs.coerceAtLeast(1L).toFloat()
+                    Slider(
+                        value = dragging ?: playback.positionMs.toFloat().coerceIn(0f, duration),
+                        onValueChange = { dragging = it },
+                        onValueChangeFinished = { dragging?.let { onSeek(it.toLong()) }; dragging = null },
+                        valueRange = 0f..duration,
+                        enabled = playback.durationMs > 0,
+                        modifier = Modifier.fillMaxWidth().semantics { contentDescription = seekLabel },
+                    )
                 }
             }
             if (torrentLine != null) {
@@ -222,11 +262,11 @@ private fun ExternalMpvCard(
             )
             if (mode.forcedByFrameGen) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
-                    FilledTonalButton(onClick = onWithoutFrameGen) {
+                    FilledTonalButton(onClick = onWithoutFrameGen, shape = NijiyomeControls.shape) {
                         Icon(Icons.Rounded.PlayArrow, contentDescription = null)
                         Text(stringResource(Res.string.player_xmpv_without_fg), Modifier.padding(start = 8.dp))
                     }
-                    TextButton(onClick = onFrameGenSettings) {
+                    TextButton(onClick = onFrameGenSettings, shape = NijiyomeControls.shape) {
                         Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.player_xmpv_fg_settings), Modifier.padding(start = 8.dp))
                     }
@@ -234,20 +274,30 @@ private fun ExternalMpvCard(
             }
             Spacer(Modifier.height(4.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
-                Button(onClick = onStop) {
+                Button(onClick = onStop, shape = NijiyomeControls.shape) {
                     Icon(Icons.Rounded.Stop, contentDescription = null)
                     Text(stringResource(Res.string.player_external_stop), Modifier.padding(start = 8.dp))
                 }
                 if (canPickSource) {
-                    FilledTonalButton(onClick = onOpenPicker) {
+                    FilledTonalButton(onClick = onOpenPicker, shape = NijiyomeControls.shape) {
                         Icon(Icons.Rounded.Tune, contentDescription = null)
                         Text(stringResource(Res.string.player_xmpv_sources), Modifier.padding(start = 8.dp))
                     }
                 }
-                TextButton(onClick = onBack) {
+                TextButton(onClick = onBack, shape = NijiyomeControls.shape) {
                     Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
                     Text(stringResource(Res.string.player_back), Modifier.padding(start = 8.dp))
                 }
+                val sender = send
+                if (sender != null) sender.phones.forEach { phone ->
+                    TextButton(onClick = { sender.send(phone) }, enabled = !sender.busy, shape = NijiyomeControls.shape) {
+                        Icon(Icons.Outlined.SendToMobile, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(Res.string.rd_s5_send_to, phone.name), Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+            if (sendMessage != null) {
+                Text(sendMessage, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant, textAlign = TextAlign.Center)
             }
         }
     }

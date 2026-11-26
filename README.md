@@ -8,7 +8,7 @@
 
 **English** · [Español](README.es.md)
 
-[![Release](https://img.shields.io/badge/release-v1.1.1-8b5cf6)](https://github.com/Kushro/Nijiyome/releases/latest)
+[![Release](https://img.shields.io/badge/release-v1.3.0-8b5cf6)](https://github.com/Kushro/Nijiyome/releases/latest)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%C2%B7%20Linux%20%C2%B7%20Windows-555)
 ![Kotlin + Compose Multiplatform](https://img.shields.io/badge/Kotlin-Compose%20Multiplatform-7f52ff)
@@ -21,23 +21,39 @@ extensions that you choose and install yourself. **The app ships no content.**
 
 ## 📸 Screenshots
 
-### Desktop
+### Visual Directions (Desktop)
+
+Choose between five independent visual directions — **Tanabata**, **Obi**, **Night Transit**, **Sumi & Hanko**, and **Material** — and mix any direction with 16 card styles, curated light/dark/OLED palettes, motion profiles, and per-screen layouts.
 
 <table>
   <tr>
-    <td align="center" valign="top"><img src="docs/readme/home.png" alt="Home: spotlight banner, shortcuts and search" width="100%"><br><sub>Home</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/home.png" alt="Tanabata direction: Tonight row with hanging tanzaku strips on a bamboo rod and 24-hour airing strip" width="100%"><br><sub>Tanabata — Home (Tonight)</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/style-obi.png" alt="Obi direction: Japanese book-band resume cards and printed-label controls" width="100%"><br><sub>Obi — Home (Tonight)</sub></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><img src="docs/readme/style-transit.png" alt="Night Transit direction: metro station lines, ticket cards and 24-hour departure strip" width="100%"><br><sub>Night Transit — Home (Tonight)</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/style-sumi.png" alt="Sumi and Hanko direction: ink-brush headings, kanji hanko stamps and ensō accents" width="100%"><br><sub>Sumi &amp; Hanko — Home (Tonight)</sub></td>
+  </tr>
+</table>
+
+### Desktop Screens
+
+<table>
+  <tr>
+    <td align="center" valign="top"><img src="docs/readme/details-cinema.png" alt="Details in Cinema layout with full-bleed backdrop, status picker and episode drawer" width="100%"><br><sub>Anime Details (Cinema layout)</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/calendar.png" alt="Weekly airing calendar in 24-hour format with mini month sidebar" width="100%"><br><sub>Calendar (Week, 24 h)</sub></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><img src="docs/readme/settings-appearance.png" alt="Settings › Appearance › Design with the five visual directions and live preview" width="100%"><br><sub>Settings › Appearance › Design</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/manga.png" alt="Manga catalog with featured tanzaku and Continue reading row" width="100%"><br><sub>Manga catalog</sub></td>
+  </tr>
+  <tr>
     <td align="center" valign="top"><img src="docs/readme/player.png" alt="The libmpv player playing an episode with Anime4K A+A active" width="100%"><br><sub>Built-in player with Anime4K</sub></td>
-  </tr>
-  <tr>
     <td align="center" valign="top"><img src="docs/readme/source-picker.png" alt="Episode sources picker in manual mode, with sources cached on TorBox" width="100%"><br><sub>Episode sources (cached on TorBox)</sub></td>
+  </tr>
+  <tr>
     <td align="center" valign="top"><img src="docs/readme/torrents-debrid.png" alt="Torrents › Debrid: TorBox recommended, Real-Debrid and AllDebrid experimental, none linked" width="100%"><br><sub>Torrents › Debrid</sub></td>
-  </tr>
-  <tr>
     <td align="center" valign="top"><img src="docs/readme/extensions.png" alt="Extensions with one extension installed" width="100%"><br><sub>Extensions</sub></td>
-    <td align="center" valign="top"><img src="docs/readme/settings-appearance.png" alt="Settings › Appearance with the color palettes" width="100%"><br><sub>Settings › Appearance</sub></td>
-  </tr>
-  <tr>
-    <td align="center" valign="top" colspan="2"><img src="docs/readme/manga.png" alt="Manga: featured banners" width="100%"><br><sub>Manga</sub></td>
   </tr>
 </table>
 
@@ -56,7 +72,7 @@ extensions that you choose and install yourself. **The app ships no content.**
 
 <p align="center"><img src="docs/readme/phone-home.png" alt="Android Home" width="270"><br><sub>Android: Home</sub></p>
 
-<sub>Version 1.1.2, real screenshots on desktop (Linux) and Android. Some names are covered with black bars on purpose: source and site names, and network details.</sub>
+<sub>Version 1.3.0, real screenshots on desktop (Linux) and Android. Some names in older player/extension screenshots are covered with black bars on purpose: source and site names, and network details.</sub>
 
 ## ✨ Features
 
@@ -82,8 +98,9 @@ extensions that you choose and install yourself. **The app ships no content.**
   Chrome, Edge or Chromium in the background through the DevTools protocol. Nothing is bundled.
 - 🌐 **Network.** Outbound proxy (HTTP or SOCKS5, with credentials) and FlareSolverr support.
 - 🖥️ **Desktop integration.** System tray, Discord Rich Presence and MPRIS media controls on Linux.
-- 🎨 **Make it yours.** Curated Material 3 palettes, light / dark / AMOLED, contrast levels, layout presets, English and
-  Spanish.
+- 🎨 **Make it yours.** Five independent visual directions (Tanabata, Obi, Night Transit, Sumi & Hanko, Material), 16 card
+  styles, curated palettes (light / dark / OLED), contrast levels, per-screen layouts, motion profiles, global command
+  palette (`Ctrl+K`), English and Spanish.
 
 ## 📦 Download and install
 
@@ -92,13 +109,13 @@ the files.
 
 | Platform | File | Notes |
 |---|---|---|
-| 🤖 Android 8.0+ | `Nijiyome-v1.1.1-android-arm64-v8a.apk` | Most phones from the last years. |
-| | `Nijiyome-v1.1.1-android-armeabi-v7a.apk` | Older 32-bit phones. |
-| | `Nijiyome-v1.1.1-android-x86_64.apk` | Emulators and x86 devices. |
-| | `Nijiyome-v1.1.1-android-universal.apk` | Any device, larger download. If unsure, pick this one. |
-| 🐧 Linux x86_64 | `Nijiyome-v1.1.1-linux-x86_64.AppImage` | `chmod +x` it and run it. Torrents need glibc 2.38+ (Ubuntu 24.04, Fedora 39, Arch and newer). |
-| 🪟 Windows x64 | `Nijiyome-v1.1.1-windows-x64-setup.exe` | Installer; can register `nijiyome:` links and offer itself for `magnet:` / `.torrent`. |
-| | `Nijiyome-v1.1.1-windows-x64-portable.zip` | Unzip and run; data still goes to `%APPDATA%\Nijiyome`. |
+| 🤖 Android 8.0+ | `Nijiyome-v1.3.0-android-arm64-v8a.apk` | Most phones from the last years. |
+| | `Nijiyome-v1.3.0-android-armeabi-v7a.apk` | Older 32-bit phones. |
+| | `Nijiyome-v1.3.0-android-x86_64.apk` | Emulators and x86 devices. |
+| | `Nijiyome-v1.3.0-android-universal.apk` | Any device, larger download. If unsure, pick this one. |
+| 🐧 Linux x86_64 | `Nijiyome-v1.3.0-linux-x86_64.AppImage` | `chmod +x` it and run it. Torrents need glibc 2.38+ (Ubuntu 24.04, Fedora 39, Arch and newer). |
+| 🪟 Windows x64 | `Nijiyome-v1.3.0-windows-x64-setup.exe` | Installer; can register `nijiyome:` links and offer itself for `magnet:` / `.torrent`. |
+| | `Nijiyome-v1.3.0-windows-x64-portable.zip` | Unzip and run; data still goes to `%APPDATA%\Nijiyome`. |
 
 On Arch / CachyOS you can also build a package with the `PKGBUILD` in [`packaging/linux`](packaging/linux) (see
 [`packaging/README.md`](packaging/README.md)).

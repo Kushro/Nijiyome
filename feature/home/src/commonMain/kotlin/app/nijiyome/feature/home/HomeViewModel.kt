@@ -10,6 +10,8 @@ import app.nijiyome.model.ExtensionRepository
 import app.nijiyome.model.FeedKind
 import app.nijiyome.model.HistoryEntry
 import app.nijiyome.model.HistoryRepository
+import app.nijiyome.model.HomeRowIds
+import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.Media
 import app.nijiyome.model.MatureContentMode
@@ -25,7 +27,10 @@ import app.nijiyome.model.torrent.TorrentRepository
 import kotlinx.coroutines.Job
 import app.nijiyome.ui.media.distinctByKey
 import app.nijiyome.ui.media.mediaKey
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import app.nijiyome.ui.state.runCatchingApp
 import app.nijiyome.ui.state.toAppError
@@ -40,6 +45,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
 
 /** One independently loading row of Home. A failing row never breaks the others (02 §3). */
 data class FeedRow(val kind: FeedKind, val state: LoadState<List<Media>>)
@@ -86,7 +93,50 @@ data class HomeUiState(
         get() = continueWatching.isEmpty() &&
             feeds.all { val s = it.state; s is LoadState.Ok && s.value.isEmpty() } &&
             !discover.hasContent
+
+    /**
+     * Sparkles (S2): the [HomeRowIds] that have something to draw right now, in default order; `DesignPrefs.homeRows(available)` puts
+     * them in the user's order. Rows that load, fail or retry on their own stay available (their skeleton or error is the content).
+     */
+    fun availableRows(tonightCount: Int, hasGenres: Boolean): List<String> {
+        val d = discover
+        val ext = extensionRows
+        val extEmpty = ext is LoadState.Ok && ext.value.isEmpty()
+        return HomeRowIds.DEFAULT_ORDER.filter { id ->
+            when (id) {
+                ROW_CONTINUE -> tonightCount > 0
+                ROW_DOWNLOADS -> (d.activity?.total ?: 0) > 0
+                ROW_FOLLOWED -> d.followed.shown()
+                ROW_LATEST -> d.latest.shown()
+                ROW_FOR_YOU -> d.forYou.shown()
+                ROW_BECAUSE -> d.because?.state?.shown() == true
+                ROW_GENRES -> hasGenres
+                ROW_PREMIERES -> d.upcoming.shown()
+                ROW_FAVOURITES -> d.favourites.shown()
+                ROW_EXTENSIONS -> !extEmpty
+                else -> true
+            }
+        }
+    }
 }
+
+private fun <T> LoadState<List<T>>.shown(): Boolean = !(this is LoadState.Ok && value.isEmpty())
+
+// Sparkles (S2): Home row ids (HomeRowIds.DEFAULT_ORDER); every row of Home has one.
+internal const val ROW_CONTINUE = "continuar"
+internal const val ROW_DOWNLOADS = "descargando"
+internal const val ROW_FOLLOWED = "siguiendo"
+internal const val ROW_LATEST = "ultimos"
+internal const val ROW_TOP = "top"
+internal const val ROW_FOR_YOU = "parati"
+internal const val ROW_BECAUSE = "porque"
+internal const val ROW_GENRES = "generos"
+internal const val ROW_FEEDS = "feeds"
+internal const val ROW_PREMIERES = "estrenos"
+internal const val ROW_FAVOURITES = "favoritos"
+internal const val ROW_EXTENSIONS = "extensiones"
+internal const val ROW_MORE = "mas"
+
 
 val HERO_FEED = FeedKind.TRENDING
 const val HERO_SIZE = 5
@@ -110,6 +160,9 @@ class HomeViewModel(
     downloads: DownloadRepository? = null,
     torrents: TorrentRepository? = null,
     private val nowSec: () -> Long = { System.currentTimeMillis() / 1000 },
+    // --- Sparkles (S2): optional, appended so existing callers keep working ---
+    private val lists: ListsRepository? = null,
+    private val zone: () -> ZoneId = { ZoneId.systemDefault() },
 ) : ViewModel() {
 
     private val feeds = MutableStateFlow(HOME_FEEDS.map { FeedRow(it, LoadState.Loading) })
@@ -119,6 +172,9 @@ class HomeViewModel(
     private var heroArtJob: Job? = null
     private var becauseJob: Job? = null
     private var genreJob: Job? = null
+
+    /** A-02: every metadata request of Home goes through it (see [RequestPacer]). */
+    private val pacer = RequestPacer(PACE_PARALLEL, PACE_GAP_MS)
 
     private val providers = settings?.settings?.map { it.providerPriority }?.distinctUntilChanged()
         ?: flowOf(AppSettings.DEFAULT_PROVIDER_PRIORITY)
@@ -144,14 +200,28 @@ class HomeViewModel(
     private val adult: Boolean get() = settings?.settings?.value?.showAdult ?: false
 
     init {
-        HOME_FEEDS.forEach(::load)
+        // A-02: asked in the order the first screen shows them (Esta noche and today's agenda, the novelties, the hero, then the
+        // rows below); the pacer starts them a few at a time, so they appear one after another instead of 25 requests at once.
+        loadToday()
+        loadFollowed()
+        load(HERO_FEED)
+        HOME_FEEDS.filter { it != HERO_FEED }.forEach(::load)
         loadLatest()
         loadTop10(TopWindow.TODAY)
+        loadForYou()
         loadUpcoming()
         loadFavourites()
         loadGenreCloud()
-        loadFollowed()
-        loadForYou()
+        lists?.let { repo ->
+            viewModelScope.launch {
+                repo.entries(null).catch { emit(emptyList()) }.collect { list -> discover.update { it.copy(listEntries = list) } }
+            }
+        }
+        airing?.let { repo ->
+            viewModelScope.launch {
+                repo.followed.catch { emit(emptyList()) }.collect { list -> discover.update { it.copy(followedShows = list) } }
+            }
+        }
         viewModelScope.launch {
             settings?.settings?.map { it.matureContent }?.distinctUntilChanged()?.catch { emit(MatureContentMode.WARN) }?.collect { mode ->
                 discover.update { it.copy(matureContent = mode) }
@@ -204,6 +274,56 @@ class HomeViewModel(
         if (d.favourites is LoadState.Err) loadFavourites()
         if (d.forYou is LoadState.Err) loadForYou()
         if (d.because?.state is LoadState.Err) retryBecause()
+        if (d.today is LoadState.Err) loadToday()
+    }
+
+    /** Sparkles (S2): "Actualizar todo Inicio": reloads every row at once (each still fails and retries on its own). */
+    fun refreshAll() {
+        HOME_FEEDS.forEach { setRow(it, LoadState.Loading); load(it) }
+        val d = discover.value
+        loadFollowed()
+        loadLatest()
+        loadTop10(d.topWindow)
+        loadUpcoming()
+        loadFavourites()
+        loadForYou()
+        loadToday()
+        if (d.because?.state is LoadState.Err) retryBecause()
+        if (extensionRows.value is LoadState.Err) loadExtensionRows()
+    }
+
+    /** Sparkles (S2): today's airing schedule in the user's zone (agenda "Hoy en emisión" and the "Esta noche" row). */
+    fun loadToday() = launchRow<List<app.nijiyome.model.AiringEpisode>>({ s, v -> s.copy(today = v) }) {
+        val z = zone()
+        val day = Instant.ofEpochSecond(nowSec()).atZone(z).toLocalDate()
+        metadata.airingSchedule(day.atStartOfDay(z).toEpochSecond(), day.plusDays(1).atStartOfDay(z).toEpochSecond())
+            .sortedBy { it.airingAtEpochSec }
+    }
+
+    /**
+     * Sparkles (S2): the bell of an episode. Not followed -> follow with its reminder on; followed -> flip its reminder. Returns the new
+     * state of the bell, or null when there is no airing service.
+     */
+    fun toggleReminder(media: Media): Boolean? {
+        val repo = airing ?: return null
+        val show = discover.value.followedShow(media.ref)
+        val on = show == null || !show.remind
+        viewModelScope.launch {
+            runCatchingApp {
+                if (show == null) repo.follow(media, remind = true) else repo.setReminder(show.ref, on)
+            }
+        }
+        return on
+    }
+
+    /** Sparkles (S2): order and hidden rows of Home, stored in `LookPrefs.design` (Editar Inicio). */
+    fun setRowPrefs(order: List<String>, hidden: Set<String>) {
+        val repo = settings ?: return
+        viewModelScope.launch {
+            runCatchingApp {
+                repo.update { s -> s.copy(look = s.look.copy(design = s.look.design.copy(homeRowOrder = order, homeRowsHidden = hidden))) }
+            }
+        }
     }
 
     // ---------------------------------------------------------------- parity wave B rows (16 §3.1)
@@ -211,7 +331,7 @@ class HomeViewModel(
     private fun <T> launchRow(set: (HomeDiscoverState, LoadState<T>) -> HomeDiscoverState, block: suspend () -> T) {
         discover.update { set(it, LoadState.Loading) }
         viewModelScope.launch {
-            val r = runCatchingApp { block() }
+            val r = runCatchingApp { pacer.run { block() } }
             discover.update { set(it, r.fold(onSuccess = { v -> LoadState.Ok(v) }, onFailure = { e -> LoadState.Err(e.toAppError()) })) }
         }
     }
@@ -269,7 +389,7 @@ class HomeViewModel(
         }
         discover.update { it.copy(because = BecauseRow(entry.title, LoadState.Loading)) }
         becauseJob = viewModelScope.launch {
-            val r = runCatchingApp { metadata.recommendations(MediaRef(anilistId = id, malId = entry.malId)).map { it.media }.distinctByKey() }
+            val r = runCatchingApp { pacer.run { metadata.recommendations(MediaRef(anilistId = id, malId = entry.malId)).map { it.media }.distinctByKey() } }
             discover.update {
                 it.copy(because = BecauseRow(entry.title, r.fold(onSuccess = { v -> LoadState.Ok(v) }, onFailure = { e -> LoadState.Err(e.toAppError()) })))
             }
@@ -287,7 +407,7 @@ class HomeViewModel(
     /** Genre catalogue of the provider (falls back to the genres of the loaded rows in the screen). */
     fun loadGenreCloud() {
         viewModelScope.launch {
-            val genres = runCatchingApp { metadata.genres(MediaKind.ANIME) }.getOrNull().orEmpty()
+            val genres = runCatchingApp { pacer.run { metadata.genres(MediaKind.ANIME) } }.getOrNull().orEmpty()
                 .filterNot { it.equals("Hentai", ignoreCase = true) && !adult }
             discover.update { it.copy(genreCloud = genres, genreRowsDone = genres.isEmpty()) }
         }
@@ -314,7 +434,9 @@ class HomeViewModel(
 
     private suspend fun fillGenre(genre: String) {
         val r = runCatchingApp {
-            metadata.searchAdvanced(MediaKind.ANIME, MediaSearchQuery(genres = listOf(genre), sort = MediaSort.POPULARITY, adult = adult)).items.distinctByKey()
+            pacer.run {
+                metadata.searchAdvanced(MediaKind.ANIME, MediaSearchQuery(genres = listOf(genre), sort = MediaSort.POPULARITY, adult = adult)).items.distinctByKey()
+            }
         }
         val st: LoadState<List<Media>> = r.fold(onSuccess = { LoadState.Ok(it) }, onFailure = { LoadState.Err(it.toAppError()) })
         discover.update { s -> s.copy(genreRows = s.genreRows.map { if (it.genre == genre) it.copy(state = st) else it }) }
@@ -371,7 +493,7 @@ class HomeViewModel(
 
     private fun load(kind: FeedKind) {
         viewModelScope.launch {
-            val result = runCatchingApp { metadata.feed(MediaKind.ANIME, kind).items.distinctByKey() }
+            val result = runCatchingApp { pacer.run { metadata.feed(MediaKind.ANIME, kind).items.distinctByKey() } }
             setRow(
                 kind,
                 result.fold(
@@ -412,5 +534,26 @@ class HomeViewModel(
         const val FOR_YOU_PREVIEW = 10
         const val MAX_PROVIDER_SOURCES = 6
         const val HERO_ART_PARALLEL = 3
+        const val PACE_PARALLEL = 2
+        const val PACE_GAP_MS = 250L
+    }
+}
+
+/**
+ * A-02: AniList answered 429 to the burst of about 25 queries Home fired at start-up (every row at once). Requests run [parallel] at
+ * a time and each one starts at least [gapMs] after the previous start, in the order they were asked (the semaphore and the mutex
+ * are fair), so the first screen's rows come first and the rest follow. A retry goes through the same queue.
+ */
+internal class RequestPacer(parallel: Int, private val gapMs: Long) {
+    private val permits = Semaphore(parallel)
+    private val starts = Mutex()
+    private var started = false
+
+    suspend fun <T> run(block: suspend () -> T): T = permits.withPermit {
+        starts.withLock {
+            if (started) delay(gapMs)
+            started = true
+        }
+        block()
     }
 }

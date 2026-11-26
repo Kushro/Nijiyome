@@ -8,7 +8,7 @@
 
 [English](README.md) · **Español**
 
-[![Versión](https://img.shields.io/badge/versi%C3%B3n-v1.1.1-8b5cf6)](https://github.com/Kushro/Nijiyome/releases/latest)
+[![Versión](https://img.shields.io/badge/versi%C3%B3n-v1.3.0-8b5cf6)](https://github.com/Kushro/Nijiyome/releases/latest)
 [![Licencia: AGPL-3.0-or-later](https://img.shields.io/badge/licencia-AGPL--3.0--or--later-blue)](LICENSE)
 ![Plataformas](https://img.shields.io/badge/plataformas-Android%20%C2%B7%20Linux%20%C2%B7%20Windows-555)
 ![Kotlin + Compose Multiplatform](https://img.shields.io/badge/Kotlin-Compose%20Multiplatform-7f52ff)
@@ -21,23 +21,39 @@ streams de extensiones `.kai` que tú eliges e instalas. **La app no trae conten
 
 ## 📸 Capturas
 
-### Escritorio
+### Direcciones visuales (Escritorio)
+
+Elige entre cinco direcciones visuales independientes — **Tanabata**, **Obi**, **Tránsito nocturno**, **Sumi y hanko** y **Material** — y combina cualquiera con 16 estilos de tarjeta, paletas curadas (claro, oscuro y OLED), perfiles de movimiento y estructuras configurables por pantalla.
 
 <table>
   <tr>
-    <td align="center" valign="top"><img src="docs/readme/home.png" alt="Inicio: banner destacado, accesos rápidos y búsqueda" width="100%"><br><sub>Inicio</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/home.png" alt="Dirección Tanabata: fila Esta noche con tiras tanzaku colgadas de la vara de bambú y franja de emisión en 24 h" width="100%"><br><sub>Tanabata — Inicio (Esta noche)</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/style-obi.png" alt="Dirección Obi: tarjetas con faja japonesa y controles de etiqueta impresa" width="100%"><br><sub>Obi — Inicio (Esta noche)</sub></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><img src="docs/readme/style-transit.png" alt="Dirección Tránsito nocturno: líneas con estaciones, tarjetas billete y tablero de salidas en 24 h" width="100%"><br><sub>Tránsito nocturno — Inicio (Esta noche)</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/style-sumi.png" alt="Dirección Sumi y hanko: títulos a pincel, sellos hanko con kanji y detalles ensō" width="100%"><br><sub>Sumi y hanko — Inicio (Esta noche)</sub></td>
+  </tr>
+</table>
+
+### Pantallas de escritorio
+
+<table>
+  <tr>
+    <td align="center" valign="top"><img src="docs/readme/details-cinema.png" alt="Ficha en estructura Cine con arte a sangre, selector de estado y cajón de episodios" width="100%"><br><sub>Ficha de anime (estructura Cine)</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/calendar.png" alt="Calendario semanal en formato de 24 horas con mini mes lateral" width="100%"><br><sub>Calendario (Semana, 24 h)</sub></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><img src="docs/readme/settings-appearance.png" alt="Ajustes › Apariencia › Diseño con las cinco direcciones visuales y vista previa en vivo" width="100%"><br><sub>Ajustes › Apariencia › Diseño</sub></td>
+    <td align="center" valign="top"><img src="docs/readme/manga.png" alt="Catálogo de Manga con tanzaku destacado y fila Seguir leyendo" width="100%"><br><sub>Catálogo de Manga</sub></td>
+  </tr>
+  <tr>
     <td align="center" valign="top"><img src="docs/readme/player.png" alt="El reproductor libmpv reproduciendo un episodio con Anime4K A+A activo" width="100%"><br><sub>Reproductor integrado con Anime4K</sub></td>
-  </tr>
-  <tr>
     <td align="center" valign="top"><img src="docs/readme/source-picker.png" alt="Selector de fuentes del episodio en modo manual, con fuentes en caché de TorBox" width="100%"><br><sub>Fuentes del episodio (en caché de TorBox)</sub></td>
+  </tr>
+  <tr>
     <td align="center" valign="top"><img src="docs/readme/torrents-debrid.png" alt="Torrents › Debrid: TorBox recomendado, Real-Debrid y AllDebrid experimentales, ninguno vinculado" width="100%"><br><sub>Torrents › Debrid</sub></td>
-  </tr>
-  <tr>
     <td align="center" valign="top"><img src="docs/readme/extensions.png" alt="Extensiones con una extensión instalada" width="100%"><br><sub>Extensiones</sub></td>
-    <td align="center" valign="top"><img src="docs/readme/settings-appearance.png" alt="Ajustes › Apariencia con las paletas de color" width="100%"><br><sub>Ajustes › Apariencia</sub></td>
-  </tr>
-  <tr>
-    <td align="center" valign="top" colspan="2"><img src="docs/readme/manga.png" alt="Manga: banners destacados" width="100%"><br><sub>Manga</sub></td>
   </tr>
 </table>
 
@@ -56,7 +72,7 @@ streams de extensiones `.kai` que tú eliges e instalas. **La app no trae conten
 
 <p align="center"><img src="docs/readme/phone-home.png" alt="Inicio en Android" width="270"><br><sub>Android: Inicio</sub></p>
 
-<sub>Versión 1.1.2, capturas reales en escritorio (Linux) y Android. Algunos nombres están tapados con barras negras a propósito: nombres de fuentes y sitios, y datos de red.</sub>
+<sub>Versión 1.3.0, capturas reales en escritorio (Linux) y Android. Algunos nombres en capturas anteriores del reproductor y extensiones están tapados con barras negras a propósito: nombres de fuentes y sitios, y datos de red.</sub>
 
 ## ✨ Funciones
 
@@ -84,8 +100,9 @@ streams de extensiones `.kai` que tú eliges e instalas. **La app no trae conten
   maneja en segundo plano tu Chrome, Edge o Chromium instalado mediante el protocolo DevTools. No viene ninguno incluido.
 - 🌐 **Red.** Proxy de salida (HTTP o SOCKS5, con credenciales) y soporte de FlareSolverr.
 - 🖥️ **Integración con el escritorio.** Bandeja del sistema, Rich Presence de Discord y controles multimedia MPRIS en Linux.
-- 🎨 **A tu gusto.** Paletas Material 3 seleccionadas, modo claro / oscuro / AMOLED, niveles de contraste, estilos de diseño,
-  inglés y español.
+- 🎨 **A tu gusto.** Cinco direcciones visuales independientes (Tanabata, Obi, Tránsito nocturno, Sumi y hanko, Material),
+  16 estilos de tarjeta, paletas curadas (claro / oscuro / OLED), niveles de contraste, estructuras configurables por pantalla,
+  perfiles de movimiento, paleta de comandos (`Ctrl+K`), inglés y español.
 
 ## 📦 Descarga e instalación
 
@@ -94,13 +111,13 @@ archivos.
 
 | Plataforma | Archivo | Notas |
 |---|---|---|
-| 🤖 Android 8.0+ | `Nijiyome-v1.1.1-android-arm64-v8a.apk` | La mayoría de los teléfonos de los últimos años. |
-| | `Nijiyome-v1.1.1-android-armeabi-v7a.apk` | Teléfonos antiguos de 32 bits. |
-| | `Nijiyome-v1.1.1-android-x86_64.apk` | Emuladores y equipos x86. |
-| | `Nijiyome-v1.1.1-android-universal.apk` | Cualquier equipo, descarga más grande. Si dudas, elige este. |
-| 🐧 Linux x86_64 | `Nijiyome-v1.1.1-linux-x86_64.AppImage` | Dale `chmod +x` y ejecútalo. Los torrents piden glibc 2.38+ (Ubuntu 24.04, Fedora 39, Arch o más nuevos). |
-| 🪟 Windows x64 | `Nijiyome-v1.1.1-windows-x64-setup.exe` | Instalador; puede registrar los enlaces `nijiyome:` y ofrecerse para `magnet:` / `.torrent`. |
-| | `Nijiyome-v1.1.1-windows-x64-portable.zip` | Descomprime y ejecuta; los datos igual van a `%APPDATA%\Nijiyome`. |
+| 🤖 Android 8.0+ | `Nijiyome-v1.3.0-android-arm64-v8a.apk` | La mayoría de los teléfonos de los últimos años. |
+| | `Nijiyome-v1.3.0-android-armeabi-v7a.apk` | Teléfonos antiguos de 32 bits. |
+| | `Nijiyome-v1.3.0-android-x86_64.apk` | Emuladores y equipos x86. |
+| | `Nijiyome-v1.3.0-android-universal.apk` | Cualquier equipo, descarga más grande. Si dudas, elige este. |
+| 🐧 Linux x86_64 | `Nijiyome-v1.3.0-linux-x86_64.AppImage` | Dale `chmod +x` y ejecútalo. Los torrents piden glibc 2.38+ (Ubuntu 24.04, Fedora 39, Arch o más nuevos). |
+| 🪟 Windows x64 | `Nijiyome-v1.3.0-windows-x64-setup.exe` | Instalador; puede registrar los enlaces `nijiyome:` y ofrecerse para `magnet:` / `.torrent`. |
+| | `Nijiyome-v1.3.0-windows-x64-portable.zip` | Descomprime y ejecuta; los datos igual van a `%APPDATA%\Nijiyome`. |
 
 En Arch / CachyOS también puedes construir un paquete con el `PKGBUILD` de [`packaging/linux`](packaging/linux) (ver
 [`packaging/README.md`](packaging/README.md)).

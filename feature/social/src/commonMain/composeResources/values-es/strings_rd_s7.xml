@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rediseño Sparkles, carril S7: perfil y notificaciones. -->
+<resources>
+    <string name="rd_s7_soc_unread">%1$d sin leer</string>
+    <string name="rd_s7_soc_about_more">Ver más</string>
+    <string name="rd_s7_soc_about_less">Ver menos</string>
+    <string name="rd_s7_soc_publish">Publicar</string>
+</resources>

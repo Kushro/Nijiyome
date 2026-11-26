@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign, lane S7: the "Tú" hub. -->
+<resources>
+    <string name="rd_s7_you_group_read">Read and discover</string>
+    <string name="rd_s7_you_group_activity">Your activity</string>
+    <string name="rd_s7_you_group_device">Devices and sources</string>
+    <string name="rd_s7_you_profile_summary">Activity, stats, favorites and followers</string>
+    <string name="rd_s7_you_transfers">Transfers</string>
+    <string name="rd_s7_you_sources">Sources</string>
+    <string name="rd_s7_you_link">Nijiyome Link</string>
+    <string name="rd_s7_you_unread">%1$d unread</string>
+    <string name="rd_s7_you_active">%1$d active downloads</string>
+    <string name="rd_s7_you_synced">History and lists synced</string>
+    <string name="rd_s7_you_sync_failed">Could not sync. Check the connection and try again.</string>
+</resources>

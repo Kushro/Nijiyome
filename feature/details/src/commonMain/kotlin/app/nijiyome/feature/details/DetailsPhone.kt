@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
@@ -83,66 +84,10 @@ import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.displayTitle
 import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
-// Ficha "Primero el episodio" (phone, < 840 dp): a compact header (168 dp fanart, the poster overlapping it, the title and, in the A / C
-// compositions, the facts line); the rest of the header is the "Cabecera de la ficha" composition (DetailsHead.kt), so the button, the
-// tabs and the episode to continue are on screen at scroll 0. Studios, genres and the synopsis live in "Información".
-
-/** Compact phone header: fanart, overlapping poster, title (2 lines) and [facts] (the A / C facts line; null = the title only). */
-@Composable
-internal fun CompactHeader(
-    media: Media,
-    state: DetailsUiState,
-    actions: DetailsActions,
-    facts: (@Composable () -> Unit)? = null,
-    /** B / D (no facts line): the "+18" badge goes under the title. */
-    adultBadge: Boolean = false,
-) {
-    val background = MaterialTheme.colorScheme.background
-    val title = media.displayTitle(state.titleLanguage)
-    val blurred = state.coverBlurred
-    val blurModifier = if (blurred) Modifier.blur(24.dp).clickable(onClick = actions.onRevealCover) else Modifier
-    val backdrop = headerBackdrop(media, state.artwork)
-    Column(Modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().height(COMPACT_FANART)) {
-            AsyncImage(
-                model = backdrop.url,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = if (backdrop.lowRes && media.banner != null) Alignment.BottomCenter else Alignment.Center,
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest).then(blurModifier),
-            )
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        listOf(background.copy(alpha = if (backdrop.lowRes) 0.35f else 0.1f), background.copy(alpha = if (backdrop.lowRes) 0.7f else 0.45f), background),
-                    ),
-                ),
-            )
-            if (blurred) MatureReveal(actions, Modifier.align(Alignment.Center))
-        }
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            MediaCover(url = media.cover, modifier = Modifier.width(96.dp).overlapUp(POSTER_OVERLAP).then(blurModifier))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                androidx.compose.foundation.text.selection.SelectionContainer {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                }
-                facts?.invoke()
-                TitleQuickActions(title = title, media = media, actions = actions, adultBadge = adultBadge)
-            }
-        }
-    }
-}
+// Pieces of the Ficha header shared by its structures: the adult badge, the title's quick actions, the mature reveal, the Watch
+// button with its labels and the source line.
 
 /** "+18" next to the title when no facts line carries it (B / D). */
 @Composable
@@ -250,13 +195,6 @@ internal fun MatureReveal(actions: DetailsActions, modifier: Modifier = Modifier
     }
 }
 
-/** Draws the content [by] higher than its slot and reports that much less height (the poster overlapping the fanart). */
-private fun Modifier.overlapUp(by: Dp): Modifier = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    val px = by.roundToPx().coerceAtMost(placeable.height)
-    layout(placeable.width, placeable.height - px) { placeable.place(0, -px) }
-}
-
 /** Primary button label: [word] may ellipsize, [number] (" · ep. 12") never does; [long] is the TalkBack form. */
 internal data class WatchLabels(
     val word: String,
@@ -309,8 +247,11 @@ internal fun WatchButton(
     val action = state.watchAction
     val labels = watchLabels(state)
     val playable = state.playable
-    val radius = height / 2
-    val leading = RoundedCornerShape(topStart = radius, bottomStart = radius, topEnd = 6.dp, bottomEnd = 6.dp)
+    // OBI-02 / T-02: outer corners follow the direction's control shape (pill in Canon, 10 dp in Tanabata, 4 dp in Obi).
+    val ctrl = NijiyomeControls.shape
+    val inner = CornerSize(4.dp)
+    val leading = ctrl.copy(topEnd = inner, bottomEnd = inner)
+    val trailing = ctrl.copy(topStart = inner, bottomStart = inner)
     val style = MaterialTheme.typography.titleMedium
     val candidates = when {
         shortLabel -> listOf(labels.card)
@@ -383,73 +324,11 @@ internal fun WatchButton(
             Button(
                 onClick = { actions.onOpenPicker(true) },
                 enabled = playable && state.panel != null && state.hasExtensions,
-                shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = radius, bottomEnd = radius),
+                shape = trailing,
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.width(chevronWidth).fillMaxHeight(),
             ) {
                 Icon(Icons.Filled.KeyboardArrowDown, contentDescription = stringResource(Res.string.details_choose_source))
-            }
-        }
-    }
-}
-
-/** "Más": Enviar a dispositivo, Descargar episodio N / temporada, Compartir; [anchor] draws the control that opens it. */
-@Composable
-internal fun MoreActionsButton(media: Media, state: DetailsUiState, actions: DetailsActions, anchor: @Composable (open: () -> Unit) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        anchor { open = true }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            if (state.sendAvailable) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(if (state.sending) Res.string.details_send_sending else Res.string.details_send_device)) },
-                    onClick = {
-                        open = false
-                        actions.onSendToDevice()
-                    },
-                    enabled = !state.sending && state.playable,
-                    leadingIcon = { Icon(Icons.Outlined.Cast, contentDescription = null) },
-                )
-            }
-            val panel = state.panel
-            val best = state.bestTorrent
-            if (panel != null && best != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_episode, panel.episode)) },
-                    onClick = {
-                        open = false
-                        actions.onDownloadSource(best, panel.episode)
-                    },
-                    enabled = state.playable,
-                    leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                )
-                if (state.canDownloadSeason) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.details_download_season)) },
-                        onClick = {
-                            open = false
-                            actions.onDownloadSeason()
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.Movie, contentDescription = null) },
-                    )
-                }
-            } else {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_download_none)) },
-                    onClick = { open = false },
-                    enabled = false,
-                    leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                )
-            }
-            if (shareLink(media) != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.details_share)) },
-                    onClick = {
-                        open = false
-                        actions.onShare(media)
-                    },
-                    leadingIcon = { Icon(Icons.Outlined.Share, contentDescription = null) },
-                )
             }
         }
     }
@@ -502,7 +381,7 @@ internal fun SourceLine(
             !state.hasExtensions -> {
                 Dot(scheme.outline)
                 Line(stringResource(Res.string.details_no_extension_title), Modifier.weight(1f))
-                TextButton(onClick = actions.onOpenExtensions) { Text(stringResource(Res.string.details_go_extensions), maxLines = 1) }
+                TextButton(onClick = actions.onOpenExtensions, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_go_extensions), maxLines = 1) }
             }
             panel == null || sources == null || sources is LoadState.Loading -> {
                 CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
@@ -511,12 +390,12 @@ internal fun SourceLine(
             sources is LoadState.Err -> {
                 Dot(scheme.error)
                 Line(sources.cause.userMessage(), Modifier.weight(1f))
-                TextButton(onClick = actions.onRetrySources) { Text(stringResource(UiR.string.ui_retry), maxLines = 1) }
+                TextButton(onClick = actions.onRetrySources, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry), maxLines = 1) }
             }
             shown == null -> {
                 Dot(scheme.outline)
                 Line(stringResource(Res.string.details_no_sources_title), Modifier.weight(1f))
-                TextButton(onClick = actions.onOpenExtensions) { Text(stringResource(Res.string.details_open_extensions), maxLines = 1) }
+                TextButton(onClick = actions.onOpenExtensions, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_open_extensions), maxLines = 1) }
             }
             else -> {
                 val count = (sources as LoadState.Ok).value.size
@@ -539,5 +418,3 @@ internal fun SourceLine(
 }
 
 internal val ACTION_HEIGHT = 52.dp
-private val COMPACT_FANART = 168.dp
-private val POSTER_OVERLAP = 56.dp

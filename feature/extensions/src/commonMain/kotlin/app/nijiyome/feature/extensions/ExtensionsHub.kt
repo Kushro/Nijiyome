@@ -22,8 +22,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.FileOpen
 import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PowerSettingsNew
@@ -83,6 +89,7 @@ import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.ui.format.relativeTime
 import app.nijiyome.ui.state.userMessage
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B (16 §3.4, worker t): the composables of the Extensions hub sections (see ExtensionsHubViewModel).
 
@@ -127,8 +134,8 @@ internal fun KillSwitchDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         icon = { Icon(Icons.Outlined.PowerSettingsNew, contentDescription = null) },
         title = { Text(stringResource(Res.string.extensions_disable_all_title)) },
         text = { Text(stringResource(Res.string.extensions_disable_all_message)) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(Res.string.extensions_disable_all)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_close)) } },
+        confirmButton = { TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_disable_all)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
     )
 }
 
@@ -143,7 +150,7 @@ internal fun UpdatesSheet(state: HubUiState, hub: ExtensionsHubViewModel, onDism
                 Switch(checked = state.updateCheckOnStart, onCheckedChange = hub::setUpdateCheckOnStart)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = hub::checkUpdates, enabled = !state.checkingUpdates) {
+                OutlinedButton(onClick = hub::checkUpdates, enabled = !state.checkingUpdates, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         stringResource(if (state.checkingUpdates) Res.string.extensions_updates_checking else Res.string.extensions_updates_check),
@@ -151,7 +158,7 @@ internal fun UpdatesSheet(state: HubUiState, hub: ExtensionsHubViewModel, onDism
                     )
                 }
                 if (state.updates.size > 1) {
-                    Button(onClick = hub::updateAll, enabled = state.updating.isEmpty()) { Text(stringResource(Res.string.extensions_updates_all)) }
+                    Button(onClick = hub::updateAll, enabled = state.updating.isEmpty(), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_updates_all)) }
                 }
             }
             when {
@@ -192,7 +199,7 @@ private fun UpdateRow(u: ExtensionUpdate, busy: Boolean, onUpdate: () -> Unit) {
                     Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 4, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Button(onClick = onUpdate, enabled = !busy) {
+            Button(onClick = onUpdate, enabled = !busy, shape = NijiyomeControls.shape) {
                 Text(stringResource(if (busy) Res.string.extensions_updating else Res.string.extensions_update))
             }
         }
@@ -207,10 +214,13 @@ internal fun InstallUrlDialog(
     onDismiss: () -> Unit,
     /** Desktop: a pasted `.kai` path is accepted too and installed with this; null (Android) = links only. */
     onInstallPath: ((String) -> Unit)? = null,
+    /** Sparkles S9: "Elegir archivo" inside the install dialog (artifact sheet "Instalar una extensión"); null hides it. */
+    onPickFile: (() -> Unit)? = null,
 ) {
     var url by rememberSaveable { mutableStateOf("") }
     val path = if (onInstallPath != null) pastedKaiPath(url) else null
     val valid = isHttpUrl(url) || path != null
+    val clipboard = LocalClipboardManager.current
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Outlined.Link, contentDescription = null) },
@@ -232,16 +242,30 @@ internal fun InstallUrlDialog(
                     } else {
                         null
                     },
+                    leadingIcon = { Icon(Icons.Outlined.Link, contentDescription = null) },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            runCatching { clipboard.getText()?.text?.trim() }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { url = it }
+                        }) { Icon(Icons.Outlined.ContentPaste, contentDescription = stringResource(Res.string.rd_s9_paste)) }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
                     modifier = Modifier.focusOnOpen().fillMaxWidth(),
                 )
+                Text(stringResource(Res.string.rd_s9_install_trust), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (onPickFile != null) {
+                    TextButton(onClick = onPickFile, shape = NijiyomeControls.shape) {
+                        Icon(Icons.Outlined.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(Res.string.extensions_install_choose), modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (path != null && onInstallPath != null) onInstallPath(path) else onInstall(url.trim()) }, enabled = valid && !installing) {
+            TextButton(onClick = { if (path != null && onInstallPath != null) onInstallPath(path) else onInstall(url.trim()) }, enabled = valid && !installing, shape = NijiyomeControls.shape) {
                 Text(stringResource(if (installing) Res.string.extensions_installing else Res.string.extensions_install_url_confirm))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_close)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
     )
 }
 
@@ -283,16 +307,32 @@ internal fun PreferencesDialog(extensionId: String, extensionName: String, hub: 
                         }
                     }
                 }
+                // Sparkles S9 (EXT-05): text fields wait for "Guardar"; say so while something typed is not saved yet.
+                val unsaved = drafts.count { (k, v) -> v != values[k].orEmpty() }
+                if (unsaved > 0) {
+                    Text(
+                        pluralStringResource(Res.plurals.rd_s9_prefs_unsaved, unsaved, unsaved),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                } else {
+                    Text(
+                        stringResource(Res.string.rd_s9_prefs_instant),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         },
         confirmButton = {
+            val unsaved = drafts.any { (k, v) -> v != values[k].orEmpty() }
             TextButton(onClick = {
                 // TEXT / SECRET fields are saved on "Done"; toggles and selects are saved on change.
                 drafts.forEach { (k, v) -> hub.setPreference(extensionId, k, v.ifEmpty { null }) }
                 onDismiss()
-            }) { Text(stringResource(Res.string.extensions_prefs_done)) }
+            }, shape = NijiyomeControls.shape) { Text(stringResource(if (unsaved) Res.string.rd_s9_prefs_save else Res.string.extensions_prefs_done)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_close)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
     )
 }
 
@@ -333,7 +373,7 @@ private fun PreferenceField(pref: ExtensionPreference, stored: String?, draft: S
                         Text(pref.title, style = MaterialTheme.typography.bodyLarge)
                         Text(stringResource(Res.string.extensions_prefs_secret_saved), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     }
-                    TextButton(onClick = { onSave(null) }) { Text(stringResource(Res.string.extensions_prefs_secret_remove)) }
+                    TextButton(onClick = { onSave(null) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_prefs_secret_remove)) }
                 }
             } else {
                 OutlinedTextField(
@@ -352,15 +392,18 @@ private fun PreferenceField(pref: ExtensionPreference, stored: String?, draft: S
     }
 }
 
-/** Providers, repositories and Stremio sections, appended after the installed list. */
-internal fun LazyListScope.hubSections(
+/** Sparkles S9: Fuentes › Proveedores (the catalogs of the extensions with their own sources). */
+internal fun LazyListScope.providersSection(
     state: HubUiState,
     hub: ExtensionsHubViewModel,
     onOpenProvider: (extensionId: String, sourceId: String) -> Unit,
-    onRemoveRepo: (ExtensionRepo) -> Unit,
-    onRemoveAddon: (StremioAddon) -> Unit,
+    showHead: Boolean = true,
 ) {
-    item(key = "providers-head", contentType = "head") { SectionHead(stringResource(Res.string.extensions_providers_title), stringResource(Res.string.extensions_providers_hint)) }
+    if (showHead) {
+        item(key = "providers-head", contentType = "head") { SectionHead(stringResource(Res.string.extensions_providers_title), stringResource(Res.string.extensions_providers_hint)) }
+    } else {
+        item(key = "providers-hint", contentType = "hint") { TabHint(stringResource(Res.string.extensions_providers_hint)) }
+    }
     when (val p = state.providers) {
         LoadState.Loading -> item(key = "providers-loading", contentType = "state") {
             if (rememberAfterDelay()) LoadingState(Modifier.fillMaxWidth().height(96.dp))
@@ -382,8 +425,20 @@ internal fun LazyListScope.hubSections(
             }
         }
     }
+}
 
-    item(key = "repos-head", contentType = "head") { SectionHead(stringResource(Res.string.extensions_repos_title), stringResource(Res.string.extensions_repos_hint)) }
+/** Sparkles S9: Fuentes › Repositorios (add by URL with paste and validation, refresh, retry a failed read, remove with confirmation). */
+internal fun LazyListScope.reposSection(
+    state: HubUiState,
+    hub: ExtensionsHubViewModel,
+    onRemoveRepo: (ExtensionRepo) -> Unit,
+    showHead: Boolean = true,
+) {
+    if (showHead) {
+        item(key = "repos-head", contentType = "head") { SectionHead(stringResource(Res.string.extensions_repos_title), stringResource(Res.string.extensions_repos_hint)) }
+    } else {
+        item(key = "repos-hint", contentType = "hint") { TabHint(stringResource(Res.string.extensions_repos_hint)) }
+    }
     item(key = "repos-add", contentType = "add") {
         UrlAddRow(
             label = stringResource(Res.string.extensions_repos_add_label),
@@ -403,9 +458,25 @@ internal fun LazyListScope.hubSections(
             RepoCard(r, busy = state.busy, hub = hub, onRemove = { onRemoveRepo(r) })
         }
     }
+}
 
-    if (state.stremioAvailable) {
-        item(key = "stremio-head", contentType = "head") { SectionHead(stringResource(Res.string.extensions_stremio_title), stringResource(Res.string.extensions_stremio_hint)) }
+/** Sparkles S9: Fuentes › Stremio (install by manifest, enable, update, reset matches, remove with confirmation). */
+internal fun LazyListScope.stremioSection(
+    state: HubUiState,
+    hub: ExtensionsHubViewModel,
+    onRemoveAddon: (StremioAddon) -> Unit,
+    showHead: Boolean = true,
+) {
+    if (!state.stremioAvailable) {
+        item(key = "stremio-unavailable", contentType = "state") { TabHint(stringResource(Res.string.rd_s9_stremio_unavailable)) }
+        return
+    }
+    run {
+        if (showHead) {
+            item(key = "stremio-head", contentType = "head") { SectionHead(stringResource(Res.string.extensions_stremio_title), stringResource(Res.string.extensions_stremio_hint)) }
+        } else {
+            item(key = "stremio-hint", contentType = "hint") { TabHint(stringResource(Res.string.extensions_stremio_hint)) }
+        }
         item(key = "stremio-add", contentType = "add") {
             UrlAddRow(
                 label = stringResource(Res.string.extensions_stremio_add_label),
@@ -431,6 +502,12 @@ internal fun LazyListScope.hubSections(
             }
         }
     }
+}
+
+/** The one-line explanation at the top of a Fuentes tab (the tab itself names the section). */
+@Composable
+internal fun TabHint(text: String) {
+    Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
@@ -485,6 +562,8 @@ private fun UrlAddRow(
     val clean = url.trim()
     val valid = isHttpUrl(clean) || (acceptStremioScheme && clean.startsWith("stremio://", ignoreCase = true) && clean.length > 11)
     val working = clean in busy
+    // Sparkles S9 (choose, don't type): the clipboard's link goes in with one press; the field stays editable.
+    val clipboard = LocalClipboardManager.current
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
@@ -496,9 +575,19 @@ private fun UrlAddRow(
                 label = { Text(label) },
                 singleLine = true,
                 isError = error != null || (clean.isNotEmpty() && !valid),
+                leadingIcon = { Icon(Icons.Outlined.Link, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        runCatching { clipboard.getText()?.text?.trim() }.getOrNull()?.takeIf { it.isNotEmpty() }?.let {
+                            url = it
+                            if (error != null) onEdit()
+                        }
+                    }) { Icon(Icons.Outlined.ContentPaste, contentDescription = stringResource(Res.string.rd_s9_paste)) }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
                 modifier = Modifier.weight(1f),
             )
-            Button(onClick = { onAdd(clean) }, enabled = valid && !working) {
+            Button(onClick = { onAdd(clean) }, enabled = valid && !working, shape = NijiyomeControls.shape) {
                 Text(if (working) stringResource(Res.string.extensions_working) else action)
             }
         }
@@ -531,7 +620,19 @@ private fun RepoCard(repo: ExtensionRepo, busy: Set<String>, hub: ExtensionsHubV
                 }
                 IconButton(onClick = onRemove) { Icon(Icons.Outlined.Delete, contentDescription = stringResource(Res.string.extensions_repo_remove)) }
             }
-            repo.error?.let { Text(stringResource(Res.string.extensions_repo_error, it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+            repo.error?.let {
+                // Sparkles S9: a failed read says why and offers the retry next to it.
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    Text(
+                        stringResource(Res.string.extensions_repo_error, it),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { hub.refreshRepository(repo.url) }, enabled = !refreshing, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
+                }
+            }
             repo.entries.forEach { e ->
                 val working = e.url in busy
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -542,9 +643,9 @@ private fun RepoCard(repo: ExtensionRepo, busy: Set<String>, hub: ExtensionsHubV
                         }
                     }
                     when {
-                        e.updateAvailable -> Button(onClick = { hub.update(e.id) }, enabled = !working) { Text(stringResource(Res.string.extensions_update)) }
+                        e.updateAvailable -> Button(onClick = { hub.update(e.id) }, enabled = !working, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_update)) }
                         e.installed -> Pill(stringResource(Res.string.extensions_repo_installed), tone = PillTone.OK)
-                        else -> OutlinedButton(onClick = { hub.installEntry(e.url) }, enabled = !working) {
+                        else -> OutlinedButton(onClick = { hub.installEntry(e.url) }, enabled = !working, shape = NijiyomeControls.shape) {
                             Text(stringResource(if (working) Res.string.extensions_installing else Res.string.extensions_repo_install))
                         }
                     }
@@ -579,11 +680,11 @@ private fun AddonCard(addon: StremioAddon, busy: Boolean, hub: ExtensionsHubView
                 Text(stringResource(Res.string.extensions_stremio_no_streams), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = { hub.updateAddon(addon.id) }, enabled = !busy) {
+                TextButton(onClick = { hub.updateAddon(addon.id) }, enabled = !busy, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (busy) Res.string.extensions_updating else Res.string.extensions_stremio_update))
                 }
-                TextButton(onClick = { hub.resetAddonMatches(addon.id) }) { Text(stringResource(Res.string.extensions_stremio_reset)) }
-                TextButton(onClick = onRemove) { Text(stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = { hub.resetAddonMatches(addon.id) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_stremio_reset)) }
+                TextButton(onClick = onRemove, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error) }
             }
         }
     }
@@ -591,14 +692,18 @@ private fun AddonCard(addon: StremioAddon, busy: Boolean, hub: ExtensionsHubView
 
 /** Confirmation for removing a repository or an addon. */
 @Composable
-internal fun ConfirmRemoveDialog(title: String, message: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+internal fun ConfirmRemoveDialog(title: String, message: String, onConfirm: () -> Unit, onDismiss: () -> Unit, confirmLabel: String? = null) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
         title = { Text(title) },
         text = { Text(message) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_close)) } },
+        confirmButton = {
+            TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) {
+                Text(confirmLabel ?: stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
     )
 }
 

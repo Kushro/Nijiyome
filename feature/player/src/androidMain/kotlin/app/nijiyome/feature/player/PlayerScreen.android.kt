@@ -32,6 +32,7 @@ import app.nijiyome.player.PlayerSessionFactory
 import app.nijiyome.player.SubtitleTools
 import org.koin.compose.getKoin
 import org.koin.core.qualifier.named
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Android player (see the common [PlayerScreen]). The host Activity needs `android:supportsPictureInPicture="true"` and
@@ -133,8 +134,8 @@ internal actual fun ExternalBranch(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            Button(onClick = vm::useBuiltInPlayer) { Text(stringResource(Res.string.player_external_use_builtin)) }
-            OutlinedButton(onClick = { onOpenSettings(SettingsSection.PLAYER) }) { Text(stringResource(Res.string.player_external_open_settings)) }
+            Button(onClick = vm::useBuiltInPlayer, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_external_use_builtin)) }
+            OutlinedButton(onClick = { onOpenSettings(SettingsSection.PLAYER) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_external_open_settings)) }
         }
         return
     }

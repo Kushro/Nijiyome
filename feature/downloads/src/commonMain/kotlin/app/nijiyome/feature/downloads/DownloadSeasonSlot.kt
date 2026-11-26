@@ -59,6 +59,7 @@ import androidx.compose.material3.IconButton
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Parity wave B (docs/redesign/16-parity-wave-b-contract-android.md §3.2, worker r; checklist downloads.season-modal,
@@ -83,7 +84,7 @@ fun DownloadSeasonSlot(media: Media, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
     if (total <= 0) return
     Row(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        FilledTonalButton(onClick = { open = true }) {
+        FilledTonalButton(onClick = { open = true }, shape = NijiyomeControls.shape) {
             Icon(Icons.Outlined.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(UiR.string.download_season), Modifier.padding(start = 6.dp))
         }
@@ -161,7 +162,7 @@ private fun SeasonSheet(
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, androidx.compose.ui.Alignment.End)) {
-                TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) }
+                TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) }
                 Button(
                     enabled = !busy && already < wanted.size,
                     onClick = {
@@ -178,6 +179,7 @@ private fun SeasonSheet(
                             onDismiss()
                         }
                     },
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.downloads_season_start, wanted.size - already)) }
             }
         }
@@ -220,18 +222,18 @@ fun DownloadsSettingsSection(settings: AppSettings, onUpdate: (transform: (AppSe
             colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
         )
         Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { pickFolder() }) {
+            OutlinedButton(onClick = { pickFolder() }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.downloads_settings_folder_change), Modifier.padding(start = 6.dp))
             }
             if (d.directoryTreeUri != null) {
-                TextButton(onClick = { set { it.copy(directoryTreeUri = null) } }) {
+                TextButton(onClick = { set { it.copy(directoryTreeUri = null) } }, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (desktopDownloadsUi) Res.string.downloads_desktop_folder_reset else Res.string.downloads_settings_folder_reset))
                 }
             }
             val openFolder = rememberOpenFolder()
             if (openFolder != null && folderLabel.isNotBlank()) {
-                TextButton(onClick = { openFolder(folderLabel) }) { Text(stringResource(Res.string.downloads_desktop_open_folder)) }
+                TextButton(onClick = { openFolder(folderLabel) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.downloads_desktop_open_folder)) }
             }
         }
         SettingLabel(stringResource(Res.string.downloads_settings_concurrent), stringResource(Res.string.downloads_settings_concurrent_hint))
@@ -344,7 +346,7 @@ private fun LibraryFoldersSetting(downloads: DownloadRepository) {
             },
         )
     }
-    OutlinedButton(onClick = { pick() }, modifier = Modifier.padding(horizontal = 16.dp)) {
+    OutlinedButton(onClick = { pick() }, modifier = Modifier.padding(horizontal = 16.dp), shape = NijiyomeControls.shape) {
         Icon(Icons.Outlined.CreateNewFolder, contentDescription = null, modifier = Modifier.size(18.dp))
         Text(stringResource(Res.string.downloads_desktop_library_add), Modifier.padding(start = 6.dp))
     }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign: the order of the pieces of a date (app.nijiyome.ui.format.DateNames); the names come from java.time. -->
+<resources>
+    <!-- 1: day of month, 2: short month -->
+    <string name="rd_date_day_month">%2$s %1$d</string>
+    <!-- 1: short weekday, 2: day of month -->
+    <string name="rd_date_weekday_day">%1$s %2$d</string>
+    <!-- 1: weekday, 2: day of month, 3: month -->
+    <string name="rd_date_weekday_day_month">%1$s, %3$s %2$d</string>
+    <!-- 1: month, 2: year -->
+    <string name="rd_date_month_year">%1$s %2$d</string>
+    <!-- 1: first day, 2: last day, 3: short month -->
+    <string name="rd_date_range_same_month">%3$s %1$d – %2$d</string>
+    <!-- 1: first day, 2: its short month, 3: last day, 4: its short month -->
+    <string name="rd_date_range">%2$s %1$d – %4$s %3$d</string>
+</resources>

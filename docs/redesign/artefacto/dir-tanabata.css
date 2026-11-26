@@ -1,0 +1,688 @@
+/* ==========================================================================
+   Dirección Tanabata · noche de deseos (agente D1)
+   Suelo índigo, papel washi en colores tanzaku como estados, ámbar de farol solo para foco y "ahora",
+   hairlines de bambú como rieles. Las tarjetas tz-* funcionan también mezcladas con otras direcciones.
+   ========================================================================== */
+
+/* ---------- Papel y bambú: tokens propios, disponibles en cualquier dirección para mezclar tarjetas ---------- */
+.nj-app {
+  --tz-ink: #14102a;
+  --tz-p-watching: #f27a5e;   /* bermellón */
+  --tz-p-planning: #8aacf5;   /* azul */
+  --tz-p-completed: #7acd97;  /* verde */
+  --tz-p-paused: #f3d36a;     /* amarillo */
+  --tz-p-dropped: #bba3f2;    /* violeta */
+  --tz-p-rewatching: #f4a8c5; /* rosa */
+  --tz-p-none: #ebe3d0;       /* kinari, papel sin estado */
+  --tz-paper: var(--tz-p-none);
+  --tz-thread: #d8ccb2;
+  --tz-bamboo: #5f8a4c; --tz-bamboo-hi: #9fc27f; --tz-bamboo-lo: #34512b;
+  --tz-lantern: #ffb54d;
+  --tz-paper-shadow: 0 10px 18px -10px rgb(2 3 14 / .7), 0 2px 4px -2px rgb(2 3 14 / .5);
+  /* Textura washi: queda como asset raster futuro; por ahora papel liso en todas las superficies. */
+  --tz-washi: none;
+  --tz-washi-soft: none;
+  --tz-rail: repeating-linear-gradient(90deg, var(--nj-line) 0 173px, transparent 173px 176px);
+  --tz-rod:
+    repeating-linear-gradient(90deg, transparent 0 173px, var(--tz-bamboo-lo) 173px 175px, var(--tz-bamboo-hi) 175px 176px),
+    linear-gradient(to bottom, var(--tz-bamboo-hi) 0 2px, var(--tz-bamboo) 2px 5px, var(--tz-bamboo-lo) 5px 7px);
+}
+.nj-app[data-mode="light"] {
+  --tz-p-watching: #f28466; --tz-p-planning: #8fb0f6; --tz-p-completed: #7fcf9b; --tz-p-paused: #f4d570;
+  --tz-p-dropped: #bfa8f3; --tz-p-rewatching: #f5aecb; --tz-p-none: #efe8d6;
+  --tz-thread: #8f8068; --tz-bamboo: #6c9455; --tz-bamboo-hi: #a9cb88; --tz-bamboo-lo: #3f6233; --tz-lantern: #a55a00;
+  --tz-paper-shadow: 0 10px 18px -12px rgb(30 34 80 / .35), 0 0 0 1px rgb(20 16 42 / .10);
+}
+.nj-app [data-status="watching"] { --tz-paper: var(--tz-p-watching); }
+.nj-app [data-status="planning"] { --tz-paper: var(--tz-p-planning); }
+.nj-app [data-status="completed"] { --tz-paper: var(--tz-p-completed); }
+.nj-app [data-status="paused"] { --tz-paper: var(--tz-p-paused); }
+.nj-app [data-status="dropped"] { --tz-paper: var(--tz-p-dropped); }
+.nj-app [data-status="rewatching"] { --tz-paper: var(--tz-p-rewatching); }
+.nj-app [data-status=""] { --tz-paper: var(--tz-p-none); }
+
+/* ==========================================================================
+   Tokens de la dirección. Base = paleta Noche índigo, oscuro.
+   ========================================================================== */
+.nj-app[data-dir="tanabata"] {
+  --nj-font-ui: "M PLUS Rounded 1c", "Zen Maru Gothic", system-ui, sans-serif;
+  --nj-font-display: "M PLUS Rounded 1c", system-ui, sans-serif;
+  --nj-font-accent: "Yuji Syuku", "M PLUS Rounded 1c", serif;
+  --nj-font-mono: "Roboto Mono", ui-monospace, monospace;
+  --nj-fs-xs: 11px; --nj-fs-s: 12.5px; --nj-fs-m: 14px; --nj-fs-l: 16px; --nj-fs-xl: 20px; --nj-fs-2xl: 27px; --nj-fs-3xl: 38px;
+  --nj-r-xs: 3px; --nj-r-s: 6px; --nj-r-m: 10px; --nj-r-l: 14px; --nj-r-xl: 22px; --nj-r-pill: 999px;
+  --nj-shadow-1: 0 1px 2px rgb(3 4 16 / .45);
+  --nj-shadow-2: 0 6px 16px -6px rgb(3 4 16 / .6), 0 1px 2px rgb(3 4 16 / .4);
+  --nj-shadow-3: 0 18px 38px -14px rgb(3 4 16 / .75);
+  --nj-ease: cubic-bezier(.16, 1, .3, 1); --nj-ease-emph: cubic-bezier(.05, .7, .1, 1);
+  --nj-dur-1: 110ms; --nj-dur-2: 200ms; --nj-dur-3: 340ms; --nj-dur-4: 520ms;
+  --nj-gap: 16px; --nj-pad: 24px; --nj-rail-w: 88px; --nj-touch: 40px;
+
+  --nj-bg: #150f3b; --nj-surface: #1c1647; --nj-surface-2: #231c53; --nj-surface-3: #2d2562;
+  --nj-line: #30424a; --nj-line-strong: #73a07e;
+  --nj-text: #f0eefb; --nj-text-2: #cac5ec; --nj-text-3: #a7a0d6;
+  --nj-accent: #f1eadb; --nj-on-accent: #170f36; --nj-accent-soft: #352b74; --nj-on-accent-soft: #ebe7ff;
+  --nj-focus: #ffb54d; --nj-scrim: rgb(4 5 18 / .62);
+  --nj-ok: #7fd6a0; --nj-warn: #f5c46b; --nj-err: #ff9fae; --nj-info: #9ec0ff;
+  --nj-st-watching: #f6876c; --nj-st-planning: #8fb1ff; --nj-st-completed: #7fd39d;
+  --nj-st-paused: #f3d46e; --nj-st-dropped: #c0a6f6; --nj-st-rewatching: #f5a8c6;
+  --tz-lantern: #ffb54d;
+  font-feature-settings: "palt" 0;
+  color-scheme: dark;
+}
+.nj-app[data-dir="tanabata"][data-platform="android"] { --nj-touch: 48px; --nj-pad: 16px; --nj-gap: 12px; }
+
+.nj-app[data-dir="tanabata"][data-mode="light"] {
+  --nj-bg: #e1dcea; --nj-surface: #ede8f1; --nj-surface-2: #ded7e7; --nj-surface-3: #d2cadd;
+  --nj-line: #adc0a6; --nj-line-strong: #557a4c;
+  --nj-text: #14123a; --nj-text-2: #37366b; --nj-text-3: #47467b;
+  --nj-accent: #2e2a8a; --nj-on-accent: #ffffff; --nj-accent-soft: #b8b5e7; --nj-on-accent-soft: #1b1766;
+  --nj-focus: #a55a00; --nj-scrim: rgb(20 24 56 / .4);
+  --nj-ok: #19643a; --nj-warn: #744d00; --nj-err: #b3261e; --nj-info: #1f56b0;
+  --nj-st-watching: #a02f19; --nj-st-planning: #2a55b8; --nj-st-completed: #1c6435;
+  --nj-st-paused: #724f00; --nj-st-dropped: #6a45b8; --nj-st-rewatching: #942a5b;
+  --nj-shadow-1: 0 1px 2px rgb(30 34 80 / .14);
+  --nj-shadow-2: 0 6px 16px -6px rgb(30 34 80 / .22), 0 1px 2px rgb(30 34 80 / .12);
+  --nj-shadow-3: 0 18px 38px -16px rgb(30 34 80 / .32);
+  --tz-lantern: #a55a00;
+  color-scheme: light;
+}
+.nj-app[data-dir="tanabata"][data-mode="oled"] {
+  --nj-bg: #000000; --nj-surface: #0c0921; --nj-surface-2: #120e2c; --nj-surface-3: #1a153b; --nj-line: #223338;
+}
+
+/* ---------- Festival: más cálida, ciruela de verbena ---------- */
+.nj-app[data-dir="tanabata"][data-palette="festival"] {
+  --nj-bg: #1a1026; --nj-surface: #22152f; --nj-surface-2: #2a1a39; --nj-surface-3: #352246;
+  --nj-line: #3c4434; --nj-line-strong: #8ea36f;
+  --nj-text: #f7eef2; --nj-text-2: #dccad5; --nj-text-3: #b9a3b4;
+  --nj-accent: #f8dcc0; --nj-on-accent: #24121c; --nj-accent-soft: #46283f; --nj-on-accent-soft: #fbe6f0;
+}
+.nj-app[data-dir="tanabata"][data-palette="festival"][data-mode="light"] {
+  --nj-bg: #f0e3e8; --nj-surface: #f7edf1; --nj-surface-2: #e8d6de; --nj-surface-3: #ddc8d1;
+  --nj-line: #c4c5a6; --nj-line-strong: #5f7340;
+  --nj-text: #2a1420; --nj-text-2: #553646; --nj-text-3: #634353;
+  --nj-accent: #74204f; --nj-on-accent: #ffffff; --nj-accent-soft: #e2b6cb; --nj-on-accent-soft: #4a1034;
+}
+.nj-app[data-dir="tanabata"][data-palette="festival"][data-mode="oled"] {
+  --nj-bg: #000000; --nj-surface: #0f0812; --nj-surface-2: #170d1b; --nj-surface-3: #211426; --nj-line: #2b3226;
+}
+
+/* ---------- Alba: pensada para el día, papel washi como suelo ---------- */
+.nj-app[data-dir="tanabata"][data-palette="alba"] {
+  --nj-bg: #121826; --nj-surface: #19202f; --nj-surface-2: #1f2738; --nj-surface-3: #283144;
+  --nj-line: #2f4240; --nj-line-strong: #7c9c84;
+  --nj-text: #f0f1f4; --nj-text-2: #c9cdd8; --nj-text-3: #a3a9ba;
+  --nj-accent: #f3d3bf; --nj-on-accent: #251610; --nj-accent-soft: #343a50; --nj-on-accent-soft: #eee2f0;
+}
+.nj-app[data-dir="tanabata"][data-palette="alba"][data-mode="light"] {
+  --nj-bg: #e9e3ea; --nj-surface: #f3eef3; --nj-surface-2: #ded6df; --nj-surface-3: #d3cad5;
+  --nj-line: #b8c1a6; --nj-line-strong: #5a7044;
+  --nj-text: #1d1a2b; --nj-text-2: #433e54; --nj-text-3: #514b62;
+  --nj-accent: #2a4688; --nj-on-accent: #ffffff; --nj-accent-soft: #b9c3e3; --nj-on-accent-soft: #152c5e;
+}
+.nj-app[data-dir="tanabata"][data-palette="alba"][data-mode="oled"] {
+  --nj-bg: #000000; --nj-surface: #0a0e16; --nj-surface-2: #10151f; --nj-surface-3: #181e2b; --nj-line: #223230;
+}
+
+/* ---------- Bambú: bosque de noche ---------- */
+.nj-app[data-dir="tanabata"][data-palette="bambu"] {
+  --nj-bg: #0b1613; --nj-surface: #10201b; --nj-surface-2: #152822; --nj-surface-3: #1d342c;
+  --nj-line: #2b4a3a; --nj-line-strong: #7fae7c;
+  --nj-text: #edf4ee; --nj-text-2: #c3d6c8; --nj-text-3: #9cb5a3;
+  --nj-accent: #d8ebb5; --nj-on-accent: #13220f; --nj-accent-soft: #24402f; --nj-on-accent-soft: #dff0d6;
+}
+.nj-app[data-dir="tanabata"][data-palette="bambu"][data-mode="light"] {
+  --nj-bg: #e2eadf; --nj-surface: #edf3ea; --nj-surface-2: #d7e2d1; --nj-surface-3: #cbd9c4;
+  --nj-line: #a8c09a; --nj-line-strong: #4b7040;
+  --nj-text: #142019; --nj-text-2: #374a3d; --nj-text-3: #46594b;
+  --nj-accent: #2f5c2a; --nj-on-accent: #ffffff; --nj-accent-soft: #b6cfa6; --nj-on-accent-soft: #183516;
+}
+.nj-app[data-dir="tanabata"][data-palette="bambu"][data-mode="oled"] {
+  --nj-bg: #000000; --nj-surface: #07110e; --nj-surface-2: #0c1915; --nj-surface-3: #13241e; --nj-line: #1f3a2c;
+}
+
+/* ==========================================================================
+   Superficies del navegador y shell
+   ========================================================================== */
+.nj-app[data-dir="tanabata"] ::selection { background: var(--nj-accent); color: var(--nj-on-accent); }
+.nj-app[data-dir="tanabata"] { caret-color: var(--nj-focus); font-variant-numeric: tabular-nums; }
+.nj-app[data-dir="tanabata"] ::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--nj-line-strong) 45%, transparent); }
+.nj-app[data-dir="tanabata"] :focus-visible { outline: 2px solid var(--nj-focus); outline-offset: 2px; }
+.nj-app[data-dir="tanabata"] :where(button, a[href], summary, label[for], [role="button"], [role="tab"], [role="radio"], [role="switch"], input[type="checkbox"], input[type="range"]) { cursor: pointer; }
+.nj-app[data-dir="tanabata"] :where(button:disabled, [aria-disabled="true"]) { cursor: not-allowed; }
+/* De día el suelo es washi teñido, con fibras suaves. */
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-main { background-image: var(--tz-washi-soft); background-size: 240px 240px; }
+
+/* Rieles de bambú: hairline con nodos cada 176 px. */
+.nj-app[data-dir="tanabata"] .nj-topbar {
+  border-bottom: 0; height: 46px;
+  background:
+    repeating-linear-gradient(90deg, var(--nj-line) 0 173px, transparent 173px 176px) left bottom / 100% 1px no-repeat,
+    var(--nj-bg);
+}
+.nj-app[data-dir="tanabata"] .nj-topbar .nj-brand { font-family: var(--nj-font-display); font-weight: 800; font-size: 14px; letter-spacing: .01em; }
+.nj-app[data-dir="tanabata"] .nj-linkchip { background: var(--nj-surface-2); color: var(--nj-text); border-radius: var(--nj-r-s); box-shadow: inset 0 0 0 1px var(--nj-line); }
+.nj-app[data-dir="tanabata"] .nj-cmd { border-radius: var(--nj-r-m); background: var(--nj-surface); border-color: var(--nj-line); color: var(--nj-text-2); }
+.nj-app[data-dir="tanabata"] .nj-cmd:hover { border-color: var(--nj-line-strong); }
+.nj-app[data-dir="tanabata"] .nj-rail {
+  background:
+    repeating-linear-gradient(180deg, var(--nj-line) 0 173px, transparent 173px 176px) right top / 1px 100% no-repeat,
+    var(--nj-bg);
+}
+.nj-app[data-dir="tanabata"] .nj-rail-item { font-weight: 700; border-radius: var(--nj-r-s); }
+.nj-app[data-dir="tanabata"] .nj-rail-item .nj-pill { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="tanabata"] .nj-rail-item:hover { color: var(--nj-text); }
+.nj-app[data-dir="tanabata"] .nj-rail-item[aria-current="page"] .nj-pill { background: var(--nj-accent-soft); color: var(--nj-on-accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nj-on-accent-soft) 16%, transparent); }
+.nj-app[data-dir="tanabata"] .nj-bottombar {
+  background:
+    repeating-linear-gradient(90deg, var(--nj-line) 0 173px, transparent 173px 176px) left top / 100% 1px no-repeat,
+    var(--nj-surface);
+}
+.nj-app[data-dir="tanabata"] .nj-bottombar .nj-rail-item { min-height: 56px; }
+.nj-app[data-dir="tanabata"] .nj-divider { height: 1px; background: repeating-linear-gradient(90deg, var(--nj-line) 0 173px, transparent 173px 176px); }
+
+/* Tipo */
+.nj-app[data-dir="tanabata"] .nj-h1 { font-weight: 800; letter-spacing: -0.015em; }
+.nj-app[data-dir="tanabata"] .nj-h2 { font-weight: 700; letter-spacing: -0.005em; }
+.nj-app[data-dir="tanabata"] .nj-h3 { font-weight: 700; }
+.nj-app[data-dir="tanabata"] .nj-kbd { border-radius: var(--nj-r-xs); border-color: var(--nj-line-strong); }
+
+/* ==========================================================================
+   Controles
+   ========================================================================== */
+.nj-app[data-dir="tanabata"] .nj-btn { border-radius: var(--nj-r-m); font-weight: 700; }
+.nj-app[data-dir="tanabata"] .nj-btn:hover { background-color: color-mix(in srgb, var(--nj-surface-3) 82%, var(--nj-text)); }
+.nj-app[data-dir="tanabata"] .nj-btn.is-filled:hover { background-color: color-mix(in srgb, var(--nj-accent) 88%, var(--nj-text)); }
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-btn.is-filled:hover { background-color: color-mix(in srgb, var(--nj-accent) 86%, #000); }
+.nj-app[data-dir="tanabata"] .nj-btn.is-tonal:hover { background-color: color-mix(in srgb, var(--nj-accent-soft) 85%, var(--nj-on-accent-soft)); }
+.nj-app[data-dir="tanabata"] .nj-btn.is-outline { border-color: var(--nj-line-strong); }
+.nj-app[data-dir="tanabata"] .nj-btn.is-outline:hover, .nj-app[data-dir="tanabata"] .nj-btn.is-text:hover { background-color: color-mix(in srgb, var(--nj-text) 8%, transparent); }
+.nj-app[data-dir="tanabata"] .nj-btn:disabled { opacity: .45; }
+.nj-app[data-dir="tanabata"] .nj-btn.is-filled { box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--nj-on-accent) 14%, transparent); }
+.nj-app[data-dir="tanabata"] .nj-iconbtn:hover { background: color-mix(in srgb, var(--nj-text) 10%, transparent); color: var(--nj-text); }
+.nj-app[data-dir="tanabata"] .nj-iconbtn.is-filled:hover { background: color-mix(in srgb, var(--nj-accent) 88%, var(--nj-text)); color: var(--nj-on-accent); }
+
+.nj-app[data-dir="tanabata"] .nj-chip { border-radius: var(--nj-r-s); border-color: var(--nj-line-strong); color: var(--nj-text); font-weight: 700; position: relative; }
+.nj-app[data-dir="tanabata"] .nj-chip:hover { background: color-mix(in srgb, var(--nj-text) 7%, transparent); }
+.nj-app[data-dir="tanabata"] .nj-chip[aria-pressed="true"] { background: var(--nj-accent); color: var(--nj-on-accent); border-color: transparent; }
+.nj-app[data-dir="tanabata"][data-platform="android"] .nj-chip { height: 36px; }
+.nj-app[data-dir="tanabata"][data-platform="android"] .nj-chip::after { content: ""; position: absolute; inset: -6px 0; }
+
+.nj-app[data-dir="tanabata"] .nj-seg { border-radius: var(--nj-r-m); border-color: var(--nj-line-strong); background: var(--nj-bg); }
+.nj-app[data-dir="tanabata"] .nj-seg button + button { border-left-color: var(--nj-line); }
+.nj-app[data-dir="tanabata"] .nj-seg button:hover { background: color-mix(in srgb, var(--nj-text) 7%, transparent); }
+.nj-app[data-dir="tanabata"] .nj-seg button[aria-checked="true"] { background: var(--nj-accent-soft); color: var(--nj-on-accent-soft); }
+.nj-app[data-dir="tanabata"][data-platform="android"] .nj-seg button { min-height: 48px; }
+
+.nj-app[data-dir="tanabata"] .nj-tabs { border-bottom: 0; background: repeating-linear-gradient(90deg, var(--nj-line) 0 173px, transparent 173px 176px) left bottom / 100% 1px no-repeat; }
+.nj-app[data-dir="tanabata"] .nj-tab { font-weight: 700; border-radius: var(--nj-r-s) var(--nj-r-s) 0 0; }
+.nj-app[data-dir="tanabata"] .nj-tab:hover { color: var(--nj-text); background: color-mix(in srgb, var(--nj-text) 5%, transparent); }
+.nj-app[data-dir="tanabata"] .nj-tab[aria-selected="true"] { color: var(--nj-text); }
+.nj-app[data-dir="tanabata"] .nj-tab[aria-selected="true"]::after { background: var(--nj-accent); height: 3px; border-radius: 2px 2px 0 0; }
+.nj-app[data-dir="tanabata"][data-platform="android"] .nj-tab { min-height: 48px; }
+
+.nj-app[data-dir="tanabata"] .nj-toggle input { border-color: var(--nj-line-strong); background: var(--nj-surface-2); }
+.nj-app[data-dir="tanabata"] .nj-toggle input:checked { background: var(--nj-accent); border-color: var(--nj-accent); }
+.nj-app[data-dir="tanabata"] .nj-toggle input:checked::after { background: var(--nj-on-accent); }
+.nj-app[data-dir="tanabata"] .nj-toggle:hover input:not(:checked) { border-color: var(--nj-text-2); }
+.nj-app[data-dir="tanabata"] .nj-slider input[type="range"] { accent-color: var(--nj-accent); }
+
+.nj-app[data-dir="tanabata"] .nj-field, .nj-app[data-dir="tanabata"] .nj-search { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="tanabata"] .nj-search { background: var(--nj-surface); border-color: var(--nj-line); }
+.nj-app[data-dir="tanabata"] .nj-search:focus-within, .nj-app[data-dir="tanabata"] .nj-field:focus-within { border-color: var(--nj-focus); }
+.nj-app[data-dir="tanabata"] .nj-menu { border-radius: var(--nj-r-m); background: var(--nj-surface-2); box-shadow: var(--nj-shadow-2), inset 0 0 0 1px var(--nj-line); }
+.nj-app[data-dir="tanabata"] .nj-menu-item { border-radius: var(--nj-r-s); margin: 0 6px; }
+.nj-app[data-dir="tanabata"] .nj-dialog { border-radius: var(--nj-r-l); background: var(--nj-surface-2); box-shadow: var(--nj-shadow-3), inset 0 0 0 1px var(--nj-line); }
+.nj-app[data-dir="tanabata"] .nj-badge { border-radius: var(--nj-r-xs); background: var(--nj-surface-3); color: var(--nj-text); }
+.nj-app[data-dir="tanabata"] .nj-progress { background: color-mix(in srgb, var(--nj-line-strong) 30%, transparent); border-radius: 2px; }
+.nj-app[data-dir="tanabata"] .nj-progress > i { background: var(--nj-accent); border-radius: 2px; }
+.nj-app[data-dir="tanabata"] .nj-list-row { border-radius: var(--nj-r-s); }
+
+/* Hojas y paneles: papel con asa de bambú. */
+.nj-app[data-dir="tanabata"] :is(.nj-sheet, [data-region="sheet"]) {
+  background: var(--tz-washi) 0 0 / 200px 200px, var(--nj-surface);
+  box-shadow: var(--nj-shadow-3), inset 0 1px 0 color-mix(in srgb, var(--nj-text) 8%, transparent);
+}
+.nj-app[data-dir="tanabata"] .nj-sheet { border-radius: var(--nj-r-xl) var(--nj-r-xl) 0 0; }
+.nj-app[data-dir="tanabata"] .nj-sheet::before { width: 40px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--tz-bamboo) 0 46%, var(--tz-bamboo-lo) 46% 54%, var(--tz-bamboo) 54%); }
+.nj-app[data-dir="tanabata"] .nj-sheet.is-side { border-radius: var(--nj-r-l) 0 0 var(--nj-r-l); }
+
+/* Snackbar: un aviso escrito en papel. */
+.nj-app[data-dir="tanabata"] .nj-snackbar {
+  background: var(--tz-washi) 0 0 / 160px 160px, var(--tz-p-none); color: var(--tz-ink);
+  border-radius: var(--nj-r-s); box-shadow: var(--tz-paper-shadow); font-weight: 500;
+}
+.nj-app[data-dir="tanabata"] .nj-snackbar .nj-btn.is-text { color: #22307a; font-weight: 800; }
+.nj-app[data-dir="tanabata"] .nj-snackbar .nj-btn.is-text:hover { background: rgb(20 16 42 / .08); }
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-snackbar { background: #1d2350; color: #f1eadb; box-shadow: var(--nj-shadow-2); }
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-snackbar .nj-btn.is-text { color: #c3cdff; }
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-snackbar .nj-btn.is-text:hover { background: rgb(255 255 255 / .1); }
+.nj-app[data-dir="tanabata"] .nj-tooltip { background: var(--tz-p-none); color: var(--tz-ink); border-radius: var(--nj-r-xs); }
+
+/* Chip de estado: un tanzaku mínimo con su agujero. */
+.nj-app[data-dir="tanabata"] .nj-status {
+  background: var(--tz-paper); color: var(--tz-ink); border-radius: var(--nj-r-xs);
+  padding: 2px 8px 2px 6px; font-weight: 800; letter-spacing: .01em;
+}
+.nj-app[data-dir="tanabata"] .nj-status::before { width: 6px; height: 6px; background: var(--nj-bg); box-shadow: inset 0 0 0 1px rgb(20 16 42 / .45); }
+.nj-app[data-dir="tanabata"] .nj-card .nj-card-badges .nj-status { background: var(--tz-paper); }
+
+/* ==========================================================================
+   Tarjetas tanzaku (todas las variantes). Usan solo --nj-* y --tz-*, por eso se mezclan con cualquier dirección.
+   ========================================================================== */
+.nj-card.tz {
+  --tz-w: 150px; --tz-thread-h: 16px;
+  --tz-inked: color-mix(in oklab, var(--tz-paper) 84%, var(--tz-ink));
+  --tz-edge: color-mix(in oklab, var(--tz-paper) 66%, var(--tz-ink));
+  width: var(--tz-w); align-self: start; display: block; padding: 0; border: 0; background: transparent;
+  color: var(--nj-text); text-align: left; cursor: pointer; position: relative; font-family: var(--nj-font-ui);
+  -webkit-tap-highlight-color: transparent;
+}
+.nj-card.tz[data-size="s"] { --tz-w: 112px; }
+.nj-card.tz[data-size="l"] { --tz-w: 196px; }
+.nj-card.tz[data-context="hero"] { --tz-w: 220px; }
+.nj-card.tz[data-context="hero"][data-size="s"] { --tz-w: 176px; }
+.nj-card.tz[data-context="hero"][data-size="l"] { --tz-w: 260px; }
+.nj-grid > .nj-card.tz { width: auto; }
+.nj-card.tz img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* La tira que oscila: pivota en el extremo superior del hilo. */
+.nj-card.tz .tz-hang { display: block; position: relative; transform-origin: 50% 0; }
+.nj-card.tz .tz-thread { display: none; }
+.nj-card.tz-hangs .tz-hang { padding-top: var(--tz-thread-h); }
+.nj-card.tz-hangs .tz-thread {
+  display: block; position: absolute; left: calc(50% - 0.75px); top: 0; width: 1.5px; height: calc(var(--tz-thread-h) + 10px);
+  background: var(--tz-thread); border-radius: 1px; z-index: 2; pointer-events: none;
+}
+/* nudo sobre el agujero del papel */
+.nj-card.tz-hangs .tz-thread::after {
+  content: ""; position: absolute; left: 50%; bottom: 1px; width: 7px; height: 5px; translate: -50% 0;
+  border-radius: 50%; background: var(--tz-thread); box-shadow: 0 1px 0 rgb(0 0 0 / .25);
+}
+/* Héroe sin fila: su propio trozo de vara. */
+.nj-card.tz .tz-stub {
+  position: absolute; top: -4px; left: 50%; width: 70%; height: 7px; translate: -50% 0; border-radius: 4px;
+  background: var(--tz-rod); background-size: 100% 7px; z-index: 1;
+}
+
+/* Papel */
+.nj-card.tz .tz-paper {
+  display: block; position: relative; border-radius: 2px; color: var(--tz-ink);
+  background: var(--tz-washi) 0 0 / 160px 160px, var(--tz-paper);
+  box-shadow: var(--tz-paper-shadow);
+  transition: box-shadow var(--nj-dur-2) var(--nj-ease), background-color var(--nj-dur-2) var(--nj-ease);
+}
+/* Agujero del hilo */
+.nj-card.tz .tz-paper::before {
+  content: ""; position: absolute; top: 6px; left: 50%; width: 6px; height: 6px; translate: -50% 0; border-radius: 50%;
+  background: var(--nj-bg); box-shadow: inset 0 0 0 1px rgb(20 16 42 / .4); z-index: 1;
+}
+/* Tinta que baja con el progreso */
+.nj-card.tz .tz-ink.has-ink {
+  background-image:
+    var(--tz-washi),
+    linear-gradient(to bottom, var(--tz-inked) 0, var(--tz-inked) calc(var(--p) * 100% - 5px), var(--tz-edge) calc(var(--p) * 100% - 1px), transparent calc(var(--p) * 100% + 2px));
+  background-size: 160px 160px, 100% 100%;
+}
+.nj-card.tz .tz-text.tz-ink.has-ink { background-color: transparent; background-image: linear-gradient(to bottom, var(--tz-inked) 0, var(--tz-inked) calc(var(--p) * 100% - 5px), var(--tz-edge) calc(var(--p) * 100% - 1px), transparent calc(var(--p) * 100% + 2px)); background-size: 100% 100%; }
+
+.nj-card.tz .tz-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 700; font-size: var(--nj-fs-s); line-height: 1.3; }
+.nj-card.tz .tz-sub { display: block; font-size: var(--nj-fs-xs); font-weight: 500; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nj-card.tz .tz-wish, .nj-card.tz .tz-sub.is-wish { display: block; font-family: var(--nj-font-ui); font-weight: 500; font-size: var(--nj-fs-s); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nj-card.tz .tz-score { position: absolute; right: 4px; bottom: 4px; display: inline-flex; align-items: center; gap: 2px; padding: 1px 5px; border-radius: var(--nj-r-xs); background: rgb(14 18 48 / .82); color: #fff2d6; font-size: var(--nj-fs-xs); font-weight: 800; }
+.nj-card.tz .tz-score .nj-ic { color: #ffcf7a; }
+
+/* Estados de interacción comunes */
+.nj-card.tz:hover .tz-paper { box-shadow: var(--tz-paper-shadow), 0 0 0 1px color-mix(in srgb, var(--tz-ink) 30%, transparent); }
+.nj-card.tz:active .tz-paper { background-color: var(--tz-inked); }
+.nj-card.tz:focus-visible { outline: none; }
+.nj-card.tz:focus-visible :is(.tz-paper, .tz-art) { outline: 2px solid var(--nj-focus); outline-offset: 3px; }
+.nj-app[data-motion="full"] .nj-card.tz:focus-visible :is(.tz-paper, .tz-art) { box-shadow: var(--tz-paper-shadow), 0 10px 22px -8px color-mix(in srgb, var(--nj-focus) 55%, transparent); }
+.nj-card.tz[data-style="tanzaku-sello"]:focus-visible .tz-paper, .nj-card.tz[data-style="tanzaku-hilo"]:focus-visible .tz-musubi { outline: none; box-shadow: var(--tz-paper-shadow); }
+
+/* ---------- tanzaku ---------- */
+.nj-card.tz[data-style="tanzaku"] .tz-paper { padding: 16px 6px 2px; }
+.nj-card.tz[data-style="tanzaku"] .tz-art { display: block; position: relative; aspect-ratio: 2 / 3; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--tz-ink) 18%, var(--tz-paper)); }
+.nj-card.tz[data-style="tanzaku"] .tz-text { display: grid; gap: 2px; padding: 8px 3px 10px; margin: 0 -6px; padding-inline: 9px; min-height: 64px; align-content: start; }
+.nj-card.tz[data-style="tanzaku"][data-size="s"] .tz-paper { padding: 14px 5px 2px; }
+.nj-card.tz[data-style="tanzaku"][data-size="s"] .tz-text { margin: 0 -5px; padding-inline: 7px; min-height: 56px; }
+.nj-card.tz[data-style="tanzaku"][data-size="s"] .tz-wish { display: none; }
+.nj-card.tz[data-style="tanzaku"][data-context="hero"] .tz-title { font-family: var(--nj-font-display); font-size: var(--nj-fs-l); font-weight: 800; }
+.nj-card.tz[data-style="tanzaku"][data-context="hero"] .tz-wish { font-size: var(--nj-fs-m); }
+.nj-card.tz[data-style="tanzaku"][data-context="wish"] .tz-wish { font-size: var(--nj-fs-m); }
+
+/* ---------- tanzaku-sello ---------- */
+.nj-card.tz[data-style="tanzaku-sello"] { display: grid; gap: 3px; padding-top: 8px; }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-art { display: block; position: relative; aspect-ratio: 2 / 3; border-radius: var(--nj-r-m); overflow: hidden; background: var(--nj-surface-3); box-shadow: var(--nj-shadow-1); margin-bottom: 5px; }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-strip { position: absolute; top: 0; right: 12%; width: 30%; min-width: 34px; max-width: 54px; z-index: 2; }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-strip .tz-thread { display: block; position: absolute; left: calc(50% - .75px); top: 0; width: 1.5px; height: 18px; background: var(--tz-thread); z-index: 2; }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-strip .tz-thread::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 7px; height: 5px; translate: -50% 0; border-radius: 50%; background: var(--tz-thread); }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-strip .tz-paper { margin-top: 8px; padding: 15px 2px 6px; display: grid; justify-items: center; gap: 4px; min-height: 84px; }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-vlabel { writing-mode: vertical-rl; font-size: 11px; font-weight: 800; letter-spacing: .04em; line-height: 1; white-space: nowrap; }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-ep { font-size: 10.5px; font-weight: 800; line-height: 1.1; text-align: center; white-space: nowrap; }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-ep .nj-ic { font-size: 15px; }
+.nj-card.tz[data-style="tanzaku-sello"][data-size="s"] .tz-ep { font-size: 9.5px; }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-title { color: var(--nj-text); }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-sub { color: var(--nj-text-2); }
+.nj-card.tz[data-style="tanzaku-sello"] .tz-sub.is-wish { color: var(--nj-text); }
+.nj-card.tz[data-style="tanzaku-sello"]:hover .tz-art { box-shadow: var(--nj-shadow-2); }
+.nj-card.tz[data-style="tanzaku-sello"][data-size="s"] .tz-strip .tz-paper { min-height: 70px; }
+.nj-card.tz[data-style="tanzaku-sello"][data-size="s"] .tz-vlabel { font-size: 10px; }
+.nj-card.tz[data-style="tanzaku-sello"][data-context="hero"] .tz-title { font-family: var(--nj-font-display); font-size: var(--nj-fs-l); font-weight: 800; }
+.nj-card.tz[data-style="tanzaku-sello"][data-context="hero"] .tz-strip .tz-paper { min-height: 118px; }
+
+/* ---------- tanzaku-vertical ---------- */
+.nj-card.tz[data-style="tanzaku-vertical"] { --tz-w: 74px; --tz-vh: 150px; }
+.nj-card.tz[data-style="tanzaku-vertical"][data-size="s"] { --tz-w: 60px; --tz-vh: 118px; }
+.nj-card.tz[data-style="tanzaku-vertical"][data-size="l"] { --tz-w: 90px; --tz-vh: 182px; }
+.nj-card.tz[data-style="tanzaku-vertical"][data-context="hero"] { --tz-w: 112px; --tz-vh: 220px; }
+.nj-card.tz[data-style="tanzaku-vertical"] .tz-paper { padding: 15px 5px 8px; display: grid; gap: 8px; justify-items: center; }
+.nj-card.tz[data-style="tanzaku-vertical"] .tz-art { display: block; width: 100%; aspect-ratio: 2 / 3; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--tz-ink) 18%, var(--tz-paper)); }
+.nj-card.tz[data-style="tanzaku-vertical"] .tz-vert { writing-mode: vertical-rl; block-size: auto; inline-size: var(--tz-vh); display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+.nj-card.tz[data-style="tanzaku-vertical"] .tz-vtitle { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 800; font-size: 14px; line-height: 1.2; letter-spacing: .03em; }
+.nj-card.tz[data-style="tanzaku-vertical"] .tz-vsub { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; font-size: 11px; line-height: 1.2; }
+.nj-card.tz[data-style="tanzaku-vertical"] .tz-vsub.is-wish { font-weight: 500; }
+.nj-card.tz[data-style="tanzaku-vertical"] .tz-foot { font-size: 10px; font-weight: 800; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+.nj-card.tz[data-style="tanzaku-vertical"][data-size="s"] .tz-vtitle { font-size: 12.5px; }
+.nj-card.tz[data-style="tanzaku-vertical"][data-size="l"] .tz-vtitle, .nj-card.tz[data-style="tanzaku-vertical"][data-context="hero"] .tz-vtitle { font-size: 16px; }
+.nj-grid > .nj-card.tz[data-style="tanzaku-vertical"] .tz-art { width: 72%; }
+
+/* ---------- tanzaku-hilo ---------- */
+.nj-card.tz[data-style="tanzaku-hilo"] { display: grid; gap: 3px; }
+.nj-card.tz[data-style="tanzaku-hilo"] .tz-hang { padding-top: 12px; }
+.nj-card.tz-hangs[data-style="tanzaku-hilo"] .tz-hang { padding-top: calc(var(--tz-thread-h) + 8px); }
+.nj-card.tz-hangs[data-style="tanzaku-hilo"] .tz-thread { height: calc(var(--tz-thread-h) + 6px); }
+.nj-card.tz-hangs[data-style="tanzaku-hilo"] .tz-thread::after { display: none; }
+.nj-card.tz[data-style="tanzaku-hilo"] .tz-art { display: block; position: relative; aspect-ratio: 2 / 3; border-radius: var(--nj-r-s); overflow: hidden; background: var(--nj-surface-3); box-shadow: var(--nj-shadow-2); }
+/* Nudo de papel (musubi) del color del estado, atado al borde superior del póster. */
+.nj-card.tz[data-style="tanzaku-hilo"] .tz-musubi {
+  position: absolute; left: 50%; top: calc(100% - 100% + var(--tz-thread-h) - 2px); translate: -50% 0; width: 30px; height: 14px; z-index: 3;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--tz-paper) 70%, var(--tz-ink)) 0 3px, transparent 3.5px),
+    conic-gradient(from 90deg at 50% 50%, var(--tz-paper) 0 25%, color-mix(in oklab, var(--tz-paper) 85%, var(--tz-ink)) 25% 50%, var(--tz-paper) 50% 75%, color-mix(in oklab, var(--tz-paper) 85%, var(--tz-ink)) 75%);
+  clip-path: polygon(0 0, 50% 40%, 100% 0, 100% 100%, 50% 60%, 0 100%);
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / .35));
+}
+.nj-card.tz[data-style="tanzaku-hilo"]:not(.tz-hangs) .tz-musubi { top: 4px; }
+.nj-card.tz[data-style="tanzaku-hilo"] .tz-line { display: block; height: 3px; margin: 4px 2px 2px; border-radius: 2px; background: linear-gradient(90deg, var(--nj-accent) 0 calc(var(--p) * 100%), color-mix(in srgb, var(--nj-line-strong) 35%, transparent) calc(var(--p) * 100%)); }
+.nj-card.tz[data-style="tanzaku-hilo"] .tz-title { color: var(--nj-text); margin-top: 4px; }
+.nj-card.tz[data-style="tanzaku-hilo"] .tz-sub { color: var(--nj-text-2); }
+.nj-card.tz[data-style="tanzaku-hilo"] .tz-sub.is-wish { color: var(--nj-text); }
+.nj-card.tz[data-style="tanzaku-hilo"]:hover .tz-art { box-shadow: var(--nj-shadow-3); }
+.nj-card.tz[data-style="tanzaku-hilo"][data-context="hero"] .tz-title { font-family: var(--nj-font-display); font-size: var(--nj-fs-l); font-weight: 800; }
+
+/* ---------- Continuar (todas las variantes): tira ancha colgante ---------- */
+.nj-card.tz[data-context="continue"] { --tz-w: 300px; grid-template-columns: none; background: transparent; padding: 0; border-radius: 0; }
+.nj-card.tz[data-context="continue"][data-size="s"] { --tz-w: 260px; }
+.nj-card.tz[data-context="continue"][data-size="l"] { --tz-w: 340px; }
+.nj-stack > .nj-card.tz[data-context="continue"], .nj-grid > .nj-card.tz[data-context="continue"] { width: 100%; max-width: 420px; }
+.nj-card.tz[data-context="continue"] .tz-paper { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 10px 10px 10px; min-height: 100px; }
+.nj-card.tz[data-context="continue"] .tz-paper::before { left: 50%; top: 4px; }
+.nj-card.tz[data-context="continue"] .tz-thumb { display: block; aspect-ratio: 2 / 3; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--tz-ink) 18%, var(--tz-paper)); }
+.nj-card.tz[data-context="continue"] .tz-text { display: grid; gap: 2px; min-width: 0; padding: 0; background: none; margin: 0; min-height: 0; }
+.nj-card.tz[data-context="continue"] .tz-title { font-size: var(--nj-fs-m); }
+.nj-card.tz[data-context="continue"] .tz-play { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--tz-ink); color: var(--tz-paper); }
+.nj-card.tz[data-context="continue"]:hover .tz-play { background: #000; }
+.nj-card.tz[data-context="continue"] .tz-vert { writing-mode: vertical-rl; inline-size: 80px; overflow: hidden; }
+.nj-card.tz[data-context="continue"] .tz-vtitle { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 800; font-size: 13px; }
+.nj-card.tz[data-style="tanzaku-vertical"][data-context="continue"] .tz-paper { grid-template-columns: 50px auto minmax(0, 1fr) auto; }
+.nj-card.tz[data-style="tanzaku-hilo"][data-context="continue"] .tz-paper,
+.nj-card.tz[data-style="tanzaku-sello"][data-context="continue"] .tz-paper { background: var(--nj-surface-2); color: var(--nj-text); box-shadow: inset 0 0 0 1px var(--nj-line); border-radius: var(--nj-r-m); }
+.nj-card.tz[data-style="tanzaku-hilo"][data-context="continue"] .tz-paper::before,
+.nj-card.tz[data-style="tanzaku-sello"][data-context="continue"] .tz-paper::before { display: none; }
+.nj-card.tz[data-style="tanzaku-hilo"][data-context="continue"] .tz-thumb,
+.nj-card.tz[data-style="tanzaku-sello"][data-context="continue"] .tz-thumb { border-radius: var(--nj-r-s); box-shadow: 0 -4px 0 -1px var(--tz-paper); }
+.nj-card.tz[data-style="tanzaku-hilo"][data-context="continue"] .tz-wish,
+.nj-card.tz[data-style="tanzaku-sello"][data-context="continue"] .tz-wish { display: inline-block; justify-self: start; font-family: var(--nj-font-ui); font-size: var(--nj-fs-xs); font-weight: 800; padding: 1px 7px; border-radius: var(--nj-r-xs); background: var(--tz-paper); color: var(--tz-ink); }
+.nj-card.tz[data-style="tanzaku-hilo"][data-context="continue"] .tz-play,
+.nj-card.tz[data-style="tanzaku-sello"][data-context="continue"] .tz-play { background: var(--nj-accent); color: var(--nj-on-accent); }
+.nj-card.tz[data-style="tanzaku-hilo"][data-context="continue"] .tz-ink.has-ink,
+.nj-card.tz[data-style="tanzaku-sello"][data-context="continue"] .tz-ink.has-ink {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--nj-accent) 14%, transparent) 0 calc(var(--p) * 100%), transparent calc(var(--p) * 100%));
+  background-size: 100% 100%;
+}
+
+/* ---------- Compacta (todas): fila con etiqueta tanzaku ---------- */
+.nj-card.tz[data-context="compact"] { --tz-w: 100%; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 6px 8px; border-radius: var(--nj-r-s); min-height: 64px; }
+.nj-card.tz[data-context="compact"]:hover { background: color-mix(in srgb, var(--nj-text) 6%, transparent); }
+.nj-card.tz[data-context="compact"]:focus-visible { outline: 2px solid var(--nj-focus); outline-offset: 0; }
+.nj-card.tz[data-context="compact"] .tz-thumb { display: block; aspect-ratio: 2 / 3; border-radius: var(--nj-r-xs); overflow: hidden; background: var(--nj-surface-3); }
+.nj-card.tz[data-context="compact"] .tz-text { display: grid; gap: 2px; min-width: 0; }
+.nj-card.tz[data-context="compact"] .tz-title { -webkit-line-clamp: 1; font-size: var(--nj-fs-m); }
+.nj-card.tz[data-context="compact"] .tz-sub { color: var(--nj-text-2); }
+.nj-card.tz .tz-tag {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: var(--nj-r-xs);
+  background: var(--tz-washi) 0 0 / 120px 120px, var(--tz-paper); color: var(--tz-ink); font-size: var(--nj-fs-xs); font-weight: 800; white-space: nowrap;
+  box-shadow: 0 1px 0 rgb(0 0 0 / .18);
+}
+.nj-card.tz .tz-tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--nj-bg); box-shadow: inset 0 0 0 1px rgb(20 16 42 / .45); }
+.nj-app[data-platform="android"] .nj-card.tz[data-context="compact"] { min-height: 64px; }
+
+/* ==========================================================================
+   Varas de bambú: filas con tarjetas colgantes (CSS para cualquier dirección; decorate marca las demás).
+   ========================================================================== */
+.nj-row:has(> .nj-card.tz-hangs), .nj-app [data-tz-rod], .nj-app [data-region="tonight"]:is(.nj-row):has(.nj-card.tz-hangs), .nj-app [data-region="tonight"] .nj-row:has(.nj-card.tz-hangs) {
+  padding-top: 6px; padding-inline: 8px; margin-inline: -8px; scroll-padding-inline: 8px;
+  background-image: var(--tz-rod); background-repeat: no-repeat; background-size: 100% 7px, 100% 7px; background-position: 0 3px, 0 3px;
+  background-attachment: local, local;
+}
+.nj-row:has(> .nj-card.tz-hangs) { align-items: flex-start; }
+.nj-card.tz:not(.tz-hangs) .tz-paper { margin-top: 0; }
+/* Fuera de una vara no hay hilo: el papel solo muestra su agujero. */
+.nj-card.tz-hangs:not([data-context="hero"]):not(:is(.nj-row, [data-tz-rod], [data-region="tonight"]) .nj-card) .tz-thread { display: none; }
+.nj-card.tz-hangs:not([data-context="hero"]):not(:is(.nj-row, [data-tz-rod], [data-region="tonight"]) .nj-card) .tz-hang { padding-top: 0; }
+.nj-card.tz-hangs[data-style="tanzaku-hilo"]:not([data-context="hero"]):not(:is(.nj-row, [data-tz-rod], [data-region="tonight"]) .nj-card) .tz-hang { padding-top: 12px; }
+.nj-card.tz-hangs[data-style="tanzaku-hilo"]:not([data-context="hero"]):not(:is(.nj-row, [data-tz-rod], [data-region="tonight"]) .nj-card) .tz-musubi { top: 4px; }
+
+/* ==========================================================================
+   Regiones (data-region): cambian el material, no la organización.
+   ========================================================================== */
+/* Esta noche: la vara principal, más gruesa, con hilos largos. */
+.nj-app[data-dir="tanabata"] [data-region="tonight"] { --tz-thread-h: 22px; }
+.nj-app[data-dir="tanabata"] [data-region="tonight"] :is(.nj-row, [data-tz-rod]) {
+  background-size: 100% 9px, 100% 9px; padding-top: 7px;
+}
+/* Cascada al entrar en Inicio */
+@keyframes tz-cuelga {
+  0% { transform: translateY(-18px) rotate(-6deg); }
+  36% { transform: translateY(2px) rotate(4.5deg); }
+  58% { transform: translateY(0) rotate(-2.4deg); }
+  76% { transform: rotate(1.1deg); }
+  90% { transform: rotate(-.4deg); }
+  100% { transform: none; }
+}
+@keyframes tz-funde { from { opacity: .6; } to { opacity: 1; } }
+.nj-app[data-dir="tanabata"][data-motion="full"] [data-region="tonight"] .nj-card.tz .tz-hang {
+  animation: tz-cuelga 900ms cubic-bezier(.33, 0, .3, 1) both; animation-delay: calc(var(--tz-i, 0) * 60ms);
+}
+.nj-app[data-dir="tanabata"][data-tz-settled] [data-region="tonight"] .nj-card.tz .tz-hang { animation: none; }
+
+/* Agenda: el farol marca lo que se emite ahora. */
+.nj-app[data-dir="tanabata"] [data-region="airing"] [data-tz-now] {
+  position: relative; border-radius: var(--nj-r-m);
+  box-shadow: 0 0 0 1.5px var(--tz-lantern);
+  background-color: color-mix(in srgb, var(--tz-lantern) 9%, transparent);
+}
+.nj-app[data-dir="tanabata"] [data-region="airing"] [data-tz-now]::after {
+  content: ""; position: absolute; top: -8px; left: 14px; width: 11px; height: 15px; border-radius: 5px / 6px; z-index: 2; pointer-events: none;
+  background:
+    linear-gradient(#5a2e00, #5a2e00) 50% 0 / 5px 2px no-repeat,
+    linear-gradient(#5a2e00, #5a2e00) 50% 100% / 5px 2px no-repeat,
+    repeating-linear-gradient(to bottom, transparent 0 3px, rgb(120 60 0 / .35) 3px 4px),
+    radial-gradient(ellipse at 50% 45%, #fff1cf 0 25%, #ffb54d 60%, #f08a1c 100%);
+}
+.nj-app[data-dir="tanabata"][data-motion="full"] [data-region="airing"] [data-tz-now] { box-shadow: 0 0 0 1.5px var(--tz-lantern), 0 12px 26px -10px color-mix(in srgb, var(--tz-lantern) 60%, transparent); }
+.nj-app[data-dir="tanabata"][data-motion="full"] [data-region="airing"] [data-tz-now]::after { box-shadow: 0 5px 12px -3px color-mix(in srgb, #f59a2a 65%, transparent); }
+
+/* Selector de estado: tiras de colores. */
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is([data-value="watching"], [data-status="watching"]) { --tz-paper: var(--tz-p-watching); }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is([data-value="planning"], [data-status="planning"]) { --tz-paper: var(--tz-p-planning); }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is([data-value="completed"], [data-status="completed"]) { --tz-paper: var(--tz-p-completed); }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is([data-value="paused"], [data-status="paused"]) { --tz-paper: var(--tz-p-paused); }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is([data-value="dropped"], [data-status="dropped"]) { --tz-paper: var(--tz-p-dropped); }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is([data-value="rewatching"], [data-status="rewatching"]) { --tz-paper: var(--tz-p-rewatching); }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] .nj-seg { border: 0; gap: 6px; overflow: visible; flex-wrap: wrap; background: transparent; }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] .nj-seg button + button { border-left: 0; }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is(.nj-seg button, .nj-chip, [role="radio"], [role="option"]) {
+  position: relative; border-radius: var(--nj-r-xs); padding-top: 6px; color: var(--nj-text); font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--tz-paper) 55%, transparent);
+  background: color-mix(in srgb, var(--tz-paper) 14%, transparent);
+}
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is(.nj-seg button, .nj-chip, [role="radio"], [role="option"]):hover { background: color-mix(in srgb, var(--tz-paper) 26%, transparent); }
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"]) {
+  background: var(--tz-washi) 0 0 / 120px 120px, var(--tz-paper); color: var(--tz-ink); border-color: transparent; box-shadow: var(--tz-paper-shadow);
+}
+.nj-app[data-dir="tanabata"] [data-region="status-picker"] :is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"])::after {
+  content: ""; position: absolute; top: 3px; left: 50%; translate: -50% 0; width: 5px; height: 5px; border-radius: 50%; background: var(--nj-bg); box-shadow: inset 0 0 0 1px rgb(20 16 42 / .45);
+}
+.nj-app[data-dir="tanabata"][data-platform="android"] [data-region="status-picker"] :is(.nj-seg button, .nj-chip, [role="radio"], [role="option"]) { min-height: 48px; }
+
+/* Episodios: los vistos quedan entintados; el siguiente lleva el farol. */
+.nj-app[data-dir="tanabata"] [data-region="episodes"] { background-image: var(--tz-rail); background-size: 100% 1px; background-repeat: no-repeat; background-position: 0 0; }
+.nj-app[data-dir="tanabata"] :is([data-region="episodes"] .nj-ep, [data-region="airing"] [data-time]) { background-image: var(--tz-rail); background-size: 100% 1px; background-repeat: no-repeat; background-position: left bottom; }
+.nj-app[data-dir="tanabata"] [data-region="airing"] { background-image: var(--tz-rail); background-size: 100% 1px; background-repeat: no-repeat; background-position: 0 0; }
+.nj-app[data-dir="tanabata"] [data-region="episodes"] .nj-ep[data-watched="true"] { background-color: color-mix(in srgb, var(--tz-p-completed) 9%, transparent); }
+.nj-app[data-dir="tanabata"] [data-region="episodes"] .nj-ep[data-aired="false"] { color: var(--nj-text-2); background-image: repeating-linear-gradient(90deg, color-mix(in srgb, var(--nj-line) 70%, transparent) 0 6px, transparent 6px 12px); background-size: 100% 1px; background-repeat: no-repeat; background-position: left bottom; box-shadow: none; }
+.nj-app[data-dir="tanabata"] [data-region="episodes"] .nj-ep:is([data-tz-next], [data-next="true"]) { box-shadow: inset 0 0 0 1.5px var(--tz-lantern); border-radius: var(--nj-r-s); background-color: color-mix(in srgb, var(--tz-lantern) 8%, transparent); }
+
+/* Vacío: un tanzaku en blanco, todavía sin deseo escrito. */
+.nj-app[data-dir="tanabata"] [data-region="empty"]::before {
+  content: ""; display: block; width: 110px; height: 112px; margin: 0 auto 14px; flex: none; align-self: center;
+  background:
+    linear-gradient(var(--tz-thread), var(--tz-thread)) 54px 6px / 1.5px 22px no-repeat,
+    radial-gradient(circle at 55px 34px, var(--nj-bg) 0 3px, rgb(20 16 42 / .4) 3.5px, transparent 4.5px),
+    var(--tz-washi) 39px 26px / 32px 84px no-repeat,
+    linear-gradient(var(--tz-p-none), var(--tz-p-none)) 39px 26px / 32px 84px no-repeat,
+    var(--tz-rod);
+  background-size: 1.5px 22px, auto, 32px 84px, 32px 84px, 100% 7px, 100% 7px;
+  background-position: 54px 6px, 0 0, 39px 26px, 39px 26px, 0 4px, 0 4px;
+  background-repeat: no-repeat;
+  rotate: -3deg; transform-origin: 50% 0;
+}
+
+/* Link: rieles de bambú arriba y abajo, papel de fondo; el cable vivo es un hilo ámbar (ahora), el caído queda punteado. */
+.nj-app[data-dir="tanabata"] [data-region="link"] {
+  background-image: var(--tz-rail), var(--tz-rail), var(--tz-washi-soft);
+  background-size: calc(100% - 28px) 1px, calc(100% - 28px) 1px, 240px 240px;
+  background-position: 14px 10px, 14px calc(100% - 10px), 0 0;
+  background-repeat: no-repeat, no-repeat, repeat;
+}
+.nj-app[data-dir="tanabata"] [data-region="link"] path[data-state="connected"] { stroke: var(--tz-lantern); }
+.nj-app[data-dir="tanabata"] [data-region="link"] path[data-state="idle"] { stroke: var(--nj-line-strong); }
+.nj-app[data-dir="tanabata"] [data-region="link"] [data-device][data-state="connected"] { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tz-lantern) 70%, transparent); border-radius: var(--nj-r-m); }
+.nj-app[data-dir="tanabata"] [data-region="link"] [data-device][data-state="failed"] { box-shadow: inset 0 0 0 1.5px var(--nj-err); border-radius: var(--nj-r-m); }
+
+/* Héroe: tipografía display y legibilidad sobre la imagen. */
+.nj-app[data-dir="tanabata"] [data-region="hero"] .nj-h1 { font-family: var(--nj-font-display); font-weight: 800; letter-spacing: -0.02em; }
+.nj-app[data-dir="tanabata"][data-mode="dark"] [data-region="hero"] .nj-h1,
+.nj-app[data-dir="tanabata"][data-mode="oled"] [data-region="hero"] .nj-h1 { text-shadow: 0 2px 18px rgb(6 8 26 / .55); }
+
+/* Barra del reproductor: capítulos como nodos de bambú. */
+.nj-app[data-dir="tanabata"] [data-region="player-seek"] .nj-progress > i { background: var(--nj-accent); }
+
+/* ==========================================================================
+   Perfiles de movimiento
+   ========================================================================== */
+/* Calmo: sin balanceo ni cascada; solo fundido corto. */
+.nj-app[data-motion="calm"] .nj-card.tz .tz-hang { rotate: none !important; }
+.nj-app[data-dir="tanabata"][data-motion="calm"] [data-region="tonight"] .nj-card.tz .tz-hang { animation: tz-funde 140ms ease-out both !important; }
+.nj-app[data-dir="tanabata"][data-motion="calm"][data-tz-settled] [data-region="tonight"] .nj-card.tz .tz-hang { animation: none !important; }
+
+/* Rendimiento: sin textura, sin sombras, sin física ni cascada. */
+.nj-app[data-motion="perf"] { --tz-washi: none; --tz-washi-soft: none; --tz-paper-shadow: 0 0 0 1px rgb(20 16 42 / .25); }
+.nj-app[data-motion="perf"] .nj-card.tz .tz-hang { rotate: none !important; animation: none !important; }
+.nj-app[data-motion="perf"] .nj-card.tz .tz-paper { transition: none; }
+.nj-app[data-motion="perf"] .nj-card.tz[data-style="tanzaku-hilo"] .tz-musubi { filter: none; }
+.nj-app[data-dir="tanabata"][data-motion="perf"][data-mode="light"] .nj-main { background-image: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nj-app .nj-card.tz .tz-hang { rotate: none !important; }
+  .nj-app[data-dir="tanabata"] [data-region="tonight"] .nj-card.tz .tz-hang { animation: tz-funde 140ms ease-out both !important; }
+  .nj-app[data-dir="tanabata"][data-tz-settled] [data-region="tonight"] .nj-card.tz .tz-hang,
+  .nj-app[data-dir="tanabata"][data-motion="perf"] [data-region="tonight"] .nj-card.tz .tz-hang { animation: none !important; }
+}
+.nj-card.tz .tz-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ==========================================================================
+   Esta noche: cada hueco es un tanzaku colgado de la vara, con su deseo escrito a pincel debajo.
+   ========================================================================== */
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] { --tz-w: 138px; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"][data-size="s"] { --tz-w: 140px; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"][data-size="l"] { --tz-w: 160px; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-paper { display: block; padding: 16px 6px 0; min-height: 0; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-paper.has-ink { background-image: var(--tz-washi); background-size: 160px 160px; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-thumb { display: block; width: 100%; aspect-ratio: 2 / 3; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-text { display: grid; gap: 2px; margin: 8px -6px 0; padding: 0 9px 8px; min-height: 54px; align-content: start; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-paper.has-ink .tz-text {
+  background-image: linear-gradient(to bottom, var(--tz-inked) 0, var(--tz-inked) calc(var(--p) * 100% - 5px), var(--tz-edge) calc(var(--p) * 100% - 1px), transparent calc(var(--p) * 100% + 2px));
+}
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-title { font-size: var(--nj-fs-s); }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-wish { font-family: var(--nj-font-ui); font-size: var(--nj-fs-xs); font-weight: 700; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-play { position: absolute; right: 12px; top: calc(16px + (var(--tz-w) - 12px) * 1.5 - 52px); box-shadow: 0 4px 10px -3px rgb(0 0 0 / .5); }
+.nj-app [data-region="tonight"] .nj-card.tz[data-context="continue"] .tz-vert { display: none; }
+.nj-card.tz .tz-ttl-alt { display: none; }
+.nj-app [data-region="tonight"] .nj-card.tz .tz-ttl-alt { display: -webkit-box; }
+/* sello e hilo dentro de Esta noche: también papel de estado, no tarjeta gris */
+.nj-app [data-region="tonight"] .nj-card.tz:is([data-style="tanzaku-hilo"], [data-style="tanzaku-sello"])[data-context="continue"] .tz-paper { background: var(--tz-washi) 0 0 / 160px 160px, var(--tz-paper); color: var(--tz-ink); box-shadow: var(--tz-paper-shadow); border-radius: 2px; }
+.nj-app [data-region="tonight"] .nj-card.tz:is([data-style="tanzaku-hilo"], [data-style="tanzaku-sello"])[data-context="continue"] .tz-paper::before { display: block; }
+.nj-app [data-region="tonight"] .nj-card.tz:is([data-style="tanzaku-hilo"], [data-style="tanzaku-sello"])[data-context="continue"] .tz-thumb { box-shadow: none; border-radius: 2px; }
+.nj-app [data-region="tonight"] .nj-card.tz:is([data-style="tanzaku-hilo"], [data-style="tanzaku-sello"])[data-context="continue"] .tz-wish { background: none; padding: 0; color: var(--tz-ink); }
+.nj-app [data-region="tonight"] .nj-card.tz:is([data-style="tanzaku-hilo"], [data-style="tanzaku-sello"])[data-context="continue"] .tz-play { background: var(--tz-ink); color: var(--tz-paper); }
+
+/* Botón reproducir: botón real dentro de la tarjeta <article>. */
+.nj-card.tz .tz-play { border: 0; padding: 0; cursor: pointer; flex: none; }
+.nj-card.tz .tz-play:hover { background: #000; }
+.nj-card.tz .tz-play:focus-visible { outline: 2px solid var(--nj-focus); outline-offset: 2px; }
+.nj-card.tz[data-context="continue"]:focus-visible { outline: none; }
+.nj-card.tz[data-context="continue"]:focus-visible .tz-paper { outline: 2px solid var(--nj-focus); outline-offset: 3px; }
+
+/* Recién salido: sello y nudo ámbar de farol. Próximo: sello de papel y hilo punteado. Retomar: solo su tinta. */
+.nj-app [data-region="tonight"] .nj-card.tz[data-tz-kind="new"] .tz-thread,
+.nj-app [data-region="tonight"] .nj-card.tz[data-tz-kind="new"] .tz-thread::after { background: #ffb54d; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-tz-kind="soon"] .tz-thread { background: repeating-linear-gradient(to bottom, var(--tz-thread) 0 3px, transparent 3px 6px); }
+.nj-app [data-region="tonight"] .nj-card.tz:is([data-tz-kind="new"], [data-tz-kind="soon"]) .tz-paper::after {
+  position: absolute; left: 10px; top: 21px; z-index: 2; padding: 1px 7px; border-radius: 3px; rotate: -4deg;
+  font: 800 10.5px/1.5 var(--nj-font-ui); letter-spacing: .02em;
+}
+.nj-app [data-region="tonight"] .nj-card.tz[data-tz-kind="new"] .tz-paper::after { content: "Nuevo"; background: linear-gradient(#ffc56b, #f59a2a); color: #2a1600; }
+.nj-app [data-region="tonight"] .nj-card.tz[data-tz-kind="soon"] .tz-paper::after { content: "Pronto"; background: var(--tz-p-none); color: var(--tz-ink); box-shadow: inset 0 0 0 1px rgb(20 16 42 / .35); }
+.nj-app[data-motion="full"] [data-region="tonight"] .nj-card.tz[data-tz-kind="new"] .tz-paper::after { box-shadow: 0 4px 10px -3px color-mix(in srgb, #f59a2a 70%, transparent); }
+
+/* Huecos de Esta noche: la tira arriba, el deseo a pincel debajo (sin cambiar el orden de lectura). */
+.nj-app[data-dir="tanabata"] [data-region="tonight"] > :has(> .nj-card.tz):not(.nj-card) {
+  display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 6px; width: 138px; animation: none !important; opacity: 1;
+}
+.nj-app[data-dir="tanabata"] [data-region="tonight"] > :has(> .nj-card.tz[data-size="s"]):not(.nj-card) { width: 140px; }
+.nj-app[data-dir="tanabata"] [data-region="tonight"] > :has(> .nj-card.tz) > :not(.nj-card) {
+  font-family: var(--nj-font-ui); font-size: var(--nj-fs-s); font-weight: 600; line-height: 1.35; color: var(--nj-text); align-items: flex-start; padding-inline: 2px;
+}
+.nj-app[data-dir="tanabata"] [data-region="tonight"] > :has(> .nj-card.tz) > :not(.nj-card) .nj-ic { color: var(--nj-text-2); margin-top: 1px; }
+.nj-app[data-dir="tanabata"] [data-region="tonight"] > :has(> .nj-card.tz[data-tz-kind="new"]) > :not(.nj-card) .nj-ic { color: var(--tz-lantern); }
+
+/* Voz de pincel: solo en títulos cortos de deseo de 20 px o más (el título de Esta noche). */
+.nj-app[data-dir="tanabata"] :is(:has(+ [data-region="tonight"]), :has(+ * > [data-region="tonight"]), :has(> [data-region="tonight"]), [data-region="tonight"]) > :is(.nj-section-head, header, div) > :is(.nj-h1, .nj-h2),
+.nj-app[data-dir="tanabata"] :is(:has(+ [data-region="tonight"]), [data-region="tonight"]) > :is(.nj-h1, .nj-h2) {
+  font-family: var(--nj-font-accent); font-weight: 400; letter-spacing: 0;
+}
+
+/* ==========================================================================
+   Día: superficies de washi (fibra suave, índigo cálido), encabezados con riel de bambú, insignias como tiras.
+   ========================================================================== */
+.nj-app[data-dir="tanabata"][data-mode="light"] :is([class*="-panel"], [class*="card"]:not([class*="nj-card"]), [class*="-map"], .nj-a-epdetail, .nj-b-boardwrap, .nj-b-tablewrap, .nj-b-ev, .nj-a-air, .nj-b-air, .nj-dialog, .nj-menu) {
+  background-image: var(--tz-washi-soft); background-size: 240px 240px;
+  box-shadow: 0 1px 0 rgb(255 255 255 / .55) inset, 0 8px 18px -14px rgb(40 30 90 / .35);
+}
+.nj-app[data-dir="tanabata"] .nj-section-head,
+.nj-app[data-dir="tanabata"] [class*="-panel"] > :is(h2, h3, [class*="-head"]):first-child {
+  padding-bottom: 8px; background-image: var(--tz-rail); background-size: 100% 1px; background-repeat: no-repeat; background-position: left bottom;
+}
+.nj-app[data-dir="tanabata"][data-mode="light"] :is(.nj-badge, [class*="-badge"]) {
+  background: var(--tz-washi) 0 0 / 120px 120px, var(--tz-p-none); color: var(--tz-ink); border-radius: var(--nj-r-xs);
+  box-shadow: inset 0 0 0 1px rgb(20 16 42 / .16);
+}
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-toggle input { background: var(--nj-surface); border-color: var(--nj-line-strong); }
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-toggle input:checked { background: var(--nj-accent); border-color: var(--nj-accent); }
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-toggle input:checked::after { background: var(--tz-p-none); box-shadow: 0 1px 2px rgb(10 8 40 / .35); }
+.nj-app[data-dir="tanabata"][data-mode="light"] .nj-status { box-shadow: inset 0 0 0 1px rgb(20 16 42 / .14); }
+.nj-app[data-motion="perf"][data-dir="tanabata"][data-mode="light"] :is([class*="-panel"], [class*="card"]:not([class*="nj-card"]), [class*="-map"]) { box-shadow: none; }

@@ -140,6 +140,15 @@ class YouViewModelTest {
     }
 
     @Test
+    fun `without the link client the link row is hidden`() = runTest {
+        val vm = YouViewModel(FakeLists(), FakeHistory(), FakeExtensions(), link = null)
+
+        val ok = assertIs<LoadState.Ok<YouOverview>>(vm.state.first { it.overview is LoadState.Ok }.overview)
+        assertEquals(false, ok.value.linkClient)
+        assertEquals(LinkedSummary.None, ok.value.linked)
+    }
+
+    @Test
     fun `history failure shows the error and retry re-subscribes`() = runTest {
         val history = FakeHistory(failHistory = true)
         val vm = YouViewModel(FakeLists(), history, FakeExtensions(), FakeLink())

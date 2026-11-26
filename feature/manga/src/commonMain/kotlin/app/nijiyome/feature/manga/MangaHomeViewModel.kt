@@ -36,7 +36,8 @@ data class MangaFilters(
     val year: Int? = null,
     val sort: MediaSort = MediaSort.POPULARITY,
 ) {
-    val active: Boolean get() = query.isNotBlank() || origin != null || status != null || genre != null || year != null
+    // A sort other than the default is a search of its own ("Ver todo" of a row, the sort chip), so it keeps the results open.
+    val active: Boolean get() = query.isNotBlank() || origin != null || status != null || genre != null || year != null || sort != MediaSort.POPULARITY
 
     fun toQuery(adult: Boolean = false): MediaSearchQuery = MediaSearchQuery(
         query = query.trim().ifEmpty { null },

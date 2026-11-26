@@ -43,19 +43,36 @@ internal fun sourceQualityChip(state: PlayerUiState): String? {
 /** The rows of the Quality sheet: Auto, then each quality; the playing one is checked. */
 @Composable
 internal fun SourceQualityRows(vm: PlayerViewModel, state: PlayerUiState, onDone: () -> Unit) {
-    val auto = autoSource(state.sources)
-    val autoOn = auto != null && state.current?.key == auto.key
-    val failed = state.failed.map { it.key }.toSet()
+    val autoOn = isAutoSource(state)
     Row(stringResource(Res.string.player_quality_auto), autoOn) {
-        if (auto != null && !autoOn) vm.pickSource(auto.key)
+        pickSourceQuality(vm, state, null)
         onDone()
     }
     sourceQualities(state.sources).forEach { q ->
         Row(q.label(), !autoOn && state.current?.candidate?.quality == q) {
-            sourceForQuality(state.sources, q, failed)?.takeIf { it.key != state.current?.key }?.let { vm.pickSource(it.key) }
+            pickSourceQuality(vm, state, q)
             onDone()
         }
     }
+}
+
+/** The ranking's recommended source plays (the menu's "Auto"). */
+internal fun isAutoSource(state: PlayerUiState): Boolean {
+    val auto = autoSource(state.sources)
+    return auto != null && state.current?.key == auto.key
+}
+
+/**
+ * Plays the best source of [quality] (null = Auto: the recommended one), unless it already plays. Desktop's quality menu: the stream
+ * has no renditions, so another quality is another source.
+ */
+internal fun pickSourceQuality(vm: PlayerViewModel, state: PlayerUiState, quality: Quality?) {
+    val target = if (quality == null) {
+        autoSource(state.sources)
+    } else {
+        sourceForQuality(state.sources, quality, state.failed.map { it.key }.toSet())
+    }
+    target?.takeIf { it.key != state.current?.key }?.let { vm.pickSource(it.key) }
 }
 
 @Composable

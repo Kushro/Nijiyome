@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, carril D4: la dirección Sumi y hanko (rd_sumi_*). -->
+    <string name="rd_sumi_name">Sumi y hanko</string>
+    <string name="rd_sumi_tagline">La identidad de hoy, entintada: violeta Nijiyome, el kitsune dentro del ensō y los estados de lista como sellos</string>
+    <string name="rd_sumi_palette_violeta">Violeta Nijiyome</string>
+    <string name="rd_sumi_palette_sakura">Sakura</string>
+    <string name="rd_sumi_palette_matcha">Matcha</string>
+    <string name="rd_sumi_palette_oceano">Océano</string>
+    <string name="rd_sumi_palette_luna">Luna de sangre</string>
+    <string name="rd_sumi_palette_mono">Mono</string>
+    <string name="rd_sumi_watched">Visto</string>
+</resources>

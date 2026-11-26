@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, carril M1: movimiento (rd_m1_*). -->
+    <string name="rd_m1_loading">Cargando…</string>
+</resources>

@@ -52,6 +52,7 @@ import app.nijiyome.ui.state.userMessage
 import org.koin.compose.getKoin
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** The view model key of one player entry: a new episode / source / session is a new view model. */
 internal fun playerViewModelKey(args: PlayerArgs): String =
@@ -92,6 +93,8 @@ internal fun PlayerScreenContent(
         contrast = settings.contrastLevel(),
         dynamicColor = settings.dynamicColor,
         darkTheme = true,
+        direction = app.nijiyome.designsystem.direction.Directions.byId(settings.look.design.direction.id),
+        directionPalette = settings.look.design.palette,
     ) {
         PlayerBody(
             vm = vm,
@@ -155,7 +158,10 @@ private fun PlayerBody(
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val session = state.session
         when {
-            state.phase == PlayerPhase.EXTERNAL && state.external != null -> ExternalBranch(vm, state, title, onBack, onOpenSettings, onOpenPicker = { pickerOpen = true })
+            // Sparkles S5: the args reach the external mpv card too (its "Enviar a dispositivo")
+            state.phase == PlayerPhase.EXTERNAL && state.external != null -> androidx.compose.runtime.CompositionLocalProvider(LocalDownloadArgs provides args) {
+                ExternalBranch(vm, state, title, onBack, onOpenSettings, onOpenPicker = { pickerOpen = true })
+            }
             session != null && state.phase != PlayerPhase.ERROR -> androidx.compose.runtime.CompositionLocalProvider(LocalDownloadArgs provides args) { PlayerContent(
                 vm = vm,
                 session = session,
@@ -247,7 +253,7 @@ private fun StatusBody(
         PlayerPhase.MANUAL -> Centered {
             // BUG-079: a state line, not the sheet's words (the sheet opened on top repeated "Elige una fuente para este episodio").
             Text(stringResource(Res.string.player_no_source_yet), color = onColor, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-            FilledTonalButton(onClick = onPick) { Text(stringResource(Res.string.player_pick_source)) }
+            FilledTonalButton(onClick = onPick, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_pick_source)) }
         }
         PlayerPhase.NO_SOURCES -> Centered {
             EmptyState(

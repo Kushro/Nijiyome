@@ -6,67 +6,55 @@ import app.nijiyome.feature.manga.resources.*
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.ChecklistRtl
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.DeleteSweep
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.DownloadDone
-import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.Movie
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.SwapVert
-import androidx.compose.material.icons.outlined.Translate
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.BottomAppBar
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.LiveTv
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,37 +63,36 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import org.jetbrains.compose.resources.pluralStringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.nijiyome.designsystem.components.AdaptiveSheet
-import app.nijiyome.designsystem.components.EmptyState
-import app.nijiyome.designsystem.components.LoadingState
 import app.nijiyome.designsystem.components.Pill
-import app.nijiyome.designsystem.components.SectionCard
-import app.nijiyome.designsystem.components.rememberAfterDelay
-import app.nijiyome.manga.ChapterLists
-import app.nijiyome.manga.ChapterOrder
+import app.nijiyome.designsystem.components.PillTone
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.ProgressTrack
+import app.nijiyome.designsystem.direction.SectionHeader
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.LoadingPlaceholder
+import app.nijiyome.designsystem.motion.cardSway
+import app.nijiyome.designsystem.motion.cardToDetailsSource
+import app.nijiyome.designsystem.motion.cardToDetailsTarget
 import app.nijiyome.manga.ChapterText
 import app.nijiyome.manga.MangaInfo
+import app.nijiyome.manga.MangaRanking
 import app.nijiyome.manga.MangaRepositoryImpl
-import app.nijiyome.manga.key
-import app.nijiyome.model.ListProgress
 import app.nijiyome.model.ListStatus
 import app.nijiyome.model.LoadState
-import app.nijiyome.model.MangaChapter
-import app.nijiyome.model.MangaChapterSource
-import app.nijiyome.model.SourceProblem
-import app.nijiyome.manga.MangaRanking
 import app.nijiyome.model.MangaReaderArgs
 import app.nijiyome.model.MatureContentMode
 import app.nijiyome.model.Media
 import app.nijiyome.model.MediaKind
 import app.nijiyome.model.ReadEntry
+import app.nijiyome.model.SourceProblem
+import app.nijiyome.model.TitleLanguage
+import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.TitleCard
 import app.nijiyome.ui.format.formatCount
 import app.nijiyome.ui.format.formatDecimal1
 import app.nijiyome.ui.labels.characterRoleLabel
@@ -113,27 +100,32 @@ import app.nijiyome.ui.labels.genreLabel
 import app.nijiyome.ui.labels.mediaSourceLabel
 import app.nijiyome.ui.labels.readLabelRes
 import app.nijiyome.ui.labels.staffRoleLabel
+import app.nijiyome.ui.look.slot
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.alternativeTitle
 import app.nijiyome.ui.media.displayTitle
-import app.nijiyome.ui.state.userMessage
-import coil3.compose.AsyncImage
+import app.nijiyome.ui.patterns.ListStatusPicker
+import app.nijiyome.ui.patterns.ProgressStepper
+import app.nijiyome.ui.patterns.UndoSnackbar
+import app.nijiyome.ui.patterns.isCompactWindow
+import app.nijiyome.ui.patterns.rememberSelectionState
+import app.nijiyome.ui.patterns.rememberUndoController
+import app.nijiyome.ui.patterns.toListStatus
+import app.nijiyome.ui.state.screenInsets
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import java.text.DateFormat
-import java.util.Date
-import java.util.Locale
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
- * `Route.Details(MediaKind.MANGA, anilistId)` (checklist manga.details / .anime-link / manga.metadata.* / manga.chapters.* /
- * manga.readlist / manga.download.chapters): cabecera, lista de lectura, sinopsis + metadatos (AniList + MangaUpdates), puntuaciones,
- * tags, personajes, recomendaciones, árbol de la serie, adaptación anime ([onOpenAnime]), capítulos por extensión con orden, filtro,
- * agrupación por volumen, Refrescar y Vaciar caché, selección múltiple → descarga.
+ * `Route.Details(MediaKind.MANGA, anilistId)` (MNG-06 to MNG-11) in the Sparkles design (artifact screen `manga`, the `ficha` view):
+ * header with cover, facts, "Seguir en el cap. N", the read counter and the six list statuses one tap away; chapters by source with
+ * filter, order, language, scanlation group, volumes and multi-selection (mark read / unread with undo, download); the information
+ * aside (facts, scores, synopsis, genres and tags, anime adaptation, series, characters, recommendations). Phones: tabs Capítulos /
+ * Información under the header.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MangaDetailsScreen(
     anilistId: Int,
@@ -155,6 +147,7 @@ fun MangaDetailsScreen(
     val progress by vm.progress.collectAsStateWithLifecycle()
     val downloaded by vm.downloaded.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val undo = rememberUndoController()
     val scope = rememberCoroutineScope()
     var sourceSheet by rememberSaveable { mutableStateOf(false) }
 
@@ -170,63 +163,54 @@ fun MangaDetailsScreen(
                 is DetailsEvent.Open -> onOpenReader(ev.args)
                 is DetailsEvent.Queued -> scope.launch {
                     val r = snackbar.showSnackbar(queuedText.format(ev.count), actionLabel = openDownloadsLabel)
-                    if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) onOpenDownloads()
+                    if (r == SnackbarResult.ActionPerformed) onOpenDownloads()
                 }
                 is DetailsEvent.Failed -> scope.launch { snackbar.showSnackbar(errorPrefix) }
                 DetailsEvent.NoChapter -> scope.launch { snackbar.showSnackbar(noChapterText) }
                 DetailsEvent.NoSourceFound -> scope.launch {
                     val r = snackbar.showSnackbar(noSourceText, actionLabel = sourcesLabel)
-                    if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) sourceSheet = true
+                    if (r == SnackbarResult.ActionPerformed) sourceSheet = true
                 }
             }
         }
     }
 
-    Scaffold(
-        modifier = modifier,
-        contentWindowInsets = app.nijiyome.ui.state.screenInsets,
-        snackbarHost = { SnackbarHost(snackbar) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    val t = (ui.info as? LoadState.Ok)?.value?.media?.displayTitle(settings.mangaTitleLanguage) ?: stringResource(Res.string.manga_title)
-                    Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) } },
-            )
-        },
-        bottomBar = {
-            if (ui.selecting) {
-                BottomAppBar {
-                    Text(pluralStringResource(Res.plurals.manga_selected_count, ui.selected.size, ui.selected.size), modifier = Modifier.padding(start = 16.dp).weight(1f))
-                    TextButton(onClick = vm::selectAllShown) { Text(stringResource(Res.string.manga_select_all)) }
-                    Button(onClick = vm::downloadSelected, enabled = ui.selected.isNotEmpty(), modifier = Modifier.padding(end = 8.dp)) {
-                        Icon(Icons.Outlined.Download, contentDescription = null)
-                        Text(stringResource(Res.string.manga_download), modifier = Modifier.padding(start = 6.dp))
-                    }
-                }
-            }
-        },
-    ) { padding ->
+    val selection = rememberSelectionState<String>()
+    Box(modifier.fillMaxSize().windowInsetsPadding(screenInsets)) {
         when (val info = ui.info) {
-            LoadState.Loading -> if (rememberAfterDelay()) LoadingState(Modifier.padding(padding))
-            is LoadState.Err -> ErrorBlock(info.cause, vm::load, Modifier.padding(padding))
+            LoadState.Loading -> Column {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
+                DetailsLoading()
+            }
+            is LoadState.Err -> Column {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
+                ErrorBlock(info.cause, vm::load)
+            }
             is LoadState.Ok -> {
                 val needsWarning = info.value.isAdult && settings.matureContent == MatureContentMode.WARN && anilistId !in prefs.matureAccepted
                 if (needsWarning) {
                     MatureWarningDialog(onConfirm = vm::acceptMature, onDismiss = onBack)
                 } else {
-                    DetailsBody(
+                    val readUpTo = entry?.progress ?: 0
+                    val chapterState = ChapterSectionState(
+                        ui = ui,
+                        readUpTo = readUpTo,
+                        nextChapter = vm.nextChapterNumber(progress, entry, (ui.chapters as? LoadState.Ok)?.value.orEmpty()),
+                        downloadedIds = downloaded.map { MangaRepositoryImpl.downloadId(it) }.toSet(),
+                        preferredKey = prefs.preferredSourceByMedia[MangaRepositoryImpl.mediaKey(app.nijiyome.model.MediaRef(anilistId = anilistId))],
+                        selection = selection,
+                    )
+                    MangaFicha(
                         info = info.value,
                         ui = ui,
                         entry = entry,
-                        progressChapter = progress?.chapterNumber,
-                        nextChapter = vm.nextChapterNumber(progress, entry, (ui.chapters as? LoadState.Ok)?.value.orEmpty()),
-                        downloadedIds = downloaded.map { MangaRepositoryImpl.downloadId(it) }.toSet(),
+                        hasProgress = progress != null || readUpTo > 0,
+                        chapters = chapterState,
                         blurCover = info.value.isAdult && settings.matureContent == MatureContentMode.BLUR,
                         titleLanguage = settings.mangaTitleLanguage,
-                        padding = padding,
                         vm = vm,
+                        undo = undo,
+                        onBack = onBack,
                         onOpenReader = onOpenReader,
                         onOpenAnime = onOpenAnime,
                         onOpenManga = onOpenManga,
@@ -234,8 +218,13 @@ fun MangaDetailsScreen(
                         onOpenGenre = onOpenGenre,
                         onOpenSourceSheet = { sourceSheet = true },
                     )
+                    ChapterSelectionBar(chapterState, vm, undo, Modifier.align(Alignment.BottomCenter))
                 }
             }
+        }
+        Column(Modifier.align(Alignment.BottomCenter).padding(bottom = 88.dp)) {
+            UndoSnackbar(undo, Modifier.padding(horizontal = 16.dp))
+            SnackbarHost(snackbar)
         }
     }
 
@@ -245,7 +234,7 @@ fun MangaDetailsScreen(
             current = ui.source,
             preferredKey = prefs.preferredSourceByMedia[MangaRepositoryImpl.mediaKey(app.nijiyome.model.MediaRef(anilistId = anilistId))],
             languages = prefs.languages,
-            onSelect = { vm.selectSource(it); sourceSheet = false },
+            onSelect = { vm.selectSource(it) },
             onPrefer = vm::setPreferredSource,
             onLanguages = vm::setLanguages,
             onOpenExtensions = onOpenExtensions,
@@ -254,19 +243,35 @@ fun MangaDetailsScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DetailsBody(
+private fun DetailsLoading() {
+    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            LoadingPlaceholder(Modifier.width(140.dp).height(210.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LoadingPlaceholder(Modifier.fillMaxWidth().height(32.dp))
+                LoadingPlaceholder(Modifier.fillMaxWidth(0.6f).height(20.dp))
+            }
+        }
+        LoadingPlaceholder(Modifier.fillMaxWidth().height(240.dp))
+    }
+}
+
+internal val READ_STATUSES = listOf(ListStatus.WATCHING, ListStatus.PLANNING, ListStatus.COMPLETED, ListStatus.PAUSED, ListStatus.DROPPED, ListStatus.REPEATING)
+
+/** The page: header, then chapters beside the information aside (wide) or under tabs (phones). */
+@Composable
+private fun MangaFicha(
     info: MangaInfo,
     ui: MangaDetailsUi,
     entry: ReadEntry?,
-    progressChapter: Double?,
-    nextChapter: Double?,
-    downloadedIds: Set<String>,
+    hasProgress: Boolean,
+    chapters: ChapterSectionState,
     blurCover: Boolean,
-    titleLanguage: app.nijiyome.model.TitleLanguage,
-    padding: PaddingValues,
+    titleLanguage: TitleLanguage,
     vm: MangaDetailsViewModel,
+    undo: app.nijiyome.ui.patterns.UndoController,
+    onBack: () -> Unit,
     onOpenReader: (MangaReaderArgs) -> Unit,
     onOpenAnime: (Int) -> Unit,
     onOpenManga: (Media) -> Unit,
@@ -274,209 +279,297 @@ private fun DetailsBody(
     onOpenGenre: (String) -> Unit,
     onOpenSourceSheet: () -> Unit,
 ) {
+    val compact = isCompactWindow()
     val media = info.media
     val title = media.displayTitle(titleLanguage)
-    // chapter marks follow the readlist progress (AniList when linked): ListProgress.isChapterRead
-    val readUpTo = (entry?.progress ?: 0).toDouble()
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp)) {
-        item(key = "header") { Header(info, title, media.alternativeTitle(title), blurCover) }
-        item(key = "actions") {
-            ActionsRow(
-                entry = entry,
-                total = info.chapters ?: ui.details?.chapters,
-                opening = ui.opening,
-                hasProgress = progressChapter != null || (entry?.progress ?: 0) > 0,
-                nextChapter = nextChapter,
-                onRead = vm::readNext,
-                onStatus = vm::setStatus,
-                onProgress = vm::setProgress,
-            )
-        }
-        media.synopsis?.let { synopsis -> item(key = "synopsis") { Synopsis(synopsis) } }
-        item(key = "facts") { Facts(info, ui) }
-        if (media.genres.isNotEmpty() || info.tags.isNotEmpty()) {
-            item(key = "tags") {
-                var spoilers by rememberSaveable { mutableStateOf(false) }
-                SectionHeader(stringResource(Res.string.manga_tags))
-                FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    media.genres.forEach { g -> AssistChip(onClick = { onOpenGenre(g) }, label = { Text(genreLabel(g)) }) }
-                    info.tags.filter { spoilers || !it.isSpoiler }.forEach { t ->
-                        SuggestionChip(onClick = {}, label = { Text(t.rank?.let { r -> "${t.name} $r%" } ?: t.name) })
-                    }
-                    if (info.tags.any { it.isSpoiler }) {
-                        TextButton(onClick = { spoilers = !spoilers }) {
-                            Text(stringResource(if (spoilers) Res.string.manga_hide_spoilers else Res.string.manga_show_spoilers))
-                        }
+    val header: @Composable () -> Unit = {
+        FichaHeader(info, ui, entry, title, hasProgress, chapters.nextChapter, blurCover, compact, vm, undo, onBack)
+    }
+    val aside: @Composable ColumnScope.() -> Unit = {
+        InfoPanels(info, ui, titleLanguage, onOpenAnime, onOpenManga, onOpenGenre)
+    }
+    // The aside goes beside the chapters only when the pane itself has the room (a desktop window opened from the Manga catalogue
+    // gives this page a pane, not the window): else the phone layout, tabs Capítulos / Información under the header.
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val sideBySide = !compact && maxWidth >= SIDE_BY_SIDE_MIN
+        if (!sideBySide) {
+            var tab by rememberSaveable { mutableIntStateOf(0) }
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                if (compact && chapters.selection.active) {
+                    item(key = "selbar") { ChapterSelectionTopBar(chapters) }
+                }
+                item(key = "header") { header() }
+                item(key = "tabs") {
+                    TabRow(selectedTabIndex = tab) {
+                        Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(Res.string.manga_chapters)) })
+                        Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(Res.string.manga_info)) })
                     }
                 }
+                if (tab == 0) {
+                    chaptersSection(chapters, vm, onOpenReader, onOpenExtensions, onOpenSourceSheet)
+                } else {
+                    item(key = "info") { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { aside() } }
+                }
             }
-        }
-        // Anime adaptation (checklist manga.details.anime-link).
-        val adaptation = info.relations.firstOrNull { it.media.kind == MediaKind.ANIME && it.relation == "ADAPTATION" }
-            ?: info.relations.firstOrNull { it.media.kind == MediaKind.ANIME }
-        adaptation?.media?.ref?.anilistId?.let { animeId ->
-            item(key = "adaptation") {
-                ListItem(
-                    leadingContent = { MediaCover(url = adaptation.media.cover, modifier = Modifier.width(48.dp)) },
-                    overlineContent = { Text(stringResource(Res.string.manga_anime_adaptation)) },
-                    headlineContent = { Text(adaptation.media.displayTitle(titleLanguage)) },
-                    supportingContent = { Text(listOfNotNull(adaptation.media.year?.toString(), anilistStatusLabel(adaptation.media.status)).joinToString(" · ")) },
-                    trailingContent = { Icon(Icons.Outlined.Movie, contentDescription = null) },
-                    modifier = Modifier.clickable { onOpenAnime(animeId) },
+        } else {
+            Row(Modifier.fillMaxSize()) {
+                LazyColumn(Modifier.weight(1f).fillMaxHeight(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                    item(key = "header") { header() }
+                    chaptersSection(chapters, vm, onOpenReader, onOpenExtensions, onOpenSourceSheet)
+                }
+                Column(
+                    Modifier.width(380.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, end = 16.dp, bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    content = aside,
                 )
             }
         }
-        // Series tree (relations).
-        val tree = info.relations.filter { it !== adaptation }
-        if (tree.isNotEmpty()) {
-            item(key = "relations") {
-                SectionHeader(stringResource(Res.string.manga_series_tree))
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(tree, key = { "${it.relation}-${it.media.ref.anilistId}" }) { rel ->
-                        MangaCard(
-                            rel.media,
-                            titleLanguage,
-                            onClick = {
-                                val id = rel.media.ref.anilistId
-                                if (rel.media.kind == MediaKind.ANIME && id != null) onOpenAnime(id) else onOpenManga(rel.media)
-                            },
-                            subtitle = relationLabel(rel.relation),
-                        )
-                    }
-                }
-            }
-        }
-        if (info.characters.isNotEmpty()) {
-            item(key = "characters") {
-                SectionHeader(stringResource(Res.string.manga_characters))
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(info.characters, key = { it.character.id }) { c ->
-                        Column(Modifier.width(88.dp)) {
-                            MediaCover(url = c.character.image, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large)
-                            Text(c.character.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, modifier = Modifier.padding(top = 4.dp))
-                            c.role?.let { Text(characterRoleLabel(it), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        }
-                    }
-                }
-            }
-        }
-        if (info.recommendations.isNotEmpty()) {
-            item(key = "recs") {
-                SectionHeader(stringResource(Res.string.manga_recommendations))
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(info.recommendations, key = { it.media.ref.anilistId ?: it.media.title.hashCode() }) { r ->
-                        MangaCard(r.media, titleLanguage, onClick = { onOpenManga(r.media) })
-                    }
-                }
-            }
-        }
-        chaptersSection(ui, readUpTo, downloadedIds, vm, onOpenReader, onOpenExtensions, onOpenSourceSheet)
     }
 }
 
+/** Pane width from which the chapters (at least ~600 dp) and the 380 dp information aside sit side by side. */
+private val SIDE_BY_SIDE_MIN = 1000.dp
+
+// ------------------------------------------------------------------------------------------------------------------- header
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Header(info: MangaInfo, title: String, alt: String?, blurCover: Boolean) {
+private fun FichaHeader(
+    info: MangaInfo,
+    ui: MangaDetailsUi,
+    entry: ReadEntry?,
+    title: String,
+    hasProgress: Boolean,
+    nextChapter: Double?,
+    blurCover: Boolean,
+    compact: Boolean,
+    vm: MangaDetailsViewModel,
+    undo: app.nijiyome.ui.patterns.UndoController,
+    onBack: () -> Unit,
+) {
     val media = info.media
-    // MatureContentMode.BLUR: banner and cover stay blurred until tapped once.
+    val key = mangaCardKey(media.ref, media.title)
+    // MatureContentMode.BLUR: the cover stays blurred until tapped once.
     var revealed by remember(media.ref) { mutableStateOf(false) }
     val hide = blurCover && !revealed
-    val blur = if (hide) Modifier.blur(24.dp) else Modifier
-    Box(Modifier.fillMaxWidth()) {
-        AsyncImage(
-            model = media.banner ?: media.cover,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxWidth().height(180.dp).then(blur),
-        )
-        Box(Modifier.fillMaxWidth().height(180.dp).background(Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.surface))))
-        Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 96.dp), verticalAlignment = Alignment.Bottom) {
-            Box(Modifier.width(110.dp).clickable(enabled = hide) { revealed = true }, contentAlignment = Alignment.Center) {
-                MediaCover(url = media.cover, modifier = Modifier.fillMaxWidth().then(blur))
-                if (hide) Text(stringResource(Res.string.manga_mature_tap), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(6.dp))
+    val total = info.chapters ?: ui.details?.chapters
+    val statusSaved = stringResource(Res.string.rd_s11_status_saved)
+    val removed = stringResource(Res.string.rd_s11_removed_from_list)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // the header's inner width (minus its 16 dp padding) decides where "Quitar de la lista" goes
+        val besideRemove = !compact && maxWidth - 32.dp >= STATUS_ROW_MIN
+        Column(Modifier.fillMaxWidth().decor(DecorRegion.HERO).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            TextButton(onClick = onBack, shape = NijiyomeControls.shape) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(Res.string.manga_title))
             }
-            Column(Modifier.padding(start = 12.dp).weight(1f)) {
-                Text(title, style = MaterialTheme.typography.headlineSmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                alt?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
-                Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    formatLabel(info.format)?.let { Pill(it) }
-                    anilistStatusLabel(info.status)?.let { Pill(it) }
-                    originLabel(info.origin)?.let { Pill(it) }
-                    media.year?.let { Pill(it.toString()) }
-                    if (info.isAdult) Pill("18+")
+            Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 24.dp), verticalAlignment = Alignment.Top) {
+                Box(Modifier.width(if (compact) 112.dp else 180.dp).clickable(enabled = hide) { revealed = true }, contentAlignment = Alignment.Center) {
+                    MediaCover(
+                        url = media.cover,
+                        contentDescription = stringResource(Res.string.rd_s11_cover_of, title),
+                        modifier = Modifier.fillMaxWidth().cardToDetailsTarget(key).then(if (hide) Modifier.blur(24.dp) else Modifier),
+                    )
+                    if (hide) Text(stringResource(Res.string.manga_mature_tap), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(6.dp))
                 }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        formatLabel(info.format)?.let { Pill(it, tone = PillTone.PRIMARY) }
+                        anilistStatusLabel(info.status)?.let { Pill(it) }
+                        originLabel(info.origin)?.let { Pill(it) }
+                        media.year?.let { Pill(it.toString()) }
+                        if (info.isAdult) Pill("18+", tone = PillTone.WARN)
+                    }
+                    Text(title, style = if (compact) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineLarge, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
+                    media.alternativeTitle(title)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
+                    if (!compact) ReadActions(ui, entry, total, hasProgress, nextChapter, vm)
+                }
+            }
+            if (compact) ReadActions(ui, entry, total, hasProgress, nextChapter, vm)
+            if (entry != null && total != null && total > 0) {
+                ProgressTrack(progress = (entry.progress.toFloat() / total).coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp), segments = total.takeIf { it <= MAX_TRACK_SEGMENTS })
+            }
+            // MNG-07: the six read statuses one tap away, each change undoable. They keep their names: "Quitar de la lista" sits beside
+            // them only where the row has the room for both, else under them.
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ListStatusPicker(
+                    selected = entry?.status?.slot(),
+                    onSelect = { slot ->
+                        val previous = entry
+                        vm.setStatus(slot.toListStatus())
+                        undo.show(statusSaved, undo = { vm.restoreEntry(previous) })
+                    },
+                    modifier = Modifier.weight(1f),
+                    labelOf = { stringResource(it.toListStatus().readLabelRes()) },
+                    compact = compact,
+                )
+                if (entry != null && besideRemove) {
+                    TextButton(onClick = {
+                        val previous = entry
+                        vm.setStatus(null)
+                        undo.show(removed, undo = { vm.restoreEntry(previous) })
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.list_remove)) }
+                }
+            }
+            if (entry != null && !besideRemove) {
+                TextButton(onClick = {
+                    val previous = entry
+                    vm.setStatus(null)
+                    undo.show(removed, undo = { vm.restoreEntry(previous) })
+                }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.list_remove)) }
             }
         }
     }
 }
 
+/** From this width the six named statuses and "Quitar de la lista" share one row. */
+private val STATUS_ROW_MIN = 860.dp
+
+/** "Seguir en el cap. N" / "Empezar a leer" and the "Leídos" counter (− / +). */
 @Composable
-private fun ActionsRow(
-    entry: ReadEntry?,
-    total: Int?,
-    opening: Boolean,
-    hasProgress: Boolean,
-    onRead: () -> Unit,
-    onStatus: (ListStatus?) -> Unit,
-    onProgress: (Int) -> Unit,
-    nextChapter: Double? = null,
-) {
-    var statusMenu by remember { mutableStateOf(false) }
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = onRead, enabled = !opening) {
-                if (opening) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                val n = ChapterText.formatNumber(nextChapter)
-                val label = when {
-                    n == null -> stringResource(if (hasProgress) Res.string.manga_continue else Res.string.manga_read)
-                    hasProgress -> stringResource(Res.string.manga_continue_chapter, n)
+private fun ReadActions(ui: MangaDetailsUi, entry: ReadEntry?, total: Int?, hasProgress: Boolean, nextChapter: Double?, vm: MangaDetailsViewModel) {
+    FlowRowCompat {
+        Button(onClick = vm::readNext, enabled = !ui.opening, shape = NijiyomeControls.shape) {
+            if (ui.opening) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            val n = ChapterText.formatNumber(nextChapter)
+            Text(
+                when {
+                    n == null -> stringResource(if (hasProgress) Res.string.manga_continue else Res.string.rd_s11_start_reading)
+                    hasProgress -> stringResource(Res.string.rd_s11_resume_chapter, n)
                     else -> stringResource(Res.string.manga_read_chapter, n)
-                }
-                Text(label, modifier = Modifier.padding(start = 6.dp))
-            }
-            Box {
-                FilledTonalButton(onClick = { statusMenu = true }) {
-                    Text(entry?.status?.let { stringResource(it.readLabelRes()) } ?: stringResource(Res.string.manga_add_to_list))
-                }
-                DropdownMenu(expanded = statusMenu, onDismissRequest = { statusMenu = false }) {
-                    READ_STATUSES.forEach { s ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(s.readLabelRes())) },
-                            leadingIcon = if (entry?.status == s) ({ Icon(Icons.Outlined.CheckCircle, contentDescription = null) }) else null,
-                            onClick = {
-                                statusMenu = false
-                                onStatus(s)
-                            },
-                        )
-                    }
-                    if (entry != null) {
-                        HorizontalDivider()
-                        DropdownMenuItem(text = { Text(stringResource(UiR.string.list_remove)) }, onClick = {
-                            statusMenu = false
-                            onStatus(null)
-                        })
-                    }
-                }
-            }
+                },
+            )
         }
         if (entry != null) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-                Text(stringResource(Res.string.manga_progress_label, entry.progress, total?.toString() ?: "?"), modifier = Modifier.weight(1f))
-                OutlinedButton(onClick = { onProgress(entry.progress - 1) }, enabled = entry.progress > 0) { Text("−") }
-                Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { onProgress(entry.progress + 1) }) { Text("+") }
+            ProgressStepper(
+                value = entry.progress,
+                onValueChange = vm::setProgress,
+                max = total ?: Int.MAX_VALUE,
+                total = total,
+                label = stringResource(Res.string.rd_s11_read_count),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FlowRowCompat(content: @Composable () -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { content() }
+}
+
+// ------------------------------------------------------------------------------------------------------------------- aside
+
+/** The information panels (artifact `aside`): facts and scores, synopsis, genres and tags, adaptation, series, characters, recs. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ColumnScope.InfoPanels(
+    info: MangaInfo,
+    ui: MangaDetailsUi,
+    titleLanguage: TitleLanguage,
+    onOpenAnime: (Int) -> Unit,
+    onOpenManga: (Media) -> Unit,
+    onOpenGenre: (String) -> Unit,
+) {
+    val media = info.media
+    Panel(stringResource(Res.string.manga_info)) { Facts(info, ui) }
+    media.synopsis?.let { synopsis ->
+        Panel(stringResource(Res.string.rd_s11_synopsis)) {
+            var expanded by rememberSaveable { mutableStateOf(false) }
+            Text(synopsis, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 5, overflow = TextOverflow.Ellipsis)
+            TextButton(onClick = { expanded = !expanded }, shape = NijiyomeControls.shape) { Text(stringResource(if (expanded) Res.string.manga_less else Res.string.manga_more)) }
+        }
+    }
+    if (media.genres.isNotEmpty() || info.tags.isNotEmpty()) {
+        Panel(stringResource(Res.string.manga_row_genres)) {
+            var spoilers by rememberSaveable { mutableStateOf(false) }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                media.genres.forEach { g -> SuggestionChip(onClick = { onOpenGenre(g) }, label = { Text(genreLabel(g)) }) }
+            }
+            val tags = info.tags.filter { spoilers || !it.isSpoiler }
+            if (tags.isNotEmpty()) {
+                Text(stringResource(Res.string.rd_s11_tags), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+                Text(tags.joinToString(" · ") { t -> t.rank?.let { r -> "${t.name} $r %" } ?: t.name }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (info.tags.any { it.isSpoiler }) {
+                TextButton(onClick = { spoilers = !spoilers }, shape = NijiyomeControls.shape) { Text(stringResource(if (spoilers) Res.string.manga_hide_spoilers else Res.string.manga_show_spoilers)) }
+            }
+        }
+    }
+    // Anime adaptation (MNG-06).
+    val adaptation = info.relations.firstOrNull { it.media.kind == MediaKind.ANIME && it.relation == "ADAPTATION" }
+        ?: info.relations.firstOrNull { it.media.kind == MediaKind.ANIME }
+    adaptation?.media?.ref?.anilistId?.let { animeId ->
+        Panel(stringResource(Res.string.manga_anime_adaptation)) {
+            Row(
+                Modifier.fillMaxWidth().clickable { onOpenAnime(animeId) }.padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(Icons.Outlined.LiveTv, contentDescription = null)
+                Column(Modifier.weight(1f)) {
+                    Text(adaptation.media.displayTitle(titleLanguage), style = MaterialTheme.typography.titleSmall)
+                    Text(listOfNotNull(adaptation.media.year?.toString(), anilistStatusLabel(adaptation.media.status)).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(Icons.Outlined.ChevronRight, contentDescription = null)
+            }
+        }
+    }
+    val tree = info.relations.filter { it !== adaptation }
+    if (tree.isNotEmpty()) {
+        AsideRow(stringResource(Res.string.manga_series_tree)) {
+            itemsIndexed(tree, key = { _, r -> "${r.relation}-${r.media.ref.anilistId}" }) { i, rel ->
+                val data = rel.media.mangaCard(titleLanguage, subtitle = relationLabel(rel.relation))
+                TitleCard(
+                    data,
+                    onClick = {
+                        val id = rel.media.ref.anilistId
+                        if (rel.media.kind == MediaKind.ANIME && id != null) onOpenAnime(id) else onOpenManga(rel.media)
+                    },
+                    context = CardContext.ROW,
+                    modifier = Modifier.cardSway(i).cardToDetailsSource(data.key),
+                )
+            }
+        }
+    }
+    if (info.characters.isNotEmpty()) {
+        AsideRow(stringResource(Res.string.manga_characters)) {
+            items(info.characters, key = { it.character.id }) { c ->
+                Column(Modifier.width(88.dp)) {
+                    MediaCover(url = c.character.image, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large)
+                    Text(c.character.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, modifier = Modifier.padding(top = 4.dp))
+                    c.role?.let { Text(characterRoleLabel(it), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
+            }
+        }
+    }
+    if (info.recommendations.isNotEmpty()) {
+        AsideRow(stringResource(Res.string.rd_s11_if_you_liked)) {
+            itemsIndexed(info.recommendations, key = { i, r -> "${r.media.ref.anilistId ?: r.media.title}-$i" }) { i, r ->
+                val data = r.media.mangaCard(titleLanguage)
+                TitleCard(data, onClick = { onOpenManga(r.media) }, context = CardContext.ROW, modifier = Modifier.cardSway(i).cardToDetailsSource(data.key))
             }
         }
     }
 }
 
-internal val READ_STATUSES = listOf(ListStatus.WATCHING, ListStatus.PLANNING, ListStatus.COMPLETED, ListStatus.PAUSED, ListStatus.DROPPED, ListStatus.REPEATING)
+@Composable
+private fun Panel(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+            content()
+        }
+    }
+}
 
 @Composable
-private fun Synopsis(text: String) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.padding(horizontal = 16.dp).clickable { expanded = !expanded }) {
-        Text(text, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 5, overflow = TextOverflow.Ellipsis)
-        Text(stringResource(if (expanded) Res.string.manga_less else Res.string.manga_more), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
+private fun AsideRow(title: String, content: LazyListScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(title)
+        LazyRow(Modifier.fillMaxWidth().decor(DecorRegion.ROW), horizontalArrangement = Arrangement.spacedBy(12.dp), content = content)
     }
 }
 
@@ -485,42 +578,37 @@ private fun Synopsis(text: String) {
 private fun Facts(info: MangaInfo, ui: MangaDetailsUi) {
     val mu = ui.mangaUpdates
     val d = ui.details
-    SectionCard(Modifier.padding(16.dp), title = stringResource(Res.string.manga_info)) {
-        @Composable
-        fun Fact(label: String, value: String?) {
-            if (value.isNullOrBlank()) return
-            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-                Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(130.dp))
-                Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            }
+    @Composable
+    fun Fact(label: String, value: String?) {
+        if (value.isNullOrBlank()) return
+        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(120.dp))
+            Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
         }
-        Fact(stringResource(Res.string.manga_fact_authors), info.authors.map { a -> a.staff.name to a.role?.let { staffRoleLabel(it) } }.joinToString(", ") { (name, role) -> role?.let { "$name ($it)" } ?: name })
-        Fact(stringResource(Res.string.manga_fact_chapters), (info.chapters ?: d?.chapters ?: mu?.latestChapter)?.toString())
-        Fact(stringResource(Res.string.manga_fact_volumes), (info.volumes ?: d?.volumes)?.toString())
-        Fact(stringResource(Res.string.manga_fact_status), anilistStatusLabel(info.status))
-        Fact(stringResource(Res.string.manga_fact_publication), mu?.status)
-        Fact(stringResource(Res.string.manga_fact_publishers), mu?.publishers?.joinToString(", "))
-        Fact(stringResource(Res.string.manga_fact_serialization), mu?.serialization)
-        Fact(stringResource(Res.string.manga_fact_licensed), mu?.let { stringResource(if (it.licensed) Res.string.manga_yes else Res.string.manga_no) })
-        Fact(stringResource(Res.string.manga_fact_start), info.startDate)
-        Fact(stringResource(Res.string.manga_fact_end), info.endDate)
-        Fact(stringResource(Res.string.manga_fact_origin), originLabel(info.origin))
-        Fact(stringResource(Res.string.manga_fact_source), info.source?.let { mediaSourceLabel(it) })
-        // Scores (checklist manga.details: puntuaciones). BUG-126: they wrap instead of squeezing the last box ("48 / 38 / 1 / Fav"),
-        // with clear labels and the language's thousands separator ("337.460 miembros").
-        FlowRow(
-            Modifier.padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            info.media.score?.let { ScoreBox(stringResource(Res.string.manga_score_anilist), stringResource(Res.string.manga_score_percent, it)) }
-            info.meanScore?.let { ScoreBox(stringResource(Res.string.manga_score_mean), stringResource(Res.string.manga_score_percent, it)) }
-            mu?.rating?.let { ScoreBox(stringResource(Res.string.manga_score_mangaupdates), formatDecimal1(it / 10.0)) }
-            info.popularity?.let { ScoreBox(stringResource(Res.string.manga_score_popularity), formatCount(it.toLong())) }
-            info.favourites?.let { ScoreBox(stringResource(Res.string.manga_score_favourites), formatCount(it.toLong())) }
-        }
-        if (info.rankings.isNotEmpty()) {
-            FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) { info.rankings.take(4).forEach { Pill(rankingLabel(it)) } }
+    }
+    Fact(stringResource(Res.string.manga_fact_authors), info.authors.map { a -> a.staff.name to a.role?.let { staffRoleLabel(it) } }.joinToString(", ") { (name, role) -> role?.let { "$name ($it)" } ?: name })
+    Fact(stringResource(Res.string.manga_fact_chapters), (info.chapters ?: d?.chapters ?: mu?.latestChapter)?.toString())
+    Fact(stringResource(Res.string.manga_fact_volumes), (info.volumes ?: d?.volumes)?.toString())
+    Fact(stringResource(Res.string.manga_fact_status), anilistStatusLabel(info.status))
+    Fact(stringResource(Res.string.manga_fact_publication), mu?.status)
+    Fact(stringResource(Res.string.manga_fact_publishers), mu?.publishers?.joinToString(", "))
+    Fact(stringResource(Res.string.manga_fact_serialization), mu?.serialization)
+    Fact(stringResource(Res.string.manga_fact_licensed), mu?.let { stringResource(if (it.licensed) Res.string.manga_yes else Res.string.manga_no) })
+    Fact(stringResource(Res.string.manga_fact_start), info.startDate)
+    Fact(stringResource(Res.string.manga_fact_end), info.endDate)
+    Fact(stringResource(Res.string.manga_fact_origin), originLabel(info.origin))
+    Fact(stringResource(Res.string.manga_fact_source), info.source?.let { mediaSourceLabel(it) })
+    // Scores (BUG-126: they wrap, with clear labels and the language's thousands separator).
+    FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        info.media.score?.let { ScoreBox(stringResource(Res.string.manga_score_anilist), stringResource(Res.string.manga_score_percent, it)) }
+        info.meanScore?.let { ScoreBox(stringResource(Res.string.manga_score_mean), stringResource(Res.string.manga_score_percent, it)) }
+        mu?.rating?.let { ScoreBox(stringResource(Res.string.manga_score_mangaupdates), formatDecimal1(it / 10.0)) }
+        info.popularity?.let { ScoreBox(stringResource(Res.string.manga_score_popularity), formatCount(it.toLong())) }
+        info.favourites?.let { ScoreBox(stringResource(Res.string.manga_score_favourites), formatCount(it.toLong())) }
+    }
+    if (info.rankings.isNotEmpty()) {
+        FlowRow(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            info.rankings.take(4).forEach { Pill(rankingLabel(it)) }
         }
     }
 }
@@ -544,104 +632,6 @@ private fun relationLabel(relation: String): String = when (relation.uppercase()
     "ADAPTATION" -> stringResource(Res.string.manga_rel_adaptation)
     "SOURCE" -> stringResource(Res.string.manga_rel_source)
     else -> stringResource(Res.string.manga_rel_other)
-}
-
-// ------------------------------------------------------------------------------------------------------------------- chapters
-
-private fun LazyListScope.chaptersSection(
-    ui: MangaDetailsUi,
-    readUpTo: Double,
-    downloadedIds: Set<String>,
-    vm: MangaDetailsViewModel,
-    onOpenReader: (MangaReaderArgs) -> Unit,
-    onOpenExtensions: () -> Unit,
-    onOpenSourceSheet: () -> Unit,
-) {
-    item(key = "chapters-header") {
-        SectionHeader(stringResource(Res.string.manga_chapters)) {
-            Row {
-                IconButton(onClick = vm::refreshChapters) { Icon(Icons.Outlined.Refresh, contentDescription = stringResource(Res.string.manga_refresh)) }
-                IconButton(onClick = vm::clearCache) { Icon(Icons.Outlined.DeleteSweep, contentDescription = stringResource(Res.string.manga_clear_cache)) }
-                IconButton(onClick = { vm.setSelecting(!ui.selecting) }) {
-                    Icon(if (ui.selecting) Icons.Outlined.Close else Icons.Outlined.ChecklistRtl, contentDescription = stringResource(Res.string.manga_select_chapters))
-                }
-            }
-        }
-    }
-    when (val sources = ui.sources) {
-        LoadState.Loading -> item(key = "sources-loading") { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-        is LoadState.Err -> item(key = "sources-error") { ErrorBlock(sources.cause, vm::loadSources) }
-        is LoadState.Ok -> {
-            if (sources.value.isEmpty()) {
-                item(key = "no-sources") {
-                    EmptyState(
-                        icon = Icons.Outlined.Extension,
-                        title = stringResource(Res.string.manga_no_sources),
-                        message = stringResource(Res.string.manga_no_sources_message),
-                        actionLabel = stringResource(Res.string.manga_open_extensions),
-                        onAction = onOpenExtensions,
-                    )
-                }
-                return
-            }
-            item(key = "sources") {
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    sources.value.forEach { s ->
-                        FilterChip(
-                            selected = ui.source?.key == s.key,
-                            onClick = { vm.selectSource(s) },
-                            enabled = s.itemId != null,
-                            label = { Text(sourceChipLabel(s)) },
-                        )
-                    }
-                    AssistChip(onClick = onOpenSourceSheet, label = { Text(stringResource(Res.string.manga_source_settings)) }, leadingIcon = { Icon(Icons.Outlined.Translate, contentDescription = null) })
-                }
-            }
-            item(key = "tools") { ChapterToolbar(ui, vm) }
-            when (val chapters = ui.chapters) {
-                LoadState.Loading -> item(key = "chapters-loading") { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-                is LoadState.Err -> item(key = "chapters-error") { ErrorBlock(chapters.cause, vm::refreshChapters) }
-                is LoadState.Ok -> {
-                    val shown = ui.shown
-                    if (ui.noSourceFound) {
-                        item(key = "unmatched-all") { Text(stringResource(Res.string.manga_no_source_found_long), modifier = Modifier.padding(16.dp)) }
-                    } else if (ui.source?.itemId == null) {
-                        item(key = "unmatched") { Text(stringResource(Res.string.manga_source_unmatched), modifier = Modifier.padding(16.dp)) }
-                    } else if (shown.isEmpty()) {
-                        item(key = "chapters-empty") { Text(stringResource(Res.string.manga_chapters_empty), modifier = Modifier.padding(16.dp)) }
-                    } else if (ui.tools.byVolume) {
-                        ChapterLists.byVolume(shown).forEach { (volume, list) ->
-                            item(key = "vol-$volume") {
-                                Text(
-                                    volume?.let { stringResource(Res.string.manga_volume_n, it) } ?: stringResource(Res.string.manga_volume_none),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
-                                )
-                            }
-                            items(list, key = { "c-" + MangaRepositoryImpl.downloadId(it) }) { ch -> ChapterRow(ch, ui, readUpTo, downloadedIds, vm, onOpenReader) }
-                        }
-                    } else {
-                        items(shown, key = { "c-" + MangaRepositoryImpl.downloadId(it) }) { ch -> ChapterRow(ch, ui, readUpTo, downloadedIds, vm, onOpenReader) }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun sourceChipLabel(s: MangaChapterSource): String = buildString {
-    append(s.extensionName)
-    // BUG-099: a source without chapters says why, not a bare "· 0".
-    val problem = s.problem
-    if (problem != null) {
-        append(" · ").append(sourceProblemLabel(problem))
-        return@buildString
-    }
-    s.chapterCount?.let { append(" · ").append(it) }
-    if (s.languages.isNotEmpty()) append(" · ").append(s.languages.take(3).joinToString("/").uppercase())
-    append(" · ").append((s.reliability * 100).toInt()).append('%')
 }
 
 /** BUG-111: an AniList ranking in the app's language ("#97 mejor valorado de todos los tiempos", "#1 más popular de 2018"). */
@@ -671,144 +661,4 @@ internal fun sourceProblemLabel(p: SourceProblem): String = stringResource(
     },
 )
 
-@Composable
-private fun ChapterToolbar(ui: MangaDetailsUi, vm: MangaDetailsViewModel) {
-    val all = (ui.chapters as? LoadState.Ok)?.value.orEmpty()
-    val langs = ChapterLists.languages(all)
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        OutlinedTextField(
-            value = ui.tools.query,
-            onValueChange = { q -> vm.setTools { it.copy(query = q) } },
-            singleLine = true,
-            placeholder = { Text(stringResource(Res.string.manga_chapter_filter_hint)) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            AssistChip(
-                onClick = { vm.setTools { it.copy(order = if (it.order == ChapterOrder.ASC) ChapterOrder.DESC else ChapterOrder.ASC) } },
-                label = { Text(stringResource(if (ui.tools.order == ChapterOrder.ASC) Res.string.manga_order_asc else Res.string.manga_order_desc)) },
-                leadingIcon = { Icon(Icons.Outlined.SwapVert, contentDescription = null) },
-            )
-            FilterChip(selected = ui.tools.byVolume, onClick = { vm.setTools { it.copy(byVolume = !it.byVolume) } }, label = { Text(stringResource(Res.string.manga_group_volume)) })
-            if (langs.size > 1) {
-                FilterDropdown(
-                    label = stringResource(Res.string.manga_chapter_language),
-                    value = ui.tools.lang?.uppercase(),
-                    options = listOf<String?>(null) + langs,
-                    optionLabel = { it?.let { l -> Locale.forLanguageTag(l).getDisplayLanguage(Locale.getDefault()).ifBlank { l } } ?: stringResource(Res.string.manga_filter_any) },
-                    onSelect = { l -> vm.setTools { it.copy(lang = l) } },
-                )
-            }
-            Text(stringResource(Res.string.manga_chapter_count, ui.shown.size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun ChapterRow(
-    ch: MangaChapter,
-    ui: MangaDetailsUi,
-    readUpTo: Double,
-    downloadedIds: Set<String>,
-    vm: MangaDetailsViewModel,
-    onOpenReader: (MangaReaderArgs) -> Unit,
-) {
-    val id = MangaRepositoryImpl.downloadId(ch)
-    val isDownloaded = ch.downloaded || id in downloadedIds
-    val read = ListProgress.isChapterRead(ch.number, readUpTo.toInt())
-    val date = ch.releasedAtMs?.let { remember(it) { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it)) } }
-    ListItem(
-        headlineContent = {
-            Text(
-                ChapterText.formatNumber(ch.number)?.let { stringResource(Res.string.manga_chapter_n, it) + (ch.title?.takeIf { t -> t.isNotBlank() }?.let { t -> " · $t" } ?: "") } ?: (ch.title ?: ch.id),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = if (read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-            )
-        },
-        supportingContent = {
-            Text(listOfNotNull(ch.group, ch.lang?.uppercase(), date, ch.volume?.let { stringResource(Res.string.manga_volume_n, it) }).joinToString(" · "))
-        },
-        leadingContent = if (ui.selecting) ({ Checkbox(checked = id in ui.selected, onCheckedChange = { vm.toggle(ch) }) }) else null,
-        trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isDownloaded) Icon(Icons.Outlined.DownloadDone, contentDescription = stringResource(Res.string.manga_downloaded))
-                val label = ChapterText.formatNumber(ch.number)
-                if (!ui.selecting && label != null) {
-                    IconButton(onClick = { vm.toggleRead(ch) }) {
-                        Icon(
-                            if (read) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
-                            contentDescription = stringResource(if (read) Res.string.manga_mark_unread else Res.string.manga_mark_read, label),
-                            tint = if (read) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-        },
-        modifier = Modifier.clickable {
-            if (ui.selecting) vm.toggle(ch) else onOpenReader(vm.argsFor(ch.copy(downloaded = isDownloaded)))
-        },
-    )
-}
-
-// ------------------------------------------------------------------------------------------------------------------- source sheet
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SourceSheet(
-    sources: List<MangaChapterSource>,
-    current: MangaChapterSource?,
-    preferredKey: String?,
-    languages: List<String>,
-    onSelect: (MangaChapterSource) -> Unit,
-    onPrefer: (MangaChapterSource?) -> Unit,
-    onLanguages: (List<String>) -> Unit,
-    onOpenExtensions: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AdaptiveSheet(onDismissRequest = onDismiss) {
-        Text(stringResource(Res.string.manga_source_settings), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
-        Text(stringResource(Res.string.manga_preferred_languages), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(horizontal = 16.dp))
-        Text(stringResource(Res.string.manga_preferred_languages_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp))
-        FlowRow(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LANGUAGE_CHOICES.forEach { code ->
-                val selected = code in languages
-                FilterChip(
-                    selected = selected,
-                    onClick = { onLanguages(if (selected) languages - code else languages + code) },
-                    label = { Text(Locale.forLanguageTag(code).getDisplayLanguage(Locale.getDefault()).replaceFirstChar(Char::uppercase)) },
-                )
-            }
-        }
-        HorizontalDivider()
-        Text(stringResource(Res.string.manga_preferred_source), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(16.dp))
-        ListItem(
-            headlineContent = { Text(stringResource(Res.string.manga_source_auto)) },
-            supportingContent = { Text(stringResource(Res.string.manga_source_auto_hint)) },
-            trailingContent = { if (preferredKey == null) Icon(Icons.Outlined.CheckCircle, contentDescription = null) },
-            modifier = Modifier.clickable { onPrefer(null) },
-        )
-        sources.forEach { s ->
-            ListItem(
-                headlineContent = { Text(s.extensionName) },
-                supportingContent = {
-                    Text(
-                        if (s.itemId == null) stringResource(Res.string.manga_source_unmatched) else sourceChipLabel(s),
-                    )
-                },
-                trailingContent = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (preferredKey == s.key) Icon(Icons.Outlined.CheckCircle, contentDescription = stringResource(Res.string.manga_preferred_source))
-                        TextButton(onClick = { onPrefer(s) }, enabled = s.itemId != null) { Text(stringResource(Res.string.manga_prefer)) }
-                    }
-                },
-                modifier = Modifier.clickable(enabled = s.itemId != null) { onSelect(s) }.then(
-                    if (current?.key == s.key) Modifier.background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)) else Modifier,
-                ),
-            )
-        }
-        TextButton(onClick = onOpenExtensions, modifier = Modifier.padding(horizontal = 8.dp)) { Text(stringResource(Res.string.manga_open_extensions)) }
-    }
-}
-
-internal val LANGUAGE_CHOICES = listOf("en", "es", "pt", "fr", "de", "it", "ru", "id", "vi", "th", "ja", "ko", "zh", "ar", "tr", "pl")
+internal const val MAX_TRACK_SEGMENTS = 52

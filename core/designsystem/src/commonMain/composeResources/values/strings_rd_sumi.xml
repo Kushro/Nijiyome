@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, lane D4: the Sumi y hanko direction (rd_sumi_*). -->
+    <string name="rd_sumi_name">Sumi and hanko</string>
+    <string name="rd_sumi_tagline">The current identity, inked: Nijiyome violet, the kitsune inside the ensō and list statuses as seals</string>
+    <string name="rd_sumi_palette_violeta">Nijiyome violet</string>
+    <string name="rd_sumi_palette_sakura">Sakura</string>
+    <string name="rd_sumi_palette_matcha">Matcha</string>
+    <string name="rd_sumi_palette_oceano">Ocean</string>
+    <string name="rd_sumi_palette_luna">Blood moon</string>
+    <string name="rd_sumi_palette_mono">Mono</string>
+    <string name="rd_sumi_watched">Watched</string>
+</resources>

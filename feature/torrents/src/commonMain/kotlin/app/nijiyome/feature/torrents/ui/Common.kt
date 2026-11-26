@@ -89,7 +89,7 @@ internal fun torrentErrorMessage(error: AppError): String {
         "moved" -> stringResource(Res.string.torrent_android_moved)
         "no_space" -> stringResource(Res.string.torrent_android_no_space, formatBytes(parts.getOrNull(2)?.toLongOrNull() ?: 0))
         "no_file" -> stringResource(Res.string.torrent_android_no_file)
-        "background_off" -> stringResource(Res.string.torrent_android_background_off)
+        "background_off" -> stringResource(Res.string.rd_s8_tor_background_off)
         "incomplete" -> stringResource(Res.string.torrent_android_incomplete)
         "export_unsupported" -> stringResource(Res.string.torrent_android_export_unsupported)
         "invalid_source" -> stringResource(Res.string.torrent_android_invalid_source)

@@ -5,6 +5,18 @@ import app.nijiyome.designsystem.components.focusOnOpen
 import app.nijiyome.feature.novel.resources.Res
 import app.nijiyome.feature.novel.resources.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FontDownload
+import androidx.compose.material.icons.outlined.UploadFile
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.produceState
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.items
@@ -75,12 +87,13 @@ import org.koin.compose.getKoin
 import app.nijiyome.ui.resources.ui_cancel
 import java.io.File
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
- * Settings › Lector › Novelas (mounted right after `ReaderSettingsSection`; checklist novel.tts.settings / novel.reader.typography /
- * novel.reader.custom-font / novel.reader.flow / novel.tts.*): typography (font presets, imported TTF / OTF in `filesDir/fonts/novel/`,
- * size, line height, paragraph spacing, width, colours, justify), flow (continuous scroll, progress bar, fullscreen, keep screen on) and
- * the narrator (engine, voice with "Probar voz", speed, endpoint / model, API key in SecretStore shown as "guardada" / "Quitar").
+ * Settings › Lectores y narrador › Novela (NOV-12, NOV-15 to NOV-18; lane S10 embeds it right after `ReaderSettingsSection`):
+ * typography with its live preview on top (font presets, installed family, imported TTF / OTF, size, line height, paragraph
+ * spacing, width, colours, justify), reading flow, and the narrator (engine, voice with "Probar voz", speed, pitch, highlight,
+ * server / model, API key in SecretStore shown as "guardada" / "Quitar", the local KittenTTS model).
  */
 @Composable
 fun NovelReaderSettingsSection(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
@@ -88,9 +101,11 @@ fun NovelReaderSettingsSection(settings: AppSettings, onUpdate: (transform: (App
     val narrator = remember { koin.getOrNull<Narrator>() }
     val secrets = remember { koin.getOrNull<SecretStore>() }
     val reader = settings.novelReader.sanitized()
-    Column(modifier.fillMaxWidth()) {
+    var preview by remember { mutableStateOf<NovelReaderSettings?>(null) }
+    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Title(stringResource(Res.string.novel_settings_section))
-        NovelTypographyRows(reader) { t -> onUpdate { it.copy(novelReader = t(it.novelReader).sanitized()) } }
+        NovelPreview(preview ?: reader)
+        NovelTypographyRows(reader, onPreview = { preview = it }) { t -> preview = null; onUpdate { it.copy(novelReader = t(it.novelReader).sanitized()) } }
         NovelFlowRows(reader) { t -> onUpdate { it.copy(novelReader = t(it.novelReader).sanitized()) } }
         Title(stringResource(Res.string.novel_narration_section))
         NarratorRows(settings.tts.sanitized(), narrator, secrets) { t -> onUpdate { it.copy(tts = t(it.tts).sanitized()) } }
@@ -99,38 +114,50 @@ fun NovelReaderSettingsSection(settings: AppSettings, onUpdate: (transform: (App
 
 @Composable
 private fun Title(text: String) {
-    Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp))
+    Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp).semantics { heading() })
 }
 
 @Composable
-private fun SwitchRow(title: String, hint: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = if (hint != null) ({ Text(hint) }) else null,
-        trailingContent = { Switch(checked = checked, onCheckedChange = onChange) },
-        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-        modifier = Modifier.clickable { onChange(!checked) },
-    )
-}
+private fun SwitchRow(title: String, hint: String?, checked: Boolean, onChange: (Boolean) -> Unit) = NovelSwitch(title, hint, checked, onChange)
 
 @Composable
-private fun SliderRow(title: String, value: Float, range: ClosedFloatingPointRange<Float>, steps: Int, label: @Composable (Float) -> String, onDone: (Float) -> Unit) {
-    var drag by remember(value) { mutableFloatStateOf(value) }
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = {
-            Column {
-                Text(label(drag))
-                Slider(value = drag, onValueChange = { drag = it }, onValueChangeFinished = { onDone(drag) }, valueRange = range, steps = steps)
-            }
-        },
-        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-    )
+private fun SliderRow(title: String, value: Float, range: ClosedFloatingPointRange<Float>, steps: Int, label: @Composable (Float) -> String, onDone: (Float) -> Unit) =
+    NovelSlider(title, value, range, steps, label, onDone = onDone)
+
+/** A few paragraphs in the chosen typography and colours (the live preview of NOV-12 / NOV-15). */
+@Composable
+internal fun NovelPreview(reader: NovelReaderSettings, modifier: Modifier = Modifier) {
+    val palette = novelPalette(reader.background)
+    val family = remember(reader.font, reader.customFontPath) { novelFontFamily(reader.font, reader.customFontPath) }
+    Surface(color = palette.background, shape = MaterialTheme.shapes.medium, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), modifier = modifier.fillMaxWidth()) {
+        Text(
+            stringResource(Res.string.novel_settings_preview_text),
+            style = TextStyle(
+                fontFamily = family,
+                fontSize = reader.sizeSp.sp,
+                lineHeight = (reader.sizeSp * reader.lineHeight).sp,
+                letterSpacing = dyslexicSpacing(reader.font).em,
+                color = palette.text,
+                textAlign = if (reader.textAlignJustify) TextAlign.Justify else TextAlign.Start,
+            ),
+            maxLines = 6,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
 }
 
-/** Font, size, line height, spacing, width, colours (also the in-reader sheet, checklist novel.reader.settings-sheet). */
+/**
+ * Typography (NOV-12 / NOV-15; also the reader's "Texto y diseño" panel): fonts as chips written in their own face, the installed
+ * family (desktop), import / remove a TTF or OTF, size, line height, paragraph spacing, width, colours and justify. [onPreview]
+ * follows a slider while it is dragged, so the preview (and the reader's text) change live before the value is saved.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun NovelTypographyRows(reader: NovelReaderSettings, onUpdate: ((NovelReaderSettings) -> NovelReaderSettings) -> Unit) {
+internal fun NovelTypographyRows(
+    reader: NovelReaderSettings,
+    onPreview: (NovelReaderSettings?) -> Unit = {},
+    onUpdate: ((NovelReaderSettings) -> NovelReaderSettings) -> Unit,
+) {
     val importFont = rememberFontImporter()
     val scope = rememberCoroutineScope()
     var fontError by remember { mutableStateOf(false) }
@@ -156,91 +183,90 @@ internal fun NovelTypographyRows(reader: NovelReaderSettings, onUpdate: ((NovelR
             if (path != null) onUpdate { it.copy(font = "custom", customFontPath = path) }
         }
     }
-    ListItem(
-        headlineContent = { Text(stringResource(Res.string.novel_settings_font)) },
-        supportingContent = {
-            Column {
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    novelFonts().forEach { f ->
-                        if (f == "custom" && reader.customFontPath == null) return@forEach
-                        FilterChip(selected = reader.font == f, onClick = { onUpdate { it.copy(font = f) } }, label = { Text(fontLabel(f)) })
-                    }
-                    // Desktop (Tatakai Next `family:` fonts): any family installed on the computer.
-                    if (installedFontsOffered) {
-                        val family = NovelReaderSettings.installedFamily(reader.font)
-                        FilterChip(
-                            selected = family != null,
-                            onClick = { pickingFamily = true },
-                            label = { Text(family ?: stringResource(Res.string.novel_font_installed)) },
-                        )
-                    }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        NovelGroup(stringResource(Res.string.rd_s11_typography)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                novelFonts().forEach { f ->
+                    if (f == "custom" && reader.customFontPath == null) return@forEach
+                    val family = remember(f, reader.customFontPath) { novelFontFamily(f, reader.customFontPath) }
+                    FilterChip(selected = reader.font == f, onClick = { onUpdate { it.copy(font = f) } }, label = { Text(fontLabel(f), fontFamily = family) })
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                    TextButton(onClick = { importer() }) {
-                        Text(stringResource(Res.string.novel_settings_font_import))
-                    }
-                    val installed = reader.customFontPath
-                    if (installed != null) {
-                        TextButton(onClick = {
-                            runCatching { File(installed).delete() }
-                            onUpdate { it.copy(customFontPath = null, font = if (it.font == "custom") "serif" else it.font) }
-                        }) { Text(stringResource(Res.string.novel_settings_font_remove)) }
-                    }
+                // Desktop (Tatakai Next `family:` fonts): any family installed on the computer.
+                if (installedFontsOffered) {
+                    val family = NovelReaderSettings.installedFamily(reader.font)
+                    FilterChip(
+                        selected = family != null,
+                        onClick = { pickingFamily = true },
+                        label = { Text(family ?: stringResource(Res.string.novel_font_installed)) },
+                        leadingIcon = { Icon(Icons.Outlined.FontDownload, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    )
                 }
-                reader.customFontPath?.let { Text(stringResource(Res.string.novel_settings_font_installed, File(it).name), style = MaterialTheme.typography.bodySmall) }
-                if (fontError) Text(stringResource(Res.string.novel_settings_font_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                FilterChip(
+                    selected = false,
+                    onClick = { importer() },
+                    label = { Text(stringResource(Res.string.novel_settings_font_import)) },
+                    leadingIcon = { Icon(Icons.Outlined.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                )
             }
-        },
-    )
-    SliderRow(stringResource(Res.string.novel_settings_size), reader.sizeSp.toFloat(), 10f..40f, 29, label = { stringResource(Res.string.novel_settings_sp, it.roundToInt()) }) { v -> onUpdate { it.copy(sizeSp = v.roundToInt()) } }
-    SliderRow(stringResource(Res.string.novel_settings_line_height), reader.lineHeight, 1f..2.5f, 14, label = { "%.1f×".format(it) }) { v -> onUpdate { it.copy(lineHeight = (v * 10).roundToInt() / 10f) } }
-    SliderRow(stringResource(Res.string.novel_settings_paragraph_spacing), reader.paragraphSpacingDp.toFloat(), 0f..48f, 23, label = { stringResource(Res.string.novel_settings_dp, it.roundToInt()) }) { v ->
-        onUpdate { it.copy(paragraphSpacingDp = v.roundToInt()) }
-    }
-    SliderRow(
-        stringResource(Res.string.novel_settings_width),
-        reader.maxWidthDp.toFloat(),
-        0f..1600f,
-        31,
-        label = { if (it.roundToInt() == 0) stringResource(Res.string.novel_settings_no_limit) else stringResource(Res.string.novel_settings_dp, it.roundToInt()) },
-    ) { v -> onUpdate { it.copy(maxWidthDp = (v.roundToInt() / 50) * 50) } }
-    ListItem(
-        headlineContent = { Text(stringResource(Res.string.novel_settings_background)) },
-        supportingContent = {
-            Segmented(
-                options = listOf(
-                    SegmentedOption("theme", stringResource(Res.string.novel_bg_theme)),
-                    SegmentedOption("sepia", stringResource(Res.string.novel_bg_sepia)),
-                    SegmentedOption("white", stringResource(Res.string.novel_bg_white)),
-                    SegmentedOption("gray", stringResource(Res.string.novel_bg_gray)),
-                    SegmentedOption("black", stringResource(Res.string.novel_bg_black)),
+            val installed = reader.customFontPath
+            if (installed != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(Res.string.novel_settings_font_installed, File(installed).name), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                    TextButton(onClick = {
+                        runCatching { File(installed).delete() }
+                        onUpdate { it.copy(customFontPath = null, font = if (it.font == "custom") "serif" else it.font) }
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_settings_font_remove)) }
+                }
+            }
+            if (fontError) Text(stringResource(Res.string.novel_settings_font_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            NovelSlider(
+                stringResource(Res.string.novel_settings_size), reader.sizeSp.toFloat(), 10f..40f, 29,
+                label = { stringResource(Res.string.novel_settings_sp, it.roundToInt()) },
+                onLive = { v -> onPreview(reader.copy(sizeSp = v.roundToInt())) },
+            ) { v -> onUpdate { it.copy(sizeSp = v.roundToInt()) } }
+            NovelSlider(
+                stringResource(Res.string.novel_settings_line_height), reader.lineHeight, 1f..2.5f, 14,
+                label = { "%.1f×".format(it) },
+                onLive = { v -> onPreview(reader.copy(lineHeight = (v * 10).roundToInt() / 10f)) },
+            ) { v -> onUpdate { it.copy(lineHeight = (v * 10).roundToInt() / 10f) } }
+            NovelSlider(
+                stringResource(Res.string.novel_settings_paragraph_spacing), reader.paragraphSpacingDp.toFloat(), 0f..48f, 23,
+                label = { stringResource(Res.string.novel_settings_dp, it.roundToInt()) },
+                onLive = { v -> onPreview(reader.copy(paragraphSpacingDp = v.roundToInt())) },
+            ) { v -> onUpdate { it.copy(paragraphSpacingDp = v.roundToInt()) } }
+            NovelSlider(
+                stringResource(Res.string.novel_settings_width), reader.maxWidthDp.toFloat(), 0f..1600f, 31,
+                label = { if (it.roundToInt() == 0) stringResource(Res.string.novel_settings_no_limit) else stringResource(Res.string.novel_settings_dp, it.roundToInt()) },
+                onLive = { v -> onPreview(reader.copy(maxWidthDp = (v.roundToInt() / 50) * 50)) },
+            ) { v -> onUpdate { it.copy(maxWidthDp = (v.roundToInt() / 50) * 50) } }
+            NovelSwitch(stringResource(Res.string.novel_settings_justify), null, reader.textAlignJustify) { v -> onUpdate { it.copy(textAlignJustify = v) } }
+        }
+        NovelGroup(stringResource(Res.string.novel_settings_background)) {
+            NovelSwatches(
+                listOf(
+                    "theme" to stringResource(Res.string.novel_bg_theme),
+                    "sepia" to stringResource(Res.string.novel_bg_sepia),
+                    "white" to stringResource(Res.string.novel_bg_white),
+                    "gray" to stringResource(Res.string.novel_bg_gray),
+                    "black" to stringResource(Res.string.novel_bg_black),
                 ),
+                colorOf = { novelPalette(it).background },
                 selected = reader.background,
                 onSelect = { v -> onUpdate { it.copy(background = v) } },
-                small = true,
             )
-        },
-    )
-    SwitchRow(stringResource(Res.string.novel_settings_justify), null, reader.textAlignJustify) { v -> onUpdate { it.copy(textAlignJustify = v) } }
-    // Live preview with the chosen typography.
-    val palette = novelPalette(reader.background)
-    val family = remember(reader.font, reader.customFontPath) { novelFontFamily(reader.font, reader.customFontPath) }
-    Surface(color = palette.background, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(
-            stringResource(Res.string.novel_settings_preview_text),
-            style = TextStyle(fontFamily = family, fontSize = reader.sizeSp.sp, lineHeight = (reader.sizeSp * reader.lineHeight).sp, letterSpacing = dyslexicSpacing(reader.font).em, color = palette.text),
-            modifier = Modifier.padding(16.dp),
-        )
+        }
     }
 }
 
-/** Continuous scroll, progress bar, fullscreen, keep the screen on (checklist novel.reader.flow). */
+/** Reading flow (NOV-12 / NOV-15): continuous scroll, progress bar, fullscreen on open, keep the screen on. */
 @Composable
 internal fun NovelFlowRows(reader: NovelReaderSettings, onUpdate: ((NovelReaderSettings) -> NovelReaderSettings) -> Unit) {
-    SwitchRow(stringResource(Res.string.novel_settings_continuous), stringResource(Res.string.novel_settings_continuous_hint), reader.continuousScroll) { v -> onUpdate { it.copy(continuousScroll = v) } }
-    SwitchRow(stringResource(Res.string.novel_settings_progress_bar), null, reader.showProgressBar) { v -> onUpdate { it.copy(showProgressBar = v) } }
-    SwitchRow(stringResource(Res.string.novel_settings_fullscreen), null, reader.fullscreenOnOpen) { v -> onUpdate { it.copy(fullscreenOnOpen = v) } }
-    SwitchRow(stringResource(Res.string.novel_settings_keep_on), null, reader.keepScreenOn) { v -> onUpdate { it.copy(keepScreenOn = v) } }
+    NovelGroup(stringResource(Res.string.rd_s11_reading_flow)) {
+        NovelSwitch(stringResource(Res.string.novel_settings_continuous), stringResource(Res.string.novel_settings_continuous_hint), reader.continuousScroll) { v -> onUpdate { it.copy(continuousScroll = v) } }
+        NovelSwitch(stringResource(Res.string.novel_settings_progress_bar), null, reader.showProgressBar) { v -> onUpdate { it.copy(showProgressBar = v) } }
+        NovelSwitch(stringResource(Res.string.novel_settings_fullscreen), null, reader.fullscreenOnOpen) { v -> onUpdate { it.copy(fullscreenOnOpen = v) } }
+        NovelSwitch(stringResource(Res.string.novel_settings_keep_on), null, reader.keepScreenOn) { v -> onUpdate { it.copy(keepScreenOn = v) } }
+    }
 }
 
 @Composable
@@ -311,7 +337,7 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
             Column {
                 val current = voices?.firstOrNull { it.id == tts.voice }?.label ?: tts.voice ?: stringResource(Res.string.novel_narration_voice_default)
                 Box {
-                    OutlinedButton(onClick = { voiceMenu = true }, enabled = !voices.isNullOrEmpty()) { Text(current) }
+                    OutlinedButton(onClick = { voiceMenu = true }, enabled = !voices.isNullOrEmpty(), shape = NijiyomeControls.shape) { Text(current) }
                     DropdownMenu(expanded = voiceMenu, onDismissRequest = { voiceMenu = false }) {
                         DropdownMenuItem(text = { Text(stringResource(Res.string.novel_narration_voice_default)) }, onClick = { voiceMenu = false; onUpdate { it.copy(voice = null) } })
                         voices.orEmpty().forEach { v ->
@@ -326,7 +352,7 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
                     var manual by remember(tts.engine) { mutableStateOf(tts.voice.orEmpty()) }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                         OutlinedTextField(value = manual, onValueChange = { manual = it }, singleLine = true, label = { Text(stringResource(Res.string.novel_narration_voice_id)) }, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { onUpdate { it.copy(voice = manual.trim().ifEmpty { null }) } }) { Text(stringResource(Res.string.novel_save)) }
+                        TextButton(onClick = { onUpdate { it.copy(voice = manual.trim().ifEmpty { null }) } }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_save)) }
                     }
                 }
             }
@@ -373,7 +399,7 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(onClick = { onUpdate { it.copy(endpoint = endpoint.trim(), model = model.trim()) } }) { Text(stringResource(Res.string.novel_save)) }
+            TextButton(onClick = { onUpdate { it.copy(endpoint = endpoint.trim(), model = model.trim()) } }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_save)) }
         }
         // API key (SecretStore, SecretKeys.ttsApiKey): "saved" / "remove", never shown.
         val secretKey = SecretKeys.ttsApiKey(tts.engine.id)
@@ -411,10 +437,11 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
                                 }
                             },
                             enabled = secrets != null && keyInput.isNotBlank(),
+                            shape = NijiyomeControls.shape,
                         ) { Text(stringResource(Res.string.novel_save)) }
                     }
                     if (saved) {
-                        TextButton(onClick = { scope.launch { runCatching { secrets?.put(secretKey, null) }; keyVersion++ } }) { Text(stringResource(Res.string.novel_narration_key_remove)) }
+                        TextButton(onClick = { scope.launch { runCatching { secrets?.put(secretKey, null) }; keyVersion++ } }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_narration_key_remove)) }
                     }
                 }
             },
@@ -443,8 +470,9 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
                 }
             },
             enabled = !testing,
+            shape = NijiyomeControls.shape,
         ) { Text(stringResource(if (testing) Res.string.novel_narration_testing else Res.string.novel_narration_test)) }
-        if (testing) TextButton(onClick = { narrator?.stop(); testing = false }) { Text(stringResource(Res.string.novel_narration_stop)) }
+        if (testing) TextButton(onClick = { narrator?.stop(); testing = false }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_narration_stop)) }
     }
     testError?.let { Text(ttsErrorText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp)) }
 }
@@ -502,7 +530,7 @@ private fun LocalVoiceRows(local: LocalVoiceInstaller, tts: TtsSettings, onChang
                             installed = local.installed(model.id)
                             onChanged()
                         }
-                    }) { Text(stringResource(Res.string.novel_narration_key_remove)) }
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_narration_key_remove)) }
                 } else {
                     FilledTonalButton(onClick = {
                         error = null
@@ -511,7 +539,7 @@ private fun LocalVoiceRows(local: LocalVoiceInstaller, tts: TtsSettings, onChang
                             installed = local.installed(model.id)
                             onChanged()
                         }
-                    }) { Text(stringResource(Res.string.novel_narration_local_download)) }
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_narration_local_download)) }
                 }
             }
         },
@@ -554,11 +582,11 @@ private fun InstalledFontDialog(current: String?, onPick: (String) -> Unit, onDi
             }
         },
         confirmButton = {
-            TextButton(onClick = { onPick(query.trim()) }, enabled = query.isNotBlank() && installedFontFamily(query.trim()) != null) {
+            TextButton(onClick = { onPick(query.trim()) }, enabled = query.isNotBlank() && installedFontFamily(query.trim()) != null, shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.novel_font_installed_use))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
     )
 }
 

@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** v1.1 (F6, sistema-ajustes-7): Tatakai Next's desktop wizard has a download folder step and a system step. */
 internal actual val platformOnboardingSteps: Set<OnboardingStep> = setOf(OnboardingStep.DOWNLOADS, OnboardingStep.SYSTEM)
@@ -84,9 +85,9 @@ private fun OnboardingDownloads() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = pick) { Text(stringResource(Res.string.settings_onboarding_downloads_change)) }
+            OutlinedButton(onClick = pick, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.settings_onboarding_downloads_change)) }
             if (torrent.downloadDir.isNotBlank()) {
-                TextButton(onClick = { save { it.copy(downloadDir = "", storageLocation = StorageLocation.AppSpecific) } }) {
+                TextButton(onClick = { save { it.copy(downloadDir = "", storageLocation = StorageLocation.AppSpecific) } }, shape = NijiyomeControls.shape) {
                     Text(stringResource(Res.string.settings_onboarding_downloads_reset))
                 }
             }

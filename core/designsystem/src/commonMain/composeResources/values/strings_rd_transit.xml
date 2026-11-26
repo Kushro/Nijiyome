@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sparkles redesign, lane D3 (Tránsito nocturno). -->
+    <string name="rd_transit_name">Night Transit</string>
+    <string name="rd_transit_tagline">Metro signage on graphite: every series is a colored line, every episode a station.</string>
+    <string name="rd_transit_palette_grafito">Graphite</string>
+    <string name="rd_transit_palette_anden">Platform</string>
+    <string name="rd_transit_palette_yamanote">Yamanote Line</string>
+    <string name="rd_transit_palette_ultima">Last Train</string>
+    <!-- Letter before an episode number on a station plate (E09). -->
+    <string name="rd_transit_prefix_episode">E</string>
+</resources>

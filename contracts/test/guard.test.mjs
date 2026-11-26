@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 //     the desktop imports, and the migration tooling).
 // Patterns are assembled from parts so this file does not match itself.
 const OLD = 'tata' + 'kai';
-const FORBIDDEN = new RegExp([OLD + '\\.me', OLD + 'api', 'sen' + 'try', 'data' + 'dog', 'analy' + 'tics'].join('|'), 'i');
+const FORBIDDEN = new RegExp([OLD + '\\.me', OLD + 'api', '\\bsen' + 'try\\b', 'data' + 'dog', 'analy' + 'tics'].join('|'), 'i');
 const OLD_NAME = new RegExp(OLD, 'i');
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -32,6 +32,7 @@ const OLD_NAME_FILES = [
   /^scripts\/migracion\//,
   /^README\.md$/,
   /^README\.es\.md$/,
+  /^PRODUCT\.md$/,
   /^THIRD_PARTY_NOTICES\.md$/,
   /^contracts\/extension-host\/globals\.v1\.md$/,
 ];

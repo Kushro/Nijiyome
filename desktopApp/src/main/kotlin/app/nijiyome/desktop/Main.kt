@@ -44,7 +44,6 @@ import app.nijiyome.desktop.system.TrayLiveStatus
 import app.nijiyome.extensionserver.PendingServerLink
 import app.nijiyome.desktop.system.NijiyomeTray
 import app.nijiyome.desktop.system.quantizedForTray
-import app.nijiyome.desktop.system.TrayTexts
 import app.nijiyome.desktop.system.connectDiscord
 import app.nijiyome.desktop.system.desktopSystemModule
 import app.nijiyome.desktop.system.discordEndpoints
@@ -55,12 +54,19 @@ import app.nijiyome.feature.settings.DesktopAppProperties
 import app.nijiyome.model.LinkServerController
 import app.nijiyome.model.MediaRef
 import app.nijiyome.model.PlayerArgs
+import app.nijiyome.model.NoticeDestination
 import app.nijiyome.model.SettingsRepository
+import app.nijiyome.model.SystemNotifier
+import app.nijiyome.model.torrent.TorrentSection
+import app.nijiyome.desktop.system.DesktopNotifier
 import app.nijiyome.nav.NijiyomeApp
 import app.nijiyome.nav.Route
 import app.nijiyome.ui.platform.AppWindow
 import app.nijiyome.social.DesktopSocialPoller
 import app.nijiyome.nav.ShellShortcuts
+import app.nijiyome.nav.TrayStrings
+import app.nijiyome.nav.loadTrayStrings
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.InterceptPlatformTextInput
 import app.nijiyome.ui.platform.DesktopBackDispatcher
 import app.nijiyome.ui.platform.LocalAppWindow
@@ -162,6 +168,13 @@ fun main(args: Array<String>) {
     // v1.1 (F2): the desktop's scale (Xft.dpi) that AWT ignores on Linux, applied to Compose's density (LinuxUiScale).
     val uiScale = LinuxUiScale.factor
     var showWindow: () -> Unit = {}
+    // DESK-09: a clicked notification shows the window on its screen, through the same route links as a forwarded launch.
+    (koin.getOrNull<SystemNotifier>() as? DesktopNotifier)?.onOpen = { destination ->
+        EventQueue.invokeLater {
+            router.routeLinks.value = destination.route()
+            showWindow()
+        }
+    }
     val channel = InstanceChannel.listen(paths.dataDir) { forwarded ->
         EventQueue.invokeLater {
             router.open(LaunchArgs.parse(forwarded).target)
@@ -201,7 +214,8 @@ fun main(args: Array<String>) {
             // The tray menu in the chosen language from the start and as soon as it changes (its texts are a parameter, so a new
             // language recomposes the menu; they never depend on when the default locale was last set).
             DesktopLocale.apply(appSettings.language)
-            val trayTexts = TrayTexts.forLocale(DesktopLocale.localeFor(appSettings.language))
+            // Read from the shell's resources once the process locale above is the chosen one.
+            val trayTexts by produceState(TrayStrings(), appSettings.language) { value = loadTrayStrings() }
             val spanish = DesktopLocale.localeFor(appSettings.language).language == "es"
 
             // Live telemetry for the Link Monitor dialog (sampled every 1.5-3s) and a coarse, freeze-guarded snapshot for
@@ -209,7 +223,7 @@ fun main(args: Array<String>) {
             var liveStatus by remember { mutableStateOf(TrayLiveStatus(spanish = spanish, link = link)) }
             var traySnapshot by remember { mutableStateOf(liveStatus.quantizedForTray()) }
             val trayFreezeUntilMs = remember { java.util.concurrent.atomic.AtomicLong(0L) }
-            LaunchedEffect(linkServer, torrentRepo, trayOn, linkMonitorOpen, spanish) {
+            LaunchedEffect(linkServer, torrentRepo, trayOn, linkMonitorOpen, spanish, trayTexts) {
                 while (true) {
                     val snapshot = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         val rt = Runtime.getRuntime()
@@ -228,10 +242,10 @@ fun main(args: Array<String>) {
                                 kotlinx.coroutines.withTimeoutOrNull(250) { torrentRepo?.stats(item.id)?.first() }
                             }.getOrNull()
                             val stateLbl = when (st?.state ?: item.state) {
-                                app.nijiyome.model.torrent.TorrentState.DOWNLOADING -> if (spanish) "Descargando" else "Downloading"
-                                app.nijiyome.model.torrent.TorrentState.SEEDING -> if (spanish) "Compartiendo" else "Seeding"
-                                app.nijiyome.model.torrent.TorrentState.INITIALIZING -> if (spanish) "Iniciando" else "Initializing"
-                                else -> if (spanish) "Activo" else "Active"
+                                app.nijiyome.model.torrent.TorrentState.DOWNLOADING -> trayTexts.stateDownloading
+                                app.nijiyome.model.torrent.TorrentState.SEEDING -> trayTexts.stateSeeding
+                                app.nijiyome.model.torrent.TorrentState.INITIALIZING -> trayTexts.stateInitializing
+                                else -> trayTexts.stateActive
                             }
                             ActiveTorrentSummary(
                                 id = item.id,
@@ -274,7 +288,8 @@ fun main(args: Array<String>) {
                 }
             }
             val openMonitor = { show(); linkMonitorOpen = true }
-            val openTorrents = { show(); router.routeLinks.value = app.nijiyome.nav.Route.Torrents() }
+            // Sparkles: the torrents live in Transferencias.
+            val openTorrents = { show(); router.routeLinks.value = app.nijiyome.nav.Route.Downloads() }
             val openSettingsModal = { show(); shortcuts.openSettingsModal(null) }
             if (trayOn && trayIcons != null) {
                 NijiyomeTray(
@@ -365,6 +380,9 @@ fun main(args: Array<String>) {
                                     accountLinks = router.accountLinks,
                                     routeLinks = router.routeLinks,
                                     shortcuts = shortcuts,
+                                    // Sparkles file drop: a magnet or a .torrent dropped on the window goes where the command line sends it.
+                                    openExternal = { raw -> LaunchArgs.targetOf(raw)?.let { router.open(it); true } ?: false },
+                                    openLinkMonitor = { linkMonitorOpen = true },
                                     windowTopBar = if (nativeBar) null else ({
                                         DesktopTitleBar(
                                             window = window,
@@ -372,7 +390,6 @@ fun main(args: Array<String>) {
                                             appWindow = appWindow,
                                             online = online,
                                             linkPort = linkPort,
-                                            spanish = spanish,
                                             windows = windows,
                                             onClose = closeWindow,
                                             canGoBack = shortcuts.canGoBack,
@@ -401,6 +418,8 @@ fun main(args: Array<String>) {
                                         contrast = contrast,
                                         dynamicColor = false,
                                         darkTheme = dark,
+                                        direction = app.nijiyome.designsystem.direction.Directions.byId(appSettings.look.design.direction.id),
+                                        directionPalette = appSettings.look.design.palette,
                                     ) {
                                         LinkMonitorDialog(
                                             status = liveStatus.copy(link = link, spanish = spanish),
@@ -465,6 +484,14 @@ private fun exitWithWatchdog(code: Int): Nothing {
 internal fun localFileRoute(path: String): Route? {
     val file = File(path).takeIf { it.isFile } ?: return null
     return Route.Player(PlayerArgs(media = MediaRef(), title = file.nameWithoutExtension, episode = 1, localUri = file.absolutePath, looseFile = true))
+}
+
+/** The screen a clicked desktop notification opens. */
+internal fun NoticeDestination.route(): Route = when (this) {
+    NoticeDestination.Transfers -> Route.Downloads()
+    is NoticeDestination.Torrent -> Route.Torrents(TorrentSection.OVERVIEW, torrentId)
+    NoticeDestination.Calendar -> Route.Calendar
+    NoticeDestination.Notifications -> Route.Notifications
 }
 
 /** Startup messages shown before any shared resource can be loaded: English, or Spanish on a Spanish system. */

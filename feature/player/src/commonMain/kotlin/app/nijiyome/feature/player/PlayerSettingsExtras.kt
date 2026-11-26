@@ -70,12 +70,14 @@ import app.nijiyome.player.SubtitleTranslators
 import app.nijiyome.player.TranslationException
 import app.nijiyome.player.TranslatorConfig
 import app.nijiyome.ui.format.formatBytes
+import app.nijiyome.feature.player.sheets.languageName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.compose.getKoin
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Parity wave A contract (docs/redesign/15-parity-wave-a-contract-android.md §3.2). Owner: worker p. Mounted by Settings › Reproductor
@@ -106,6 +108,36 @@ fun PlayerSettingsExtras(
         SectionTitle(stringResource(Res.string.player_settings_shortcuts_section))
         ShortcutRows(settings, onUpdate)
     }
+}
+
+// Sparkles redesign (lane S6): the same rows one group at a time, for the new Settings categories (lane S10): Reproducción gets the
+// playback rows and the shortcut editor, Subtítulos y audio the second language and the translation. Same saving as above.
+
+/** Auto-next countdown, stable volume, background playback (Settings › Reproducción). */
+@Composable
+fun PlayerPlaybackSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { PlaybackRows(settings, onUpdate) }
+}
+
+/** The language of the second subtitle track (Settings › Subtítulos y audio). */
+@Composable
+fun SubtitleLanguageSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { SecondaryLanguageRow(settings, onUpdate) }
+}
+
+/** Subtitle translation: engine, mode, language, connection, key, test, cache (Settings › Subtítulos y audio › Traducción). */
+@Composable
+fun SubtitleTranslationSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    val koin = getKoin()
+    val tools = remember { koin.subtitleToolsAccess() }
+    val secrets = remember { koin.getOrNull<SecretStore>() }
+    Column(modifier.fillMaxWidth()) { TranslationRows(settings, onUpdate, tools, secrets) }
+}
+
+/** The player's keyboard shortcut editor (Settings › Reproducción › Atajos). */
+@Composable
+fun PlayerShortcutSettings(settings: AppSettings, onUpdate: (transform: (AppSettings) -> AppSettings) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) { ShortcutRows(settings, onUpdate) }
 }
 
 @Composable
@@ -177,7 +209,7 @@ private fun SecondaryLanguageRow(settings: AppSettings, onUpdate: ((AppSettings)
                 Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp), Arrangement.spacedBy(6.dp)) {
                     FilterChip(selected = settings.secondarySubLang == null, onClick = { onUpdate { it.copy(secondarySubLang = null) } }, label = { Text(stringResource(Res.string.player_sub_secondary_off)) })
                     SECONDARY_LANGS.forEach { l ->
-                        FilterChip(selected = settings.secondarySubLang == l, onClick = { onUpdate { it.copy(secondarySubLang = l) } }, label = { Text(l.uppercase()) })
+                        FilterChip(selected = settings.secondarySubLang == l, onClick = { onUpdate { it.copy(secondarySubLang = l) } }, label = { Text(languageName(l)) })
                     }
                 }
             }
@@ -187,7 +219,7 @@ private fun SecondaryLanguageRow(settings: AppSettings, onUpdate: ((AppSettings)
 
 // ---- translation ------------------------------------------------------------------------------------------------------------------------
 
-private fun TranslationProvider.needsKey(): Boolean = this == TranslationProvider.DEEPL || this == TranslationProvider.AZURE
+internal fun TranslationProvider.needsKey(): Boolean = this == TranslationProvider.DEEPL || this == TranslationProvider.AZURE
 private fun TranslationProvider.acceptsKey(): Boolean = this != TranslationProvider.NONE && this != TranslationProvider.GOOGLE
 private fun TranslationProvider.usesEndpoint(): Boolean = this == TranslationProvider.DEEPLX || this == TranslationProvider.OPENAI || this == TranslationProvider.AZURE
 
@@ -230,7 +262,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
         supportingContent = {
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp), Arrangement.spacedBy(6.dp)) {
                 SubtitleTranslators.TARGET_LANGUAGES.forEach { l ->
-                    FilterChip(selected = t.targetLang == l, onClick = { update { it.copy(targetLang = l) } }, label = { Text(l.uppercase()) })
+                    FilterChip(selected = t.targetLang == l, onClick = { update { it.copy(targetLang = l) } }, label = { Text(languageName(l)) })
                 }
             }
         },
@@ -258,7 +290,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
                 OutlinedTextField(value = region, onValueChange = { region = it }, label = { Text(stringResource(Res.string.player_settings_region)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             }
             val dirty = endpoint != t.endpoint || model != t.model || region != t.region
-            FilledTonalButton(onClick = { update { it.copy(endpoint = endpoint.trim(), model = model.trim(), region = region.trim()) } }, enabled = dirty) {
+            FilledTonalButton(onClick = { update { it.copy(endpoint = endpoint.trim(), model = model.trim(), region = region.trim()) } }, enabled = dirty, shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.player_settings_save))
             }
         }
@@ -284,7 +316,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
             },
             trailingContent = if (keySaved == true && secrets != null) {
                 {
-                    TextButton(onClick = { scope.launch { runCatching { secrets.put(secretKey, null) }; keySaved = false } }) {
+                    TextButton(onClick = { scope.launch { runCatching { secrets.put(secretKey, null) }; keySaved = false } }, shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.player_settings_key_remove))
                     }
                 }
@@ -316,6 +348,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
                         }
                     },
                     enabled = keyInput.isNotBlank(),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.player_settings_save)) }
             }
         }
@@ -361,6 +394,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
                     )
                 }
             },
+            shape = NijiyomeControls.shape,
         ) { Text(stringResource(if (testing) Res.string.player_settings_testing else Res.string.player_settings_test)) }
         testResult?.let {
             Text(
@@ -379,7 +413,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
             headlineContent = { Text(stringResource(Res.string.player_settings_cache)) },
             supportingContent = { Text(stringResource(Res.string.player_settings_cache_size, formatBytes(size))) },
             trailingContent = {
-                TextButton(onClick = { scope.launch { tools.translationCache.clear(); size = tools.translationCache.sizeBytes() } }, enabled = size > 0) {
+                TextButton(onClick = { scope.launch { tools.translationCache.clear(); size = tools.translationCache.sizeBytes() } }, enabled = size > 0, shape = NijiyomeControls.shape) {
                     Text(stringResource(Res.string.player_settings_cache_clear))
                 }
             },
@@ -412,7 +446,7 @@ private fun ShortcutRows(settings: AppSettings, onUpdate: ((AppSettings) -> AppS
             modifier = Modifier.clickable { editing = action },
         )
     }
-    TextButton(onClick = { onUpdate { it.copy(playerKeymap = PlayerKeymap.reset()) } }, enabled = settings.playerKeymap.isNotEmpty(), modifier = Modifier.padding(horizontal = 8.dp)) {
+    TextButton(onClick = { onUpdate { it.copy(playerKeymap = PlayerKeymap.reset()) } }, enabled = settings.playerKeymap.isNotEmpty(), modifier = Modifier.padding(horizontal = 8.dp), shape = NijiyomeControls.shape) {
         Text(stringResource(Res.string.player_settings_shortcuts_reset))
     }
     HorizontalDivider(Modifier.padding(top = 8.dp))
@@ -462,8 +496,8 @@ private fun KeyCaptureDialog(action: String, keymap: Map<String, String>, onSave
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { key?.let(onSave) }, enabled = key != null && !reserved) { Text(stringResource(Res.string.player_settings_save)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.player_cancel)) } },
+        confirmButton = { TextButton(onClick = { key?.let(onSave) }, enabled = key != null && !reserved, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_settings_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_cancel)) } },
     )
 }
 

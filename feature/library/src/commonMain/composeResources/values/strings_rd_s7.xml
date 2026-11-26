@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkles redesign, lane S7: Library (structures Estantes, Tablero, Lista; medium switch; editor). -->
+<resources>
+    <string name="rd_s7_tab_my_list">My list</string>
+    <string name="rd_s7_medium_anime">Anime</string>
+    <string name="rd_s7_medium_manga">Manga</string>
+    <string name="rd_s7_medium_novel">Novel</string>
+    <string name="rd_s7_menu">Library options</string>
+    <string name="rd_s7_accounts">Lists and accounts</string>
+    <string name="rd_s7_torrents_downloaded">Downloaded torrents</string>
+    <string name="rd_s7_torrents_moved">Torrents now live in Transfers, next to your other downloads.</string>
+    <string name="rd_s7_open_transfers">Open Transfers</string>
+    <string name="rd_s7_back_to_library">Back to Library</string>
+    <string name="rd_s7_synced">Library synced</string>
+    <string name="rd_s7_sync_failed">Could not sync. Check the connection and try again.</string>
+
+    <string name="rd_s7_continue">Continue</string>
+    <string name="rd_s7_continue_hint">Pick up where you left off</string>
+    <string name="rd_s7_next_episode">Next: ep %1$d</string>
+    <string name="rd_s7_filter_all">All · %1$d</string>
+    <string name="rd_s7_folded">Folded</string>
+    <string name="rd_s7_unfolded">Unfolded</string>
+    <string name="rd_s7_empty_title">Your list is empty</string>
+    <string name="rd_s7_no_match">Nothing in your list matches “%1$s”</string>
+    <string name="rd_s7_no_status">No titles with this status</string>
+    <string name="rd_s7_clear_filter">Clear filter</string>
+    <string name="rd_s7_show_all">Show all</string>
+
+    <string name="rd_s7_move_to">Move to</string>
+    <string name="rd_s7_move_to_status">Move to %1$s</string>
+    <string name="rd_s7_already_in">Already in %1$s</string>
+    <string name="rd_s7_edit_entry">Edit entry…</string>
+    <string name="rd_s7_add_favorite">Add to favorites</string>
+    <string name="rd_s7_remove_favorite">Remove from favorites</string>
+    <string name="rd_s7_favorite_on">In favorites</string>
+    <string name="rd_s7_remove">Remove from list</string>
+    <string name="rd_s7_pick">Pick up to move</string>
+    <string name="rd_s7_more_for">More actions for %1$s</string>
+
+    <string name="rd_s7_board_hint_wide">Drag a card to another column to change its status. With the keyboard, press Space on a card or use its Move to menu.</string>
+    <string name="rd_s7_board_hint_touch">Touch and hold a card to move it to another status.</string>
+    <string name="rd_s7_column">%1$s, %2$d titles</string>
+    <string name="rd_s7_drop_here_empty">Drop here</string>
+
+    <string name="rd_s7_col_title">Title</string>
+    <string name="rd_s7_col_status">Status</string>
+    <string name="rd_s7_col_progress">Progress</string>
+    <string name="rd_s7_col_score">Score</string>
+    <string name="rd_s7_col_updated">Updated</string>
+    <string name="rd_s7_sort_by">Sort by %1$s</string>
+    <string name="rd_s7_sort_natural">Default order</string>
+    <string name="rd_s7_sort_reversed">Reversed order</string>
+    <string name="rd_s7_no_score">No score</string>
+    <string name="rd_s7_select">Select</string>
+    <string name="rd_s7_done">Done</string>
+    <string name="rd_s7_select_all">Select all</string>
+    <string name="rd_s7_select_title">Select %1$s</string>
+    <string name="rd_s7_select_hint">Choose titles: click, Shift+click or touch and hold</string>
+    <string name="rd_s7_change_status">Change status</string>
+    <string name="rd_s7_plus_one">+1 episode</string>
+    <string name="rd_s7_remove_n">Remove %1$d</string>
+    <string name="rd_s7_batch_status_title">Move %1$d titles to</string>
+    <plurals name="rd_s7_titles">
+        <item quantity="one">%1$d title</item>
+        <item quantity="other">%1$d titles</item>
+    </plurals>
+    <plurals name="rd_s7_episodes">
+        <item quantity="one">%1$d episode</item>
+        <item quantity="other">%1$d episodes</item>
+    </plurals>
+
+    <string name="rd_s7_moved">%1$s moved to %2$s.</string>
+    <string name="rd_s7_moved_many">%1$d titles moved to %2$s.</string>
+    <string name="rd_s7_plus_one_done">Added an episode to %1$d titles.</string>
+    <string name="rd_s7_removed">%1$s left your list.</string>
+    <string name="rd_s7_removed_many">%1$d titles left your list.</string>
+    <string name="rd_s7_char_removed">%1$s left your favorites.</string>
+    <string name="rd_s7_no_characters">No favorite characters yet.</string>
+
+    <string name="rd_s7_editor_title">Edit entry</string>
+    <string name="rd_s7_editor_saved">Every change saves when you tap it</string>
+    <string name="rd_s7_score_hint">0 leaves the title without a score.</string>
+</resources>

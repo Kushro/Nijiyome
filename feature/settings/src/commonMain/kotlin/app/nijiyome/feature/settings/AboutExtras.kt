@@ -6,6 +6,7 @@ package app.nijiyome.feature.settings
 import app.nijiyome.feature.settings.resources.Res
 import app.nijiyome.feature.settings.resources.*
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.getString
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,6 +66,7 @@ import app.nijiyome.ui.platform.rememberOpenFolder
 import app.nijiyome.ui.state.userMessage
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // parity wave A (15 §3.4, worker q; checklist system.update-check, system.open-logs): rows of Settings › Acerca de.
 
@@ -85,7 +87,7 @@ internal fun UpdateCheckRow(system: SystemViewModel, updateCheckEnabled: Boolean
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val update = state.update
-        FilledTonalButton(onClick = system::checkUpdates, enabled = update != UpdateCheckState.Checking) {
+        FilledTonalButton(onClick = system::checkUpdates, enabled = update != UpdateCheckState.Checking, shape = NijiyomeControls.shape) {
             if (update == UpdateCheckState.Checking) {
                 LoadingIndicator(Modifier.size(20.dp))
             } else {
@@ -96,7 +98,7 @@ internal fun UpdateCheckRow(system: SystemViewModel, updateCheckEnabled: Boolean
         when (update) {
             UpdateCheckState.Idle, UpdateCheckState.Checking -> Unit
             UpdateCheckState.UpToDate -> Pill(stringResource(Res.string.settings_update_up_to_date), tone = PillTone.OK)
-            is UpdateCheckState.Available -> TextButton(onClick = { openUrl(update.info.url) }) {
+            is UpdateCheckState.Available -> TextButton(onClick = { openUrl(update.info.url) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.NewReleases, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text(stringResource(Res.string.settings_update_available, update.info.version), modifier = Modifier.padding(start = 8.dp))
             }
@@ -128,7 +130,7 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
         system.events.collect { ev ->
             when (ev) {
                 is SystemEvent.LogsPushed -> snackbar.show(
-                    if (ev.count > 0) "Se enviaron ${ev.count} líneas a la PC" else "Los registros ya estaban al día en la PC",
+                    if (ev.count > 0) getString(Res.string.rd_s10_logs_pushed, ev.count) else getString(Res.string.rd_s10_logs_up_to_date),
                 )
                 is SystemEvent.Failed -> snackbar.show(actionFailed)
                 else -> Unit
@@ -150,17 +152,17 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
             )
             val lines = (state.logs as? LoadState.Ok)?.value.orEmpty()
             IconButton(onClick = system::loadLogs) {
-                Icon(Icons.Outlined.Refresh, contentDescription = "Actualizar")
+                Icon(Icons.Outlined.Refresh, contentDescription = stringResource(Res.string.rd_s10_logs_refresh))
             }
             if (openFolder != null) {
                 val folder = system.logsFolder()
                 if (folder != null) {
                     IconButton(onClick = { openFolder(folder.absolutePath) }) {
-                        Icon(Icons.Outlined.FolderOpen, contentDescription = "Abrir carpeta")
+                        Icon(Icons.Outlined.FolderOpen, contentDescription = stringResource(Res.string.rd_s10_logs_open_folder))
                     }
                 }
             }
-            TextButton(onClick = system::clearLogs, enabled = lines.isNotEmpty()) {
+            TextButton(onClick = system::clearLogs, enabled = lines.isNotEmpty(), shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.DeleteSweep, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text(stringResource(Res.string.settings_logs_clear), modifier = Modifier.padding(start = 4.dp))
             }
@@ -169,6 +171,7 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                     if (!shareLog()) snackbar.show(shareFailed)
                 },
                 enabled = lines.isNotEmpty(),
+                shape = NijiyomeControls.shape,
             ) {
                 Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text(stringResource(Res.string.settings_logs_share), modifier = Modifier.padding(start = 4.dp))
@@ -189,7 +192,7 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                     FilterChip(
                         selected = state.logSource == LogSourceFilter.Local,
                         onClick = { system.selectLogSource(LogSourceFilter.Local) },
-                        label = { Text("Esta PC") },
+                        label = { Text(stringResource(Res.string.rd_s10_logs_this_pc)) },
                     )
                     state.logDevices.forEach { dev ->
                         FilterChip(
@@ -201,20 +204,21 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                     FilterChip(
                         selected = state.logSource == LogSourceFilter.All,
                         onClick = { system.selectLogSource(LogSourceFilter.All) },
-                        label = { Text("Todos") },
+                        label = { Text(stringResource(Res.string.rd_s10_logs_all)) },
                     )
                 }
                 if (system.canPushLogs) {
                     FilledTonalButton(
                         onClick = system::pushLogsToPc,
                         enabled = !state.pushingLogs,
+                        shape = NijiyomeControls.shape,
                     ) {
                         if (state.pushingLogs) {
                             LoadingIndicator(Modifier.size(18.dp))
                         } else {
                             Icon(Icons.Outlined.CloudUpload, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         }
-                        Text("Enviar a la PC", modifier = Modifier.padding(start = 6.dp))
+                        Text(stringResource(Res.string.rd_s10_logs_send_pc), modifier = Modifier.padding(start = 6.dp))
                     }
                 }
             }
@@ -229,7 +233,7 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                 FilterChip(
                     selected = severity == SeverityFilter.ALL,
                     onClick = { severity = SeverityFilter.ALL },
-                    label = { Text("Todos") },
+                    label = { Text(stringResource(Res.string.rd_s10_logs_all)) },
                 )
                 FilterChip(
                     selected = severity == SeverityFilter.WARN_UP,
@@ -247,12 +251,12 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                placeholder = { Text("Filtrar por etiqueta, error o mensaje…") },
+                placeholder = { Text(stringResource(Res.string.rd_s10_logs_filter)) },
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { query = "" }) {
-                            Icon(Icons.Outlined.Close, contentDescription = "Limpiar")
+                            Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s10_search_clear))
                         }
                     }
                 },

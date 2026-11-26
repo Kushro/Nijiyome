@@ -1,0 +1,553 @@
+/* ==========================================================================
+   Dirección Tránsito nocturno (agente D3)
+   Grafito de señalética como suelo, esmalte azul reservado a tableros y carteles, líneas de color
+   (cobalto, escarlata, ámbar, verde) como protagonistas y rótulos de porcelana.
+   Tipo: Atkinson Hyperlegible Next (UI, hecha para leerse de lejos: monitor grande y TV desde el sofá)
+   y Overpass (display y números; hereda la Highway Gothic de la señalética vial), cifras tabulares.
+   ========================================================================== */
+
+/* ---------- Grafito (por defecto): suelo grafito, acento cobalto ---------- */
+.nj-app[data-dir="transit"] {
+  --nj-font-ui: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --nj-font-display: "Overpass", "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --nj-font-accent: "Overpass", system-ui, sans-serif;
+  --nj-font-mono: "Overpass Mono", ui-monospace, monospace;
+  --nj-fs-xs: 11.5px; --nj-fs-s: 13px; --nj-fs-m: 14.5px; --nj-fs-l: 16.5px; --nj-fs-xl: 21px; --nj-fs-2xl: 28px; --nj-fs-3xl: 40px;
+  --nj-r-xs: 4px; --nj-r-s: 6px; --nj-r-m: 10px; --nj-r-l: 14px; --nj-r-xl: 22px; --nj-r-pill: 999px;
+  --nj-shadow-1: 0 1px 2px rgb(2 6 20 / .35);
+  --nj-shadow-2: 0 4px 12px -4px rgb(2 6 20 / .5);
+  --nj-shadow-3: 0 18px 40px -14px rgb(2 6 20 / .65);
+  --nj-ease: cubic-bezier(.16, 1, .3, 1); --nj-ease-emph: cubic-bezier(.22, 1, .36, 1);
+  --nj-dur-1: 110ms; --nj-dur-2: 190ms; --nj-dur-3: 320ms; --nj-dur-4: 600ms;
+  --nj-gap: 16px; --nj-pad: 24px;
+
+  --nj-bg: #101113; --nj-surface: #16181b; --nj-surface-2: #1c1f23; --nj-surface-3: #252930;
+  --nj-line: #343941; --nj-line-strong: #7f8793;
+  --nj-text: #f3f4f6; --nj-text-2: #c9cdd4; --nj-text-3: #a7adb7;
+  --nj-accent: #4f9dff; --nj-on-accent: #031a33; --nj-accent-soft: #14304f; --nj-on-accent-soft: #d6e8ff;
+  --nj-focus: #ffc24a; --nj-scrim: rgb(0 0 0 / .62);
+  --nj-ok: #4fd08a; --nj-warn: #ffc24a; --nj-err: #ff8a7e; --nj-info: #5aa9ff;
+  /* estados = colores de línea del metro de Tokio */
+  --nj-st-watching: #5aa9ff; --nj-st-planning: #ffb547; --nj-st-completed: #4fd08a;
+  --nj-st-paused: #b39cff; --nj-st-dropped: #ff7466; --nj-st-rewatching: #3fd6cf;
+
+  --tr-porcelain: #f8f9fb; --tr-ink: #0b1430;
+  --tr-a: #5aa9ff; --tr-b: #ff7466; /* líneas de Link: PC (cobalto) y teléfono (escarlata) */
+  /* esmalte azul: solo tableros y carteles */
+  --tr-board-bg: #0b1a4a; --tr-board-s: #13245c; --tr-board-line: #2a3d7a; --tr-board-text: #f3f5fb; --tr-board-text-2: #c6d0ee; --tr-board-hi: #ffc24a;
+  --ln: var(--nj-accent);
+  font-variant-numeric: tabular-nums;
+}
+.nj-app[data-dir="transit"][data-mode="light"] {
+  --nj-bg: #f4f5f6; --nj-surface: #ffffff; --nj-surface-2: #eceef0; --nj-surface-3: #e1e4e8;
+  --nj-line: #c8ccd2; --nj-line-strong: #5d636d;
+  --nj-text: #111316; --nj-text-2: #383d45; --nj-text-3: #535a64;
+  --nj-accent: #0a58b0; --nj-on-accent: #ffffff; --nj-accent-soft: #d9e7fa; --nj-on-accent-soft: #062f5e;
+  --nj-focus: #111316; --nj-scrim: rgb(17 19 22 / .42);
+  --nj-ok: #13703f; --nj-warn: #8a5a00; --nj-err: #b8261b; --nj-info: #0a5fb4;
+  --nj-st-watching: #0a5fb4; --nj-st-planning: #8a5a00; --nj-st-completed: #13703f;
+  --nj-st-paused: #5e45b0; --nj-st-dropped: #b8261b; --nj-st-rewatching: #00706b;
+  --nj-shadow-1: 0 1px 2px rgb(17 19 22 / .12); --nj-shadow-2: 0 4px 12px -4px rgb(17 19 22 / .16); --nj-shadow-3: 0 18px 40px -16px rgb(17 19 22 / .26);
+  --tr-a: #0a58b0; --tr-b: #bf231a;
+}
+.nj-app[data-dir="transit"][data-mode="oled"] {
+  --nj-bg: #000000; --nj-surface: #0a0b0c; --nj-surface-2: #111315; --nj-surface-3: #1a1c20; --nj-line: #2b2f35;
+}
+
+/* ---------- Andén: esmalte blanco de andén con escarlata (pensada para el claro) ---------- */
+.nj-app[data-dir="transit"][data-palette="anden"] {
+  --nj-bg: #121519; --nj-surface: #181c22; --nj-surface-2: #1e232b; --nj-surface-3: #262c36;
+  --nj-line: #343c49; --nj-line-strong: #7c8698;
+  --nj-text: #f2f4f7; --nj-text-2: #c7cdd8; --nj-text-3: #a4acba;
+  --nj-accent: #ff7466; --nj-on-accent: #2a0705; --nj-accent-soft: #3d2028; --nj-on-accent-soft: #ffdcd6;
+  --nj-focus: #ffc24a; --nj-scrim: rgb(0 0 0 / .6);
+  --nj-ok: #4fd08a; --nj-warn: #ffc24a; --nj-err: #ff8a7e; --nj-info: #62aaff;
+  --nj-st-watching: #62aaff; --nj-st-planning: #ffb547; --nj-st-completed: #4fd08a;
+  --nj-st-paused: #b39cff; --nj-st-dropped: #ff7466; --nj-st-rewatching: #3fd6cf;
+  --tr-a: #62aaff; --tr-b: #ff7466;
+  --tr-board-bg: #0d1014; --tr-board-s: #161a20; --tr-board-line: #2c333e; --tr-board-text: #f2f4f7; --tr-board-text-2: #c7cdd8; --tr-board-hi: #ffc24a;
+}
+.nj-app[data-dir="transit"][data-palette="anden"][data-mode="light"] {
+  --nj-bg: #f5f6f8; --nj-surface: #ffffff; --nj-surface-2: #eceef2; --nj-surface-3: #e1e5ec;
+  --nj-line: #c9ced8; --nj-line-strong: #5c6473;
+  --nj-text: #11151d; --nj-text-2: #373e4c; --nj-text-3: #525a69;
+  --nj-accent: #bf231a; --nj-on-accent: #ffffff; --nj-accent-soft: #fde0dc; --nj-on-accent-soft: #5c0b05;
+  --nj-focus: #11151d; --nj-scrim: rgb(17 21 29 / .4);
+  --nj-ok: #13703f; --nj-warn: #8a5a00; --nj-err: #b8261b; --nj-info: #0a58b0;
+  --nj-st-watching: #0a58b0; --nj-st-planning: #8a5a00; --nj-st-completed: #13703f;
+  --nj-st-paused: #5e45b0; --nj-st-dropped: #b8261b; --nj-st-rewatching: #00706b;
+  --nj-shadow-1: 0 1px 2px rgb(17 21 29 / .12); --nj-shadow-2: 0 4px 12px -4px rgb(17 21 29 / .16); --nj-shadow-3: 0 18px 40px -16px rgb(17 21 29 / .26);
+  --tr-a: #0a58b0; --tr-b: #b8261b;
+}
+.nj-app[data-dir="transit"][data-palette="anden"][data-mode="oled"] {
+  --nj-bg: #000000; --nj-surface: #08090b; --nj-surface-2: #0f1114; --nj-surface-3: #171a1f; --nj-line: #2a2f38;
+}
+
+/* ---------- Línea Yamanote: verde lima sobre noche verdosa ---------- */
+.nj-app[data-dir="transit"][data-palette="yamanote"] {
+  --nj-bg: #0a1a1e; --nj-surface: #0f2227; --nj-surface-2: #142b31; --nj-surface-3: #1b353c;
+  --nj-line: #2a4952; --nj-line-strong: #6f949c;
+  --nj-text: #eef6f2; --nj-text-2: #c4d8d0; --nj-text-3: #a1bab2;
+  --nj-accent: #a8d84c; --nj-on-accent: #152204; --nj-accent-soft: #22391b; --nj-on-accent-soft: #e3f6c6;
+  --nj-focus: #ffc24a; --nj-scrim: rgb(2 10 12 / .62);
+  --nj-ok: #a8d84c; --nj-warn: #ffc24a; --nj-err: #ff8a7e; --nj-info: #5aa9ff;
+  --nj-st-watching: #5aa9ff; --nj-st-planning: #ffb547; --nj-st-completed: #a8d84c;
+  --nj-st-paused: #b39cff; --nj-st-dropped: #ff7466; --nj-st-rewatching: #3fd6cf;
+  --tr-a: #5aa9ff; --tr-b: #a8d84c;
+  --tr-board-bg: #071417; --tr-board-s: #0f2227; --tr-board-line: #24414a; --tr-board-text: #eef6f2; --tr-board-text-2: #c4d8d0; --tr-board-hi: #a8d84c;
+}
+.nj-app[data-dir="transit"][data-palette="yamanote"][data-mode="light"] {
+  --nj-bg: #f2f7f1; --nj-surface: #ffffff; --nj-surface-2: #e7efe5; --nj-surface-3: #dbe6d9;
+  --nj-line: #c2d0bf; --nj-line-strong: #56685a;
+  --nj-text: #0d1a12; --nj-text-2: #2e4134; --nj-text-3: #4a5c4f;
+  --nj-accent: #376c0e; --nj-on-accent: #ffffff; --nj-accent-soft: #e0efcc; --nj-on-accent-soft: #1d3b05;
+  --nj-focus: #0d1a12; --nj-scrim: rgb(13 26 18 / .4);
+  --nj-ok: #376c0e; --nj-warn: #8a5a00; --nj-err: #b8261b; --nj-info: #0a58b0;
+  --nj-st-watching: #0a58b0; --nj-st-planning: #8a5a00; --nj-st-completed: #376c0e;
+  --nj-st-paused: #5e45b0; --nj-st-dropped: #b8261b; --nj-st-rewatching: #00706b;
+  --nj-shadow-1: 0 1px 2px rgb(13 26 18 / .12); --nj-shadow-2: 0 4px 12px -4px rgb(13 26 18 / .16); --nj-shadow-3: 0 18px 40px -16px rgb(13 26 18 / .26);
+  --tr-a: #0a58b0; --tr-b: #376c0e;
+}
+.nj-app[data-dir="transit"][data-palette="yamanote"][data-mode="oled"] {
+  --nj-bg: #000000; --nj-surface: #050d0e; --nj-surface-2: #0a1517; --nj-surface-3: #111e21; --nj-line: #1f363c;
+}
+
+/* ---------- Última salida: ámbar del último tren ---------- */
+.nj-app[data-dir="transit"][data-palette="ultima"] {
+  --nj-bg: #0f0e1f; --nj-surface: #16152a; --nj-surface-2: #1c1b33; --nj-surface-3: #25233f;
+  --nj-line: #36334f; --nj-line-strong: #817c9f;
+  --nj-text: #f5f3f0; --nj-text-2: #d2cdd9; --nj-text-3: #aea8bc;
+  --nj-accent: #ffb547; --nj-on-accent: #2a1700; --nj-accent-soft: #3a2a1f; --nj-on-accent-soft: #ffe4ba;
+  --nj-focus: #f5f3f0; --nj-scrim: rgb(5 4 14 / .64);
+  --nj-ok: #4fd08a; --nj-warn: #ffb547; --nj-err: #ff8a7e; --nj-info: #5aa9ff;
+  --nj-st-watching: #5aa9ff; --nj-st-planning: #ffb547; --nj-st-completed: #4fd08a;
+  --nj-st-paused: #b39cff; --nj-st-dropped: #ff7466; --nj-st-rewatching: #3fd6cf;
+  --tr-a: #5aa9ff; --tr-b: #ffb547;
+  --tr-board-bg: #0a0916; --tr-board-s: #15142a; --tr-board-line: #2f2c47; --tr-board-text: #f5f3f0; --tr-board-text-2: #d2cdd9; --tr-board-hi: #ffb547;
+}
+.nj-app[data-dir="transit"][data-palette="ultima"][data-mode="light"] {
+  --nj-bg: #f5f4f8; --nj-surface: #ffffff; --nj-surface-2: #eeecf3; --nj-surface-3: #e3e0ea;
+  --nj-line: #ccc8d6; --nj-line-strong: #625d73;
+  --nj-text: #16142a; --nj-text-2: #3c3851; --nj-text-3: #56516a;
+  --nj-accent: #955300; --nj-on-accent: #ffffff; --nj-accent-soft: #fde8c6; --nj-on-accent-soft: #4a2900;
+  --nj-focus: #16142a; --nj-scrim: rgb(22 20 42 / .4);
+  --nj-ok: #13703f; --nj-warn: #955300; --nj-err: #b8261b; --nj-info: #0a58b0;
+  --nj-st-watching: #0a58b0; --nj-st-planning: #955300; --nj-st-completed: #13703f;
+  --nj-st-paused: #5e45b0; --nj-st-dropped: #b8261b; --nj-st-rewatching: #00706b;
+  --nj-shadow-1: 0 1px 2px rgb(22 20 42 / .12); --nj-shadow-2: 0 4px 12px -4px rgb(22 20 42 / .16); --nj-shadow-3: 0 18px 40px -16px rgb(22 20 42 / .26);
+  --tr-a: #0a58b0; --tr-b: #955300;
+}
+.nj-app[data-dir="transit"][data-palette="ultima"][data-mode="oled"] {
+  --nj-bg: #000000; --nj-surface: #07070e; --nj-surface-2: #0e0d18; --nj-surface-3: #161523; --nj-line: #2a2840;
+}
+.nj-app[data-dir="transit"][data-mode="oled"][data-palette] { --tr-board-bg: #000000; --tr-board-s: #0a0b12; }
+.nj-app[data-dir="transit"][data-platform="android"] { --nj-touch: 48px; --nj-pad: 16px; }
+
+/* Color de línea legible en cada modo (vale para las tarjetas en cualquier dirección). */
+.nj-app { --tr-mix: #ffffff; --tr-mixp: 24%; }
+.nj-app[data-mode="light"] { --tr-mix: #000000; --tr-mixp: 34%; }
+.nj-app .tr-card, .nj-app [data-tr-ln], .nj-app .tr-epline {
+  --ln-ink: color-mix(in oklab, var(--ln, var(--nj-accent)), var(--tr-mix) var(--tr-mixp));
+  --ln-track: color-mix(in oklab, var(--ln-ink) 34%, var(--nj-surface-2));
+}
+
+/* ==========================================================================
+   Shell y componentes base
+   ========================================================================== */
+.nj-app[data-dir="transit"] ::selection { background: var(--nj-accent); color: var(--nj-on-accent); }
+.nj-app[data-dir="transit"] :focus-visible { outline: 3px solid var(--nj-focus); outline-offset: 2px; }
+.nj-app[data-dir="transit"] { caret-color: var(--nj-accent); }
+.nj-app[data-dir="transit"] :is(button, [role="button"], [role="tab"], [role="radio"], [role="switch"], label[for], summary, a[href]) { cursor: pointer; }
+.nj-app[data-dir="transit"] :is(button, input)[disabled] { cursor: not-allowed; }
+.nj-app[data-dir="transit"] ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--nj-line-strong) 55%, transparent); background-clip: padding-box; }
+
+.nj-app[data-dir="transit"] .nj-topbar { background: var(--nj-bg); border-bottom: 1px solid var(--nj-line); }
+.nj-app[data-dir="transit"] .nj-topbar .nj-brand { font-family: var(--nj-font-display); font-weight: 800; letter-spacing: .01em; }
+.nj-app[data-dir="transit"] .nj-cmd { border-radius: var(--nj-r-s); background: var(--nj-surface-2); border-color: var(--nj-line); }
+.nj-app[data-dir="transit"] .nj-kbd { border-color: var(--nj-line-strong); }
+/* Chip de Link: el símbolo de transbordo (dos estaciones unidas en una cápsula de porcelana). */
+.nj-app[data-dir="transit"] .nj-linkchip { background: var(--nj-surface-2); color: var(--nj-text); border: 1px solid var(--nj-line); padding: 3px 10px 3px 6px; font-family: var(--nj-font-display); }
+.nj-app[data-dir="transit"] .nj-linkchip::before {
+  width: 22px; height: 12px; border-radius: 6px; box-shadow: 0 0 0 1.5px var(--nj-text);
+  background: radial-gradient(circle at 6px 6px, var(--tr-a) 3px, transparent 3.5px), radial-gradient(circle at 16px 6px, var(--tr-b) 3px, transparent 3.5px), var(--tr-porcelain);
+}
+.nj-app[data-dir="transit"] .nj-rail, .nj-app[data-dir="transit"] .nj-bottombar { background: var(--nj-bg); }
+.nj-app[data-dir="transit"] .nj-bottombar { background: var(--nj-surface); border-top: 1px solid var(--nj-line); }
+.nj-app[data-dir="transit"] .nj-rail-item { font-family: var(--nj-font-display); font-weight: 700; letter-spacing: .01em; }
+.nj-app[data-dir="transit"] .nj-rail-item[aria-current="page"] .nj-pill { background: var(--nj-accent-soft); box-shadow: inset 0 0 0 2px var(--nj-accent); }
+
+.nj-app[data-dir="transit"] .nj-h1 { font-weight: 800; letter-spacing: -0.012em; line-height: 1.04; }
+.nj-app[data-dir="transit"] .nj-h2 { font-weight: 800; letter-spacing: -0.004em; }
+.nj-app[data-dir="transit"] .nj-h3 { font-family: var(--nj-font-display); font-weight: 700; }
+.nj-app[data-dir="transit"] .nj-section-head { padding-top: 6px; }
+
+.nj-app[data-dir="transit"] .nj-btn { border-radius: var(--nj-r-m); font-family: var(--nj-font-display); font-weight: 700; letter-spacing: .005em; }
+.nj-app[data-dir="transit"] .nj-btn:hover { filter: none; background-image: linear-gradient(color-mix(in srgb, var(--nj-text) 8%, transparent), color-mix(in srgb, var(--nj-text) 8%, transparent)); }
+.nj-app[data-dir="transit"] .nj-btn[disabled] { opacity: .5; }
+.nj-app[data-dir="transit"] .nj-iconbtn { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="transit"] .nj-iconbtn:active { transform: scale(.94); }
+.nj-app[data-dir="transit"] .nj-chip { border-radius: var(--nj-r-pill); border-color: var(--nj-line-strong); color: var(--nj-text-2); }
+.nj-app[data-dir="transit"] .nj-chip:hover { background: color-mix(in srgb, var(--nj-text) 7%, transparent); }
+.nj-app[data-dir="transit"] .nj-chip[aria-pressed="true"] { background: var(--nj-accent-soft); color: var(--nj-on-accent-soft); border-color: var(--nj-accent); }
+.nj-app[data-dir="transit"] .nj-seg { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="transit"] .nj-seg button { font-family: var(--nj-font-display); font-weight: 700; }
+.nj-app[data-dir="transit"][data-platform="android"] .nj-seg button { min-height: 48px; }
+.nj-app[data-dir="transit"] .nj-tab { font-family: var(--nj-font-display); font-weight: 700; }
+.nj-app[data-dir="transit"] .nj-tab[aria-selected="true"]::after { height: 4px; border-radius: 0; left: 14px; right: 14px; }
+.nj-app[data-dir="transit"] .nj-field { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="transit"] .nj-search { border-radius: var(--nj-r-m); border-color: var(--nj-line); }
+.nj-app[data-dir="transit"] .nj-menu { border: 1px solid var(--nj-line); border-radius: var(--nj-r-m); }
+.nj-app[data-dir="transit"] .nj-dialog { border: 1px solid var(--nj-line); border-radius: var(--nj-r-xl); background: var(--nj-surface-2); }
+.nj-app[data-dir="transit"] .nj-sheet { background: var(--nj-surface); border: 1px solid var(--nj-line); border-bottom: 0; }
+.nj-app[data-dir="transit"] .nj-sheet.is-side { border: 1px solid var(--nj-line); border-right: 0; }
+.nj-app[data-dir="transit"] [data-region="sheet"] { background: var(--nj-surface); }
+.nj-app[data-dir="transit"] .nj-snackbar { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="transit"] .nj-badge { font-family: var(--nj-font-display); border-radius: var(--nj-r-s); }
+.nj-app[data-dir="transit"] .nj-kbd, .nj-app[data-dir="transit"] time { font-variant-numeric: tabular-nums; }
+
+/* Estado de lista: un punto de estación con aro del color de su línea. */
+.nj-app[data-dir="transit"] .nj-status { font-family: var(--nj-font-display); border-radius: var(--nj-r-pill); padding: 2px 9px 2px 5px; }
+.nj-app[data-dir="transit"] .nj-status::before { width: 11px; height: 11px; background: var(--tr-porcelain); box-shadow: inset 0 0 0 3px var(--st); }
+
+/* Progreso lineal: vía delgada y tramo recorrido con la estación al final. */
+.nj-app[data-dir="transit"] .nj-progress { height: 4px; overflow: visible; background: color-mix(in srgb, var(--nj-text) 18%, transparent); }
+.nj-app[data-dir="transit"] .nj-progress > i { position: relative; background: var(--nj-accent); }
+.nj-app[data-dir="transit"] .nj-progress > i::after { content: ""; position: absolute; right: -5px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--tr-porcelain); box-shadow: inset 0 0 0 2.5px var(--nj-accent); }
+
+/* Toggle: botón de andén, el pulgar es una estación de porcelana. */
+.nj-app[data-dir="transit"] .nj-toggle input:checked::after { background: var(--tr-porcelain); box-shadow: inset 0 0 0 3px color-mix(in oklab, var(--nj-accent) 70%, #000); }
+
+/* ==========================================================================
+   Piezas compartidas de las tarjetas: rótulo de estación, línea y tren
+   ========================================================================== */
+.nj-app .tr-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.nj-app .tr-code {
+  --c: 34px; position: relative; flex: none; width: var(--c); height: var(--c); border-radius: 50%;
+  display: inline-grid; place-content: center; justify-items: center; line-height: .92;
+  background: var(--tr-porcelain, #f8f9fb); color: var(--tr-ink, #0b1430);
+  box-shadow: inset 0 0 0 calc(var(--c) * .11) var(--ln-ink, var(--nj-accent)), 0 0 0 1.5px var(--nj-surface, #000);
+  font-family: "Overpass", var(--nj-font-display); font-variant-numeric: tabular-nums;
+}
+.nj-app .tr-code b { font-size: calc(var(--c) * .25); font-weight: 800; letter-spacing: .02em; }
+.nj-app .tr-code i { font-style: normal; font-size: calc(var(--c) * .4); font-weight: 900; letter-spacing: -0.02em; }
+.nj-app .tr-code[data-len="3"] i { font-size: calc(var(--c) * .3); }
+.nj-app .tr-code[data-len="4"] i { font-size: calc(var(--c) * .24); }
+.nj-app .tr-code.is-xs { --c: 24px; }
+.nj-app .tr-code.is-xs b { display: none; }
+.nj-app .tr-code.is-xs i { font-size: 10.5px; }
+.nj-app .tr-code.is-sm { --c: 30px; }
+.nj-app .tr-code.is-lg { --c: 48px; }
+.nj-app .tr-code.is-pending { background: var(--nj-surface, #fff); color: var(--nj-text); box-shadow: inset 0 0 0 2px var(--nj-line-strong), 0 0 0 1.5px var(--nj-surface, #000); }
+.nj-app .tr-code.is-pending::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1.5px dashed var(--ln-ink, var(--nj-accent)); }
+
+.nj-app .tr-route { --pad: 5px; position: relative; display: block; height: var(--h, 14px); padding-inline: var(--pad); min-width: 0; }
+.nj-app .tr-svg { display: block; overflow: visible; width: 100%; height: 100%; }
+.nj-app .tr-future { stroke: var(--nj-line-strong); stroke-width: 1.5; stroke-dasharray: 3 4; opacity: .75; }
+.nj-app .tr-track { stroke: var(--ln-track, var(--nj-line)); stroke-width: 3; stroke-linecap: round; stroke-dasharray: var(--pa) 2; transition: stroke-dasharray var(--nj-dur-3) var(--nj-ease); }
+.nj-app .tr-run { stroke: var(--ln-ink, var(--nj-accent)); stroke-width: 4; stroke-linecap: round; stroke-dasharray: var(--p) 2; transition: stroke-dasharray var(--nj-dur-3) var(--nj-ease), stroke-width var(--nj-dur-2) var(--nj-ease); }
+.nj-app .tr-st { r: 3.5px; stroke-width: 2; transition: fill var(--nj-dur-2) var(--nj-ease), stroke var(--nj-dur-2) var(--nj-ease), r var(--nj-dur-2) var(--nj-ease); }
+.nj-app .tr-st[data-s="w"] { fill: var(--ln-ink, var(--nj-accent)); stroke: var(--ln-ink, var(--nj-accent)); r: 3px; }
+.nj-app .tr-st[data-s="a"] { fill: var(--tr-porcelain, #f8f9fb); stroke: var(--ln-ink, var(--nj-accent)); }
+.nj-app .tr-st[data-s="u"] { fill: var(--nj-surface, #000); stroke: var(--nj-line-strong); stroke-width: 1.5; r: 3px; }
+.nj-app .tr-st[data-s="d"] { fill: var(--nj-surface, #000); stroke: var(--nj-warn); stroke-dasharray: 2 2; r: 4px; }
+
+/* El tren / "estás aquí": anillo de porcelana con el color de la línea. */
+.nj-app .tr-train { position: absolute; top: 50%; left: calc(var(--pad) + var(--x, 0) * (100% - 2 * var(--pad))); width: 0; height: 0; pointer-events: none; transition: left var(--nj-dur-3) var(--nj-ease); }
+.nj-app .tr-train i { position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; border-radius: 50%; background: var(--tr-porcelain, #f8f9fb); box-shadow: inset 0 0 0 3px var(--ln, var(--nj-accent)), inset 0 0 0 5px var(--tr-porcelain, #f8f9fb), inset 0 0 0 8px var(--ln-ink, var(--nj-accent)), 0 0 0 2px var(--nj-surface, #000); }
+.nj-app .tr-train b { position: absolute; bottom: 12px; left: 0; transform: translateX(-50%); padding: 1px 6px; border-radius: var(--nj-r-xs); background: var(--nj-text); color: var(--nj-bg); font: 800 11px/1.3 "Overpass", var(--nj-font-display); white-space: nowrap; }
+.nj-app [data-status="dropped"] .tr-train i, .nj-app [data-status="paused"] .tr-train i { box-shadow: inset 0 0 0 3px var(--nj-line-strong), inset 0 0 0 5px var(--tr-porcelain, #f8f9fb), inset 0 0 0 8px var(--nj-line-strong), 0 0 0 2px var(--nj-surface, #000); }
+.nj-app .tr-labs { position: absolute; left: var(--pad); right: var(--pad); top: calc(100% + 4px); height: 14px; }
+.nj-app .tr-lab { position: absolute; left: calc(var(--x) * 100%); transform: translateX(-50%); font: 700 10.5px/1.2 "Overpass", var(--nj-font-display); color: var(--nj-text-2); white-space: nowrap; }
+.nj-app .tr-lab:not(.is-key) { display: none; }
+
+/* Hover y foco: la línea elegida brilla más. */
+.nj-app .tr-card:is(:hover, :focus-visible) .tr-run { stroke: var(--ln, var(--nj-accent)); stroke-width: 5; }
+.nj-app[data-mode="light"] .tr-card:is(:hover, :focus-visible) .tr-run { stroke: var(--ln-ink); }
+
+.nj-app .tr-badges { position: absolute; left: 6px; top: 6px; right: 6px; display: flex; gap: 4px; flex-wrap: wrap; }
+.nj-app .tr-badges .nj-status { background: #0b1430; color: #eef1fa; }
+.nj-app .tr-play { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--nj-accent); color: var(--nj-on-accent); transition: transform var(--nj-dur-1) var(--nj-ease); }
+.nj-app .tr-card:active .tr-play { transform: scale(.94); }
+.nj-app .tr-text { display: grid; gap: 2px; min-width: 0; }
+.nj-app .tr-card .nj-card-sub { color: var(--nj-text-2); font-variant-numeric: tabular-nums; }
+.nj-app .tr-card .nj-card-title { color: var(--nj-text); }
+
+/* ==========================================================================
+   Tarjeta Estación
+   ========================================================================== */
+.nj-app .nj-card.tr-card { --w: 150px; gap: 0; color: var(--nj-text); border-radius: var(--nj-r-m); }
+.nj-app .nj-card.tr-card[data-size="s"] { --w: 116px; }
+.nj-app .nj-card.tr-card[data-size="l"] { --w: 200px; }
+.nj-app .nj-grid > .nj-card.tr-card { width: auto; }
+
+.nj-app .tr-card[data-style="transit-estacion"] { background: var(--nj-surface-2); overflow: hidden; border: 1px solid var(--nj-line); transition: border-color var(--nj-dur-2) var(--nj-ease); }
+.nj-app .tr-card[data-style="transit-estacion"]:hover { border-color: var(--ln-ink); }
+.nj-app .tr-card[data-style="transit-estacion"] .tr-art { position: relative; display: block; aspect-ratio: 2 / 3; overflow: hidden; background: var(--nj-surface-3); }
+.nj-app .tr-card[data-style="transit-estacion"] .tr-art img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--nj-dur-3) var(--nj-ease); }
+.nj-app .tr-card[data-style="transit-estacion"]:hover .tr-art img { transform: scale(1.03); }
+.nj-app .tr-card[data-style="transit-estacion"] .tr-plate { position: relative; display: grid; gap: 8px; padding: 22px 10px 10px; }
+.nj-app .tr-card[data-style="transit-estacion"] .tr-plate > .tr-code { position: absolute; top: -18px; left: 8px; }
+.nj-app .tr-card[data-style="transit-estacion"][data-size="s"] .tr-plate { padding: 18px 8px 8px; gap: 6px; }
+.nj-app .tr-card[data-style="transit-estacion"][data-size="s"] .tr-plate > .tr-code { --c: 28px; top: -15px; left: 6px; }
+.nj-app .tr-card[data-style="transit-estacion"] .tr-plate .tr-route { margin-inline: -2px; }
+
+.nj-app .tr-card[data-style="transit-estacion"][data-context="continue"] { --w: 330px; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="continue"][data-size="s"] { --w: 290px; }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="continue"][data-size="l"] { --w: 400px; }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="continue"] .tr-art { border-radius: var(--nj-r-s); }
+.nj-app .tr-card[data-style="transit-estacion"] .tr-body { display: grid; gap: 10px; min-width: 0; }
+.nj-app .tr-card[data-style="transit-estacion"] .tr-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.nj-app .tr-card[data-style="transit-estacion"][data-context="compact"] { --w: 100%; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 6px 12px 6px 6px; min-height: 56px; }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="compact"] .tr-art { border-radius: var(--nj-r-xs); }
+
+.nj-app .tr-card[data-style="transit-estacion"][data-context="hero"] { --w: 100%; max-width: 680px; grid-template-columns: 148px minmax(0, 1fr); gap: 20px; padding: 12px 20px 12px 12px; align-items: center; }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="hero"][data-size="s"] { grid-template-columns: 104px minmax(0, 1fr); }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="hero"] .tr-art { border-radius: var(--nj-r-s); }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="hero"] .tr-body { gap: 18px; padding-bottom: 18px; }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="hero"] .nj-card-title { font-family: var(--nj-font-display); font-size: var(--nj-fs-xl); font-weight: 800; line-height: 1.15; }
+.nj-app .tr-card[data-style="transit-estacion"][data-context="hero"] .nj-card-sub { font-size: var(--nj-fs-s); }
+
+.nj-app .tr-card[data-style="transit-estacion"][data-context="wish"] .tr-plate { background: var(--nj-surface); }
+
+/* ==========================================================================
+   Tarjeta Billete: troquel con medias lunas y segmentos
+   ========================================================================== */
+.nj-app .nj-card.tr-card[data-style="transit-billete"] { --w: 160px; --notch: 7px; background: transparent; padding: 0; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+.nj-app .tr-card[data-style="transit-billete"][data-size="s"] { --w: 124px; }
+.nj-app .tr-card[data-style="transit-billete"][data-size="l"] { --w: 204px; }
+.nj-app .tr-ticket { display: grid; min-width: 0; color: var(--nj-text); }
+.nj-app .tr-ticket > * { background: var(--nj-surface-2); min-width: 0; }
+.nj-app[data-mode="light"] .tr-ticket > * { background: var(--nj-surface); box-shadow: inset 0 0 0 1px var(--nj-line); }
+.nj-app .tr-card[data-style="transit-billete"]:hover .tr-ticket > * { background: color-mix(in srgb, var(--nj-surface-3) 70%, var(--nj-surface-2)); }
+.nj-app .tr-stub { position: relative; overflow: hidden; display: block; }
+.nj-app .tr-stub img { width: 100%; height: 100%; object-fit: cover; }
+.nj-app .tr-tbody { display: grid; gap: 8px; align-content: start; }
+
+/* Vertical: póster arriba, troquel horizontal, segmentos abajo. */
+.nj-app .tr-ticket.is-v { grid-template-rows: auto auto; }
+.nj-app .tr-ticket.is-v .tr-stub { aspect-ratio: 2 / 3; border-radius: var(--nj-r-m) var(--nj-r-m) 0 0;
+  -webkit-mask: radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) left / 51% 100% no-repeat, radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) left / 51% 100% no-repeat, radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) right / 51% 100% no-repeat; }
+.nj-app .tr-ticket.is-v .tr-tbody { position: relative; padding: 12px 10px 10px; border-radius: 0 0 var(--nj-r-m) var(--nj-r-m);
+  background-image: linear-gradient(to right, var(--nj-line-strong) 50%, transparent 0); background-size: 7px 1.5px; background-repeat: repeat-x; background-position: 0 0;
+  -webkit-mask: radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) left / 51% 100% no-repeat, radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) left / 51% 100% no-repeat, radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) right / 51% 100% no-repeat; }
+.nj-app[data-mode="light"] .tr-ticket.is-v .tr-tbody { box-shadow: none; border: 1px solid var(--nj-line); border-top: 0; }
+.nj-app .tr-segs { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.nj-app .tr-seg { display: grid; gap: 1px; min-width: 0; flex: 1 1 0; }
+.nj-app .tr-seg small { font-size: 11px; color: var(--nj-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nj-app .tr-seg b { font: 800 var(--nj-fs-m)/1.15 "Overpass", var(--nj-font-display); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nj-app .tr-seg:first-child b { color: var(--nj-text); }
+.nj-app .tr-perf { flex: none; width: 1.5px; background: linear-gradient(var(--nj-line-strong) 50%, transparent 0) 0 0 / 1.5px 5px repeat-y; }
+.nj-app .tr-card[data-style="transit-billete"][data-size="s"] .tr-seg b { font-size: var(--nj-fs-s); }
+.nj-app .tr-card[data-style="transit-billete"][data-size="s"] .tr-tbody { padding: 10px 8px 8px; }
+.nj-app .tr-card[data-style="transit-billete"] .tr-badges .nj-status { background: #0b1430; color: #eef1fa; }
+
+/* Horizontal: talón a la izquierda (póster o rótulo), troquel vertical, cuerpo con segmentos. */
+.nj-app .tr-card[data-style="transit-billete"]:is([data-context="continue"], [data-context="hero"], [data-context="compact"]) { --w: 344px; }
+.nj-app .tr-card[data-style="transit-billete"][data-context="continue"][data-size="s"] { --w: 300px; }
+.nj-app .tr-card[data-style="transit-billete"][data-context="continue"][data-size="l"] { --w: 420px; }
+.nj-app .tr-card[data-style="transit-billete"][data-context="compact"] { --w: 100%; }
+.nj-app .tr-card[data-style="transit-billete"][data-context="hero"] { --w: 100%; max-width: 680px; --notch: 9px; }
+.nj-app .tr-ticket.is-h { grid-template-columns: 78px minmax(0, 1fr); }
+.nj-app .tr-card[data-context="hero"] .tr-ticket.is-h { grid-template-columns: 150px minmax(0, 1fr); }
+.nj-app .tr-card[data-context="compact"] .tr-ticket.is-h { grid-template-columns: 56px minmax(0, 1fr); min-height: 56px; }
+.nj-app .tr-ticket.is-h .tr-stub { border-radius: var(--nj-r-m) 0 0 var(--nj-r-m); min-height: 100%;
+  -webkit-mask: radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) top / 100% 51% no-repeat, radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
+          mask: radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) top / 100% 51% no-repeat, radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) bottom / 100% 51% no-repeat; }
+.nj-app .tr-ticket.is-h .tr-stub img { position: absolute; inset: 0; }
+.nj-app .tr-ticket.is-h .tr-stub.is-code { display: grid; place-items: center; }
+.nj-app .tr-ticket.is-h .tr-tbody { padding: 10px 14px 12px 16px; border-radius: 0 var(--nj-r-m) var(--nj-r-m) 0; align-content: center;
+  background-image: linear-gradient(var(--nj-line-strong) 50%, transparent 0); background-size: 1.5px 7px; background-repeat: repeat-y; background-position: 0 0;
+  -webkit-mask: radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) top / 100% 51% no-repeat, radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
+          mask: radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) top / 100% 51% no-repeat, radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) bottom / 100% 51% no-repeat; }
+.nj-app[data-mode="light"] .tr-ticket.is-h > * { box-shadow: none; border: 1px solid var(--nj-line); }
+.nj-app[data-mode="light"] .tr-ticket.is-h .tr-stub { border-right: 0; }
+.nj-app[data-mode="light"] .tr-ticket.is-h .tr-tbody { border-left: 0; }
+.nj-app .tr-card[data-context="compact"] .tr-ticket.is-h .tr-tbody { display: flex; align-items: center; gap: 12px; padding: 6px 12px 6px 14px; }
+.nj-app .tr-card[data-context="compact"] .tr-ticket.is-h .tr-text { flex: 1; }
+.nj-app .tr-seg.is-go { flex: none; align-content: center; }
+.nj-app .tr-card[data-context="hero"] .tr-ticket.is-h .tr-tbody { padding: 18px 22px 30px 24px; gap: 14px; }
+.nj-app .tr-card[data-context="hero"] .tr-ticket .nj-card-title { font-family: var(--nj-font-display); font-size: var(--nj-fs-xl); font-weight: 800; }
+.nj-app .tr-card[data-context="hero"] .tr-seg b { font-size: var(--nj-fs-xl); }
+.nj-app .tr-card[data-style="transit-billete"][data-context="hero"] .tr-ticket.is-h .tr-stub { aspect-ratio: 2 / 3; }
+
+/* ==========================================================================
+   Tarjeta Línea: la más densa
+   ========================================================================== */
+.nj-app .tr-card[data-style="transit-linea"] { --w: 160px; gap: 10px; padding: 10px 12px 12px 10px; background: var(--nj-surface-2); border: 1px solid var(--nj-line); transition: border-color var(--nj-dur-2) var(--nj-ease), background var(--nj-dur-2) var(--nj-ease); }
+.nj-app .tr-card[data-style="transit-linea"][data-size="s"] { --w: 136px; }
+.nj-app .tr-card[data-style="transit-linea"][data-size="l"] { --w: 220px; }
+.nj-app .tr-card[data-style="transit-linea"]:hover { border-color: var(--ln-ink); background: var(--nj-surface-3); }
+.nj-app .tr-card[data-style="transit-linea"] .tr-head { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.nj-app .tr-card[data-style="transit-linea"] .tr-thumb { flex: none; width: 40px; aspect-ratio: 2 / 3; border-radius: var(--nj-r-xs); overflow: hidden; background: var(--nj-surface-3); }
+.nj-app .tr-card[data-style="transit-linea"] .tr-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.nj-app .tr-card[data-style="transit-linea"][data-size="s"] .tr-thumb { width: 30px; }
+.nj-app .tr-card[data-style="transit-linea"] .tr-foot { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.nj-app .tr-card[data-style="transit-linea"] .tr-foot-txt { font: 700 var(--nj-fs-xs)/1.2 "Overpass", var(--nj-font-display); color: var(--nj-text-2); }
+.nj-app .tr-card[data-style="transit-linea"][data-context="wish"] { background: var(--nj-surface); border-style: dashed; }
+
+.nj-app .tr-card[data-style="transit-linea"]:is([data-context="compact"], [data-context="continue"]) {
+  --w: 100%; container-type: inline-size; min-height: 56px; padding: 8px 12px 8px 10px; gap: 4px 14px; align-items: center;
+  grid-template-columns: auto minmax(0, 1fr) minmax(120px, 1.1fr) auto;
+}
+.nj-app .tr-card[data-style="transit-linea"][data-context="continue"] { --w: 360px; }
+.nj-app .tr-card[data-style="transit-linea"][data-context="continue"][data-size="l"] { --w: 460px; }
+.nj-app .tr-card[data-style="transit-linea"]:is([data-context="compact"], [data-context="continue"]) .nj-card-title { -webkit-line-clamp: 1; }
+/* Angosta (teléfono, columna lateral): la línea baja a una segunda fila bajo el título. */
+@container (max-width: 420px) {
+  .nj-app .tr-card[data-style="transit-linea"] > .tr-code { grid-column: 1; grid-row: 1 / span 2; }
+  .nj-app .tr-card[data-style="transit-linea"] > .tr-text { grid-column: 2 / 4; grid-row: 1; }
+  .nj-app .tr-card[data-style="transit-linea"] > .tr-route { grid-column: 2 / 4; grid-row: 2; }
+  .nj-app .tr-card[data-style="transit-linea"] > :is(.nj-status, .tr-play) { grid-column: 4; grid-row: 1 / span 2; }
+}
+
+.nj-app .tr-card[data-style="transit-linea"][data-context="hero"] { --w: 100%; max-width: 680px; padding: 16px 22px 34px 16px; gap: 18px; }
+.nj-app .tr-card[data-style="transit-linea"][data-context="hero"] .tr-thumb { width: 64px; }
+.nj-app .tr-card[data-style="transit-linea"][data-context="hero"] .nj-card-title { font-family: var(--nj-font-display); font-size: var(--nj-fs-xl); font-weight: 800; }
+.nj-app .tr-card[data-style="transit-linea"][data-context="hero"] .tr-text { flex: 1; }
+
+/* ==========================================================================
+   Regiones
+   ========================================================================== */
+
+/* episodes: la línea de la serie sobre la lista, con leyenda y el tren en el siguiente. */
+.nj-app .tr-epline { display: grid; gap: 14px; padding: 14px 16px 30px; margin-bottom: 12px; border-radius: var(--nj-r-l); background: var(--nj-surface); border: 1px solid var(--nj-line); grid-column: 1 / -1; }
+.nj-app .tr-epline-head { display: flex; align-items: center; gap: 14px; min-width: 0; flex-wrap: wrap; }
+.nj-app .tr-epline-read { display: grid; gap: 2px; min-width: 0; flex: 1 1 180px; }
+.nj-app .tr-epline-title { font: 800 var(--nj-fs-l)/1.2 var(--nj-font-display); }
+.nj-app .tr-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: var(--nj-fs-xs); color: var(--nj-text-2); }
+.nj-app .tr-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.nj-app .tr-legend li::before { content: ""; width: 9px; height: 9px; border-radius: 50%; box-sizing: border-box; }
+.nj-app .tr-legend li[data-s="w"]::before { background: var(--ln-ink); }
+.nj-app .tr-legend li[data-s="next"]::before { width: 13px; height: 13px; background: var(--tr-porcelain, #f8f9fb); box-shadow: inset 0 0 0 3px var(--ln), inset 0 0 0 4px var(--tr-porcelain, #f8f9fb), inset 0 0 0 6.5px var(--ln-ink); }
+.nj-app .tr-legend li[data-s="a"]::before { background: var(--tr-porcelain, #f8f9fb); border: 2px solid var(--ln-ink); }
+.nj-app .tr-legend li[data-s="u"]::before { border: 1.5px solid var(--nj-line-strong); }
+.nj-app .tr-legend li[data-s="d"]::before { border: 2px dashed var(--nj-warn); }
+.nj-app .tr-route.is-strip { --pad: 12px; }
+.nj-app .tr-route.is-strip .tr-st { r: 5px; stroke-width: 2.5; }
+.nj-app .tr-route.is-strip .tr-st[data-s="w"] { r: 4.5px; }
+.nj-app .tr-route.is-strip .tr-st[data-s="u"] { r: 4px; }
+.nj-app .tr-route.is-strip .tr-track { stroke-width: 5; }
+.nj-app .tr-route.is-strip .tr-run { stroke-width: 6; }
+.nj-app .tr-route.is-strip .tr-future { stroke-width: 2; }
+.nj-app .tr-route.is-strip .tr-train i { left: -10px; top: -10px; width: 20px; height: 20px; box-shadow: inset 0 0 0 4px var(--ln), inset 0 0 0 7px var(--tr-porcelain, #f8f9fb), inset 0 0 0 11px var(--ln-ink), 0 0 0 2.5px var(--nj-surface); }
+.nj-app .tr-route.is-strip .tr-train b { bottom: 15px; }
+.nj-app .tr-epline[data-preview] .tr-train b { background: var(--ln-ink); color: var(--tr-ink, #0b1430); }
+.nj-app[data-mode="light"] .tr-epline[data-preview] .tr-train b { color: #fff; }
+.nj-app .tr-route.is-strip .tr-labs { top: calc(100% + 8px); }
+.nj-app .tr-route.is-strip .tr-lab { font-size: 11px; }
+.nj-app[data-platform="desktop"] .tr-route.is-strip .tr-lab { display: block; }
+.nj-app .tr-route.is-strip .tr-lab.is-here { color: var(--nj-text); }
+/* el ítem de episodio siguiente se marca con un aro completo, nunca con una franja lateral */
+.nj-app[data-dir="transit"] .nj-ep[data-tr="next"] { box-shadow: inset 0 0 0 2px var(--ln-ink, var(--nj-accent)); border-radius: var(--nj-r-m); }
+
+/* tonight: la vía de esta noche, una parada por tarjeta en el color de cada serie. */
+.nj-app[data-dir="transit"] .tr-tracked { padding-top: 26px; position: relative;
+  background-image: linear-gradient(var(--nj-accent), var(--nj-accent)); background-repeat: no-repeat; background-size: 100% 3px; background-position: 0 11px; background-attachment: local; }
+.nj-app[data-dir="transit"] .tr-tracked > .tr-stop { position: relative; overflow: visible; }
+.nj-app[data-dir="transit"] .tr-tracked > .tr-stop::before { content: ""; position: absolute; top: -21px; left: 14px; width: 16px; height: 16px; border-radius: 50%; background: var(--tr-porcelain); box-shadow: inset 0 0 0 3.5px var(--ln-ink, var(--nj-accent)), 0 0 0 2px var(--nj-bg); z-index: 1; }
+
+/* airing: tablero de salidas. Isla oscura en todos los modos, como los tableros reales. */
+.nj-app[data-dir="transit"] .tr-board {
+  --nj-surface: var(--tr-board-s); --nj-surface-2: var(--tr-board-s); --nj-surface-3: color-mix(in srgb, var(--tr-board-s) 80%, #fff);
+  --nj-line: var(--tr-board-line); --nj-text: var(--tr-board-text); --nj-text-2: var(--tr-board-text-2); --nj-text-3: var(--tr-board-text-2);
+  --nj-line-strong: color-mix(in srgb, var(--tr-board-text-2) 70%, var(--tr-board-bg));
+  background: var(--tr-board-bg); color: var(--tr-board-text); border-radius: var(--nj-r-l); padding: 10px 12px; color-scheme: dark;
+  --tr-mix: #ffffff; --tr-mixp: 24%; --nj-focus: var(--tr-board-hi);
+}
+.nj-app[data-dir="transit"][data-mode="oled"] .tr-board { box-shadow: inset 0 0 0 1px var(--tr-board-line); }
+.nj-app[data-dir="transit"] .tr-board [data-time] { font-variant-numeric: tabular-nums; border-radius: var(--nj-r-s); }
+.nj-app[data-dir="transit"] .tr-board time, .nj-app[data-dir="transit"] .tr-board .nj-time { font-family: "Overpass", var(--nj-font-display); font-weight: 800; }
+.nj-app[data-dir="transit"] .tr-board :is([data-now]:not([data-now="false"]), [aria-current="true"], [aria-current="time"], [aria-current="step"], .is-now) { background: color-mix(in srgb, var(--tr-board-hi) 16%, var(--tr-board-bg)); box-shadow: inset 0 0 0 2px var(--tr-board-hi); }
+.nj-app[data-dir="transit"] .tr-board :is([data-now]:not([data-now="false"]), [aria-current="true"], [aria-current="time"], .is-now) :is(time, .nj-time) { color: var(--tr-board-hi); }
+
+/* link: transbordo entre la línea del PC y la del teléfono. */
+.nj-app .tr-xfer { height: 40px; margin: 0 0 10px; padding-inline: 6px; }
+.nj-app .tr-xfer svg { display: block; overflow: visible; }
+.nj-app .tr-xfer-a { stroke: var(--tr-a); stroke-width: 5; stroke-dasharray: 1 1; }
+.nj-app .tr-xfer-b { stroke: var(--tr-b); stroke-width: 5; stroke-dasharray: 1 1; }
+.nj-app .tr-xfer-end { fill: var(--tr-porcelain); stroke-width: 3; }
+.nj-app .tr-xfer-end.is-a, .nj-app .tr-xfer-st.is-a { stroke: var(--tr-a); }
+.nj-app .tr-xfer-end.is-b, .nj-app .tr-xfer-st.is-b { stroke: var(--tr-b); }
+.nj-app .tr-xfer-cap { fill: var(--tr-porcelain); stroke: var(--nj-text); stroke-width: 2.5; }
+.nj-app .tr-xfer-st { fill: var(--tr-porcelain); stroke-width: 3.5; }
+.nj-app [data-tr-link]:not([data-tr-link="connected"]) .tr-xfer-b { stroke: var(--nj-line-strong); stroke-width: 3; stroke-dasharray: .02 .02; }
+.nj-app [data-tr-link]:not([data-tr-link="connected"]) .tr-xfer-st.is-b,
+.nj-app [data-tr-link]:not([data-tr-link="connected"]) .tr-xfer-end.is-b { stroke: var(--nj-line-strong); fill: var(--nj-surface); }
+.nj-app [data-tr-link]:not([data-tr-link="connected"]) .tr-xfer-cap { stroke: var(--nj-warn); stroke-dasharray: 4 3; }
+.nj-app [data-tr-link="failed"] .tr-xfer-cap { stroke: var(--nj-err); }
+.nj-app[data-dir="transit"] [data-region="link"] [data-device][data-state] { font-variant-numeric: tabular-nums; }
+
+/* status-picker: cada estado es una estación con aro de su color; el elegido se llena. */
+.nj-app[data-dir="transit"] [data-region="status-picker"] :is(button, [role="radio"], [role="option"])[data-status] { position: relative; font-family: var(--nj-font-display); font-weight: 700; }
+.nj-app[data-dir="transit"] [data-region="status-picker"] :is(button, [role="radio"], [role="option"])[data-status]::before { content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--tr-porcelain); box-shadow: inset 0 0 0 3px var(--st); margin-right: 2px; }
+.nj-app[data-dir="transit"] [data-region="status-picker"] :is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"])[data-status] { background: color-mix(in srgb, var(--st) 20%, var(--nj-surface)); color: var(--nj-text); border-color: var(--st); }
+.nj-app[data-dir="transit"] [data-region="status-picker"] :is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"])[data-status]::before { background: var(--st); box-shadow: inset 0 0 0 3px var(--st), inset 0 0 0 5px var(--tr-porcelain); content: ""; font-family: inherit; }
+
+/* player-seek: capítulos como estaciones sobre la barra. */
+.nj-app[data-dir="transit"] [data-region="player-seek"] { position: relative; }
+.nj-app[data-dir="transit"] [data-region="player-seek"] input[type="range"] { accent-color: var(--nj-accent); }
+.nj-app .tr-chapters { position: absolute; left: 0; right: 0; top: 50%; height: 0; pointer-events: none; }
+.nj-app .tr-chapters i { position: absolute; top: 50%; left: calc(var(--x) * 100%); width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--tr-porcelain); box-shadow: inset 0 0 0 2.5px #0b1430, 0 0 0 1.5px rgb(255 255 255 / .6); }
+
+/* hero: display de señalética, sin texturas. */
+.nj-app[data-dir="transit"] [data-region="hero"] .nj-h1 { font-weight: 900; letter-spacing: -0.016em; }
+
+/* empty: fin de línea, con la vía que sigue en punteado. */
+.nj-app .tr-empty-art { display: flex; justify-content: center; margin-bottom: 8px; }
+.nj-app .tr-empty-art svg { overflow: visible; }
+.nj-app .tr-e-run { stroke: var(--nj-accent); stroke-width: 4; stroke-linecap: round; }
+.nj-app .tr-e-gap { stroke: var(--nj-line-strong); stroke-width: 2; stroke-dasharray: 3 4; }
+.nj-app .tr-e-st { fill: var(--tr-porcelain, #f8f9fb); stroke: var(--nj-accent); stroke-width: 2.5; }
+.nj-app .tr-e-end { fill: var(--tr-porcelain, #f8f9fb); stroke: var(--nj-text); stroke-width: 3.5; }
+.nj-app .tr-e-stop { stroke: var(--nj-text); stroke-width: 4; stroke-linecap: round; }
+
+/* ==========================================================================
+   Movimiento: un momento por pantalla, solo en la entrada (data-tr-enter lo pone decorate)
+   ========================================================================== */
+@keyframes tr-draw { from { stroke-dashoffset: var(--from, 1); } to { stroke-dashoffset: 0; } }
+@keyframes tr-pop { from { opacity: 0; r: 0; } }
+@keyframes tr-fade { from { opacity: 0; } }
+@keyframes tr-arrive { from { left: var(--pad); } }
+@keyframes tr-lay { from { background-size: 0 3px; } }
+@keyframes tr-stop-in { from { transform: scale(0); } }
+@keyframes tr-flap { from { transform: perspective(500px) rotateX(-78deg); opacity: .2; } }
+
+.nj-app[data-tr-enter] .tr-epline .tr-track { --from: var(--pa); animation: tr-draw 520ms var(--nj-ease) both; }
+.nj-app[data-tr-enter] .tr-epline .tr-run { --from: var(--p); animation: tr-draw 520ms var(--nj-ease) 60ms both; }
+.nj-app[data-tr-enter] .tr-epline .tr-future { animation: tr-fade 300ms var(--nj-ease) 320ms both; }
+.nj-app[data-tr-enter] .tr-epline .tr-st { animation: tr-pop 240ms var(--nj-ease) calc(var(--i) * 28ms + 40ms) both; }
+.nj-app[data-tr-enter] .tr-epline .tr-train { animation: tr-arrive 520ms var(--nj-ease) 380ms both; }
+.nj-app[data-tr-enter] .tr-epline .tr-train b { animation: tr-fade 160ms var(--nj-ease) 860ms both; }
+.nj-app[data-dir="transit"][data-tr-enter] .tr-tracked { animation: tr-lay 560ms var(--nj-ease) both; }
+.nj-app[data-dir="transit"][data-tr-enter] .tr-tracked > .tr-stop::before { animation: tr-stop-in 260ms var(--nj-ease) calc(var(--i, 0) * 50ms + 120ms) both; }
+.nj-app[data-dir="transit"][data-tr-enter] .tr-board [data-time] { transform-origin: 50% 0; animation: tr-flap 280ms var(--nj-ease) calc(var(--i, 0) * 30ms) both; }
+.nj-app[data-tr-enter] .tr-xfer-a, .nj-app[data-tr-enter] .tr-xfer-b { animation: tr-draw 480ms var(--nj-ease) both; }
+.nj-app[data-tr-enter] .tr-xfer-b { animation-delay: 120ms; }
+
+/* Rendimiento: una sola animación (el trazo de la línea), sin escalonados ni llegada del tren; sin sombras grandes. */
+.nj-app[data-motion="perf"] .tr-epline .tr-st,
+.nj-app[data-motion="perf"] .tr-epline .tr-train,
+.nj-app[data-motion="perf"] .tr-epline .tr-train b,
+.nj-app[data-motion="perf"] .tr-epline .tr-future,
+.nj-app[data-motion="perf"] .tr-epline .tr-track,
+.nj-app[data-motion="perf"] .tr-tracked > .tr-stop::before,
+.nj-app[data-motion="perf"] .tr-board [data-time],
+.nj-app[data-motion="perf"] .tr-xfer-b { animation: none !important; }
+.nj-app[data-motion="perf"] .tr-card img { transition: none !important; transform: none !important; }
+.nj-app[data-motion="perf"] .tr-train { transition: none; }
+
+/* Calmo: sin trazo ni desplazamientos; quedan fundidos cortos de color. */
+.nj-app[data-motion="calm"] :is(.tr-epline, .tr-xfer, .tr-board, .tr-tracked) *,
+.nj-app[data-motion="calm"] .tr-tracked, .nj-app[data-motion="calm"] .tr-tracked > .tr-stop::before { animation: none !important; }
+.nj-app[data-motion="calm"] .tr-card img { transform: none !important; }
+.nj-app[data-motion="calm"] .tr-train { transition: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nj-app :is(.tr-epline, .tr-xfer, .tr-board, .tr-tracked) *, .nj-app .tr-tracked, .nj-app .tr-tracked > .tr-stop::before { animation: none !important; }
+  .nj-app .tr-train, .nj-app .tr-card img { transition: none !important; transform: none !important; }
+  .nj-app .tr-track, .nj-app .tr-run, .nj-app .tr-st { transition-property: fill, stroke !important; transition-duration: 120ms !important; }
+}

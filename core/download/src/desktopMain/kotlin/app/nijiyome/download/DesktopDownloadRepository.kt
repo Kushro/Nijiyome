@@ -2,6 +2,7 @@
 package app.nijiyome.download
 
 import app.nijiyome.model.DesktopNoticeTexts
+import app.nijiyome.model.NoticeDestination
 import app.nijiyome.model.SystemNotifier
 import app.nijiyome.model.AppDataWiper
 import app.nijiyome.model.AppError
@@ -208,13 +209,13 @@ class DesktopDownloadRepository internal constructor(
                     persist()
                 }
             }
-            records.value[id]?.item?.let { notifier?.notify(DesktopNoticeTexts.downloaded(it.title, it.episode), it.sourceLabel) }
+            records.value[id]?.item?.let { notifier?.notify(DesktopNoticeTexts.downloaded(it.title, it.episode), it.sourceLabel, NoticeDestination.Transfers) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             // 1.1 review #7 / #11: a debrid code is stored bare (the Downloads page translates it) and a debrid error keeps no URL
             update(id, persist = true) { it.copy(state = DownloadState.FAILED, error = storedDownloadError(e.message, rec.debrid != null, ERR_FAILED)) }
-            records.value[id]?.item?.let { notifier?.notify(DesktopNoticeTexts.downloadFailed(it.title, it.episode), it.sourceLabel) }
+            records.value[id]?.item?.let { notifier?.notify(DesktopNoticeTexts.downloadFailed(it.title, it.episode), it.sourceLabel, NoticeDestination.Transfers) }
         } finally {
             val current = currentCoroutineContext()[Job]
             if (current != null) running.remove(id, current) else running.remove(id)

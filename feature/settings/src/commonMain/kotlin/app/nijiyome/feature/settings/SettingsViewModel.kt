@@ -11,6 +11,9 @@ import app.nijiyome.model.LookPrefs
 import app.nijiyome.model.LookPreset
 import app.nijiyome.model.Motion
 import app.nijiyome.model.ContrastPref
+import app.nijiyome.model.DesignDirection
+import app.nijiyome.model.DesignPrefs
+import app.nijiyome.model.PlayerStructure
 import app.nijiyome.model.HistoryRepository
 import app.nijiyome.model.LinkRepository
 import app.nijiyome.model.LinkState
@@ -92,7 +95,7 @@ sealed interface SettingsEvent {
 }
 
 /**
- * Settings as one sectioned screen. Every field saves immediately through [SettingsRepository]. [history], [metadata], [torrents],
+ * Settings in 14 categories. Every field saves immediately through [SettingsRepository]. [history], [metadata], [torrents],
  * [lists], [link] and [reset] are optional so the existing tests (and a build without a module) keep working.
  */
 class SettingsViewModel(
@@ -167,10 +170,36 @@ class SettingsViewModel(
         it.copy(look = next, reduceMotion = next.motion == Motion.OFF)
     }
 
-    /** Every field of [preset]; the header composition is not part of any preset and stays as chosen. */
+    /** Every field of [preset]; the header composition and the Sparkles design are not part of any preset and stay as chosen. */
     fun applyLookPreset(preset: LookPreset) = update(announce = true) {
-        val next = LookPrefs.of(preset).copy(headerLayout = it.look.headerLayout)
+        val next = LookPrefs.of(preset).copy(headerLayout = it.look.headerLayout, design = it.look.design)
         it.copy(look = next, reduceMotion = next.motion == Motion.OFF)
+    }
+
+    // ---------------------------------------------------------------- Sparkles design (Ajustes › Apariencia › Diseño)
+
+    /** One field of `LookPrefs.design`. */
+    fun setDesign(transform: (DesignPrefs) -> DesignPrefs) = setLook { it.copy(design = transform(it.design)) }
+
+    /** A new direction starts on its own default palette (palette ids belong to one direction). */
+    fun setDirection(direction: DesignDirection) = setDesign { it.copy(direction = direction, palette = null) }
+
+    /** A palette of a non-Canon direction; like [setPalette] it turns the wallpaper colors off so the choice shows at once. */
+    fun setDirectionPalette(id: String) = update {
+        it.copy(dynamicColor = false, look = it.look.copy(design = it.look.design.copy(palette = id)))
+    }
+
+    /**
+     * The player structure (replaces the touch "Estilo del reproductor"); CINEMA / MINIMAL also keep the old field in step for builds that
+     * still read it.
+     */
+    fun setPlayerStructure(value: PlayerStructure) = update {
+        val chrome = when (value) {
+            PlayerStructure.MINIMAL -> PlayerChromeStyle.MINIMAL
+            PlayerStructure.CINEMA -> PlayerChromeStyle.CINEMA
+            PlayerStructure.PANEL -> it.playerChromeStyle
+        }
+        it.copy(playerChromeStyle = chrome, look = it.look.copy(design = it.look.design.copy(structures = it.look.design.structures.copy(player = value))))
     }
 
     fun setAiringReminders(value: Boolean) = update(announce = true) { it.copy(airingReminders = value) }
@@ -219,6 +248,12 @@ class SettingsViewModel(
 
     /** Moves [providerId] by [delta] positions in the metadata priority list (negative = earlier). */
     fun moveProvider(providerId: String, delta: Int) = update { it.copy(providerPriority = it.providerPriority.moved(providerId, delta)) }
+
+    /** The whole order at once (the reorder pattern hands the moved list); unknown ids are kept out, missing ones kept at the end. */
+    fun setProviderPriority(order: List<String>) = update { s ->
+        val known = order.filter { it in s.providerPriority }.distinct()
+        s.copy(providerPriority = known + s.providerPriority.filterNot { it in known })
+    }
 
     fun setMetadataTtl(hours: Int) = update(announce = true) { it.copy(metadataCacheTtlHours = hours.coerceIn(1, 168)) }
 
@@ -347,7 +382,8 @@ class SettingsViewModel(
     /** parity wave A (15 §3.2): generic setter for rows owned by other modules (`PlayerSettingsExtras` of worker p). Announces "saved". */
     fun updateSettings(transform: (AppSettings) -> AppSettings) = update(announce = true, transform)
 
-    private fun update(announce: Boolean = false, transform: (AppSettings) -> AppSettings) {
+    /** Every change announces [SettingsEvent.Saved] (one save model: applied on change, confirmed by the "Guardado" legend). */
+    private fun update(announce: Boolean = true, transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch {
             settingsRepo.update(transform)
             if (announce) _events.trySend(SettingsEvent.Saved)

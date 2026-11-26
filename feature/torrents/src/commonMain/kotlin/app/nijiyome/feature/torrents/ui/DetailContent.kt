@@ -100,7 +100,14 @@ internal fun DetailContent(
         topBar = {
             if (showBack) {
                 TopAppBar(
-                    title = { Text(stringResource(UiR.string.nav_torrents)) },
+                    // Sparkles (TOR-08): the torrent's real name in the bar, not the generic "Torrents".
+                    title = {
+                        Text(
+                            title.ifBlank { stringResource(Res.string.rd_s8_tor_untitled) },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(UiR.string.ui_back))

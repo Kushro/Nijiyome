@@ -10,12 +10,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +30,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -40,7 +43,10 @@ import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.PersonRemove
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
+import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -78,6 +84,16 @@ import app.nijiyome.designsystem.components.EmptyState
 import app.nijiyome.designsystem.components.LocalAppSnackbar
 import app.nijiyome.designsystem.components.Pill
 import app.nijiyome.designsystem.components.PillTone
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.SectionHeader
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.cardSway
+import app.nijiyome.designsystem.motion.cardToDetailsSource
+import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardShow
+import app.nijiyome.ui.cards.TitleCard
+import app.nijiyome.ui.cards.toCardData
+import app.nijiyome.ui.patterns.isCompactWindow
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.Media
 import app.nijiyome.model.Review
@@ -94,6 +110,7 @@ import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.7, worker t). Signatures FINAL. Every screen shows
 // "Conecta AniList" (EmptyState → [onOpenAccounts]) when there is no linked AniList account (`SOCIAL_NOT_LINKED`).
@@ -145,7 +162,8 @@ fun ProfileScreen(
         contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         topBar = {
             TopAppBar(
-                title = { Text(user?.name ?: stringResource(Res.string.social_profile_title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                // PER-01: the name is the header's; the bar keeps the page name so it is not said twice.
+                title = { Text(stringResource(Res.string.social_profile_title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
@@ -162,27 +180,104 @@ fun ProfileScreen(
             )
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
-            when (val s = state.user) {
-                LoadState.Loading -> DelayedLoading(Modifier.fillMaxSize())
-                is LoadState.Err -> SocialError(s.cause, onRetry = vm::load, onOpenAccounts = onOpenAccounts, modifier = Modifier.fillMaxSize())
-                is LoadState.Ok -> ProfileContent(
-                    user = s.value,
-                    state = state,
-                    vm = vm,
-                    draft = draft,
-                    onDraft = { draft = it },
-                    onOpenUser = onOpenUser,
-                    onOpenActivity = onOpenActivity,
+        // Sparkles (screen `perfil`, desktop): the viewer's own profile keeps the notifications in view in a side column.
+        val panel = user?.isViewer == true && !isCompactWindow()
+        Row(Modifier.fillMaxSize().padding(padding), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+                when (val s = state.user) {
+                    LoadState.Loading -> DelayedLoading(Modifier.fillMaxSize())
+                    is LoadState.Err -> SocialError(s.cause, onRetry = vm::load, onOpenAccounts = onOpenAccounts, modifier = Modifier.fillMaxSize())
+                    is LoadState.Ok -> ProfileContent(
+                        user = s.value,
+                        state = state,
+                        vm = vm,
+                        draft = draft,
+                        onDraft = { draft = it },
+                        onOpenUser = onOpenUser,
+                        onOpenActivity = onOpenActivity,
+                        onOpenMedia = onOpenMedia,
+                        onEditProfile = { openUrl(ANILIST_SETTINGS_URL) },
+                    )
+                }
+            }
+            if (panel) {
+                NotificationsPanel(
                     onOpenMedia = onOpenMedia,
-                    onEditProfile = { openUrl(ANILIST_SETTINGS_URL) },
+                    onOpenActivity = onOpenActivity,
+                    onOpenUser = onOpenUser,
+                    modifier = Modifier.width(340.dp).fillMaxHeight().padding(top = 8.dp, end = 16.dp, bottom = 16.dp),
                 )
             }
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * The notifications column of the desktop profile (artifact `nj-b-notifpanel`): the same list and actions as the Notificaciones
+ * screen, refreshed on resume, with "Cargar más".
+ */
+@Composable
+private fun NotificationsPanel(
+    onOpenMedia: (Media) -> Unit,
+    onOpenActivity: (activityId: Int) -> Unit,
+    onOpenUser: (userName: String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val vm: NotificationsViewModel = koinViewModel()
+    val paged by vm.pager.state.collectAsStateWithLifecycle()
+    val unread by vm.unread.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.onResume() }
+    val open: (SocialNotification) -> Unit = { n ->
+        when (val t = notificationTarget(n)) {
+            is NotificationTarget.OpenMedia -> onOpenMedia(t.media)
+            is NotificationTarget.OpenActivity -> onOpenActivity(t.activityId)
+            is NotificationTarget.OpenUser -> onOpenUser(t.userName)
+            NotificationTarget.None -> Unit
+        }
+    }
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.large, modifier = modifier) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            item(key = "head") {
+                SectionHeader(
+                    stringResource(Res.string.social_notifications_title),
+                    trailing = {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (unread > 0) {
+                                val unreadLabel = stringResource(Res.string.rd_s7_soc_unread, unread)
+                                Badge(Modifier.semantics { contentDescription = unreadLabel }) { Text(unread.toString()) }
+                            }
+                            IconButton(onClick = vm::refresh) {
+                                Icon(Icons.Outlined.Refresh, contentDescription = stringResource(Res.string.social_refresh))
+                            }
+                        }
+                    },
+                )
+            }
+            when {
+                paged.initialLoading || (paged.page == 0 && paged.error == null) -> item(key = "loading") { DelayedLoading() }
+                paged.initialError != null -> item(key = "error") {
+                    SocialError(paged.initialError!!, onRetry = vm.pager::retry, onOpenAccounts = null)
+                }
+                paged.items.isEmpty() -> item(key = "empty") {
+                    Text(
+                        stringResource(Res.string.social_notifications_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(8.dp),
+                    )
+                }
+                else -> items(paged.items, key = { "pn:${it.id}" }, contentType = { "notification" }) { n -> NotificationRow(n, onClick = { open(n) }) }
+            }
+            item(key = "footer") { PagedFooter(paged, onMore = vm.pager::loadMore, onRetry = vm.pager::retry) }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileContent(
     user: SocialUser,
@@ -207,9 +302,18 @@ private fun ProfileContent(
             ProfileHeader(user, followBusy = state.followBusy, onFollow = vm::toggleFollow, onEdit = onEditProfile, onTab = vm::selectTab)
         }
         item(key = "tabs", contentType = "tabs") {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // Sparkles: real tabs (artifact `perfil`), scrollable on a phone.
+            PrimaryScrollableTabRow(
+                selectedTabIndex = state.tab.ordinal,
+                edgePadding = 0.dp,
+                containerColor = MaterialTheme.colorScheme.surface,
+            ) {
                 ProfileTab.entries.forEach { t ->
-                    FilterChip(selected = state.tab == t, onClick = { vm.selectTab(t) }, label = { Text(stringResource(t.labelRes())) })
+                    Tab(
+                        selected = state.tab == t,
+                        onClick = { vm.selectTab(t) },
+                        text = { Text(stringResource(t.labelRes()), maxLines = 1, softWrap = false) },
+                    )
                 }
             }
         }
@@ -226,8 +330,10 @@ private fun ProfileContent(
                                     modifier = Modifier.weight(1f),
                                     maxLines = 4,
                                 )
-                                IconButton(onClick = { vm.postStatus(draft) }, enabled = draft.isNotBlank() && !state.posting) {
-                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(Res.string.social_post))
+                                // PER-02: a labelled "Publicar" button (the artifact's), not a bare grey arrow.
+                                Button(onClick = { vm.postStatus(draft) }, enabled = draft.isNotBlank() && !state.posting, shape = NijiyomeControls.shape) {
+                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Text(stringResource(Res.string.rd_s7_soc_publish), modifier = Modifier.padding(start = 8.dp))
                                 }
                             }
                             FilterChip(
@@ -284,9 +390,16 @@ private fun ProfileTab.labelRes(): StringResource = when (this) {
 @Composable
 private fun ProfileHeader(user: SocialUser, followBusy: Boolean, onFollow: () -> Unit, onEdit: () -> Unit, onTab: (ProfileTab) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.fillMaxWidth()) {
+        // PER-01: the banner keeps its 3.2:1 shape up to 200 dp tall (artifact), so activity shows on the first screen.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val bannerHeight = (maxWidth / 3.2f).coerceAtMost(PROFILE_BANNER_MAX)
             Box(
-                Modifier.fillMaxWidth().aspectRatio(3.2f).clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                Modifier
+                    .fillMaxWidth()
+                    .height(bannerHeight)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .decor(DecorRegion.HERO),
             ) {
                 if (!user.banner.isNullOrBlank()) {
                     AsyncImage(model = user.banner, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -297,40 +410,63 @@ private fun ProfileHeader(user: SocialUser, followBusy: Boolean, onFollow: () ->
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 28.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(user.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
-                if (user.isFollower && !user.isViewer) Pill(stringResource(Res.string.social_follows_you), tone = PillTone.NEUTRAL)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(user.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+                    if (user.isFollower && !user.isViewer) Pill(stringResource(Res.string.social_follows_you), tone = PillTone.NEUTRAL)
+                }
+                // Followers and following on the name's line block (artifact), not a row of their own.
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { onTab(ProfileTab.FOLLOWERS) }, contentPadding = PaddingValues(horizontal = 8.dp), shape = NijiyomeControls.shape) {
+                        Text(stringResource(Res.string.social_followers_count, user.followers), style = MaterialTheme.typography.bodyMedium)
+                    }
+                    TextButton(onClick = { onTab(ProfileTab.FOLLOWING) }, contentPadding = PaddingValues(horizontal = 8.dp), shape = NijiyomeControls.shape) {
+                        Text(stringResource(Res.string.social_following_count, user.following), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
             when {
-                user.isViewer -> OutlinedButton(onClick = onEdit) {
+                user.isViewer -> OutlinedButton(onClick = onEdit, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.social_edit_profile), modifier = Modifier.padding(start = 8.dp))
                 }
-                user.isFollowing -> OutlinedButton(onClick = onFollow, enabled = !followBusy) {
+                user.isFollowing -> OutlinedButton(onClick = onFollow, enabled = !followBusy, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.PersonRemove, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.social_following_button), modifier = Modifier.padding(start = 8.dp))
                 }
-                else -> Button(onClick = onFollow, enabled = !followBusy) {
+                else -> Button(onClick = onFollow, enabled = !followBusy, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.social_follow), modifier = Modifier.padding(start = 8.dp))
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(
-                stringResource(Res.string.social_followers_count, user.followers),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.clickable { onTab(ProfileTab.FOLLOWERS) },
-            )
-            Text(
-                stringResource(Res.string.social_following_count, user.following),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.clickable { onTab(ProfileTab.FOLLOWING) },
-            )
-        }
-        user.about?.let { Text(it, style = MaterialTheme.typography.bodyMedium, maxLines = 12, overflow = TextOverflow.Ellipsis) }
+        user.about?.let { about -> ProfileAbout(about) }
     }
 }
+
+/** PER-01: the bio in four lines (artifact), the rest one tap away. */
+@Composable
+private fun ProfileAbout(about: String) {
+    var expanded by rememberSaveable(about) { mutableStateOf(false) }
+    var overflows by remember(about) { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            about,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = if (expanded) Int.MAX_VALUE else PROFILE_ABOUT_LINES,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { if (!expanded) overflows = it.hasVisualOverflow },
+        )
+        if (overflows || expanded) {
+            TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 8.dp), shape = NijiyomeControls.shape) {
+                Text(stringResource(if (expanded) Res.string.rd_s7_soc_about_less else Res.string.rd_s7_soc_about_more))
+            }
+        }
+    }
+}
+
+private val PROFILE_BANNER_MAX = 200.dp
+private const val PROFILE_ABOUT_LINES = 4
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -340,7 +476,11 @@ private fun StatsGrid(stats: SocialStats?) {
         return
     }
     val days = stats.minutesWatched / 60.0 / 24.0
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    FlowRow(
+        Modifier.decor(DecorRegion.GRID),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         StatTile(stringResource(Res.string.social_stat_anime), stats.animeCount.toString())
         StatTile(stringResource(Res.string.social_stat_episodes), stats.episodesWatched.toString())
         StatTile(stringResource(Res.string.social_stat_days), String.format(java.util.Locale.getDefault(), "%.1f", days))
@@ -369,8 +509,8 @@ private fun Favorites(user: SocialUser, onOpenMedia: (Media) -> Unit) {
         FavoriteRow(stringResource(Res.string.social_favorites_anime), user.favoriteAnime, onOpenMedia)
         FavoriteRow(stringResource(Res.string.social_favorites_manga), user.favoriteManga, onOpenMedia)
         if (user.favoriteCharacters.isNotEmpty()) {
-            Text(stringResource(Res.string.social_favorites_characters), style = MaterialTheme.typography.titleSmall)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(stringResource(Res.string.social_favorites_characters))
+            LazyRow(Modifier.decor(DecorRegion.ROW), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(user.favoriteCharacters, key = { it.id }) { c ->
                     Column(Modifier.width(80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Avatar(c.image, 64.dp, contentDescription = c.name)
@@ -385,13 +525,19 @@ private fun Favorites(user: SocialUser, onOpenMedia: (Media) -> Unit) {
 @Composable
 private fun FavoriteRow(title: String, list: List<Media>, onOpenMedia: (Media) -> Unit) {
     if (list.isEmpty()) return
-    Text(title, style = MaterialTheme.typography.titleSmall)
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(list, key = { it.ref.anilistId ?: it.title.hashCode() }) { m ->
-            Column(Modifier.width(100.dp).clickable { onOpenMedia(m) }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                MediaCover(m.cover, Modifier.fillMaxWidth(), contentDescription = m.title)
-                Text(m.title, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
+    SectionHeader(title)
+    // Sparkles: titles drawn with the user's card style.
+    LazyRow(Modifier.fillMaxWidth().decor(DecorRegion.ROW), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        itemsIndexed(list, key = { _, m -> m.ref.anilistId ?: m.title.hashCode() }) { i, m ->
+            val data = m.toCardData()
+            TitleCard(
+                data = data,
+                onClick = { onOpenMedia(m) },
+                context = CardContext.ROW,
+                show = CardShow(progress = false, status = false, next = false, score = true),
+                modifier = Modifier.cardSway(i).cardToDetailsSource(data.key),
+                index = i,
+            )
         }
     }
 }
@@ -460,7 +606,7 @@ fun ActivityThreadScreen(
                         ActivityCard(s.value, onOpenUser = onOpenUser, onOpenMedia = onOpenMedia, onOpenThread = null, onLike = vm::toggleLike, expanded = true)
                     }
                     item(key = "replies-head") {
-                        Text(stringResource(Res.string.social_replies_count, s.value.replyCount), style = MaterialTheme.typography.titleSmall)
+                        SectionHeader(stringResource(Res.string.social_replies_count, s.value.replyCount))
                     }
                     when {
                         replies.initialLoading -> item(key = "r-loading") { DelayedLoading(Modifier.fillMaxWidth().height(96.dp)) }
@@ -545,7 +691,7 @@ fun NotificationsScreen(
                                 Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
                                     Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text(stringResource(Res.string.social_permission_hint), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                        TextButton(onClick = permission::request) {
+                                        TextButton(onClick = permission::request, shape = NijiyomeControls.shape) {
                                             Text(stringResource(Res.string.social_permission_allow))
                                         }
                                     }
@@ -611,7 +757,7 @@ fun AniListSocialSlot(media: Media, modifier: Modifier = Modifier) {
                 Text(stringResource(Res.string.social_reviews_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
                 media.score?.let { Text(stringResource(Res.string.social_mean_score, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
-            TextButton(onClick = { openUrl(reviewEditorUrl(id)) }) {
+            TextButton(onClick = { openUrl(reviewEditorUrl(id)) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.RateReview, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.social_write_review), modifier = Modifier.padding(start = 8.dp))
             }
@@ -666,8 +812,8 @@ private fun ReviewCard(r: Review, onOpen: () -> Unit) {
             Text(r.summary, style = MaterialTheme.typography.bodyMedium)
             if (expanded) Text(r.body, style = MaterialTheme.typography.bodySmall)
             Row {
-                TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) Res.string.social_review_collapse else Res.string.social_review_expand)) }
-                TextButton(onClick = onOpen) { Text(stringResource(Res.string.social_open_anilist)) }
+                TextButton(onClick = { expanded = !expanded }, shape = NijiyomeControls.shape) { Text(stringResource(if (expanded) Res.string.social_review_collapse else Res.string.social_review_expand)) }
+                TextButton(onClick = onOpen, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.social_open_anilist)) }
             }
         }
     }

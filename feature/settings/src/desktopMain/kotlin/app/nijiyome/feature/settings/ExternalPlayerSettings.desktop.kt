@@ -10,6 +10,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Row
+import app.nijiyome.ui.platform.rememberFilePicker
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -74,6 +77,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import java.util.Locale
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Hito 4, paso D: Settings › Reproductor on desktop for mpv in its own window (Tatakai Next's tk-ui/src/screens/settings/player.rs:
 // the external mpv, "Integrado mejorado" with mpv-anime-build, and frame generation). What cannot run says why instead of hiding.
@@ -129,7 +133,7 @@ internal actual fun ExternalPlayerSettingsRows(state: SettingsUiState, vm: Setti
                 Text(stringResource(Res.string.settings_xmpv_downloading, (p * 100).toInt()), style = MaterialTheme.typography.bodySmall)
                 LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth())
             } else {
-                FilledTonalButton(onClick = control::startInstall) { Text(stringResource(Res.string.settings_xmpv_download, size)) }
+                FilledTonalButton(onClick = control::startInstall, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.settings_xmpv_download, size)) }
             }
             failure?.let {
                 Text(stringResource(Res.string.settings_xmpv_download_failed, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
@@ -251,21 +255,31 @@ private fun rememberExternalControl(): ExternalMpvSettingsControl? {
     return remember { koin.getOrNull<ExternalMpvSettingsControl>() }
 }
 
-/** A path typed by hand; saved when it loses focus or with Enter (empty = automatic). */
+/**
+ * An executable or shader file: "Elegir archivo…" opens the system file chooser (choose, don't type); the path can still be typed
+ * and is saved when the field loses focus or with Enter. "Automático" clears it (empty = found on its own).
+ */
 @Composable
 internal fun PathField(value: String, label: String, hint: String, onDone: (String?) -> Unit) {
     var text by remember(value) { mutableStateOf(value) }
     LaunchedEffect(value) { text = value }
-    OutlinedTextField(
-        value = text,
-        onValueChange = { text = it },
-        label = { Text(label) },
-        placeholder = { Text(hint) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onDone(text.trim().ifEmpty { null }) }),
-        modifier = Modifier.fillMaxWidth().onFocusLost { if (text != value) onDone(text.trim().ifEmpty { null }) },
-    )
+    val pick = rememberFilePicker(emptyList(), multiple = false) { files -> files.firstOrNull()?.let { onDone(it) } }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text(label) },
+            placeholder = { Text(hint) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onDone(text.trim().ifEmpty { null }) }),
+            modifier = Modifier.fillMaxWidth().onFocusLost { if (text != value) onDone(text.trim().ifEmpty { null }) },
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilledTonalButton(onClick = pick, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s10_path_pick)) }
+            if (value.isNotEmpty()) TextButton(onClick = { onDone(null) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s10_path_auto)) }
+        }
+    }
 }
 
 private fun Modifier.onFocusLost(block: () -> Unit): Modifier = onFocusChanged { if (!it.isFocused) block() }

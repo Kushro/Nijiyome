@@ -165,6 +165,21 @@ internal class PhoneFrameGenReason(val text: String, val missingShaders: Boolean
 internal expect fun frameGenNoticeReason(notice: PlayerNotice.FrameGen): String
 
 /**
+ * Sparkles S5 (PLY-27): "Enviar a dispositivo" in the top bar and the Más sheet: the paired phones and how to hand the episode over at
+ * the current position ([busy] while a send runs). The result comes back through `onMessage` as a short line for the HUD.
+ */
+internal class SendToDevice(val phones: List<app.nijiyome.model.PhoneTarget>, val busy: Boolean, val send: (app.nijiyome.model.PhoneTarget) -> Unit)
+
+/** Desktop with Nijiyome Link and a paired phone; null elsewhere (Android has no phone to send to). */
+@Composable
+internal expect fun rememberSendToDevice(
+    vm: PlayerViewModel,
+    args: app.nijiyome.model.PlayerArgs?,
+    session: PlayerSession,
+    onMessage: (String) -> Unit,
+): SendToDevice?
+
+/**
  * The EXTERNAL engine branch of the screen. Android: launch the other app, then the informative screen. Desktop: the card shown while
  * mpv plays in its own window ([onOpenPicker] opens the source list there; Android does not use it).
  */

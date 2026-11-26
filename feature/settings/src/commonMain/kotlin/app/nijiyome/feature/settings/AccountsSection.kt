@@ -72,6 +72,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Parity wave A (docs/redesign/15-parity-wave-a-contract-android.md §3.3). Owner: worker q.
@@ -172,7 +173,7 @@ internal fun AccountsSection(state: SettingsUiState, vm: SettingsViewModel) {
             Pill(stringResource(Res.string.settings_accounts_up_to_date), tone = PillTone.OK)
         }
     }
-    FilledTonalButton(onClick = accountsVm::syncNow, enabled = ui.accounts.isNotEmpty() && !ui.syncing) {
+    FilledTonalButton(onClick = accountsVm::syncNow, enabled = ui.accounts.isNotEmpty() && !ui.syncing, shape = NijiyomeControls.shape) {
         if (ui.syncing) {
             LoadingIndicator(Modifier.size(20.dp))
         } else {
@@ -207,17 +208,17 @@ internal fun AccountsSection(state: SettingsUiState, vm: SettingsViewModel) {
 
     SettingRow(stringResource(Res.string.settings_accounts_transfer), stringResource(platformHint(Res.string.settings_accounts_transfer_hint)), stack = true) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { accountsVm.export() }, enabled = !ui.transferring) {
+            OutlinedButton(onClick = { accountsVm.export() }, enabled = !ui.transferring, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.FileUpload, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text(stringResource(Res.string.settings_accounts_export), modifier = Modifier.padding(start = 8.dp))
             }
             if (listFileFormatsOffered) {
-                OutlinedButton(onClick = { accountsVm.export(csv = true) }, enabled = !ui.transferring) {
+                OutlinedButton(onClick = { accountsVm.export(csv = true) }, enabled = !ui.transferring, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.FileUpload, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Text(stringResource(Res.string.settings_accounts_export_csv), modifier = Modifier.padding(start = 8.dp))
                 }
             }
-            OutlinedButton(onClick = openImport, enabled = !ui.transferring) {
+            OutlinedButton(onClick = openImport, enabled = !ui.transferring, shape = NijiyomeControls.shape) {
                 if (ui.transferring) {
                     LoadingIndicator(Modifier.size(20.dp))
                 } else {
@@ -248,10 +249,11 @@ internal fun AccountsSection(state: SettingsUiState, vm: SettingsViewModel) {
                         accountsVm.unlink(provider)
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.settings_accounts_unlink)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmUnlink = null }) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) }
+                TextButton(onClick = { confirmUnlink = null }, shape = NijiyomeControls.shape) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) }
             },
         )
     }
@@ -353,7 +355,7 @@ private fun SyncModeSheet(ui: AccountsUiState, accountsVm: AccountsViewModel) {
             }
         },
         confirmButton = {
-            TextButton(onClick = accountsVm::dismissSyncMode) {
+            TextButton(onClick = accountsVm::dismissSyncMode, shape = NijiyomeControls.shape) {
                 Text((if (first) stringResource(Res.string.settings_accounts_mode_later) else stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)))
             }
         },
@@ -414,22 +416,22 @@ private fun ProviderCard(
                     )
                 }
                 when {
-                    account != null -> TextButton(onClick = onUnlink) { Text(stringResource(Res.string.settings_accounts_unlink)) }
+                    // AJ-04: the account's actions sit together on the header row (they were stacked, leaving a gap under the avatar).
+                    account != null -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (onSyncMode != null) {
+                            TextButton(onClick = onSyncMode, shape = NijiyomeControls.shape) {
+                                Text(stringResource(if (firstSyncPending) Res.string.settings_accounts_choose else Res.string.settings_accounts_sync_mode))
+                            }
+                        }
+                        TextButton(onClick = onUnlink, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.settings_accounts_unlink)) }
+                    }
                     linking -> LoadingIndicator(Modifier.size(32.dp))
                     // Without a client id the button stays visible but disabled; the line above says why (account.oauth.errors).
-                    else -> FilledTonalButton(onClick = onLink, enabled = configured) { Text(stringResource(Res.string.settings_accounts_link)) }
+                    else -> FilledTonalButton(onClick = onLink, enabled = configured, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.settings_accounts_link)) }
                 }
             }
-            if (account != null && (firstSyncPending || onSyncMode != null)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (firstSyncPending) Pill(stringResource(Res.string.settings_accounts_first_sync_pending), tone = PillTone.WARN)
-                    Box(Modifier.weight(1f))
-                    if (onSyncMode != null) {
-                        TextButton(onClick = onSyncMode) {
-                            Text(stringResource(if (firstSyncPending) Res.string.settings_accounts_choose else Res.string.settings_accounts_sync_mode))
-                        }
-                    }
-                }
+            if (account != null && firstSyncPending) {
+                Pill(stringResource(Res.string.settings_accounts_first_sync_pending), tone = PillTone.WARN)
             }
             if (account?.expiresAtMs != null && account.expiresAtMs!! < System.currentTimeMillis()) {
                 Pill(stringResource(Res.string.settings_accounts_expired), tone = PillTone.WARN)
@@ -453,7 +455,7 @@ private fun ConflictsBlock(conflicts: List<ListConflict>, vm: AccountsViewModel)
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { vm.resolveAll(ConflictChoice.KEEP_LOCAL) }) { Text(stringResource(Res.string.settings_accounts_keep_all_local)) }
+            TextButton(onClick = { vm.resolveAll(ConflictChoice.KEEP_LOCAL) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.settings_accounts_keep_all_local)) }
         }
         conflicts.take(MAX_CONFLICTS_SHOWN).forEach { c ->
             Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
@@ -468,10 +470,10 @@ private fun ConflictsBlock(conflicts: List<ListConflict>, vm: AccountsViewModel)
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(onClick = { vm.resolve(c, ConflictChoice.KEEP_LOCAL) }) {
+                        FilledTonalButton(onClick = { vm.resolve(c, ConflictChoice.KEEP_LOCAL) }, shape = NijiyomeControls.shape) {
                             Text(stringResource(Res.string.settings_accounts_keep_local))
                         }
-                        OutlinedButton(onClick = { vm.resolve(c, ConflictChoice.KEEP_REMOTE) }) {
+                        OutlinedButton(onClick = { vm.resolve(c, ConflictChoice.KEEP_REMOTE) }, shape = NijiyomeControls.shape) {
                             Text(stringResource(Res.string.settings_accounts_keep_remote))
                         }
                     }

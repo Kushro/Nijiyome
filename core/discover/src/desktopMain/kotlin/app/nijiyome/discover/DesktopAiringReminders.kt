@@ -3,6 +3,7 @@ package app.nijiyome.discover
 
 import app.nijiyome.model.AiringEpisode
 import app.nijiyome.model.SettingsRepository
+import app.nijiyome.model.NoticeDestination
 import app.nijiyome.model.SystemNotifier
 import app.nijiyome.model.inBackground
 import kotlinx.coroutines.CancellationException
@@ -54,7 +55,7 @@ class DesktopAiringReminders(
     internal suspend fun runOnce(): Boolean = try {
         val episodes = inBackground { due() }
         val t = texts()
-        episodes.take(maxPerRun).forEach { notifier.notify(t.title(it.media.title, it.episode), t.body) }
+        episodes.take(maxPerRun).forEach { notifier.notify(t.title(it.media.title, it.episode), t.body, NoticeDestination.Calendar) }
         true
     } catch (e: CancellationException) {
         throw e

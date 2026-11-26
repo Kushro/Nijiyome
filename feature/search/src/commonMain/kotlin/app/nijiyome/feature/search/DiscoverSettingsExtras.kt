@@ -42,6 +42,7 @@ import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import org.koin.compose.koinInject
 import kotlinx.coroutines.flow.emptyFlow
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Parity wave A contract (docs/redesign/15-parity-wave-a-contract-android.md §3.1). Owner: worker o. Mounted by Settings › Metadatos
@@ -117,7 +118,7 @@ fun DiscoverSettingsExtras(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            OutlinedButton(onClick = { confirm = true }, enabled = count > 0) {
+            OutlinedButton(onClick = { confirm = true }, enabled = count > 0, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.search_settings_history_clear), modifier = Modifier.padding(start = 6.dp))
             }
@@ -133,9 +134,9 @@ fun DiscoverSettingsExtras(
                     history.save(emptyList())
                     confirm = false
                     snackbar.show(cleared)
-                }) { Text(stringResource(Res.string.search_settings_history_clear)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.search_settings_history_clear)) }
             },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { confirm = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
 }

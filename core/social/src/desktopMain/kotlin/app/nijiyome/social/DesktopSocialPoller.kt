@@ -5,6 +5,7 @@ import app.nijiyome.model.ListProvider
 import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.SettingsRepository
 import app.nijiyome.model.SocialRepository
+import app.nijiyome.model.NoticeDestination
 import app.nijiyome.model.SystemNotifier
 import app.nijiyome.model.inBackground
 import kotlinx.coroutines.CancellationException
@@ -74,7 +75,7 @@ class DesktopSocialPoller(
         }
         val count = social.unreadCount.value
         val last = readLast()
-        if (shouldNotify(count, last)) notifier?.notify(SocialNoticeTexts.TITLE, SocialNoticeTexts.unread(count))
+        if (shouldNotify(count, last)) notifier?.notify(SocialNoticeTexts.TITLE, SocialNoticeTexts.unread(count), NoticeDestination.Notifications)
         if (count != last) writeLast(count)
     }
 

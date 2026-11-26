@@ -33,6 +33,21 @@ import java.awt.Toolkit
 import java.awt.image.BufferedImage
 import java.io.File
 import app.nijiyome.ui.platform.DesktopPictures
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import app.nijiyome.feature.player.resources.Res
+import app.nijiyome.feature.player.resources.player_send_phone_done
+import app.nijiyome.feature.player.resources.player_send_phone_err_denied
+import app.nijiyome.feature.player.resources.player_send_phone_err_device
+import app.nijiyome.feature.player.resources.player_send_phone_err_internal
+import app.nijiyome.feature.player.resources.player_send_phone_err_offline
+import app.nijiyome.feature.player.resources.player_send_phone_err_source
+import app.nijiyome.feature.player.resources.player_send_phone_failed
+import app.nijiyome.feature.player.resources.player_send_phone_sending
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 // Milestone 4: the desktop side of PlayerScreenPlatform.kt. libmpv is the only engine; what the window and the system do not offer yet
 // carries a pending note.
@@ -163,6 +178,66 @@ internal actual val playerCapabilities: PlayerCapabilities = PlayerCapabilities(
     sourceQualities = true,
     desktopShortcuts = true,
 )
+
+/**
+ * Sparkles S5 (PLY-27): "Enviar a dispositivo" from the top bar and the Más sheet, the same hand-off as [DesktopLinkRemote]'s floating
+ * button: a Link session for the phone at the current position, then the video pauses here.
+ */
+@Composable
+internal actual fun rememberSendToDevice(
+    vm: PlayerViewModel,
+    args: app.nijiyome.model.PlayerArgs?,
+    session: PlayerSession,
+    onMessage: (String) -> Unit,
+): SendToDevice? {
+    val koin = org.koin.compose.getKoin()
+    val sender = remember(koin) { koin.getOrNull<app.nijiyome.model.SendToPhone>() } ?: return null
+    if (args == null) return null
+    val phones by sender.phones.collectAsState()
+    val state by vm.state.collectAsState()
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    val message by rememberUpdatedState(onMessage)
+    val source = sendableSource(state, args)
+    if (phones.isEmpty() || source == null) return null
+    return SendToDevice(phones, busy, send = send@{ phone ->
+        if (busy) return@send
+        busy = true
+        val position = (session.currentPositionMs() / 1000).toInt().coerceAtLeast(0)
+        scope.launch {
+            message(getString(Res.string.player_send_phone_sending))
+            val result = runCatching {
+                sender.send(
+                    phone.id,
+                    app.nijiyome.model.SendToPhoneRequest(
+                        mediaId = app.nijiyome.model.HistoryEntry.animeIdOf(args.media.anilistId, args.media.malId),
+                        episode = args.episode,
+                        positionSecs = position,
+                        title = args.title,
+                        source = source,
+                    ),
+                )
+            }.getOrElse { Result.failure(it) }
+            result.fold(
+                onSuccess = {
+                    session.pause()
+                    message(getString(Res.string.player_send_phone_done, phone.name))
+                },
+                onFailure = { e -> message(getString(Res.string.player_send_phone_failed, sendErrorText(e.message.orEmpty()))) },
+            )
+            busy = false
+        }
+    })
+}
+
+private suspend fun sendErrorText(code: String): String = when (code) {
+    "source_unavailable", "library_item_not_found" -> getString(Res.string.player_send_phone_err_source)
+    "url_source_denied" -> getString(Res.string.player_send_phone_err_denied)
+    "link_off" -> getString(Res.string.player_send_phone_err_offline)
+    "device_not_authorized" -> getString(Res.string.player_send_phone_err_device)
+    "", "internal" -> getString(Res.string.player_send_phone_err_internal)
+    else -> code
+}
 
 /** A computer always has a keyboard. */
 @Composable

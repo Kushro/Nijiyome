@@ -60,6 +60,7 @@ import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.state.LoadStateContent
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Classic `/character/:name` page: image, name + native name, facts (age, birthday, blood type, gender, favourites), description with
@@ -172,7 +173,7 @@ private fun CharacterBody(
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (description.length > DESCRIPTION_TOGGLE_CHARS) {
-                    TextButton(onClick = { expanded = !expanded }) {
+                    TextButton(onClick = { expanded = !expanded }, shape = NijiyomeControls.shape) {
                         Text(stringResource(if (expanded) Res.string.details_less else Res.string.details_more))
                     }
                 }

@@ -97,7 +97,8 @@ class AiringRepositoryImpl(
      */
     private suspend fun fetchPages(fromEpochSec: Long, toEpochSec: Long): List<AiringEpisode> = coroutineScope {
         val out = mutableListOf<AiringEpisode>()
-        for (wave in AiringLogic.pageWaves(MAX_PAGES)) {
+        val maxPages = AiringLogic.maxPagesFor(fromEpochSec, toEpochSec)
+        for (wave in AiringLogic.pageWaves(maxPages)) {
             val chunks = wave.map { page -> async { metadata.airingSchedule(fromEpochSec, toEpochSec, page) } }.awaitAll()
             for (chunk in chunks) {
                 out += chunk
@@ -179,9 +180,27 @@ internal object AiringLogic {
     fun dedupe(list: List<AiringEpisode>): List<AiringEpisode> =
         list.distinctBy { "${it.media.ref.anilistId}:${it.media.ref.malId}:${it.episode}" }.sortedBy { it.airingAtEpochSec }
 
-    /** Pages of a range asked together: page 1 alone (most weeks fit in it), then 2-3, then the rest up to [maxPages]. */
-    fun pageWaves(maxPages: Int): List<List<Int>> =
-        listOf(listOf(1), (2..3).toList(), (4..maxPages).toList()).map { w -> w.filter { it <= maxPages } }.filter { it.isNotEmpty() }
+    /**
+     * MES-01: a 7-day week fits inside 6 pages (~300 slots), while a 35–42 day month grid needs up to ~20 pages in a busy season
+     * (stopping at 6 cut the month off around day 13).
+     */
+    fun maxPagesFor(fromEpochSec: Long, toEpochSec: Long): Int {
+        val days = ((toEpochSec - fromEpochSec).coerceAtLeast(0L) + 86_399L) / 86_400L
+        return when {
+            days <= 10L -> 6
+            days <= 21L -> 12
+            else -> 24
+        }
+    }
+
+    /** Pages of a range asked together: page 1 alone (most weeks fit in it), then 2-3, then waves of 3 up to [maxPages]. */
+    fun pageWaves(maxPages: Int): List<List<Int>> {
+        if (maxPages <= 0) return emptyList()
+        val waves = mutableListOf(listOf(1))
+        if (maxPages >= 2) waves += (2..minOf(3, maxPages)).toList()
+        if (maxPages >= 4) waves += (4..maxPages).chunked(3)
+        return waves
+    }
 
     /** A page this short ends the window (see QA 0.3 above: rows the mapper dropped make a full page look shorter). */
     fun endsWindow(size: Int): Boolean = size == 0 || size < PER_PAGE_AIRING / 2

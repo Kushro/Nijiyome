@@ -1,0 +1,416 @@
+/* ==========================================================================
+   Dirección Obi (agente D2). Tinta y papel para la herramienta; color saturado solo en las fajas.
+   Parte 1: tarjetas (mezclables con cualquier dirección: solo tokens --nj-* y respaldos).
+   Parte 2: tokens de la dirección (4 paletas × claro, oscuro, OLED).
+   Parte 3: reestilo de clases base y regiones.
+   Parte 4: movimiento (barrido, transición compartida, calmo, rendimiento, reduced-motion).
+   ========================================================================== */
+
+/* ---------- Parte 1 · tarjetas ---------- */
+.nj-card[data-style^="obi"] {
+  --obi-out: cubic-bezier(.16, 1, .3, 1);
+  --obi-band-font: "Dela Gothic One", var(--nj-font-display);
+  --obi-ui-font: "M PLUS 1", var(--nj-font-ui);
+  font-family: var(--obi-ui-font);
+}
+.nj-card[data-style^="obi"]:hover .nj-card-art { transform: none; box-shadow: var(--nj-shadow-2); }
+.nj-card[data-style^="obi"] .nj-card-title { font-weight: 700; }
+.nj-card[data-style^="obi"]:focus-visible { outline: 2px solid var(--nj-focus); outline-offset: 3px; border-radius: var(--nj-r-s); }
+.nj-card[data-style^="obi"] img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Tonos de faja. Las fajas por serie traen --obi-bg/--obi-fg en línea (calculados por luminancia). */
+[data-obi-tone="completed"] { --obi-bg: var(--nj-st-completed); --obi-fg: var(--nj-bg); }
+[data-obi-tone="dropped"] { --obi-bg: var(--nj-surface-3); --obi-fg: var(--nj-text-2); }
+[data-obi-tone="paper"] { --obi-bg: var(--nj-surface); --obi-fg: var(--nj-text); }
+
+/* Texto comprimido 長体: el bloque se ensancha en la misma proporción en que se comprime. */
+.obi-cond { display: block; width: calc(100% / var(--obi-cond, .86)); transform: scaleX(var(--obi-cond, .86)); transform-origin: 0 50%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--obi-band-font, "Dela Gothic One"); font-weight: 400; letter-spacing: .01em; line-height: 1.15; }
+.obi-st { flex: none; font-family: var(--obi-ui-font, "M PLUS 1"); font-weight: 800; font-size: 11px; line-height: 1; padding: 3px 5px 4px; border-radius: 2px;
+  background: var(--obi-fg); color: var(--obi-bg); white-space: nowrap; }
+
+/* 1 · obi: póster con faja inferior */
+.nj-card[data-style="obi"] { --obi-h: 30px; --obi-x: 22px; --obi-fs: 13.5px; --obi-cond: .86; }
+.nj-card[data-style="obi"][data-size="s"] { --obi-h: 26px; --obi-x: 20px; --obi-fs: 12px; --obi-cond: .92; }
+.nj-card[data-style="obi"][data-size="l"] { --obi-h: 36px; --obi-x: 24px; --obi-fs: 16px; }
+.nj-card[data-style="obi"] .obi-art { position: relative; overflow: hidden; }
+.nj-card[data-style="obi"] .obi-band { position: absolute; left: 0; right: 0; bottom: calc(var(--obi-x) * -1); z-index: 1; display: block; isolation: isolate;
+  background: var(--obi-bg); color: var(--obi-fg); transition: transform var(--nj-dur-3) var(--obi-out), box-shadow var(--nj-dur-3) var(--obi-out); }
+.nj-card[data-style="obi"] .obi-l1 { position: relative; z-index: 1; display: flex; align-items: center; gap: 6px; height: var(--obi-h); padding: 0 8px; font-size: var(--obi-fs); }
+.nj-card[data-style="obi"] .obi-ph { flex: 1; min-width: 0; overflow: hidden; }
+.nj-card[data-style="obi"][data-size="s"] .obi-l1 { gap: 5px; padding: 0 6px; }
+.nj-card[data-style="obi"] .obi-tab { position: absolute; left: 6px; bottom: 100%; z-index: 1; background: var(--obi-bg); color: var(--obi-fg); border-radius: 2px 2px 0 0; padding: 4px 6px 2px; font-size: 10.5px; }
+.nj-card[data-style="obi"][data-size="s"] .obi-tab { left: 4px; padding: 3px 5px 2px; font-size: 10px; }
+.nj-card[data-style="obi"][data-context="continue"] .obi-tab { left: 8px; }
+.nj-card[data-style="obi"] .obi-l2 { position: relative; z-index: 1; display: block; height: var(--obi-x); line-height: var(--obi-x); padding: 0 8px; font-size: 11.5px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 1px solid color-mix(in srgb, var(--obi-fg) 24%, transparent); }
+.nj-card[data-style="obi"] .obi-band > .nj-progress { position: absolute; inset: 0 0 auto 0; z-index: 2; height: 3px; border-radius: 0; background: color-mix(in srgb, var(--obi-fg) 22%, transparent); }
+.nj-card[data-style="obi"] .obi-band > .nj-progress > i { background: var(--obi-fg); border-radius: 0; }
+.nj-card[data-style="obi"]:is(:hover, :focus-visible) .obi-band { transform: translateY(calc(var(--obi-x) * -1 - 3px)); box-shadow: 0 -4px 12px -6px rgb(0 0 0 / .45); transition-delay: 60ms; }
+.nj-card[data-style="obi"] .obi-sw { flex: none; width: 10px; height: 10px; border-radius: 2px; background: var(--obi-sw, var(--nj-accent)); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .25); }
+.nj-card[data-style="obi"][data-context="wish"] .obi-band { border-top: 1px solid var(--nj-line); }
+/* destacada: título dentro de la faja */
+.nj-card[data-style="obi"][data-context="hero"] { --w: 260px; --obi-h: 30px; --obi-x: 24px; }
+.nj-card[data-style="obi"][data-context="hero"][data-size="s"] { --w: 210px; }
+.nj-card[data-style="obi"][data-context="hero"][data-size="l"] { --w: 320px; --obi-fs: 15px; }
+.nj-card[data-style="obi"] .obi-title { position: relative; z-index: 1; display: block; padding: 10px 10px 0; font-family: var(--obi-band-font); font-size: 20px; line-height: 1.15;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-wrap: balance; }
+.nj-card[data-style="obi"][data-context="hero"][data-size="l"] .obi-title { font-size: 24px; }
+.nj-card[data-style="obi"][data-context="hero"] .obi-l1 { padding: 0 10px; }
+/* continuar: la faja cruza la tarjeta y envuelve el pie del póster */
+.nj-card[data-style="obi"][data-context="continue"] { --w: 320px; max-width: 100%; --obi-h: 36px; grid-template-columns: 72px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: start;
+  gap: 0 12px; padding: 0; background: var(--nj-surface-2); border-radius: var(--nj-r-m); overflow: hidden; min-height: 112px; }
+.nj-card[data-style="obi"][data-context="continue"][data-size="s"] { --w: 280px; }
+.nj-card[data-style="obi"][data-context="continue"][data-size="l"] { --w: 380px; grid-template-columns: 84px minmax(0, 1fr); min-height: 128px; }
+.nj-card[data-style="obi"][data-context="continue"] .nj-card-art { grid-row: 1 / 3; grid-column: 1; height: 100%; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
+.nj-card[data-style="obi"][data-context="continue"] .obi-body { grid-row: 1; grid-column: 2; display: grid; gap: 3px; padding: 12px 12px 8px 0; min-width: 0; }
+.nj-card[data-style="obi"][data-context="continue"] .obi-band { position: relative; bottom: auto; grid-row: 2; grid-column: 1 / -1; z-index: 2; transition: none; }
+.nj-card[data-style="obi"][data-context="continue"]:is(:hover, :focus-visible) .obi-band { transform: none; box-shadow: none; }
+.nj-card[data-style="obi"][data-context="continue"]:hover { background: var(--nj-surface-3); }
+.nj-card[data-style="obi"] .obi-go { flex: none; display: inline-flex; align-items: center; gap: 2px; font-weight: 800; font-size: 12.5px; padding-left: 8px; border-left: 1px solid color-mix(in srgb, var(--obi-fg) 30%, transparent); }
+/* compacta: en anchos estrechos (kanban, listas angostas) la faja va debajo del título a lo ancho;
+   desde 400 px de tarjeta pasa a la derecha. El título nunca comparte línea con la faja. */
+.nj-card:is([data-style="obi"], [data-style="obi-diagonal"])[data-context="compact"] { --w: 100%; max-width: 100%; container-type: inline-size; display: grid;
+  grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "art title" "art sub" "tag tag"; grid-template-rows: auto auto auto; align-content: center; align-items: start; gap: 2px 12px; min-height: 66px; }
+.nj-card:is([data-style="obi"], [data-style="obi-diagonal"])[data-context="compact"] .nj-card-art { grid-area: art; align-self: start; border-radius: var(--nj-r-xs); }
+.nj-card:is([data-style="obi"], [data-style="obi-diagonal"])[data-context="compact"] .nj-card-title { grid-area: title; min-width: 0; overflow-wrap: normal; word-break: normal; hyphens: manual; }
+.nj-card:is([data-style="obi"], [data-style="obi-diagonal"])[data-context="compact"] :is(.obi-tag, .obi-tail) { justify-self: stretch; }
+.nj-card[data-style="obi"][data-context="compact"] .obi-tag { height: auto; min-height: 26px; padding: 4px 8px; }
+.nj-card[data-style="obi"][data-context="compact"] .obi-tag .obi-cond { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.15; }
+.nj-card[data-style="obi-diagonal"][data-context="compact"] .obi-slant { white-space: normal; height: auto; min-height: 26px; padding: 4px 14px; line-height: 1.15; }
+.nj-card:is([data-style="obi"], [data-style="obi-diagonal"])[data-context="compact"] .nj-card-sub { grid-area: sub; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nj-card:is([data-style="obi"], [data-style="obi-diagonal"])[data-context="compact"] :is(.obi-tag, .obi-tail) { grid-area: tag; justify-self: stretch; max-width: 100%; margin-top: 4px; }
+@container (min-width: 400px) {
+  .nj-card:is([data-style="obi"], [data-style="obi-diagonal"])[data-context="compact"] { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "art title tag" "art sub tag"; }
+  .nj-card:is([data-style="obi"], [data-style="obi-diagonal"])[data-context="compact"] :is(.obi-tag, .obi-tail) { align-self: center; justify-self: end; margin-top: 0; max-width: 170px; }
+}
+.nj-card[data-style="obi"] .obi-body { display: grid; gap: 2px; min-width: 0; }
+.nj-card[data-style="obi"] .obi-tag { --obi-cond: .88; display: inline-flex; align-items: center; height: 26px; min-width: 0; overflow: hidden; padding: 0 10px; border-radius: 2px; background: var(--obi-bg); color: var(--obi-fg); font-size: 13px; isolation: isolate; position: relative; }
+.nj-card[data-style="obi"] .obi-tag .obi-cond { position: relative; z-index: 1; }
+
+/* 2 · obi-lomo: lomo de estantería */
+.nj-card[data-style="obi-lomo"] { --w: 54px; --lomo-h: 256px; --lomo-fs: 14.5px; gap: 0; }
+.nj-card[data-style="obi-lomo"][data-size="s"] { --w: 44px; --lomo-h: 204px; --lomo-fs: 13px; }
+.nj-card[data-style="obi-lomo"][data-size="l"] { --w: 66px; --lomo-h: 300px; --lomo-fs: 18px; }
+.nj-card[data-style="obi-lomo"] .lomo { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: stretch; height: var(--lomo-h); overflow: hidden;
+  background: var(--obi-bg); color: var(--obi-fg); border-radius: 3px; box-shadow: var(--nj-shadow-1), inset 0 0 0 1px rgb(0 0 0 / .12);
+  transition: transform var(--nj-dur-3) var(--obi-out), box-shadow var(--nj-dur-3) var(--obi-out); }
+.nj-card[data-style="obi-lomo"] .lomo > * { position: relative; z-index: 1; }
+.nj-card[data-style="obi-lomo"] .lomo-art { flex: none; aspect-ratio: 1; overflow: hidden; }
+.nj-card[data-style="obi-lomo"] .lomo-art img { object-position: center 22%; }
+.nj-card[data-style="obi-lomo"] .lomo-title { flex: 1 1 0; min-height: 0; align-self: center; writing-mode: vertical-rl; text-orientation: mixed; padding: 8px 0;
+  font-family: var(--obi-band-font); font-size: var(--lomo-fs); line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nj-card[data-style="obi-lomo"] .lomo-num { flex: none; display: grid; justify-items: center; gap: 1px; padding: 6px 0 9px; border-top: 1px solid color-mix(in srgb, var(--obi-fg) 26%, transparent); }
+.nj-card[data-style="obi-lomo"] .lomo-num b, .nj-card[data-style="obi-lomo"] .lomo-obi b { font-family: var(--obi-band-font); font-weight: 400; font-size: calc(var(--lomo-fs) + 5px); line-height: 1; font-variant-numeric: tabular-nums; }
+.nj-card[data-style="obi-lomo"] .lomo-num small, .nj-card[data-style="obi-lomo"] .lomo-obi small { font-size: 11px; font-weight: 700; line-height: 1; }
+.nj-card[data-style="obi-lomo"] .lomo-obi { flex: none; display: grid; justify-items: center; gap: 1px; padding: 8px 0 10px; background: var(--obi-bg); color: var(--obi-fg); }
+.nj-card[data-style="obi-lomo"][data-context="wish"] .lomo { --obi-bg: var(--nj-surface); --obi-fg: var(--nj-text); box-shadow: var(--nj-shadow-1), inset 0 0 0 1px var(--nj-line); }
+.nj-card[data-style="obi-lomo"][data-context="wish"] .lomo-obi { --obi-bg: inherit; }
+.nj-card[data-style="obi-lomo"] .lomo > .nj-progress { flex: none; height: 3px; margin: 0 6px 6px; border-radius: 0; background: color-mix(in srgb, var(--obi-fg) 22%, transparent); }
+.nj-card[data-style="obi-lomo"] .lomo > .nj-progress > i { background: var(--obi-fg); border-radius: 0; }
+.nj-card[data-style="obi-lomo"]:is(:hover, :focus-visible) .lomo:not(.is-flat) { transform: translateY(-8px); box-shadow: var(--nj-shadow-2), inset 0 0 0 1px rgb(0 0 0 / .12); transition-delay: 40ms; }
+/* estante: lomos juntos y apoyados en la misma línea */
+.nj-row:has(> .nj-card[data-style="obi-lomo"]:is([data-context="row"], [data-context="wish"], [data-context="grid"])) { gap: 5px; align-items: flex-end; padding-top: 12px; }
+.nj-grid:has(> .nj-card[data-style="obi-lomo"]:not([data-context="compact"]):not([data-context="continue"])) { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 5px; padding-top: 10px; }
+.nj-grid > .nj-card[data-style="obi-lomo"]:not([data-context="compact"]):not([data-context="continue"]) { width: var(--w); }
+/* lomo acostado: continuar y compacta */
+.nj-card[data-style="obi-lomo"]:is([data-context="continue"], [data-context="compact"]) { --w: 320px; max-width: 100%; grid-template-columns: minmax(0, 1fr); padding: 0; background: transparent; border-radius: 0; }
+.nj-card[data-style="obi-lomo"][data-context="continue"][data-size="s"] { --w: 280px; }
+.nj-card[data-style="obi-lomo"][data-context="continue"][data-size="l"] { --w: 380px; }
+.nj-card[data-style="obi-lomo"][data-context="compact"] { --w: 100%; }
+.nj-card[data-style="obi-lomo"] .lomo.is-flat { flex-direction: row; align-items: center; height: 64px; }
+.nj-card[data-style="obi-lomo"][data-context="compact"] { container-type: inline-size; max-width: 100%; }
+.nj-card[data-style="obi-lomo"][data-context="compact"] .lomo.is-flat { height: auto; min-height: 56px; }
+.nj-card[data-style="obi-lomo"][data-context="compact"] .is-flat .lomo-art { height: auto; width: 44px; align-self: stretch; }
+.nj-card[data-style="obi-lomo"][data-context="compact"] .is-flat .lomo-mid { padding: 6px 10px; }
+.nj-card[data-style="obi-lomo"][data-context="compact"] .is-flat .lomo-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: normal; hyphens: auto; font-size: 14px; line-height: 1.15; }
+@container (max-width: 300px) { .nj-card[data-style="obi-lomo"][data-context="compact"] .is-flat .lomo-num { display: none; } }
+.nj-card[data-style="obi-lomo"] .is-flat .lomo-art { height: 100%; }
+.nj-card[data-style="obi-lomo"] .is-flat .lomo-mid { flex: 1; min-width: 0; display: grid; gap: 3px; padding: 0 12px; }
+.nj-card[data-style="obi-lomo"] .is-flat .lomo-title { writing-mode: horizontal-tb; align-self: auto; padding: 0; font-size: 15px; }
+.nj-card[data-style="obi-lomo"] .is-flat .lomo-ph { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nj-card[data-style="obi-lomo"] .is-flat .lomo-num { align-self: stretch; align-content: center; padding: 0 12px; border-top: 0; border-left: 1px solid color-mix(in srgb, var(--obi-fg) 26%, transparent); }
+.nj-card[data-style="obi-lomo"] .is-flat .lomo-num b { font-size: 20px; }
+.nj-card[data-style="obi-lomo"] .is-flat .lomo-go { flex: none; display: grid; place-items: center; width: 44px; align-self: stretch; background: var(--obi-fg); color: var(--obi-bg); }
+.nj-card[data-style="obi-lomo"] .is-flat > .nj-progress { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; height: 3px; }
+.nj-card[data-style="obi-lomo"]:is(:hover, :focus-visible) .lomo.is-flat { transform: translateX(4px); }
+/* destacada: lomo y portada abiertos */
+.nj-card[data-style="obi-lomo"][data-context="hero"] { --spine: 72px; --lomo-h: 330px; --lomo-fs: 20px; --w: calc(var(--spine) + var(--lomo-h) * 2 / 3); gap: 8px; }
+.nj-card[data-style="obi-lomo"][data-context="hero"][data-size="s"] { --spine: 60px; --lomo-h: 270px; --lomo-fs: 17px; }
+.nj-card[data-style="obi-lomo"][data-context="hero"][data-size="l"] { --spine: 84px; --lomo-h: 390px; --lomo-fs: 24px; }
+.nj-card[data-style="obi-lomo"] .lomo-book { display: flex; height: var(--lomo-h); }
+.nj-card[data-style="obi-lomo"] .lomo-book .lomo { flex: none; width: var(--spine); border-radius: 3px 0 0 3px; }
+.nj-card[data-style="obi-lomo"] .lomo-cover { flex: 1; min-width: 0; overflow: hidden; border-radius: 0 3px 3px 0; box-shadow: var(--nj-shadow-1); }
+.nj-card[data-style="obi-lomo"][data-context="hero"]:is(:hover, :focus-visible) .lomo { transform: none; }
+
+/* 3 · obi-diagonal: banda de novedad en la esquina */
+.nj-card[data-style="obi-diagonal"] { --rib-d: 44px; --rib-h: 24px; --rib-fs: 12px; }
+.nj-card[data-style="obi-diagonal"][data-size="s"] { --rib-d: 30px; --rib-h: 20px; --rib-fs: 11px; }
+.nj-card[data-style="obi-diagonal"][data-size="l"] { --rib-d: 54px; --rib-h: 28px; --rib-fs: 14.5px; }
+.nj-card[data-style="obi-diagonal"][data-context="hero"] { --w: 260px; --rib-d: 56px; --rib-h: 34px; --rib-fs: 17px; }
+.nj-card[data-style="obi-diagonal"][data-context="hero"][data-size="l"] { --w: 320px; }
+.nj-card[data-style="obi-diagonal"] .nj-card-art { position: relative; overflow: hidden; }
+.nj-card[data-style="obi-diagonal"] .obi-ribbon { position: absolute; top: var(--rib-d); right: var(--rib-d); z-index: 2; width: calc(var(--rib-d) * 2.83 + var(--rib-h) * 2); height: var(--rib-h);
+  transform: translate(50%, -50%) rotate(45deg); display: flex; align-items: center; justify-content: center; overflow: hidden;
+  background: var(--obi-new, #ffd60a); color: var(--obi-on-new, #121212); box-shadow: 0 1px 4px rgb(0 0 0 / .35); font-family: var(--obi-band-font); font-size: var(--rib-fs); line-height: 1; }
+.nj-card[data-style="obi-diagonal"] .obi-ribbon > span { display: block; flex: none; width: calc((var(--rib-d) * 2.83 - var(--rib-h)) / .88); transform: scaleX(.88); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nj-card[data-style="obi-diagonal"] .nj-card-art > .nj-card-badges { top: auto; bottom: 18px; right: auto; }
+.nj-card[data-style="obi-diagonal"] .nj-card-badges .nj-status { white-space: nowrap; }
+.nj-card[data-style="obi-diagonal"][data-context="hero"] .nj-card-title { font-family: var(--obi-band-font); font-weight: 400; font-size: 20px; line-height: 1.15; }
+.nj-card[data-style="obi-diagonal"][data-context="continue"] { --w: 320px; max-width: 100%; --rib-d: 30px; --rib-h: 22px; --rib-fs: 11.5px; position: relative; overflow: hidden; grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center; gap: 12px; padding: 0 12px 0 0; background: var(--nj-surface-2); border-radius: var(--nj-r-m); min-height: 108px; }
+.nj-card[data-style="obi-diagonal"][data-context="continue"][data-size="l"] { --w: 380px; }
+.nj-card[data-style="obi-diagonal"][data-context="continue"][data-size="s"] { --w: 280px; }
+.nj-card[data-style="obi-diagonal"][data-context="continue"]:hover { background: var(--nj-surface-3); }
+.nj-card[data-style="obi-diagonal"][data-context="continue"] .nj-card-art { height: 100%; aspect-ratio: auto; border-radius: 0; box-shadow: none; position: static; }
+.nj-card[data-style="obi-diagonal"][data-context="continue"] .obi-body { display: grid; gap: 4px; min-width: 0; padding-right: 22px; }
+.nj-card[data-style="obi-diagonal"][data-context="continue"] .obi-body .nj-progress { position: static; margin-top: 4px; }
+.nj-card[data-style="obi-diagonal"] .obi-play { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--nj-r-pill); background: var(--nj-accent); color: var(--nj-on-accent); align-self: end; margin-bottom: 12px; }
+.nj-card[data-style="obi-diagonal"] .obi-body { display: grid; gap: 2px; min-width: 0; }
+.nj-card[data-style="obi-diagonal"] .obi-tail { display: block; min-width: 0; }
+.nj-card[data-style="obi-diagonal"] .obi-slant { width: 100%; max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; height: 26px; padding: 0 16px; background: var(--obi-new, #ffd60a); color: var(--obi-on-new, #121212);
+  clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%); font-family: var(--obi-band-font); font-size: 12.5px; white-space: nowrap; }
+
+/* Bloque extra de la página Tarjetas (deseos, tamaño L, destacada y prueba del barrido). */
+.obi-demo { display: grid; gap: 22px; }
+.obi-demo-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+
+/* ---------- Parte 2 · tokens de la dirección ---------- */
+.nj-app[data-dir="obi"] {
+  --nj-font-ui: "M PLUS 1", system-ui, sans-serif; --nj-font-display: "Dela Gothic One", "M PLUS 1", sans-serif; --nj-font-accent: "Dela Gothic One", sans-serif;
+  --nj-font-mono: "M PLUS 1 Code", ui-monospace, monospace;
+  --nj-fs-xs: 11.5px; --nj-fs-s: 13px; --nj-fs-m: 14.5px; --nj-fs-l: 16.5px; --nj-fs-xl: 20px; --nj-fs-2xl: 28px; --nj-fs-3xl: 38px;
+  --nj-r-xs: 2px; --nj-r-s: 4px; --nj-r-m: 6px; --nj-r-l: 10px; --nj-r-xl: 16px; --nj-r-pill: 999px;
+  --nj-ease: cubic-bezier(.2, 0, 0, 1); --nj-ease-emph: cubic-bezier(.16, 1, .3, 1); --nj-dur-1: 100ms; --nj-dur-2: 180ms; --nj-dur-3: 320ms; --nj-dur-4: 480ms;
+  --nj-gap: 16px; --nj-pad: 28px; --nj-rail-w: 84px; --nj-touch: 40px;
+  --nj-shadow-1: 0 1px 2px rgb(0 0 0 / .28); --nj-shadow-2: 0 2px 8px -2px rgb(0 0 0 / .4); --nj-shadow-3: 0 12px 32px -10px rgb(0 0 0 / .55);
+  --obi-out: cubic-bezier(.16, 1, .3, 1);
+  font-feature-settings: "palt" 0;
+}
+.nj-app[data-dir="obi"][data-platform="android"] { --nj-touch: 48px; --nj-pad: 16px; --nj-gap: 12px; }
+
+/* Estados por modo (comunes a todas las paletas). Los de modo oscuro son claros y leen sobre --nj-bg; los de claro son oscuros con texto --nj-bg. */
+.nj-app[data-dir="obi"]:is([data-mode="dark"], [data-mode="oled"]) {
+  --nj-st-watching: #7aa7ff; --nj-st-planning: #f4c34a; --nj-st-completed: #5fd08e; --nj-st-paused: #b89dff; --nj-st-dropped: #ff8a80; --nj-st-rewatching: #4fd3c6;
+  --nj-ok: #5fd08e; --nj-warn: #f4c34a; --nj-err: #ff8a80; --nj-info: #7aa7ff; --nj-scrim: rgb(0 0 0 / .6); color-scheme: dark;
+}
+.nj-app[data-dir="obi"][data-mode="light"] {
+  --nj-st-watching: #2353c4; --nj-st-planning: #815600; --nj-st-completed: #1a7442; --nj-st-paused: #6c4cc0; --nj-st-dropped: #b3302a; --nj-st-rewatching: #00706f;
+  --nj-ok: #1a7442; --nj-warn: #815600; --nj-err: #b3261e; --nj-info: #1f58c7; --nj-scrim: rgb(18 18 18 / .42); color-scheme: light;
+  --nj-shadow-1: 0 1px 2px rgb(40 30 20 / .2); --nj-shadow-2: 0 2px 8px -2px rgb(40 30 20 / .25); --nj-shadow-3: 0 12px 32px -10px rgb(40 30 20 / .3);
+}
+
+/* Tienda: tinta, papel y rojo beni de faja; amarillo solo para novedades. */
+.nj-app[data-dir="obi"][data-palette="tienda"]:is([data-mode="dark"], [data-mode="oled"]) {
+  --nj-bg: #131217; --nj-surface: #1b1a20; --nj-surface-2: #222128; --nj-surface-3: #2c2b33; --nj-line: #3b3a44; --nj-line-strong: #8d8b97;
+  --nj-text: #f3f1ec; --nj-text-2: #cfccc4; --nj-text-3: #a9a69e; --nj-accent: #ff5c5c; --nj-on-accent: #1a0505; --nj-accent-soft: #4d1a1d; --nj-on-accent-soft: #ffdcdb;
+  --nj-focus: #ffd60a; --obi-new: #ffd60a; --obi-on-new: #121212; --obi-shelf: #2c2b33;
+}
+.nj-app[data-dir="obi"][data-palette="tienda"][data-mode="oled"] { --nj-bg: #000; --nj-surface: #0c0c0e; --nj-surface-2: #151518; --nj-surface-3: #1f1f23; --nj-line: #2e2e34; --obi-shelf: #1f1f23; }
+.nj-app[data-dir="obi"][data-palette="tienda"][data-mode="light"] {
+  --nj-bg: #f4f3ef; --nj-surface: #ffffff; --nj-surface-2: #ebe9e3; --nj-surface-3: #dfddd5; --nj-line: #cbc8bf; --nj-line-strong: #77736a;
+  --nj-text: #121212; --nj-text-2: #3b3934; --nj-text-3: #57544d; --nj-accent: #c4122f; --nj-on-accent: #ffffff; --nj-accent-soft: #f9d9dc; --nj-on-accent-soft: #6a0817;
+  --nj-focus: #121212; --obi-new: #ffd60a; --obi-on-new: #121212; --obi-shelf: #d6d2c8;
+}
+/* Estantería nocturna: azul de estante con luz ámbar. */
+.nj-app[data-dir="obi"][data-palette="nocturna"]:is([data-mode="dark"], [data-mode="oled"]) {
+  --nj-bg: #0d1320; --nj-surface: #131b2b; --nj-surface-2: #192235; --nj-surface-3: #212c42; --nj-line: #303d58; --nj-line-strong: #8391ad;
+  --nj-text: #eef2f8; --nj-text-2: #c4cddc; --nj-text-3: #9ba7bc; --nj-accent: #ffa23a; --nj-on-accent: #1f1000; --nj-accent-soft: #3f2a0e; --nj-on-accent-soft: #ffdcb0;
+  --nj-focus: #7fd3ff; --obi-new: #ffe14d; --obi-on-new: #121212; --obi-shelf: #212c42;
+}
+.nj-app[data-dir="obi"][data-palette="nocturna"][data-mode="oled"] { --nj-bg: #000; --nj-surface: #070b13; --nj-surface-2: #0e1420; --nj-surface-3: #172033; --nj-line: #253048; --obi-shelf: #172033; }
+.nj-app[data-dir="obi"][data-palette="nocturna"][data-mode="light"] {
+  --nj-bg: #edf0f5; --nj-surface: #ffffff; --nj-surface-2: #e2e7ef; --nj-surface-3: #d5dce7; --nj-line: #bfc8d6; --nj-line-strong: #627089;
+  --nj-text: #0d1320; --nj-text-2: #2f3b52; --nj-text-3: #4a566d; --nj-accent: #9a4c00; --nj-on-accent: #ffffff; --nj-accent-soft: #ffe2c0; --nj-on-accent-soft: #4a2400;
+  --nj-focus: #0d1320; --obi-new: #ffd60a; --obi-on-new: #121212; --obi-shelf: #cdd5e1;
+}
+/* Edición limitada: peltre y dorado mate, colores planos sin brillos. */
+.nj-app[data-dir="obi"][data-palette="limitada"]:is([data-mode="dark"], [data-mode="oled"]) {
+  --nj-bg: #15171a; --nj-surface: #1d2024; --nj-surface-2: #25292e; --nj-surface-3: #2f343a; --nj-line: #40464e; --nj-line-strong: #8f97a1;
+  --nj-text: #eeece6; --nj-text-2: #c9c6bd; --nj-text-3: #a3a097; --nj-accent: #d6b46c; --nj-on-accent: #1d1503; --nj-accent-soft: #3b3220; --nj-on-accent-soft: #f4e4bd;
+  --nj-focus: #e9eef5; --obi-new: #dfe4ea; --obi-on-new: #121212; --obi-shelf: #2f343a;
+}
+.nj-app[data-dir="obi"][data-palette="limitada"][data-mode="oled"] { --nj-bg: #000; --nj-surface: #0b0c0e; --nj-surface-2: #141619; --nj-surface-3: #1e2125; --nj-line: #30353b; --obi-shelf: #1e2125; }
+.nj-app[data-dir="obi"][data-palette="limitada"][data-mode="light"] {
+  --nj-bg: #ecebe7; --nj-surface: #f9f8f5; --nj-surface-2: #e4e3de; --nj-surface-3: #d8d6d0; --nj-line: #bbb8b0; --nj-line-strong: #6b6860;
+  --nj-text: #15171a; --nj-text-2: #393b40; --nj-text-3: #52545a; --nj-accent: #765913; --nj-on-accent: #ffffff; --nj-accent-soft: #ede0bd; --nj-on-accent-soft: #3a2b04;
+  --nj-focus: #15171a; --obi-new: #c7a447; --obi-on-new: #121212; --obi-shelf: #cfccc4;
+}
+/* Monocromo con faja: la interfaz en grises; el color queda solo en fajas y estados. */
+.nj-app[data-dir="obi"][data-palette="mono"]:is([data-mode="dark"], [data-mode="oled"]) {
+  --nj-bg: #121212; --nj-surface: #1a1a1a; --nj-surface-2: #222222; --nj-surface-3: #2c2c2c; --nj-line: #3a3a3a; --nj-line-strong: #8e8e8e;
+  --nj-text: #f2f2f2; --nj-text-2: #cccccc; --nj-text-3: #a6a6a6; --nj-accent: #f2f2f2; --nj-on-accent: #121212; --nj-accent-soft: #333333; --nj-on-accent-soft: #f2f2f2;
+  --nj-focus: #ffd60a; --obi-new: #f2f2f2; --obi-on-new: #121212; --obi-shelf: #2c2c2c;
+}
+.nj-app[data-dir="obi"][data-palette="mono"][data-mode="oled"] { --nj-bg: #000; --nj-surface: #0a0a0a; --nj-surface-2: #141414; --nj-surface-3: #1e1e1e; --nj-line: #2e2e2e; --obi-shelf: #1e1e1e; }
+.nj-app[data-dir="obi"][data-palette="mono"][data-mode="light"] {
+  --nj-bg: #f2f2f2; --nj-surface: #ffffff; --nj-surface-2: #e8e8e8; --nj-surface-3: #dcdcdc; --nj-line: #c6c6c6; --nj-line-strong: #707070;
+  --nj-text: #121212; --nj-text-2: #3a3a3a; --nj-text-3: #555555; --nj-accent: #121212; --nj-on-accent: #ffffff; --nj-accent-soft: #e0e0e0; --nj-on-accent-soft: #121212;
+  --nj-focus: #121212; --obi-new: #121212; --obi-on-new: #ffffff; --obi-shelf: #d4d4d4;
+}
+
+/* ---------- Parte 3 · clases base ---------- */
+.nj-app[data-dir="obi"] { font-family: var(--nj-font-ui); }
+.nj-app[data-dir="obi"] ::selection { background: var(--obi-new); color: var(--obi-on-new); }
+.nj-app[data-dir="obi"] :focus-visible { outline: 2px solid var(--nj-focus); outline-offset: 2px; }
+.nj-app[data-dir="obi"] input { caret-color: var(--nj-accent); }
+.nj-app[data-dir="obi"] :is(button, [role="button"], [role="tab"], [role="radio"], [role="switch"], label[for], summary, a[href]) { cursor: pointer; }
+.nj-app[data-dir="obi"] :is(button, input)[disabled] { cursor: not-allowed; }
+.nj-app[data-dir="obi"] .nj-h1 { font-family: var(--nj-font-display); font-weight: 400; letter-spacing: 0; line-height: 1.12; }
+.nj-app[data-dir="obi"] .nj-h2 { font-family: var(--nj-font-display); font-weight: 400; font-size: 19px; letter-spacing: .01em; }
+.nj-app[data-dir="obi"] .nj-h3 { font-weight: 800; }
+.nj-app[data-dir="obi"] .nj-meta, .nj-app[data-dir="obi"] [data-time] { font-variant-numeric: tabular-nums; }
+
+/* Shell: el riel es el costado del estante; la marca usa la letra de las fajas. */
+.nj-app[data-dir="obi"] .nj-topbar { background: var(--nj-surface); border-bottom: 1px solid var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-topbar .nj-brand { font-family: var(--nj-font-display); font-weight: 400; font-size: 15px; letter-spacing: .02em; }
+.nj-app[data-dir="obi"] .nj-rail { background: var(--nj-surface); border-right: 1px solid var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-rail-item { font-weight: 700; }
+.nj-app[data-dir="obi"] .nj-rail-item .nj-pill { border-radius: var(--nj-r-s); }
+.nj-app[data-dir="obi"] .nj-rail-item[aria-current="page"] .nj-pill { background: var(--nj-accent); color: var(--nj-on-accent); }
+.nj-app[data-dir="obi"] .nj-rail-item[aria-current="page"] { color: var(--nj-text); font-weight: 800; }
+.nj-app[data-dir="obi"] .nj-bottombar { border-top: 1px solid var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-cmd { border-radius: var(--nj-r-s); background: var(--nj-bg); border-color: var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-kbd { border-radius: var(--nj-r-xs); }
+.nj-app[data-dir="obi"] .nj-linkchip { border-radius: var(--nj-r-xs); background: var(--nj-surface-3); color: var(--nj-text); }
+.nj-app[data-dir="obi"] .nj-linkchip::before { border-radius: 2px; }
+
+/* Controles: rectángulos de papel con radio chico; seleccionado = tinta llena. */
+.nj-app[data-dir="obi"] .nj-btn { border-radius: var(--nj-r-s); font-weight: 800; letter-spacing: .01em; }
+.nj-app[data-dir="obi"] .nj-btn:hover { filter: none; background-image: linear-gradient(color-mix(in srgb, currentColor 10%, transparent), color-mix(in srgb, currentColor 10%, transparent)); }
+.nj-app[data-dir="obi"] .nj-btn:active { transform: translateY(1px); }
+.nj-app[data-dir="obi"] .nj-btn.is-outline { border-width: 1.5px; }
+.nj-app[data-dir="obi"] .nj-iconbtn { border-radius: var(--nj-r-s); }
+.nj-app[data-dir="obi"] .nj-iconbtn:active { background: color-mix(in srgb, var(--nj-text) 14%, transparent); }
+.nj-app[data-dir="obi"] .nj-chip { border-radius: var(--nj-r-xs); font-weight: 700; color: var(--nj-text-2); }
+.nj-app[data-dir="obi"] .nj-chip:hover { border-color: var(--nj-line-strong); color: var(--nj-text); }
+.nj-app[data-dir="obi"] .nj-chip[aria-pressed="true"] { background: var(--nj-text); color: var(--nj-bg); border-color: var(--nj-text); }
+.nj-app[data-dir="obi"][data-platform="android"] .nj-chip { position: relative; }
+.nj-app[data-dir="obi"][data-platform="android"] .nj-chip::after { content: ""; position: absolute; inset: -8px 0; }
+.nj-app[data-dir="obi"] .nj-seg { border-radius: var(--nj-r-s); border-color: var(--nj-line-strong); }
+.nj-app[data-dir="obi"] .nj-seg button { font-weight: 700; min-height: 38px; }
+.nj-app[data-dir="obi"][data-platform="android"] .nj-seg button { min-height: 48px; }
+.nj-app[data-dir="obi"] .nj-seg button:hover { background: color-mix(in srgb, var(--nj-text) 7%, transparent); }
+.nj-app[data-dir="obi"] .nj-seg button[aria-checked="true"] { background: var(--nj-text); color: var(--nj-bg); }
+.nj-app[data-dir="obi"] .nj-tabs { border-bottom-color: var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-tab { font-weight: 700; }
+.nj-app[data-dir="obi"][data-platform="android"] .nj-tab { min-height: 48px; }
+.nj-app[data-dir="obi"] .nj-tab:hover { color: var(--nj-text); }
+.nj-app[data-dir="obi"] .nj-tab[aria-selected="true"] { color: var(--nj-text); font-weight: 800; }
+.nj-app[data-dir="obi"] .nj-tab[aria-selected="true"]::after { left: 8px; right: 8px; height: 4px; border-radius: 0; background: var(--nj-accent); }
+.nj-app[data-dir="obi"] .nj-toggle input { border-radius: 16px; }
+.nj-app[data-dir="obi"] .nj-toggle input:checked::after { background: var(--nj-on-accent); }
+.nj-app[data-dir="obi"] .nj-field { border-radius: var(--nj-r-s); }
+.nj-app[data-dir="obi"] .nj-search { border-radius: var(--nj-r-s); border: 1px solid var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-menu { border-radius: var(--nj-r-m); border: 1px solid var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-sheet { background: var(--nj-surface); border-radius: var(--nj-r-xl) var(--nj-r-xl) 0 0; border-top: 1px solid var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-sheet.is-side { border-radius: var(--nj-r-l) 0 0 var(--nj-r-l); border: 1px solid var(--nj-line); border-right: 0; }
+.nj-app[data-dir="obi"] .nj-dialog { border-radius: var(--nj-r-l); background: var(--nj-surface); border: 1px solid var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-dialog .nj-h2, .nj-app[data-dir="obi"] .nj-sheet .nj-h2 { font-size: 18px; }
+/* Snackbar: una faja de tinta con la acción en el color de novedad. */
+.nj-app[data-dir="obi"] .nj-snackbar { border-radius: var(--nj-r-xs); background: var(--nj-text); color: var(--nj-bg); font-weight: 700; }
+.nj-app[data-dir="obi"] .nj-snackbar .nj-btn.is-text { color: var(--nj-bg); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; }
+.nj-app[data-dir="obi"] .nj-tooltip { border-radius: var(--nj-r-xs); }
+.nj-app[data-dir="obi"] .nj-badge { border-radius: var(--nj-r-xs); }
+.nj-app[data-dir="obi"] .nj-status { border-radius: var(--nj-r-xs); font-weight: 800; }
+.nj-app[data-dir="obi"] .nj-status::before { border-radius: 1px; }
+.nj-app[data-dir="obi"] .nj-progress { border-radius: 0; height: 4px; }
+.nj-app[data-dir="obi"] .nj-progress > i { border-radius: 0; }
+.nj-app[data-dir="obi"] .nj-list-row:hover { background: color-mix(in srgb, var(--nj-text) 6%, transparent); }
+.nj-app[data-dir="obi"] .nj-divider { background: var(--nj-line); }
+.nj-app[data-dir="obi"] .nj-card .nj-card-art { border-radius: var(--nj-r-s); }
+.nj-app[data-dir="obi"] ::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--nj-text) 26%, transparent); border-radius: 2px; }
+
+/* ---------- Regiones ---------- */
+/* hero: la cabecera es la portada; decorate() le pone su faja abajo. */
+.nj-app[data-dir="obi"] [data-region="hero"] .nj-h1 { font-family: var(--nj-font-display); font-weight: 400; }
+.nj-app[data-dir="obi"] .obi-headband { --obi-cond: .86; position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: 40px; display: flex; align-items: center; gap: 12px;
+  padding: 0 var(--nj-pad); background: var(--obi-bg); color: var(--obi-fg); isolation: isolate; pointer-events: none; }
+.nj-app[data-dir="obi"][data-platform="android"] .obi-headband { height: 36px; gap: 10px; }
+.nj-app[data-dir="obi"] .obi-headband > * { position: relative; z-index: 1; }
+.nj-app[data-dir="obi"] .obi-headband .obi-st { font-size: 12px; padding: 4px 6px 5px; }
+.nj-app[data-dir="obi"] .obi-headband .obi-ph { flex: 1; min-width: 0; overflow: hidden; font-size: 17px; }
+.nj-app[data-dir="obi"][data-platform="android"] .obi-headband .obi-ph { font-size: 15px; }
+.nj-app[data-dir="obi"] .obi-headband .obi-hx { flex: none; font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nj-app[data-dir="obi"][data-platform="android"] .obi-headband .obi-hx { display: none; }
+
+/* tonight: los títulos de esta noche se paran sobre un estante con canto. */
+.nj-app[data-dir="obi"] [data-region="tonight"] .nj-row { padding-bottom: 12px; border-bottom: 8px solid var(--obi-shelf); box-shadow: 0 10px 14px -12px rgb(0 0 0 / .55); }
+.nj-app[data-dir="obi"] [data-region="tonight"] .nj-h2 { font-size: 22px; }
+/* row: estante simple, una línea de canto bajo cada fila. */
+.nj-app[data-dir="obi"] [data-region="row"] .nj-row { padding-bottom: 10px; border-bottom: 3px solid var(--obi-shelf); }
+.nj-app[data-dir="obi"] [data-region="grid"] .nj-grid { row-gap: calc(var(--nj-gap) + 6px); }
+
+/* status-picker: cada opción es una faja del color de su estado; la elegida va llena. */
+.nj-app[data-dir="obi"] [data-region="status-picker"] [data-status] { --st-fill: color-mix(in srgb, var(--st) 16%, transparent); border-radius: var(--nj-r-xs); background: var(--st-fill);
+  border: 1.5px solid color-mix(in srgb, var(--st) 55%, transparent); color: var(--nj-text); font-weight: 800; min-height: var(--nj-touch); transition: background var(--nj-dur-2) var(--nj-ease), color var(--nj-dur-2) var(--nj-ease); }
+.nj-app[data-dir="obi"] [data-region="status-picker"] [data-status]:hover { --st-fill: color-mix(in srgb, var(--st) 26%, transparent); }
+.nj-app[data-dir="obi"] [data-region="status-picker"] [data-status]:is([aria-checked="true"], [aria-pressed="true"], [aria-selected="true"], [aria-current="true"]) {
+  background: var(--st); color: var(--nj-bg); border-color: var(--st); font-family: var(--nj-font-display); font-weight: 400; }
+.nj-app[data-dir="obi"] [data-region="status-picker"] [data-status]:is([aria-checked="true"], [aria-pressed="true"], [aria-selected="true"]) .nj-ic { color: inherit; }
+.nj-app[data-dir="obi"] [data-region="status-picker"] .nj-seg button[data-status][aria-checked="true"]::before { content: none; }
+.nj-app[data-dir="obi"] [data-region="status-picker"] .nj-seg { border: 0; gap: 6px; border-radius: 0; overflow: visible; flex-wrap: wrap; }
+.nj-app[data-dir="obi"] [data-region="status-picker"] .nj-seg button + button { border-left: 1.5px solid color-mix(in srgb, var(--st, var(--nj-line)) 55%, transparent); }
+
+/* episodes: visto en tinta suave, el siguiente lleva faja del acento, lo no emitido queda en gris legible. */
+.nj-app[data-dir="obi"] [data-region="episodes"] .nj-ep { border-radius: var(--nj-r-s); transition: background var(--nj-dur-2) var(--nj-ease); }
+.nj-app[data-dir="obi"] [data-region="episodes"] .nj-ep:is([data-watched="true"], [data-watched="1"]) { background: color-mix(in srgb, var(--nj-text) 5%, transparent); }
+.nj-app[data-dir="obi"] [data-region="episodes"] .nj-ep:is([data-aired="false"], [data-aired="0"]) { --nj-text: var(--nj-text-3); --nj-text-2: var(--nj-text-3); }
+.nj-app[data-dir="obi"] [data-region="episodes"] .nj-ep:is([data-obi-next], [data-next="true"]) { background: var(--nj-accent-soft); color: var(--nj-on-accent-soft);
+  --nj-text: var(--nj-on-accent-soft); --nj-text-2: var(--nj-on-accent-soft); --nj-text-3: var(--nj-on-accent-soft); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--nj-accent) 60%, transparent); }
+
+/* airing: horas en cifras tabulares; la que está al aire va como faja del acento. */
+.nj-app[data-dir="obi"] [data-region="airing"] [data-time] { font-variant-numeric: tabular-nums; }
+.nj-app[data-dir="obi"] [data-region="airing"] [data-time]:is([data-now], [data-now="true"], [aria-current="true"], [aria-current="time"]) {
+  background: var(--nj-accent-soft); color: var(--nj-on-accent-soft); --nj-text: var(--nj-on-accent-soft); --nj-text-2: var(--nj-on-accent-soft); --nj-text-3: var(--nj-on-accent-soft); border-radius: var(--nj-r-s); }
+
+/* empty: un estante vacío dibujado con dos lomos caídos; el texto y la acción son de la pantalla. */
+.nj-app[data-dir="obi"] [data-region="empty"] { position: relative; }
+.nj-app[data-dir="obi"] [data-region="empty"]::before { content: ""; display: block; width: 120px; height: 66px; margin: 0 auto 14px; flex: none;
+  background:
+    linear-gradient(var(--obi-shelf), var(--obi-shelf)) 0 100% / 100% 6px no-repeat,
+    linear-gradient(var(--nj-line-strong), var(--nj-line-strong)) 18px 100% / 14px 54px no-repeat,
+    linear-gradient(var(--nj-line), var(--nj-line)) 36px 100% / 12px 46px no-repeat; }
+.nj-app[data-dir="obi"] [data-region="empty"] :is(.nj-h2, .nj-h3) { font-family: var(--nj-font-display); font-weight: 400; }
+
+/* link: cada dispositivo lleva una faja corta con su estado: verde enlazado, ámbar en espera, rojo si falló. */
+.nj-app[data-dir="obi"] [data-region="link"] { border-radius: var(--nj-r-m); }
+.nj-app[data-dir="obi"] [data-region="link"] [data-device] { --dev: var(--nj-line-strong); border-radius: var(--nj-r-s); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--dev) 55%, transparent); }
+.nj-app[data-dir="obi"] [data-region="link"] [data-device][data-state="connected"] { --dev: var(--nj-ok); }
+.nj-app[data-dir="obi"] [data-region="link"] [data-device][data-state="idle"] { --dev: var(--nj-warn); }
+.nj-app[data-dir="obi"] [data-region="link"] [data-device][data-state="failed"] { --dev: var(--nj-err); background: color-mix(in srgb, var(--nj-err) 10%, transparent); }
+.nj-app[data-dir="obi"] [data-region="link"] .nj-status { font-family: var(--nj-font-display); font-weight: 400; }
+.nj-app[data-dir="obi"] [data-region="sheet"], .nj-app[data-dir="obi"] [data-region="sheet"].nj-sheet { background: var(--nj-surface); }
+
+/* ---------- Parte 4 · movimiento ---------- */
+/* Barrido: el color anterior se retira hacia la derecha y deja el nuevo; la frase se revela detrás. */
+.is-obi-sweep::before { content: ""; position: absolute; inset: 0; z-index: 0; background: var(--obi-from); pointer-events: none; animation: obi-sweep 520ms cubic-bezier(.65, 0, .35, 1) both; }
+.is-obi-sweep :is(.obi-ph, .lomo-title, .lomo-num, .obi-cond) { animation: obi-reveal 360ms 160ms var(--obi-out, ease-out) both; }
+@keyframes obi-sweep { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 0 100%); } }
+@keyframes obi-reveal { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+
+/* Transición compartida tarjeta → ficha: la faja se estira hasta ser la banda de cabecera. */
+::view-transition-group(obi-shared) { animation-duration: 420ms; animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
+::view-transition-image-pair(obi-shared) { overflow: hidden; }
+::view-transition-old(obi-shared), ::view-transition-new(obi-shared) { height: 100%; width: 100%; object-fit: none; object-position: left center; }
+::view-transition-old(obi-shared) { animation: obi-vt-out 180ms ease-out both; }
+::view-transition-new(obi-shared) { animation: obi-vt-in 260ms 120ms ease-out both; }
+@keyframes obi-vt-out { to { opacity: 0; } }
+@keyframes obi-vt-in { from { opacity: 0; } }
+
+/* Calmo: sin desplazamientos; los cambios de color quedan como fundidos cortos. */
+.nj-app[data-motion="calm"] .nj-card[data-style^="obi"] :is(.obi-band, .lomo) { transform: none !important; }
+.nj-app[data-motion="calm"] .is-obi-sweep::before { animation: obi-fade 140ms linear both; }
+.nj-app[data-motion="calm"] .is-obi-sweep :is(.obi-ph, .lomo-title, .lomo-num, .obi-cond) { animation: none; }
+@keyframes obi-fade { to { opacity: 0; } }
+/* Rendimiento: sin sombras ni barrido, una sola animación a la vez (solo la faja al pasar). */
+.nj-app[data-motion="perf"] .nj-card[data-style^="obi"] :is(.obi-band, .lomo, .obi-ribbon, .lomo-cover) { box-shadow: none !important; }
+.nj-app[data-motion="perf"] .nj-card[data-style^="obi"]:is(:hover, :focus-visible) .obi-band { transition-delay: 0ms; }
+.nj-app[data-motion="perf"] .is-obi-sweep::before, .nj-app[data-motion="perf"] .is-obi-sweep * { animation: none !important; }
+.nj-app[data-dir="obi"][data-motion="perf"] [data-region="tonight"] .nj-row { box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .nj-card[data-style^="obi"] :is(.obi-band, .lomo) { transform: none !important; }
+  .is-obi-sweep::before { animation: obi-fade 140ms linear both; }
+  .is-obi-sweep :is(.obi-ph, .lomo-title, .lomo-num, .obi-cond) { animation: none; }
+  ::view-transition-group(obi-shared), ::view-transition-old(obi-shared), ::view-transition-new(obi-shared) { animation: none; }
+}

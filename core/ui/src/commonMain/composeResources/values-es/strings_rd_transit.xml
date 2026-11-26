@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rediseño Sparkles, carril D3 (Tránsito nocturno): los tres estilos de tarjeta de Tránsito. -->
+    <string name="rd_transit_card_station">Estación</string>
+    <string name="rd_transit_card_ticket">Billete</string>
+    <string name="rd_transit_card_line">Línea</string>
+    <string name="rd_transit_prefix_episode">E</string>
+    <string name="rd_transit_prefix_chapter">C</string>
+    <string name="rd_transit_play">Reproducir</string>
+    <string name="rd_transit_sr_read">Leído hasta el capítulo %1$d de %2$d</string>
+    <string name="rd_transit_sr_read_open">Leído hasta el capítulo %1$d</string>
+    <string name="rd_transit_sr_unaired">Sin episodios emitidos, %1$d en total</string>
+    <string name="rd_transit_sr_seen">Visto %1$d de %2$d</string>
+    <string name="rd_transit_sr_seen_aired">Visto %1$d de %2$d, %3$d emitidos</string>
+    <string name="rd_transit_sr_seen_open">Visto %1$d</string>
+    <string name="rd_transit_seg_episode">Episodio</string>
+    <string name="rd_transit_seg_chapter">Capítulo</string>
+    <string name="rd_transit_seg_seen">Visto</string>
+    <string name="rd_transit_seg_read">Leído</string>
+    <string name="rd_transit_seg_next">Próximo</string>
+    <string name="rd_transit_seg_premiere">Estreno</string>
+    <string name="rd_transit_no_date">Sin fecha</string>
+    <string name="rd_transit_not_aired">Sin emitir</string>
+    <string name="rd_transit_count">%1$d de %2$d</string>
+    <string name="rd_transit_completed">Completada · %1$d ep.</string>
+</resources>

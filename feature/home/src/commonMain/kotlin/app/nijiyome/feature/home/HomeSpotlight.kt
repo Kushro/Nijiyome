@@ -32,6 +32,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.BookmarkAdd
@@ -67,6 +69,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.components.LocalAppSnackbar
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.RegionData
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.theme.parseHexColor
+import app.nijiyome.ui.labels.labelRes
+import app.nijiyome.ui.look.slot
 import app.nijiyome.model.HistoryEntry
 import app.nijiyome.model.ListStatus
 import app.nijiyome.model.ListsRepository
@@ -90,6 +98,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // 2026-11 UI refresh: Home "Destacado" (desktop HomeLayout::Spotlight, Hayase-like). A full-width pager of the trending titles drawn
 // under the status bar: banner, fact chips (episodes, format, status, season, score), title, genres, synopsis, Continue / Watch,
@@ -130,15 +139,26 @@ internal fun Spotlight(
     onContinue: (HistoryEntry) -> Unit,
     modifier: Modifier = Modifier,
     topEnd: @Composable () -> Unit = {},
+    /** Decorate the hero as `DecorRegion.HERO` with what the current page knows (title, list status, episode, progress, color). */
+    decorHero: Boolean = false,
 ) {
     val ordered = remember(items) { spotlightOrder(items) }
     if (ordered.isEmpty()) return
     val pager = rememberPagerState { ordered.size }
+    val heroMedia = ordered[pager.currentPage.coerceIn(0, ordered.lastIndex)]
+    val heroModifier = if (decorHero) {
+        Modifier.decor(DecorRegion.HERO, rememberSpotlightRegion(heroMedia, continueEntryFor(heroMedia, continueWatching)))
+    } else {
+        Modifier
+    }
     val motion = lookMotion()
     val scope = rememberCoroutineScope()
     var touching by remember { mutableStateOf(false) }
+    // Sparkles (S2): the artifact's pausable carousel; the bar keeps its place while paused.
+    var paused by remember { mutableStateOf(false) }
     val progress = remember { Animatable(0f) }
-    val period = autoplayMs?.takeIf { motion != Motion.OFF && ordered.size > 1 }
+    val canPlay = autoplayMs != null && motion != Motion.OFF && ordered.size > 1
+    val period = autoplayMs?.takeIf { canPlay && !paused }
 
     var timedPage by remember { mutableStateOf(-1) }
     // Restarts on every settled page and on touch start / end: a new page starts the bar from 0, a released finger continues it
@@ -157,6 +177,7 @@ internal fun Spotlight(
 
     BoxWithConstraints(
         modifier
+            .then(heroModifier)
             .fillMaxWidth()
             // Observe (never consume) touches so the buttons and the pager keep working: a finger on the hero pauses the timer.
             .pointerInput(Unit) {
@@ -202,13 +223,26 @@ internal fun Spotlight(
             }
             Box(Modifier.align(Alignment.TopEnd).windowInsetsPadding(WindowInsets.statusBars).padding(8.dp)) { topEnd() }
             if (ordered.size > 1) {
-                SpotlightProgress(
-                    count = ordered.size,
-                    current = pager.currentPage,
-                    progress = { if (period == null) 1f else progress.value },
-                    onSelect = { i -> scope.launch { if (motion == Motion.EXPRESSIVE) pager.animateScrollToPage(i) else pager.scrollToPage(i) } },
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 8.dp),
-                )
+                Row(
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SpotlightProgress(
+                        count = ordered.size,
+                        current = pager.currentPage,
+                        progress = { if (!canPlay) 1f else progress.value },
+                        onSelect = { i -> scope.launch { if (motion == Motion.EXPRESSIVE) pager.animateScrollToPage(i) else pager.scrollToPage(i) } },
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (canPlay) {
+                        IconButton(onClick = { paused = !paused }) {
+                            Icon(
+                                if (paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                                contentDescription = stringResource(if (paused) Res.string.rd_s2_hero_resume else Res.string.rd_s2_hero_pause),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -230,7 +264,8 @@ private fun SpotlightPage(
 ) {
     val surface = MaterialTheme.colorScheme.surface
     val title = media.displayTitle(LocalTitleLanguage.current)
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest)) {
+    // Sparkles (S2): the backdrop opens the details too (the former carousel slide did).
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest).clickable(onClickLabel = title, onClick = onOpen)) {
         // 0.3.2: the fanart fills the slot; a low-res banner / cover is cropped into a shorter band (bottom-anchored for the banner,
         // whose subject usually sits low) under a stronger scrim instead of being stretched to the full hero height.
         AsyncImage(
@@ -305,7 +340,7 @@ private fun SpotlightPage(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { if (continueEntry != null) onContinue(continueEntry) else onWatch() }) {
+                Button(onClick = { if (continueEntry != null) onContinue(continueEntry) else onWatch() }, shape = NijiyomeControls.shape) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         if (continueEntry != null) {
@@ -404,6 +439,28 @@ private fun seasonLabel(season: String?): String? = when (season?.uppercase()) {
     else -> null
 }
 
+/** What the stage hero knows about [media] for the direction's decoration: its list status (when a lists layer is bound) and the episode to continue. */
+@Composable
+private fun rememberSpotlightRegion(media: Media, continueEntry: HistoryEntry?): RegionData {
+    val koin = getKoin()
+    val lists = remember(koin) { runCatching { koin.getOrNull<ListsRepository>() }.getOrNull() }
+    val entryFlow = remember(lists, media.ref) { lists?.let { runCatching { it.entry(media.ref) }.getOrNull() } ?: flowOf(null) }
+    val entry by entryFlow.collectAsState(initial = null)
+    val status = entry?.status
+    val statusLabel = status?.let { stringResource(it.labelRes()) }
+    val episodeLabel = continueEntry?.let { stringResource(Res.string.rd_s2_ep_short, it.episode) }
+    val progress = continueEntry?.let { e -> e.durationSec?.takeIf { it > 0 }?.let { (e.progressSec.toFloat() / it).coerceIn(0f, 1f) } }
+    val accent = remember(media.color) { parseHexColor(media.color) }
+    return RegionData(
+        title = media.displayTitle(LocalTitleLanguage.current),
+        statusLabel = statusLabel,
+        status = status?.slot(),
+        episodeLabel = episodeLabel,
+        progress = progress,
+        accent = accent,
+    )
+}
+
 /**
  * List button: filled when the title is on the user's list (tap opens nothing new: the status shows in its description), otherwise
  * adds it as "Planeado" with a snackbar. Hidden when no ListsRepository is bound (tests / previews).
@@ -416,6 +473,7 @@ private fun ListButton(media: Media) {
     val entry by entryFlow.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
     val snackbar = LocalAppSnackbar.current
+    val showUndo = app.nijiyome.ui.patterns.rememberShowUndo()
     val added = stringResource(Res.string.home_spot_added)
     val failed = stringResource(Res.string.home_spot_add_failed)
     val onList = entry != null
@@ -424,7 +482,8 @@ private fun ListButton(media: Media) {
             if (!onList) {
                 scope.launch {
                     val ok = lists.setStatus(media, ListStatus.PLANNING).isSuccess
-                    snackbar.show(if (ok) added else failed)
+                    // Sparkles (S2): adding is undoable (artifact `hero-list`).
+                    if (ok) showUndo(added) { scope.launch { lists.setStatus(media, null) } } else snackbar.show(failed)
                 }
             }
         },

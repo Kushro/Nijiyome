@@ -18,9 +18,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.EmptyKind
+import app.nijiyome.designsystem.direction.ProgressTrack
+import app.nijiyome.designsystem.direction.SectionHeader
+import app.nijiyome.designsystem.direction.StatusMark
+import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.cardSway
+import app.nijiyome.designsystem.motion.cardToDetailsSource
+import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.TitleCard
+import app.nijiyome.ui.cards.TitleCardData
+import app.nijiyome.ui.look.slot
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -40,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
-import app.nijiyome.designsystem.components.EmptyState
 import app.nijiyome.manga.ChapterText
 import app.nijiyome.manga.MangaCatalog
 import app.nijiyome.manga.MangaRepositoryImpl
@@ -132,6 +144,10 @@ private const val CONTINUE_LIMIT = 10
 
 internal data class ContinueItem(val anilistId: Int, val title: String, val poster: String?, val line: String)
 
+/**
+ * The readlist (MNG-05): status chips with counts, "Seguir leyendo" as continue cards, one row per title with its list status mark
+ * and a progress track. Shared shape with the novel tab.
+ */
 @Composable
 internal fun ReadlistContent(
     entries: List<ReadEntry>?,
@@ -160,9 +176,10 @@ internal fun ReadlistContent(
         }
         val list = entries
         when {
-            list == null -> Unit
-            list.isEmpty() && continueItems.isEmpty() -> EmptyState(
-                icon = Icons.Outlined.MenuBook,
+            list == null -> CardRowPlaceholder()
+            list.isEmpty() && continueItems.isEmpty() -> ReadingEmpty(
+                kind = EmptyKind.LIBRARY,
+                icon = Icons.AutoMirrored.Outlined.MenuBook,
                 title = emptyTitle,
                 message = emptyMessage,
                 actionLabel = if (linked) null else stringResource(Res.string.manga_library_link),
@@ -174,10 +191,13 @@ internal fun ReadlistContent(
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
                     if (continueItems.isNotEmpty()) {
                         item(key = "continue") {
-                            SectionHeader(stringResource(Res.string.manga_continue_reading))
-                            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                items(continueItems, key = { it.anilistId }) { c ->
-                                    ContinueCard(title = c.title, cover = c.poster, line = c.line, progress = null, onClick = { onOpenDetails(c.anilistId) })
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                SectionHeader(stringResource(Res.string.manga_continue_reading), Modifier.padding(horizontal = 16.dp))
+                                LazyRow(Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    itemsIndexed(continueItems, key = { _, c -> c.anilistId }) { i, c ->
+                                        val data = TitleCardData(key = "manga:${c.anilistId}", title = c.title, coverUrl = c.poster, subtitle = c.line, nextLabel = c.line)
+                                        TitleCard(data, onClick = { onOpenDetails(c.anilistId) }, context = CardContext.CONTINUE, modifier = Modifier.cardSway(i).cardToDetailsSource(data.key))
+                                    }
                                 }
                             }
                         }
@@ -187,22 +207,30 @@ internal fun ReadlistContent(
                             Text(stringResource(Res.string.manga_library_none_in_status), modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    items(shown, key = { "${it.ref.anilistId}-${it.ref.malId}" }) { e ->
-                        ListItem(
-                            leadingContent = { Box(Modifier.width(48.dp)) { MediaCover(url = e.poster, modifier = Modifier.fillMaxWidth()) } },
-                            headlineContent = { Text(e.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                            supportingContent = {
-                                Column {
-                                    Text(stringResource(e.status.readLabelRes()) + " · " + stringResource(Res.string.manga_progress_label, e.progress, e.totalChapters?.toString() ?: "?"))
-                                    e.totalChapters?.takeIf { it > 0 }?.let { total ->
-                                        LinearProgressIndicator(progress = { (e.progress.toFloat() / total).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
-                                    }
-                                }
-                            },
-                            modifier = Modifier.clickable(enabled = e.ref.anilistId != null) { e.ref.anilistId?.let(onOpenDetails) },
-                        )
-                    }
+                    items(shown, key = { "${it.ref.anilistId}-${it.ref.malId}" }) { e -> ReadlistRow(e, onOpenDetails) }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReadlistRow(e: ReadEntry, onOpenDetails: (Int) -> Unit) {
+    val label = stringResource(e.status.readLabelRes())
+    Row(
+        Modifier.fillMaxWidth().clickable(enabled = e.ref.anilistId != null) { e.ref.anilistId?.let(onOpenDetails) }.padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(Modifier.width(48.dp)) { MediaCover(url = e.poster, modifier = Modifier.fillMaxWidth().cardToDetailsSource("manga:${e.ref.anilistId ?: e.title}")) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(e.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatusMark(e.status.slot(), label = label, selected = true)
+                Text(stringResource(Res.string.manga_progress_label, e.progress, e.totalChapters?.toString() ?: "?"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            e.totalChapters?.takeIf { it > 0 }?.let { total ->
+                ProgressTrack(progress = (e.progress.toFloat() / total).coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth(), segments = total.takeIf { it <= 52 })
             }
         }
     }
