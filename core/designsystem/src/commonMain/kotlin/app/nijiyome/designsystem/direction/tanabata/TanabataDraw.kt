@@ -11,12 +11,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.PathEffect
@@ -56,26 +59,39 @@ class WashiTexture internal constructor(internal val image: ImageBitmap?)
 fun rememberWashi(): WashiTexture =
     if (LocalMotion.current.rich) WashiTexture(imageResource(Res.drawable.rd_tanabata_washi)) else WashiTexture(null)
 
-/** Turns the gray tile into [tint] with the tile's luminance as alpha (ColorMatrix offsets are in 0..255). */
-fun washiFilter(tint: Color): ColorFilter = ColorFilter.colorMatrix(
-    ColorMatrix(
-        floatArrayOf(
-            0f, 0f, 0f, 0f, tint.red * 255f,
-            0f, 0f, 0f, 0f, tint.green * 255f,
-            0f, 0f, 0f, 0f, tint.blue * 255f,
-            1f, 0f, 0f, 0f, 0f,
+/**
+ * Turns the gray tile into [tint] with the tile's luminance times [alpha] (and the tint's own alpha) as alpha. ColorMatrix offsets
+ * are in 0..255 (Compose scales them for Skia).
+ *
+ * The opacity lives in the matrix, not in the paint: Skia applies the paint alpha to the image BEFORE the color filter, and a matrix
+ * whose alpha row reads only the luminance throws that alpha away. With the opacity passed to `drawImage` instead, the fibres drew at
+ * full coverage (up to 100 % white) whatever alpha the caller asked for: the high-contrast white streaks on sheets, Link and papers.
+ */
+fun washiFilter(tint: Color, alpha: Float = 1f): ColorFilter {
+    val a = (alpha * tint.alpha).coerceIn(0f, 1f)
+    return ColorFilter.colorMatrix(
+        ColorMatrix(
+            floatArrayOf(
+                0f, 0f, 0f, 0f, tint.red * 255f,
+                0f, 0f, 0f, 0f, tint.green * 255f,
+                0f, 0f, 0f, 0f, tint.blue * 255f,
+                a, 0f, 0f, 0f, 0f,
+            ),
         ),
-    ),
-)
+    )
+}
 
-/** Tiles the washi fibres over [topLeft]/[size] (default: the whole draw area), tinted by [filter] (see [washiFilter]). */
+/**
+ * Tiles the washi fibres over [topLeft]/[size] (default: the whole draw area), tinted by [filter] (see [washiFilter], which also
+ * carries the opacity). [blendMode] = [BlendMode.SrcAtop] keeps the fibres on pixels already drawn in the current layer.
+ */
 fun DrawScope.drawWashi(
     washi: WashiTexture,
     filter: ColorFilter,
-    alpha: Float,
     tileSize: Float,
     topLeft: Offset = Offset.Zero,
     size: Size = this.size,
+    blendMode: BlendMode = BlendMode.SrcOver,
 ) {
     val image = washi.image ?: return
     if (size.width <= 0f || size.height <= 0f) return
@@ -93,8 +109,9 @@ fun DrawScope.drawWashi(
                     srcSize = IntSize(image.width, image.height),
                     dstOffset = IntOffset(x, y),
                     dstSize = IntSize(tile, tile),
-                    alpha = alpha,
+                    alpha = 1f,
                     colorFilter = filter,
+                    blendMode = blendMode,
                     filterQuality = FilterQuality.Low,
                 )
                 x += tile
@@ -104,16 +121,41 @@ fun DrawScope.drawWashi(
     }
 }
 
-/** Washi fibres of [tint] behind the content of this node. Nothing under the PERF / OFF motion levels. */
+/**
+ * Washi fibres of [tint] behind the content of this node, at most [alpha] where the fibres are densest. Put it after the
+ * `background` of the surface it textures, so it sits on that surface. Nothing under the PERF / OFF motion levels.
+ */
 @Composable
-fun Modifier.washi(tint: Color, alpha: Float = 0.35f, tile: Dp = 160.dp): Modifier {
+fun Modifier.washi(tint: Color, alpha: Float = 0.25f, tile: Dp = 160.dp): Modifier {
     val washi = rememberWashi()
     if (washi.image == null) return this
     return this.drawWithCache {
-        val filter = washiFilter(tint)
+        val filter = washiFilter(tint, alpha)
         val tilePx = tile.toPx()
-        onDrawBehind { drawWashi(washi, filter, alpha, tilePx) }
+        onDrawBehind { drawWashi(washi, filter, tilePx) }
     }
+}
+
+/**
+ * A faint washi grain that lands only on what this node itself paints (its surface and content), never outside its shape nor on a
+ * region that paints nothing: the fibres are composed with `SrcAtop` in the node's own layer. For decorations applied to a container
+ * whose surface the decor cannot see (a sheet's `Surface`, whose rounded corners the old behind-the-content texture leaked through).
+ * Keep [alpha] at a grain level (a few percent): it lies over the content too.
+ */
+@Composable
+fun Modifier.washiGrain(tint: Color, alpha: Float, tile: Dp = 200.dp): Modifier {
+    val washi = rememberWashi()
+    if (washi.image == null) return this
+    return this
+        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+        .drawWithCache {
+            val filter = washiFilter(tint, alpha)
+            val tilePx = tile.toPx()
+            onDrawWithContent {
+                drawContent()
+                drawWashi(washi, filter, tilePx, blendMode = BlendMode.SrcAtop)
+            }
+        }
 }
 
 /** Draws progress as ink running down a paper from the top: solid ink, then a soft edge (artifact `.tz-ink.has-ink`). */
@@ -237,5 +279,5 @@ fun Modifier.tanzakuPaper(
         .clip(shape)
         .background(paper)
         .then(if (ink > 0f) Modifier.drawBehind { drawInkDown(paper, ink) } else Modifier)
-        .washi(TanabataMaterials.fibre(paper), alpha = 0.35f, tile = fibreTile)
+        .washi(TanabataMaterials.fibre(paper), alpha = TanabataMaterials.FIBRE_ALPHA, tile = fibreTile)
 }

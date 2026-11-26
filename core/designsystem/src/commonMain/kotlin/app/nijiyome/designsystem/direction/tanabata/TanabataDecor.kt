@@ -61,10 +61,10 @@ internal object TanabataDecor : DirectionDecor {
         val tone = LocalThemeTone.current
         val rail = cs.outlineVariant
         return when (region) {
-            // By day the floor is tinted washi with soft fibres; by night it stays plain indigo.
+            // By day the floor is tinted washi with soft fibres (on the floor color painted here); by night it stays plain indigo.
             DecorRegion.APP_BACKGROUND -> Modifier
                 .background(cs.background)
-                .then(if (tone == ThemeTone.LIGHT) Modifier.washi(Color.White, alpha = 0.5f, tile = 240.dp) else Modifier)
+                .then(if (tone == ThemeTone.LIGHT) Modifier.washi(Color.White, alpha = 0.3f, tile = 240.dp) else Modifier)
 
             DecorRegion.RAIL -> Modifier.drawWithContent {
                 drawContent()
@@ -81,16 +81,17 @@ internal object TanabataDecor : DirectionDecor {
 
             DecorRegion.EPISODES, DecorRegion.AIRING -> Modifier.drawBehind { drawRail(rail, at = 0.5.dp.toPx()) }
 
-            // Link: bamboo rails above and below, paper behind.
-            DecorRegion.LINK -> Modifier
-                .drawBehind {
-                    val inset = 14.dp.toPx()
-                    drawRail(rail, at = 10.dp.toPx(), from = inset, to = size.width - inset)
-                    drawRail(rail, at = size.height - 10.dp.toPx(), from = inset, to = size.width - inset)
-                }
-                .washi(cs.onSurface, alpha = 0.05f, tile = 240.dp)
+            // Link: bamboo rails above and below. No paper: the region is often a bare layout (a row of cards on the floor), and a
+            // texture with no surface of its own under it would lie straight behind the cards and their text.
+            DecorRegion.LINK -> Modifier.drawBehind {
+                val inset = 14.dp.toPx()
+                drawRail(rail, at = 10.dp.toPx(), from = inset, to = size.width - inset)
+                drawRail(rail, at = size.height - 10.dp.toPx(), from = inset, to = size.width - inset)
+            }
 
-            DecorRegion.SHEET -> Modifier.washi(cs.onSurface, alpha = 0.05f, tile = 200.dp)
+            // Sheets: a faint grain on the sheet's own surface. Screens put this on the sheet container (whose rounded surface the
+            // decor cannot see), so the grain is composed onto what the container paints and never leaks past its corners.
+            DecorRegion.SHEET -> Modifier.washiGrain(cs.onSurface, alpha = 0.04f, tile = 200.dp)
 
             DecorRegion.HERO, DecorRegion.GRID, DecorRegion.STATUS_PICKER, DecorRegion.PLAYER_SEEK, DecorRegion.EMPTY -> Modifier
         }
@@ -271,7 +272,7 @@ internal object TanabataDecor : DirectionDecor {
                 val paperSize = Size(32f * u, 84f * u)
                 if (rich) drawRect(shadow.copy(alpha = shadow.alpha * 0.5f), Offset(paperLeft + 1f * u, paperTop + 3f * u), paperSize)
                 drawRect(paper, Offset(paperLeft, paperTop), paperSize)
-                drawWashi(washi, washiFilter(TanabataMaterials.fibre(paper)), 0.35f, 96f * u, Offset(paperLeft, paperTop), paperSize)
+                drawWashi(washi, washiFilter(TanabataMaterials.fibre(paper), TanabataMaterials.FIBRE_ALPHA), 96f * u, Offset(paperLeft, paperTop), paperSize)
                 drawHole(Offset(55f * u, 34f * u), ground, radius = 3f * u)
                 if (broken) {
                     drawThread(thread, x = 55f * u, top = 6f * u, bottom = 20f * u, knot = false, dashed = true)
