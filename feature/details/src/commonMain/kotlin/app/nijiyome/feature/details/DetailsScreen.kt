@@ -455,7 +455,7 @@ internal fun DetailsContent(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        LoadStateContent(state = state.media, onRetry = actions.onRetry) { media ->
+        LoadStateContent(state = state.media, onRetry = actions.onRetry, loading = { FichaLoading(state, actions) }) { media ->
             if (state.adultGate) AdultGate(actions) else FichaRoot(media, state, actions)
         }
         // Loading, error and the 18+ gate have no header of their own: only the back button.

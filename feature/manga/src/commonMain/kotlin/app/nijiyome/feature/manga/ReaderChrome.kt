@@ -284,13 +284,17 @@ internal fun BoxScope.ReaderPanel(
         }
     }
     if (compact) {
-        AdaptiveSheet(onDismissRequest = onDismiss, modifier = Modifier.decor(DecorRegion.SHEET)) {
-            header()
-            pinned?.invoke()
-            if (scroll) {
-                AdaptiveSheetScrollColumn(Modifier.padding(horizontal = 16.dp), content = content)
-            } else {
-                Column(Modifier.heightIn(max = 520.dp).padding(horizontal = 16.dp), content = content)
+        // LEC-03: the direction's sheet decor goes on the content, inside the sheet's surface (on the sheet's own modifier it was
+        // drawn under the surface and only showed past the rounded corners as stray marks).
+        AdaptiveSheet(onDismissRequest = onDismiss) {
+            Column(Modifier.fillMaxWidth().decor(DecorRegion.SHEET)) {
+                header()
+                pinned?.invoke()
+                if (scroll) {
+                    AdaptiveSheetScrollColumn(Modifier.padding(horizontal = 16.dp), content = content)
+                } else {
+                    Column(Modifier.heightIn(max = 520.dp).padding(horizontal = 16.dp), content = content)
+                }
             }
         }
     } else {
@@ -298,9 +302,9 @@ internal fun BoxScope.ReaderPanel(
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             shape = MaterialTheme.shapes.extraLarge,
             tonalElevation = 2.dp,
-            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(400.dp).padding(8.dp).decor(DecorRegion.SHEET),
+            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(400.dp).padding(8.dp),
         ) {
-            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            Column(Modifier.fillMaxSize().decor(DecorRegion.SHEET).statusBarsPadding().navigationBarsPadding()) {
                 header()
                 pinned?.invoke()
                 Column(

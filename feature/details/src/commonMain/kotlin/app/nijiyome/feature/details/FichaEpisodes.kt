@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -274,72 +275,105 @@ private fun LazyListScope.fichaEpisodeItems(
     }
 }
 
-/** Search, the view (Lista / Tarjetas / Rejilla), "Seleccionar" on wide windows and how selecting works. */
+/**
+ * Search, the view (Lista / Tarjetas / Rejilla), "Seleccionar" on wide windows and how selecting works. Under [TOOLBAR_ONE_ROW] (the
+ * Cine drawer, a narrow pane) the search takes its own row, so neither it nor "Seleccionar" is squeezed to a sliver.
+ */
 @Composable
 private fun EpisodeToolbar(state: DetailsUiState, actions: DetailsActions, ui: FichaUi, route: Boolean) {
     val compact = isCompactWindow()
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (!route) {
-                OutlinedTextField(
-                    value = state.episodeQuery,
-                    onValueChange = actions.onEpisodeQuery,
-                    singleLine = true,
-                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                    trailingIcon = if (state.episodeQuery.isNotEmpty()) {
-                        {
-                            IconButton(onClick = { actions.onEpisodeQuery("") }) {
-                                Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.details_episode_search_clear))
-                            }
-                        }
-                    } else {
-                        null
-                    },
-                    placeholder = {
-                        Text(
-                            stringResource(if (compact) Res.string.details_episode_search else Res.string.rd_s4_search_wide),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-                Segmented(
-                    options = listOf(
-                        SegmentedOption(EpisodeView.LIST, stringResource(Res.string.rd_s4_view_list), icon = Icons.AutoMirrored.Outlined.ViewList),
-                        SegmentedOption(EpisodeView.CARDS, stringResource(Res.string.rd_s4_view_cards), icon = Icons.Outlined.ViewAgenda),
-                        SegmentedOption(EpisodeView.COMPACT, stringResource(Res.string.rd_s4_view_grid), icon = Icons.Outlined.GridView),
-                    ),
-                    selected = state.episodeView,
-                    onSelect = actions.onEpisodeView,
-                    small = true,
-                    iconOnly = compact,
-                )
-            } else {
-                Text(
-                    stringResource(if (compact) Res.string.rd_s4_route_hint_touch else Res.string.rd_s4_route_hint_wide),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            if (!compact) {
-                val selecting = ui.selection.active
-                OutlinedButton(onClick = { if (selecting) ui.selection.exit() else ui.selection.start() }) {
-                    Icon(Icons.Outlined.CheckBox, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(stringResource(if (selecting) Res.string.rd_s4_select_done else Res.string.rd_s4_select), modifier = Modifier.padding(start = 8.dp))
+    val search: @Composable (Modifier) -> Unit = { m ->
+        OutlinedTextField(
+            value = state.episodeQuery,
+            onValueChange = actions.onEpisodeQuery,
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+            trailingIcon = if (state.episodeQuery.isNotEmpty()) {
+                {
+                    IconButton(onClick = { actions.onEpisodeQuery("") }) {
+                        Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.details_episode_search_clear))
+                    }
                 }
+            } else {
+                null
+            },
+            placeholder = {
+                Text(
+                    stringResource(if (compact) Res.string.details_episode_search else Res.string.rd_s4_search_wide),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            modifier = m,
+        )
+    }
+    val views: @Composable () -> Unit = {
+        Segmented(
+            options = listOf(
+                SegmentedOption(EpisodeView.LIST, stringResource(Res.string.rd_s4_view_list), icon = Icons.AutoMirrored.Outlined.ViewList),
+                SegmentedOption(EpisodeView.CARDS, stringResource(Res.string.rd_s4_view_cards), icon = Icons.Outlined.ViewAgenda),
+                SegmentedOption(EpisodeView.COMPACT, stringResource(Res.string.rd_s4_view_grid), icon = Icons.Outlined.GridView),
+            ),
+            selected = state.episodeView,
+            onSelect = actions.onEpisodeView,
+            small = true,
+            iconOnly = compact,
+        )
+    }
+    val select: @Composable () -> Unit = {
+        if (!compact) {
+            val selecting = ui.selection.active
+            OutlinedButton(onClick = { if (selecting) ui.selection.exit() else ui.selection.start() }) {
+                Icon(Icons.Outlined.CheckBox, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(
+                    stringResource(if (selecting) Res.string.rd_s4_select_done else Res.string.rd_s4_select),
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
             }
         }
-        if (!route) {
-            Text(
-                stringResource(if (compact) Res.string.rd_s4_hint_touch else Res.string.rd_s4_hint_wide),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // phones keep one row: their view switch is icons only
+        val oneRow = compact || maxWidth >= TOOLBAR_ONE_ROW
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (route) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(if (compact) Res.string.rd_s4_route_hint_touch else Res.string.rd_s4_route_hint_wide),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    select()
+                }
+            } else if (oneRow) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    search(Modifier.weight(1f))
+                    views()
+                    select()
+                }
+            } else {
+                search(Modifier.fillMaxWidth())
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.weight(1f)) { views() }
+                    select()
+                }
+            }
+            if (!route) {
+                Text(
+                    stringResource(if (compact) Res.string.rd_s4_hint_touch else Res.string.rd_s4_hint_wide),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
+
+/** Width from which search, views and "Seleccionar" share one row. */
+private val TOOLBAR_ONE_ROW = 600.dp
 
 @Composable
 private fun RangeChips(page: EpisodePage, onRange: (Int) -> Unit) {
@@ -468,7 +502,7 @@ private fun FichaEpisode(
                 ) {
                     SelectionCheckbox(selected, visible = selection.active && !item.unaired)
                     mark()
-                    if (!compact) EpisodeThumb(episode, fallbackArt, Modifier.width(112.dp))
+                    if (!compact) EpisodeThumb(episode, fallbackArt, Modifier.width(112.dp), numbered = false)
                     EpisodeText(heading, meta, fraction, Modifier.weight(1f))
                     side()
                 }
@@ -606,7 +640,7 @@ private fun RouteStations(stations: List<EpisodeItem>, state: DetailsUiState, ac
             val focused = n == focus
             Column(
                 Modifier
-                    .width(104.dp)
+                    .width(120.dp)
                     .clip(MaterialTheme.shapes.medium)
                     .background(if (selected) scheme.secondaryContainer else if (focused) scheme.surfaceContainerHigh else scheme.surface.copy(alpha = 0f))
                     .then(if (focused) Modifier.border(1.dp, scheme.primary, MaterialTheme.shapes.medium) else Modifier)
@@ -636,7 +670,7 @@ private fun RouteStations(stations: List<EpisodeItem>, state: DetailsUiState, ac
                     tag ?: episodeMeta(item.episode, withRating = false).orEmpty(),
                     style = MaterialTheme.typography.labelSmall,
                     color = scheme.onSurfaceVariant,
-                    maxLines = 1,
+                    maxLines = 2, // "Hace 1 mes · 24 min" in full (ALT-09)
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 4.dp),

@@ -74,4 +74,8 @@
     <string name="rd_s4_view_cards">Cards</string>
     <string name="rd_s4_view_grid">Grid</string>
     <string name="rd_s4_view_list">List</string>
+    <string name="rd_s4_fact_studio">Studio</string>
+    <string name="rd_s4_fact_next_when">Ep. %1$d · in %2$s</string>
+    <string name="rd_s4_loading_cd">Loading the title</string>
+    <string name="rd_s4_loading_slow">This is taking longer than usual. The title will appear here as soon as it answers.</string>
 </resources>

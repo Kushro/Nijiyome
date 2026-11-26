@@ -11,6 +11,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -146,9 +148,11 @@ internal fun <T> ChoiceTiles(choices: List<Choice<T>>, selected: T, onSelect: (T
 }
 
 /** Colour swatches (reader background): each shows its colour beside its name. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun Swatches(choices: List<Pair<String, String>>, colorOf: @Composable (String) -> Color, selected: String, onSelect: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    // they wrap instead of running past the sheet's edge ("Te…")
+    FlowRow(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         choices.forEach { (id, label) ->
             val on = id == selected
             val swatch = colorOf(id)

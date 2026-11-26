@@ -285,6 +285,94 @@ internal fun FactsGrid(head: HeadModel, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Labelled facts on a wide pane (B, D): one quiet line of label-over-value pairs, as the artifact draws them (Estado · Próximo ·
+ * Episodios · Temporada · Puntuación · Estudio), about 40 dp tall where the grid took rows of large numbers. The line wraps between
+ * facts, never inside one; each fact is one TalkBack node.
+ */
+@Composable
+internal fun FactsStrip(head: HeadModel, media: Media, state: DetailsUiState, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    val season = media.season?.let { seasonLabel(it) }
+    val studio = state.detailsOrNull?.studios?.firstOrNull()?.takeIf { it.isNotBlank() }
+    val cells = mutableListOf<@Composable () -> Unit>()
+    head.facts.forEach { fact ->
+        when (fact) {
+            is HeadFact.Status -> cells += {
+                val label = stringResource(Res.string.details_info_status)
+                val value = statusPill(fact.raw)?.first ?: fact.raw
+                StripCell(label, value, stringResource(Res.string.details_fact_cd, label, value), lead = if (fact.raw == "RELEASING") ({ LiveDot() }) else null)
+            }
+            is HeadFact.Next -> cells += {
+                val label = stringResource(Res.string.details_fact_next)
+                StripCell(
+                    label,
+                    stringResource(Res.string.rd_s4_fact_next_when, fact.episode, whenText(fact.left)),
+                    stringResource(Res.string.details_fact_cd, label, stringResource(Res.string.details_next_short_cd, fact.episode, spokenWhen(fact.left))),
+                )
+            }
+            is HeadFact.Episodes -> cells += {
+                val label = stringResource(Res.string.details_episodes)
+                val total = fact.total
+                when {
+                    total != null && fact.watched > 0 -> StripCell(
+                        label,
+                        stringResource(Res.string.rd_s4_series_progress, fact.watched, total),
+                        stringResource(Res.string.details_fact_episodes_cd, fact.watched, total),
+                    )
+                    total != null -> StripCell(label, total.toString(), stringResource(Res.string.details_fact_episodes_total_cd, total))
+                    else -> {
+                        val value = "${fact.watched} ${pluralStringResource(Res.plurals.details_fact_watched, fact.watched)}"
+                        StripCell(label, value, stringResource(Res.string.details_fact_cd, label, value))
+                    }
+                }
+            }
+            is HeadFact.Year -> cells += {
+                // "Otoño 2026" says more than "2026" in the same room
+                val label = stringResource(if (season != null) Res.string.details_info_season else Res.string.details_fact_year)
+                val value = if (season != null) "$season ${fact.year}" else fact.year.toString()
+                StripCell(label, value, stringResource(Res.string.details_fact_cd, label, value))
+            }
+            is HeadFact.Score -> cells += {
+                val label = stringResource(Res.string.details_fact_score)
+                val value = formatScore(fact.score)
+                StripCell(
+                    label,
+                    value,
+                    stringResource(Res.string.details_fact_cd, label, value),
+                    lead = { Icon(Icons.Filled.Star, null, tint = scheme.primary, modifier = Modifier.size(14.dp)) },
+                )
+            }
+        }
+    }
+    if (studio != null) {
+        cells += {
+            val label = stringResource(Res.string.rd_s4_fact_studio)
+            StripCell(label, studio, stringResource(Res.string.details_fact_cd, label, studio))
+        }
+    }
+    if (cells.isEmpty()) return
+    FlowRow(
+        modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(28.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        cells.forEach { it() }
+    }
+}
+
+@Composable
+private fun StripCell(label: String, value: String, spoken: String, lead: (@Composable () -> Unit)? = null) {
+    val scheme = MaterialTheme.colorScheme
+    Column(Modifier.clearAndSetSemantics { contentDescription = spoken }, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant, maxLines = 1, softWrap = false)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            lead?.invoke()
+            Text(value, style = MaterialTheme.typography.titleSmall, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
 @Composable
 private fun FactCell(fact: HeadFact, first: Boolean, modifier: Modifier) {
     val scheme = MaterialTheme.colorScheme

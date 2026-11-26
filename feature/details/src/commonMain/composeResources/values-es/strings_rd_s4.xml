@@ -74,4 +74,8 @@
     <string name="rd_s4_view_cards">Tarjetas</string>
     <string name="rd_s4_view_grid">Rejilla</string>
     <string name="rd_s4_view_list">Lista</string>
+    <string name="rd_s4_fact_studio">Estudio</string>
+    <string name="rd_s4_fact_next_when">Ep. %1$d · en %2$s</string>
+    <string name="rd_s4_loading_cd">Cargando el título</string>
+    <string name="rd_s4_loading_slow">Esto está tardando más de lo normal. El título aparecerá aquí en cuanto responda.</string>
 </resources>

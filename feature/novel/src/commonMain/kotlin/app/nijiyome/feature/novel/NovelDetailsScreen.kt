@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -191,9 +192,13 @@ fun NovelDetailsScreen(
     val compact = isCompactWindow()
     Box(modifier.fillMaxSize().windowInsetsPadding(screenInsets)) {
         when (val info = ui.info) {
-            LoadState.Loading -> Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                LoadingPlaceholder(Modifier.width(140.dp).height(210.dp))
-                LoadingPlaceholder(Modifier.fillMaxWidth().height(240.dp))
+            LoadState.Loading -> Column {
+                // a way back while the title loads
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LoadingPlaceholder(Modifier.width(140.dp).height(210.dp))
+                    LoadingPlaceholder(Modifier.fillMaxWidth().height(240.dp))
+                }
             }
             is LoadState.Err -> Column {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
@@ -213,30 +218,34 @@ fun NovelDetailsScreen(
                     NovelHeader(info.value, entry, info.value.media.displayTitle(lang), started, state.nextChapter, compact, vm, undo, onBack)
                 }
                 val aside: @Composable ColumnScope.() -> Unit = { NovelInfo(info.value, onOpenGenre) }
-                if (compact) {
-                    var tab by rememberSaveable { mutableIntStateOf(0) }
-                    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
-                        if (selection.active) item(key = "selbar") { NovelSelectionTopBar(state) }
-                        item(key = "header") { header() }
-                        item(key = "tabs") {
-                            TabRow(selectedTabIndex = tab) {
-                                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(Res.string.novel_chapters)) })
-                                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(Res.string.novel_info)) })
-                            }
-                        }
-                        if (tab == 0) novelChapters(state, vm, onOpenReader, onOpenExtensions) else item(key = "info") { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { aside() } }
-                    }
-                } else {
-                    Row(Modifier.fillMaxSize()) {
-                        LazyColumn(Modifier.weight(1f).fillMaxHeight(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                // The aside goes beside the chapters only when the pane itself has the room (opened from the Novelas catalogue on a
+                // desktop window this page is a pane, not the window): else the phone layout, tabs Capítulos / Información.
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    if (compact || maxWidth < SIDE_BY_SIDE_MIN) {
+                        var tab by rememberSaveable { mutableIntStateOf(0) }
+                        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                            if (compact && selection.active) item(key = "selbar") { NovelSelectionTopBar(state) }
                             item(key = "header") { header() }
-                            novelChapters(state, vm, onOpenReader, onOpenExtensions)
+                            item(key = "tabs") {
+                                TabRow(selectedTabIndex = tab) {
+                                    Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(Res.string.novel_chapters)) })
+                                    Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(Res.string.novel_info)) })
+                                }
+                            }
+                            if (tab == 0) novelChapters(state, vm, onOpenReader, onOpenExtensions) else item(key = "info") { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { aside() } }
                         }
-                        Column(
-                            Modifier.width(380.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, end = 16.dp, bottom = 32.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            content = aside,
-                        )
+                    } else {
+                        Row(Modifier.fillMaxSize()) {
+                            LazyColumn(Modifier.weight(1f).fillMaxHeight(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                                item(key = "header") { header() }
+                                novelChapters(state, vm, onOpenReader, onOpenExtensions)
+                            }
+                            Column(
+                                Modifier.width(380.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, end = 16.dp, bottom = 32.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                content = aside,
+                            )
+                        }
                     }
                 }
                 NovelSelectionBar(state, vm, undo, Modifier.align(Alignment.BottomCenter))
@@ -283,70 +292,80 @@ private fun NovelHeader(
         vm.setStatus(null)
         undo.show(removed, undo = { vm.restoreEntry(previous) })
     }
-    Column(Modifier.fillMaxWidth().decor(DecorRegion.HERO).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TextButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(Res.string.novel_title))
-        }
-        val actions: @Composable () -> Unit = {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = vm::readNext) {
-                    Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    val n = ChapterText.formatNumber(nextChapter)
-                    Text(
-                        when {
-                            n == null -> stringResource(if (started) Res.string.novel_continue else Res.string.rd_s11_start_reading)
-                            started -> stringResource(Res.string.rd_s11_resume_chapter, n)
-                            else -> stringResource(Res.string.novel_read_chapter, n)
-                        },
-                    )
-                }
-                if (entry != null) {
-                    ProgressStepper(value = entry.progress, onValueChange = vm::setProgress, max = total ?: Int.MAX_VALUE, total = total, label = stringResource(Res.string.rd_s11_read_count))
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // the header's inner width (minus its 16 dp padding) decides whether "Quitar de la lista" fits beside the six named statuses
+        val besideRemove = !compact && maxWidth - 32.dp >= STATUS_ROW_MIN
+        Column(Modifier.fillMaxWidth().decor(DecorRegion.HERO).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            TextButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(Res.string.novel_title))
+            }
+            val actions: @Composable () -> Unit = {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = vm::readNext) {
+                        Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        val n = ChapterText.formatNumber(nextChapter)
+                        Text(
+                            when {
+                                n == null -> stringResource(if (started) Res.string.novel_continue else Res.string.rd_s11_start_reading)
+                                started -> stringResource(Res.string.rd_s11_resume_chapter, n)
+                                else -> stringResource(Res.string.novel_read_chapter, n)
+                            },
+                        )
+                    }
+                    if (entry != null) {
+                        ProgressStepper(value = entry.progress, onValueChange = vm::setProgress, max = total ?: Int.MAX_VALUE, total = total, label = stringResource(Res.string.rd_s11_read_count))
+                    }
                 }
             }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 24.dp)) {
-            MediaCover(
-                url = media.cover,
-                contentDescription = stringResource(Res.string.rd_s11_cover_of, title),
-                modifier = Modifier.width(if (compact) 112.dp else 180.dp).cardToDetailsTarget(novelCardKey(media.ref, media.title)),
-            )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Pill(stringResource(Res.string.novel_format_novel), tone = PillTone.PRIMARY)
-                    novelStatusLabel(info.status)?.let { Pill(it) }
-                    novelOriginLabel(info.origin)?.let { Pill(it) }
-                    media.year?.let { Pill(it.toString()) }
+            Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 24.dp)) {
+                MediaCover(
+                    url = media.cover,
+                    contentDescription = stringResource(Res.string.rd_s11_cover_of, title),
+                    modifier = Modifier.width(if (compact) 112.dp else 180.dp).cardToDetailsTarget(novelCardKey(media.ref, media.title)),
+                )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Pill(stringResource(Res.string.novel_format_novel), tone = PillTone.PRIMARY)
+                        novelStatusLabel(info.status)?.let { Pill(it) }
+                        novelOriginLabel(info.origin)?.let { Pill(it) }
+                        media.year?.let { Pill(it.toString()) }
+                    }
+                    Text(title, style = if (compact) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineLarge, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
+                    media.alternativeTitle(title)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
+                    if (!compact) actions()
                 }
-                Text(title, style = if (compact) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineLarge, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
-                media.alternativeTitle(title)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
-                if (!compact) actions()
             }
+            if (compact) actions()
+            if (entry != null && total != null && total > 0) {
+                ProgressTrack(progress = (entry.progress.toFloat() / total).coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp), segments = total.takeIf { it <= 52 })
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ListStatusPicker(
+                    selected = entry?.status?.slot(),
+                    onSelect = { slot ->
+                        val previous = entry
+                        vm.setStatus(slot.toListStatus())
+                        undo.show(statusSaved, undo = { vm.restoreEntry(previous) })
+                    },
+                    modifier = Modifier.weight(1f),
+                    labelOf = { stringResource(it.toListStatus().readLabelRes()) },
+                    compact = compact,
+                )
+                if (entry != null && besideRemove) TextButton(onClick = remove) { Text(stringResource(UiR.string.list_remove)) }
+            }
+            if (entry != null && !besideRemove) TextButton(onClick = remove) { Text(stringResource(UiR.string.list_remove)) }
         }
-        if (compact) actions()
-        if (entry != null && total != null && total > 0) {
-            ProgressTrack(progress = (entry.progress.toFloat() / total).coerceIn(0f, 1f), modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp), segments = total.takeIf { it <= 52 })
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ListStatusPicker(
-                selected = entry?.status?.slot(),
-                onSelect = { slot ->
-                    val previous = entry
-                    vm.setStatus(slot.toListStatus())
-                    undo.show(statusSaved, undo = { vm.restoreEntry(previous) })
-                },
-                modifier = Modifier.weight(1f, fill = false),
-                labelOf = { stringResource(it.toListStatus().readLabelRes()) },
-                compact = compact,
-            )
-            if (entry != null && !compact) TextButton(onClick = remove) { Text(stringResource(UiR.string.list_remove)) }
-        }
-        if (entry != null && compact) TextButton(onClick = remove) { Text(stringResource(UiR.string.list_remove)) }
     }
 }
+
+/** Pane width from which the chapters (at least ~600 dp) and the 380 dp information aside sit side by side. */
+private val SIDE_BY_SIDE_MIN = 1000.dp
+
+/** From this width the six named statuses and "Quitar de la lista" share one row. */
+private val STATUS_ROW_MIN = 860.dp
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -566,7 +585,14 @@ private fun NovelChapterRow(ch: NovelChapter, state: NovelChapterState, vm: Nove
     val read = state.isRead(ch)
     val next = state.nextChapter != null && ch.number == state.nextChapter
     val selection = state.selection
-    val date = ch.releasedAtMs?.let { remember(it) { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it)) } }
+    // the last month as "hace 3 d" (the app's words, as the artifact shows), older ones as a date
+    val date = ch.releasedAtMs?.let { ms ->
+        if (System.currentTimeMillis() - ms in 0L until RECENT_CHAPTER_MS) {
+            app.nijiyome.ui.format.relativeTime(ms)
+        } else {
+            remember(ms) { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(ms)) }
+        }
+    }
     val number = ChapterText.formatNumber(ch.number)
     Row(
         Modifier
@@ -586,7 +612,10 @@ private fun NovelChapterRow(ch: NovelChapter, state: NovelChapterState, vm: Nove
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    (number?.let { stringResource(Res.string.rd_s11_chapter_short, it) } ?: (ch.title ?: ch.id)) +
+                    // never the source's internal id: a chapter without number nor title says so
+                    (number?.let { stringResource(Res.string.rd_s11_chapter_short, it) }
+                        ?: ch.title?.takeIf { it.isNotBlank() }
+                        ?: stringResource(Res.string.rd_s11_chapter_unnumbered)) +
                         (if (number != null) ch.title?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: "" else ""),
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 2,
@@ -699,3 +728,6 @@ private fun TranslationFact(group: TranslationCredit) {
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+/** Chapters released within this long show a relative time ("hace 3 d"). */
+private const val RECENT_CHAPTER_MS = 30L * 24 * 60 * 60 * 1000
