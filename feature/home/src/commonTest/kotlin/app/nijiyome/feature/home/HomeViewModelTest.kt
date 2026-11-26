@@ -122,7 +122,8 @@ class HomeViewModelTest {
         )
         metadata.art = { ref -> if (ref.anilistId == 2) throw IOException("ani.zip down") else MediaArtwork(fanart = "f${ref.anilistId}") }
         val vm = HomeViewModel(metadata, FakeHistory())
-        val state = vm.state.first { it.heroArt.size == 4 }
+        // Rows load through the pacer (first screen first), so the hero art can be in before the last rows: wait for both.
+        val state = vm.state.first { s -> s.heroArt.size == 4 && s.feeds.all { it.state is LoadState.Ok } }
         assertEquals(listOf(1, 2, 3, 4, 5), metadata.artAsked.sortedBy { it })
         assertEquals("f1", state.heroArt["a1"]?.fanart)
         assertNull(state.heroArt["a2"])
