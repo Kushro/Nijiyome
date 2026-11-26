@@ -44,9 +44,13 @@ object TanabataDirection : DirectionSpec {
     @Composable
     override fun accentFont(): FontFamily? = tanabataBrush()
 
-    /** Artifact radii: xs 3, s 6, m 10, l 14, xl 22 (paper is nearly square, controls softly rounded). */
+    /**
+     * Artifact radii: s 6, m 10, l 14, xl 22 (paper is nearly square, controls softly rounded). extraSmall is 8 rather than the
+     * artifact's 3: Material text fields, menus and snackbars read it, and the artifact rounds its fields at 10 (`.nj-field`), so 3
+     * drew sharp-cornered fields. Paper and badges use their own 2-3 dp shapes, not this slot.
+     */
     override val shapes: Shapes = Shapes(
-        extraSmall = RoundedCornerShape(3.dp),
+        extraSmall = RoundedCornerShape(8.dp),
         small = RoundedCornerShape(6.dp),
         medium = RoundedCornerShape(10.dp),
         large = RoundedCornerShape(14.dp),

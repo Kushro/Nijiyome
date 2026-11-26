@@ -67,6 +67,7 @@ import app.nijiyome.ui.resources.rd_i1_stp_plus
 import app.nijiyome.ui.resources.rd_i1_stp_remove
 import app.nijiyome.ui.resources.rd_i1_stp_status
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `stp` of docs/redesign/artefacto/lab.js: the six list statuses in view with their color, icon and
 // name, as a real radio group (a tap or the arrow keys), and the progress beside them with a stepper instead of another dialog.
@@ -287,7 +288,7 @@ fun ListStatusEditor(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             ProgressStepper(progress, onProgressChange, max = aired, total = total, modifier = Modifier.weight(1f))
             if (status != null) {
-                TextButton(onClick = onRemove, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                TextButton(shape = NijiyomeControls.shape, onClick = onRemove, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                     Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(Res.string.rd_i1_stp_remove))

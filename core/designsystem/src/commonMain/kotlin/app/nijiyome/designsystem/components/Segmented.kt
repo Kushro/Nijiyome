@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // android wave contract (docs/redesign/12 §3.9). Owner: worker b. Names and signatures FIXED.
 
@@ -55,6 +56,7 @@ fun <T> Segmented(
      */
     fillWidth: Boolean = false,
 ) {
+    val controlShape = NijiyomeControls.shape
     val rowModifier = if (fillWidth) modifier.fillMaxWidth() else modifier.horizontalScroll(rememberScrollState())
     Row(rowModifier) {
         SingleChoiceSegmentedButtonRow(if (fillWidth) Modifier.fillMaxWidth() else Modifier) {
@@ -63,7 +65,8 @@ fun <T> Segmented(
                 SegmentedButton(
                     selected = isSelected,
                     onClick = { if (!isSelected) onSelect(option.value) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                    // The direction's control radius (Material's own default is a full pill whatever the theme's shapes say).
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size, baseShape = controlShape),
                     enabled = option.enabled,
                     contentPadding = if (small) SMALL_PADDING else SegmentedButtonDefaults.ContentPadding,
                     // Icon-only buttons keep a 48 dp touch target.

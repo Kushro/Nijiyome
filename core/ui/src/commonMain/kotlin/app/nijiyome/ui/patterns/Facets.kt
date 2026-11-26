@@ -61,6 +61,7 @@ import app.nijiyome.ui.resources.rd_i1_fac_search
 import app.nijiyome.ui.resources.rd_i1_fac_show
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `fac` of docs/redesign/artefacto/lab.js: every chip says its current value, opens a popover (a
 // sheet on phones) with a search box and multi-selection, and clears with ×. Each option shows how many titles would remain and the
@@ -289,9 +290,9 @@ fun FacetPanel(
             }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (picked.isNotEmpty()) TextButton(onClick = { onPickedChange(emptySet()) }) { Text(stringResource(Res.string.rd_i1_fac_clear)) }
+            if (picked.isNotEmpty()) TextButton(shape = NijiyomeControls.shape, onClick = { onPickedChange(emptySet()) }) { Text(stringResource(Res.string.rd_i1_fac_clear)) }
             Spacer(Modifier.weight(1f))
-            Button(onClick = onDone) { Text(pluralStringResource(Res.plurals.rd_i1_fac_show, resultCount, resultCount)) }
+            Button(shape = NijiyomeControls.shape, onClick = onDone) { Text(pluralStringResource(Res.plurals.rd_i1_fac_show, resultCount, resultCount)) }
         }
     }
 }

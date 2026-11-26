@@ -120,6 +120,7 @@ import app.nijiyome.ui.resources.rd_i1_gal_snack_msg
 import app.nijiyome.ui.resources.rd_i1_gal_title
 import app.nijiyome.ui.resources.rd_i1_gal_variant
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. The design gallery: for the active theme, every card style in the six contexts, every direction with its
 // palettes, the decoration slots and one trigger per motion moment, then live demos of the interaction patterns. For the user to preview
@@ -298,7 +299,7 @@ private fun DecorSection() {
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         GalleryBlock(stringResource(Res.string.rd_i1_gal_decor_section)) {
             SectionHeader(stringResource(Res.string.rd_i1_gal_sample_section), trailing = {
-                TextButton(onClick = {}) { Text(stringResource(Res.string.rd_i1_gal_see_all)) }
+                TextButton(shape = NijiyomeControls.shape, onClick = {}) { Text(stringResource(Res.string.rd_i1_gal_see_all)) }
             })
         }
         GalleryBlock(stringResource(Res.string.rd_i1_gal_decor_episode)) {
@@ -346,7 +347,7 @@ private fun MomentRow(moment: String, name: String, onPlay: () -> Unit, demo: @C
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             CodeTag(stringResource(Res.string.rd_i1_gal_variant, moment, variant))
-            FilledTonalButton(onClick = onPlay) { Text(stringResource(Res.string.rd_i1_gal_play)) }
+            FilledTonalButton(shape = NijiyomeControls.shape, onClick = onPlay) { Text(stringResource(Res.string.rd_i1_gal_play)) }
         }
         Box(Modifier.fillMaxWidth().height(132.dp).border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium).padding(12.dp)) {
             demo()

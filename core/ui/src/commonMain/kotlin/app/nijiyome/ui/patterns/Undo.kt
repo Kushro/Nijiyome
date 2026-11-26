@@ -65,6 +65,7 @@ import app.nijiyome.ui.resources.rd_i1_undo_recent_title
 import app.nijiyome.ui.resources.rd_i1_undo_undone
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. The undo of docs/redesign/artefacto/lab.js (`pushUndo`): every reversible action leaves "Done · Undo" in
 // a queue that does not overwrite the previous one; the snackbar times out (paused while hovered or focused), then collapses into
@@ -249,11 +250,11 @@ fun UndoSnackbar(controller: UndoController, modifier: Modifier = Modifier) {
                         val e = shownEntry
                         val inverseButton = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.inversePrimary)
                         if (e != null && e.undoable) {
-                            TextButton(onClick = { controller.undo(e) }, colors = inverseButton) { Text(stringResource(Res.string.rd_i1_undo_action)) }
+                            TextButton(shape = NijiyomeControls.shape, onClick = { controller.undo(e) }, colors = inverseButton) { Text(stringResource(Res.string.rd_i1_undo_action)) }
                         }
                         if (e != null && older > 0) {
                             Box {
-                                TextButton(onClick = { historyOpen = true }, colors = inverseButton) {
+                                TextButton(shape = NijiyomeControls.shape, onClick = { historyOpen = true }, colors = inverseButton) {
                                     Text(stringResource(Res.string.rd_i1_undo_older, older))
                                 }
                                 UndoHistoryMenu(controller, expanded = historyOpen, onDismiss = { historyOpen = false })
@@ -309,14 +310,14 @@ private fun UndoHistoryMenu(controller: UndoController, expanded: Boolean, onDis
             ) {
                 Text(e.message, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (e.undoable) {
-                    TextButton(onClick = { controller.undo(e) }) { Text(stringResource(Res.string.rd_i1_undo_action)) }
+                    TextButton(shape = NijiyomeControls.shape, onClick = { controller.undo(e) }) { Text(stringResource(Res.string.rd_i1_undo_action)) }
                 } else {
                     Text(stringResource(Res.string.rd_i1_undo_done), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
         HorizontalDivider()
-        TextButton(onClick = onDismiss, modifier = Modifier.padding(horizontal = 8.dp)) { Text(stringResource(Res.string.rd_i1_undo_close)) }
+        TextButton(shape = NijiyomeControls.shape, onClick = onDismiss, modifier = Modifier.padding(horizontal = 8.dp)) { Text(stringResource(Res.string.rd_i1_undo_close)) }
     }
 }
 

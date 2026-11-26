@@ -92,6 +92,7 @@ import app.nijiyome.ui.resources.rd_i1_pk_use
 import app.nijiyome.ui.resources.rd_i1_pk_use_default
 import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.launch
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `pk` of docs/redesign/artefacto/lab.js: every value has a picker made for it instead of a raw text
 // field: the port with a stepper and "Test", the folder with the system picker and its path as breadcrumbs, a time of day and a time
@@ -200,6 +201,7 @@ fun PortPicker(
             NumberStepperField(port.toLong(), { onPortChange(it.toInt()) }, min = 1, max = 65535, label = label)
             if (onTest != null) {
                 FilledTonalButton(
+                    shape = NijiyomeControls.shape,
                     onClick = {
                         busy = true
                         scope.launch {
@@ -247,7 +249,7 @@ private fun ResultLine(icon: ImageVector, color: Color, text: String, action: Pa
     ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium, color = color, modifier = Modifier.weight(1f, fill = false))
-        if (action != null) TextButton(onClick = action.second) { Text(action.first) }
+        if (action != null) TextButton(shape = NijiyomeControls.shape, onClick = action.second) { Text(action.first) }
     }
 }
 
@@ -311,7 +313,7 @@ fun FolderPathPicker(
                 }
             }
         }
-        OutlinedButton(onClick = pick) {
+        OutlinedButton(shape = NijiyomeControls.shape, onClick = pick) {
             Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.rd_i1_pk_change_folder), modifier = Modifier.padding(start = 8.dp))
         }
