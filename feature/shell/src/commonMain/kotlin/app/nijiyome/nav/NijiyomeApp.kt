@@ -798,7 +798,8 @@ private fun AppNavDisplay(
     /** Nijiyome Link: the client on Android, the server (with the desktop monitor) on desktop; the screen picks the side. */
     val linkedDevice: @Composable () -> Unit = {
         LinkedDeviceScreen(
-            onBack = ::back,
+            // LNK-03: a rail destination on wide windows (no back arrow) unless it was stacked over another page.
+            onBack = if (wide && backStack.size <= 2) null else ::back,
             onPlay = ::play,
             onOpenExtensionServers = if (available.offers(Route.ExtensionServers)) ({ push(Route.ExtensionServers) }) else null,
             onOpenLogs = { openSettingsAt(SettingsSection.ABOUT) },
