@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -93,13 +95,17 @@ internal fun BoxScope.NovelPanel(
         }
     }
     if (compact) {
-        AdaptiveSheet(onDismissRequest = onDismiss, modifier = Modifier.decor(DecorRegion.SHEET)) {
-            header()
-            pinned?.invoke()
-            if (scroll) {
-                AdaptiveSheetScrollColumn(Modifier.padding(horizontal = 16.dp), content = content)
-            } else {
-                Column(Modifier.heightIn(max = 520.dp).padding(horizontal = 16.dp), content = content)
+        // LEC-03: the direction's sheet decor goes on the content, inside the sheet's surface (on the sheet's own modifier it was
+        // drawn under the surface and only showed past the rounded corners as stray marks).
+        AdaptiveSheet(onDismissRequest = onDismiss) {
+            Column(Modifier.fillMaxWidth().decor(DecorRegion.SHEET)) {
+                header()
+                pinned?.invoke()
+                if (scroll) {
+                    AdaptiveSheetScrollColumn(Modifier.padding(horizontal = 16.dp), content = content)
+                } else {
+                    Column(Modifier.heightIn(max = 520.dp).padding(horizontal = 16.dp), content = content)
+                }
             }
         }
     } else {
@@ -107,9 +113,9 @@ internal fun BoxScope.NovelPanel(
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             shape = MaterialTheme.shapes.extraLarge,
             tonalElevation = 2.dp,
-            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(400.dp).padding(8.dp).decor(DecorRegion.SHEET),
+            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(400.dp).padding(8.dp),
         ) {
-            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            Column(Modifier.fillMaxSize().decor(DecorRegion.SHEET).statusBarsPadding().navigationBarsPadding()) {
                 header()
                 pinned?.invoke()
                 Column(
@@ -170,9 +176,11 @@ internal fun NovelSlider(
 }
 
 /** Colour swatches (reading colours): each shows its colour beside its name. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun NovelSwatches(choices: List<Pair<String, String>>, colorOf: @Composable (String) -> Color, selected: String, onSelect: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    // they wrap instead of running past the sheet's edge ("Te…")
+    FlowRow(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         choices.forEach { (id, label) ->
             val on = id == selected
             val swatch = colorOf(id)

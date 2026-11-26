@@ -540,8 +540,15 @@ private fun FeatureSection(hero: LoadState<List<Media>>, state: MangaHomeState, 
                 shape = MaterialTheme.shapes.extraLarge,
                 modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp).decor(DecorRegion.HERO),
             ) {
-                HeroCarousel(items = hero.value, key = { it.ref.anilistId ?: it.title.hashCode() }) { media, _ ->
-                    FeatureSlide(media, state, actions, compact)
+                // phones keep the multi-browse carousel (one large slide and a peek); wide windows one title at a time (MAN-01)
+                if (compact) {
+                    HeroCarousel(items = hero.value, key = { it.ref.anilistId ?: it.title.hashCode() }) { media, _ ->
+                        FeatureSlide(media, state, actions, compact)
+                    }
+                } else {
+                    FeaturePager(items = hero.value, key = { it.ref.anilistId ?: it.title.hashCode() }) { media ->
+                        FeatureSlide(media, state, actions, compact)
+                    }
                 }
             }
         }

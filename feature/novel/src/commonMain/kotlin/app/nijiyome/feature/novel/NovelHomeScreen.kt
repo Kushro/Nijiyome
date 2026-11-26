@@ -416,7 +416,8 @@ private fun NovelFeature(
         is LoadState.Err -> NovelError(hero.cause, onRefresh, modifier)
         is LoadState.Ok -> if (hero.value.isNotEmpty()) {
             Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.extraLarge, modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp).decor(DecorRegion.HERO)) {
-                HeroCarousel(items = hero.value, key = { it.ref.anilistId ?: it.title.hashCode() }) { media, _ ->
+                // phones keep the multi-browse carousel; wide windows one title at a time (MAN-01)
+                val slide: @Composable (Media) -> Unit = { media ->
                     val data = media.novelCard(lang)
                     val reading = continueReading.firstOrNull { it.ref.anilistId != null && it.ref.anilistId == media.ref.anilistId }
                     val saved = reading?.let { r -> home.lastRead.firstOrNull { it.mediaId == r.mediaId }?.takeIf { r.resume } }
@@ -439,6 +440,11 @@ private fun NovelFeature(
                         Box(Modifier.width(if (compact) 112.dp else 220.dp)) { TitleCard(data, onClick = { onOpen(media) }, context = CardContext.HERO, modifier = Modifier.cardToDetailsSource(data.key)) }
                         Box(Modifier.weight(1f)) { text() }
                     }
+                }
+                if (compact) {
+                    HeroCarousel(items = hero.value, key = { it.ref.anilistId ?: it.title.hashCode() }) { media, _ -> slide(media) }
+                } else {
+                    FeaturePager(items = hero.value, key = { it.ref.anilistId ?: it.title.hashCode() }) { media -> slide(media) }
                 }
             }
         }
