@@ -6,14 +6,16 @@ import androidx.compose.ui.graphics.Color
 import app.nijiyome.designsystem.direction.StatusSlot
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.media.MediaStatusKind
+import app.nijiyome.ui.media.SampleCover
 import app.nijiyome.ui.patterns.label
 import app.nijiyome.ui.resources.Res
 import app.nijiyome.ui.resources.rd_i1_gal_sample_next
 import app.nijiyome.ui.resources.rd_i1_gal_sample_synopsis
 import org.jetbrains.compose.resources.stringResource
 
-// Sparkles redesign, lane I1. Bundled sample titles of the design gallery (the artifact's own sample set, without posters: the cards draw
-// their empty cover). Proper names stay as they are; every sentence comes from resources.
+// Sparkles redesign, lane I1. Bundled sample titles of the design gallery (the artifact's own sample set). No artwork ships with the app:
+// each title gets a generated poster in its own color (SampleCover), so every card style shows its treatment of an image. Proper names
+// stay as they are; every sentence comes from resources.
 
 private data class Sample(
     val key: String,
@@ -53,7 +55,7 @@ fun gallerySampleCards(): List<TitleCardData> {
         TitleCardData(
             key = s.key,
             title = s.title,
-            coverUrl = null,
+            coverUrl = SampleCover.url(Color(s.accent), s.title),
             subtitle = "${s.year} · ${s.format}",
             progress = if (s.total > 0) s.seen / s.total.toFloat() else null,
             listStatus = s.status,
@@ -63,7 +65,7 @@ fun gallerySampleCards(): List<TitleCardData> {
             score = s.score,
             episodesSeen = s.seen,
             episodesTotal = s.total,
-            bannerUrl = null,
+            bannerUrl = SampleCover.url(Color(s.accent), s.title),
             accent = Color(s.accent),
             format = s.format,
             year = s.year,

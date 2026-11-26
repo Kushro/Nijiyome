@@ -28,7 +28,6 @@ import app.nijiyome.designsystem.direction.transit.StationCode
 import app.nijiyome.designsystem.direction.transit.TransitEase
 import app.nijiyome.designsystem.direction.transit.transitTrackStop
 import app.nijiyome.designsystem.motion.LocalMotion
-import app.nijiyome.designsystem.motion.cardToDetailsSource
 import app.nijiyome.model.CardSize
 import app.nijiyome.model.TitleCardIds
 import app.nijiyome.ui.cards.CardContext
@@ -110,7 +109,6 @@ object StationCard : TitleCardStyle {
                         url = data.coverUrl,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .cardToDetailsSource(data.key)
                             .graphicsLayer {
                                 scaleX = zoom
                                 scaleY = zoom
@@ -187,7 +185,7 @@ object StationCard : TitleCardStyle {
                 Box(Modifier.width(poster)) {
                     MediaCover(
                         url = data.coverUrl,
-                        modifier = Modifier.fillMaxWidth().cardToDetailsSource(data.key),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
                         aspectRatio = TRANSIT_POSTER_RATIO,
                     )
@@ -238,7 +236,7 @@ object StationCard : TitleCardStyle {
             ) {
                 MediaCover(
                     url = data.coverUrl,
-                    modifier = Modifier.width(44.dp).cardToDetailsSource(data.key),
+                    modifier = Modifier.width(44.dp),
                     shape = MaterialTheme.shapes.extraSmall,
                     aspectRatio = TRANSIT_POSTER_RATIO,
                 )
@@ -281,7 +279,7 @@ object StationCard : TitleCardStyle {
                 Box(Modifier.width(if (size == CardSize.SMALL) 104.dp else 148.dp)) {
                     MediaCover(
                         url = data.coverUrl,
-                        modifier = Modifier.fillMaxWidth().cardToDetailsSource(data.key),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
                         aspectRatio = TRANSIT_POSTER_RATIO,
                     )

@@ -133,6 +133,13 @@ object TitleCards {
  */
 val LocalCardPlayAction: ProvidableCompositionLocal<(() -> Unit)?> = compositionLocalOf { null }
 
+/**
+ * Key of the title whose card is being drawn, set by [TitleCard] from [TitleCardData.key]. The card's cover ([app.nijiyome.ui.media.MediaCover])
+ * registers itself as the source of the card-to-Details transition under it, so every style opens Details from its poster without
+ * wiring it itself; null outside a [TitleCard].
+ */
+val LocalCardSourceKey: ProvidableCompositionLocal<String?> = compositionLocalOf { null }
+
 /** Position of the card being drawn in its row or grid (0-based), set by [TitleCard] from its `index`; -1 = unknown. For staggering. */
 val LocalCardIndex: ProvidableCompositionLocal<Int> = compositionLocalOf { -1 }
 
@@ -153,7 +160,7 @@ fun TitleCard(
     index: Int = -1,
 ) {
     val style = TitleCards.byId(LocalLook.current.effectiveCardId())
-    CompositionLocalProvider(LocalCardPlayAction provides onPlay, LocalCardIndex provides index) {
+    CompositionLocalProvider(LocalCardPlayAction provides onPlay, LocalCardIndex provides index, LocalCardSourceKey provides data.key) {
         style.Card(data, context, size, show, onClick, modifier, onLongClick)
     }
 }

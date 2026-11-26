@@ -24,7 +24,6 @@ import app.nijiyome.designsystem.direction.StatusMark
 import app.nijiyome.designsystem.direction.transit.StationCode
 import app.nijiyome.designsystem.direction.transit.transitDisplayFamily
 import app.nijiyome.designsystem.direction.transit.transitTrackStop
-import app.nijiyome.designsystem.motion.cardToDetailsSource
 import app.nijiyome.model.CardSize
 import app.nijiyome.model.TitleCardIds
 import app.nijiyome.ui.cards.CardContext
@@ -255,7 +254,7 @@ object LineCard : TitleCardStyle {
     private fun Thumb(data: TitleCardData, width: Dp) {
         MediaCover(
             url = data.coverUrl,
-            modifier = Modifier.width(width).cardToDetailsSource(data.key),
+            modifier = Modifier.width(width),
             shape = MaterialTheme.shapes.extraSmall,
             aspectRatio = TRANSIT_POSTER_RATIO,
         )

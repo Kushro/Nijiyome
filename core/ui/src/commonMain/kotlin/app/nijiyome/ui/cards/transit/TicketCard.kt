@@ -46,7 +46,6 @@ import app.nijiyome.designsystem.direction.ThemeTone
 import app.nijiyome.designsystem.direction.transit.StationCode
 import app.nijiyome.designsystem.direction.transit.transitDisplayFamily
 import app.nijiyome.designsystem.direction.transit.transitTrackStop
-import app.nijiyome.designsystem.motion.cardToDetailsSource
 import app.nijiyome.model.CardSize
 import app.nijiyome.model.TitleCardIds
 import app.nijiyome.ui.cards.CardContext
@@ -243,7 +242,7 @@ object TicketCard : TitleCardStyle {
                 Box(Modifier.fillMaxWidth()) {
                     MediaCover(
                         url = data.coverUrl,
-                        modifier = Modifier.fillMaxWidth().cardToDetailsSource(data.key),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RectangleShape,
                         aspectRatio = TRANSIT_POSTER_RATIO,
                     )
@@ -314,7 +313,7 @@ object TicketCard : TitleCardStyle {
                 Box(Modifier.width(stub)) {
                     MediaCover(
                         url = data.coverUrl,
-                        modifier = Modifier.fillMaxWidth().cardToDetailsSource(data.key),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RectangleShape,
                         aspectRatio = TRANSIT_POSTER_RATIO,
                     )
