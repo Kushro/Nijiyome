@@ -71,9 +71,12 @@ internal fun episodeMeta(episode: Episode, withRating: Boolean): String? {
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
 
-/** Thumbnail, or the series art dimmed with the episode number on top. */
+/**
+ * Thumbnail, or the series art dimmed with the episode number on top. [numbered] = false when the row already shows the number (its
+ * mark and "N. Title"): no third copy over the art.
+ */
 @Composable
-internal fun EpisodeThumb(episode: Episode, fallbackArt: String?, modifier: Modifier = Modifier) {
+internal fun EpisodeThumb(episode: Episode, fallbackArt: String?, modifier: Modifier = Modifier, numbered: Boolean = true) {
     Box(modifier.aspectRatio(16f / 9f).clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainerHighest)) {
         val image = episode.image?.takeIf { it.isNotBlank() }
         if (image != null) {
@@ -87,12 +90,14 @@ internal fun EpisodeThumb(episode: Episode, fallbackArt: String?, modifier: Modi
                     modifier = Modifier.fillMaxSize().alpha(0.35f),
                 )
             }
-            Text(
-                episode.number.toString(),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.align(Alignment.Center),
-            )
+            if (numbered) {
+                Text(
+                    episode.number.toString(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
         }
     }
 }

@@ -329,9 +329,15 @@ internal fun SendToPhonePanel(state: DetailsUiState, actions: DetailsActions, mo
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Button(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable) {
+                // an offline phone keeps its button, but quiet: full emphasis is for the one that will receive at once
+                val sendContent: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
                     if (state.sending) CircularProgressIndicator(Modifier.size(16.dp).padding(end = 4.dp), strokeWidth = 2.dp)
                     Text(stringResource(if (state.sending) Res.string.details_send_sending else Res.string.details_send_action))
+                }
+                if (phone.online) {
+                    Button(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable, content = sendContent)
+                } else {
+                    OutlinedButton(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable, content = sendContent)
                 }
             }
         }

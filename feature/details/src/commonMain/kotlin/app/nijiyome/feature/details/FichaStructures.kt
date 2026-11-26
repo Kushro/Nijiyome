@@ -321,7 +321,8 @@ private fun CinemaBackdrop(media: Media, state: DetailsUiState, horizontal: Bool
         )
         // The veil keeps every line of text at full contrast whatever the artwork is.
         val veil = if (horizontal) {
-            Brush.horizontalGradient(listOf(bg.copy(alpha = 0.96f), bg.copy(alpha = 0.86f), bg.copy(alpha = 0.25f)))
+            // lighter than a wall: the art is the point of Cine, the text side stays dark enough for it
+            Brush.horizontalGradient(listOf(bg.copy(alpha = 0.9f), bg.copy(alpha = 0.7f), bg.copy(alpha = 0.12f)))
         } else {
             Brush.verticalGradient(listOf(bg.copy(alpha = 0.45f), bg.copy(alpha = 0.88f), bg))
         }
@@ -427,9 +428,10 @@ private fun CinemaPhone(media: Media, state: DetailsUiState, actions: DetailsAct
                 Surface(
                     color = sheetColor,
                     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                    modifier = Modifier.fillMaxWidth().decor(DecorRegion.SHEET),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Column(Modifier.padding(top = 8.dp)) { ListTabs(ui, chrome, containerColor = sheetColor) }
+                    // the sheet decor inside the rounded surface, not under it (stray corner marks)
+                    Column(Modifier.decor(DecorRegion.SHEET).padding(top = 8.dp)) { ListTabs(ui, chrome, containerColor = sheetColor) }
                 }
             }
             fichaTabItems(media, state, actions, ui, lists, cardColumns = 1, route = false)
