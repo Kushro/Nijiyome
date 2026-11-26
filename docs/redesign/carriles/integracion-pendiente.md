@@ -169,3 +169,8 @@ S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4
 - FE-03: el texto «Ver N títulos» del botón de facetas vive en `core/ui/.../patterns/Facets.kt` (plural `rd_i1_fac_show`); en el
   selector de fuentes debería decir «fuentes».
 - `AdaptiveSheet` ganó `sideSheetWidth` y `scrimAlpha` (opcionales).
+- Fichas de manga y novela: `Route.Manga` / `Route.Novels` son paneles de lista en `NijiyomeApp.kt`, así que el catálogo ocupa
+  360 px junto a la ficha; la referencia muestra la ficha a todo el ancho (shell).
+- `Route.Details` solo lleva el id: para mostrar título y póster mientras carga, y dar destino a la transición tarjeta-ficha
+  durante la carga, la ruta tendría que llevar esos datos (shell).
+- `jdk.localedata` agregado al runtime de escritorio (causa de las fechas y nombres de idioma en inglés); pesa unos 10 MB.
