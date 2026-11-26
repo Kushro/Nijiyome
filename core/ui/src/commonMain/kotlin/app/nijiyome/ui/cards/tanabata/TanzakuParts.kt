@@ -43,6 +43,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.Role
@@ -72,6 +74,7 @@ import app.nijiyome.model.CardSize
 import app.nijiyome.model.Density
 import app.nijiyome.ui.cards.CardPlayTarget
 import app.nijiyome.ui.cards.CardShow
+import app.nijiyome.ui.cards.LocalCardIndex
 import app.nijiyome.ui.cards.TitleCardData
 import app.nijiyome.ui.look.CardSizing
 import app.nijiyome.ui.look.LocalLook
@@ -250,6 +253,25 @@ internal fun Modifier.tzThread(
         drawContent()
         val x = size.width * centerFraction
         drawThread(thread, x, top = 2.dp.toPx(), bottom = (paperTop + TZ_HOLE_Y).toPx() + 1.dp.toPx(), knot = knot, dashed = dashed)
+    }
+}
+
+/** Resting lean of hanging strips, in degrees, by position: never two alike side by side, never more than 2 degrees. */
+private val TZ_REST_TILT = floatArrayOf(-1.4f, 1.1f, -0.7f, 1.6f, -1.1f, 0.8f, -1.7f, 1.3f)
+
+/**
+ * A hanging strip rests a degree or two off true, each its own way, so a row reads as papers on a cord and not as a grid. It turns
+ * around the top of the thread, like the sway, and only under the full motion level (the calm, light and off levels hang them
+ * straight, as reduced motion does). The position comes from [LocalCardIndex], else from the title's key.
+ */
+@Composable
+internal fun Modifier.tzRestTilt(key: String): Modifier {
+    if (LocalMotion.current.level != MotionLevel.FULL) return this
+    val index = LocalCardIndex.current.takeIf { it >= 0 } ?: (key.hashCode() and 0x7fffffff)
+    val angle = TZ_REST_TILT[index % TZ_REST_TILT.size]
+    return this.graphicsLayer {
+        transformOrigin = TransformOrigin(0.5f, 0f)
+        rotationZ = angle
     }
 }
 
@@ -498,7 +520,7 @@ private fun TzContinueTall(
         modifier
             .width(hangingContinueWidth(size).dense())
             .tzClickable(interaction, onClick, onLongClick, description)
-            .then(if (hangs) Modifier.tzThread(threadH, color = thread, dashed = kind == TzTonightKind.SOON) else Modifier)
+            .then(if (hangs) Modifier.tzRestTilt(data.key).tzThread(threadH, color = thread, dashed = kind == TzTonightKind.SOON) else Modifier)
             .padding(top = threadH),
     ) {
         Column(
@@ -523,7 +545,7 @@ private fun TzContinueTall(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(texts.title, style = TzType.title(), color = TanabataMaterials.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                if (sub.isNotEmpty()) Text(sub, style = TzType.sub(), color = TanabataMaterials.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (sub.isNotEmpty()) Text(sub, style = TzType.sub(), color = TanabataMaterials.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 texts.statusName?.let {
                     Text(it, style = TzType.sub(weight = FontWeight.Bold), color = TanabataMaterials.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
