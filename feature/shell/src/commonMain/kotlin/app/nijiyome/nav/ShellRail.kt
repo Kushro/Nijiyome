@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -93,6 +94,7 @@ import app.nijiyome.feature.shell.resources.rd_s1_nav_sources
 import app.nijiyome.feature.shell.resources.rd_s1_nav_transfers
 import app.nijiyome.feature.shell.resources.rd_s1_nav_transfers_short
 import app.nijiyome.feature.shell.resources.rd_s1_notifications
+import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.nav_home
 import app.nijiyome.ui.resources.nav_library
@@ -119,6 +121,8 @@ internal fun ShellRail(
     slim: Boolean,
     onSelect: (Route) -> Unit,
     modifier: Modifier = Modifier,
+    /** The linked account's picture for the account entry (the artifact's avatar); null keeps the profile icon. */
+    accountAvatar: String? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     val navLabel = stringResource(Res.string.rd_s1_nav_main)
@@ -151,7 +155,7 @@ internal fun ShellRail(
                     RailItem(route, route == selected, if (route is Route.Downloads) activeDownloads else 0, slim, showLabel = !slim, onSelect)
                 }
                 groups.account?.let { route ->
-                    RailItem(route, route == selected, 0, slim, showLabel = false, onSelect)
+                    RailItem(route, route == selected, 0, slim, showLabel = false, onSelect, avatar = accountAvatar)
                 }
             }
         }
@@ -161,7 +165,15 @@ internal fun ShellRail(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RailItem(route: Route, selected: Boolean, badge: Int, slim: Boolean, showLabel: Boolean, onSelect: (Route) -> Unit) {
+private fun RailItem(
+    route: Route,
+    selected: Boolean,
+    badge: Int,
+    slim: Boolean,
+    showLabel: Boolean,
+    onSelect: (Route) -> Unit,
+    avatar: String? = null,
+) {
     val scheme = MaterialTheme.colorScheme
     val label = route.label()
     val shortLabel = route.railLabel()
@@ -186,7 +198,9 @@ private fun RailItem(route: Route, selected: Boolean, badge: Int, slim: Boolean,
                 contentAlignment = Alignment.Center,
             ) {
                 val tint = if (selected) scheme.onPrimaryContainer else scheme.onSurfaceVariant
-                if (badge > 0) {
+                if (!avatar.isNullOrBlank()) {
+                    MediaCover(url = avatar, modifier = Modifier.size(30.dp), shape = CircleShape, aspectRatio = 1f)
+                } else if (badge > 0) {
                     BadgedBox(badge = { Badge { Text(if (badge > 99) "99+" else badge.toString()) } }) {
                         Icon(route.icon(selected), contentDescription = null, tint = tint)
                     }

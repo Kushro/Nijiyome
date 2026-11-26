@@ -35,6 +35,14 @@ class SettingsCategoryTest {
     }
 
     @Test
+    fun `every appearance setting lives in a sub-page so a jump can open it`() {
+        SettingsCatalog.entries.filter { it.category == SettingsCategory.APPEARANCE }.forEach { entry ->
+            assertNotNull(appearanceSubpageOf(entry.id), entry.id)
+        }
+        assertEquals(null, appearanceSubpageOf("network_proxy"))
+    }
+
+    @Test
     fun `catalog ids are unique and keep the ids the command palette already passes`() {
         val ids = SettingsCatalog.entries.map { it.id }
         assertEquals(ids.size, ids.toSet().size)

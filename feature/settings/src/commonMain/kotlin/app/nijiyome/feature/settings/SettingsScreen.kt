@@ -42,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -77,7 +78,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.nijiyome.designsystem.components.EmptyState
+import app.nijiyome.designsystem.components.AppSnackbarHost
 import app.nijiyome.designsystem.components.LocalAppSnackbar
+import app.nijiyome.designsystem.components.rememberAppSnackbarController
 import app.nijiyome.designsystem.components.Pill
 import app.nijiyome.designsystem.components.PillTone
 import app.nijiyome.designsystem.components.Segmented
@@ -186,6 +189,10 @@ fun SettingsModalDialog(
 ) {
     TrackModal()
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        // The dialog is its own window: the shell's snackbar host draws under it. Notices Settings raises while it is a modal
+        // ("Diseño restablecido · Deshacer", account and log results) get a host of their own, on top, where Undo can be pressed.
+        val modalSnackbar = rememberAppSnackbarController()
+        CompositionLocalProvider(LocalAppSnackbar provides modalSnackbar) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -209,7 +216,9 @@ fun SettingsModalDialog(
                         Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s10_close_settings))
                     }
                 }
+                AppSnackbarHost(modalSnackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp))
             }
+        }
         }
     }
 }
@@ -369,6 +378,12 @@ private fun ListDetailSettings(ctx: SettingsLayoutCtx) {
                                 selected = c == nav.current,
                                 onClick = { nav.select(c) },
                                 icon = { Icon(c.icon(), contentDescription = null) },
+                                // The open category is the accent's soft tone (artifact `--nj-accent-soft`), not the strongest fill.
+                                colors = NavigationDrawerItemDefaults.colors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                ),
                             )
                         }
                     }
@@ -577,7 +592,7 @@ private fun ResultRow(item: SettingCatalogItem, query: String, current: Boolean,
     val amoled = LocalNijiyomeAmoled.current
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = if (current) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+        color = if (current) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
         border = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
         modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(onClick = onClick),
     ) {
@@ -625,7 +640,7 @@ private fun CategoryCards(categories: List<SettingsCategory>, state: SettingsUiS
         categories.forEach { c ->
             Surface(
                 shape = MaterialTheme.shapes.large,
-                color = if (c == current) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                color = if (c == current) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
                 border = if (amoled) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
                 modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable { onSelect(c) },
             ) {

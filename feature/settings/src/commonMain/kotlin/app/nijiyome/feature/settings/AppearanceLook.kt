@@ -163,7 +163,10 @@ internal fun CardLookRows(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) 
     LookSegmented(Res.string.settings_look_density, Density.entries, look.density, { it.labelRes() }) { v -> onChange { it.copy(density = v) } }
 }
 
-/** Animaciones (expressive / subtle / off; off is Reducir movimiento). */
+/**
+ * Animaciones (expressive / subtle / off): the master switch. Off is Reducir movimiento and stops everything, the Sparkles profile
+ * included; Subtle only tones down the older effects. The profile decides how the redesign moves.
+ */
 @Composable
 internal fun MotionLookRow(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit) {
     LookSegmented(
@@ -171,7 +174,7 @@ internal fun MotionLookRow(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs)
         Motion.entries,
         look.motion,
         { it.labelRes() },
-        hint = stringResource(Res.string.settings_look_motion_hint),
+        hint = stringResource(Res.string.rd_s10_motion_master_hint),
     ) { v -> onChange { it.copy(motion = v) } }
 }
 
@@ -197,7 +200,8 @@ private fun <T> LookSegmented(
     small: Boolean = false,
     onSelect: (T) -> Unit,
 ) {
-    SettingRow(stringResource(labelRes), hint = hint, stack = true) {
+    // Up to four short options sit beside the label on wide rows (artifact density); more go under it.
+    SettingRow(stringResource(labelRes), hint = hint, stack = true, inline = options.size <= 4) {
         Segmented(
             options = options.map { SegmentedOption(it, stringResource(optionLabel(it))) },
             selected = selected,

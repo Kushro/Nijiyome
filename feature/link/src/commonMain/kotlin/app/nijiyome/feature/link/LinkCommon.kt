@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +35,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -89,6 +93,30 @@ internal fun Cap(key: String, value: String) {
     }
 }
 
+/**
+ * ALT-08: the status cards of the PANEL structure in even columns (three on a wide window, so six cards are 3 + 3, two on a medium one,
+ * one on a phone), every card of a row as tall as the tallest. The container is the direction's `LINK` region; the cards sit on the
+ * page itself, as in the artifact.
+ */
+@Composable
+internal fun StatCardGrid(cards: List<@Composable (Modifier) -> Unit>, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier.fillMaxWidth().decor(DecorRegion.LINK)) {
+        val columns = when {
+            maxWidth >= 840.dp -> 3
+            maxWidth >= 520.dp -> 2
+            else -> 1
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            cards.chunked(columns).forEach { row ->
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEach { card -> card(Modifier.weight(1f).fillMaxHeight()) }
+                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+}
+
 /** State of a device on the map and of the wire that reaches it. */
 enum class MapNodeState { CONNECTED, IDLE, FAILED }
 
@@ -103,6 +131,9 @@ internal data class MapNode(
 
 private val NODE_W = 168.dp
 private val NODE_H = 96.dp
+
+/** Vertical space between two devices on the map. */
+private val NODE_GAP = 28.dp
 
 /**
  * The device map (artifact `lnMap`): [hub] on the left, [nodes] stacked on the right, a curved wire from the hub to each one (solid when
@@ -123,10 +154,11 @@ internal fun DeviceMap(
 ) {
     val signals = LocalSignalColors.current
     val connected = MaterialTheme.colorScheme.primary
-    val idle = MaterialTheme.colorScheme.outline
+    // LNK-02: an offline wire is dashed, not faint: onSurfaceVariant reads on the map surface in every theme (outline did not).
+    val idle = MaterialTheme.colorScheme.onSurfaceVariant
     val failed = signals.err
     val rows = nodes.size.coerceAtLeast(1)
-    val height: Dp = maxOf(220.dp, NODE_H * rows + 32.dp * (rows + 1) + if (extra != null) 56.dp else 0.dp)
+    val height: Dp = maxOf(240.dp, NODE_H * rows + NODE_GAP * (rows + 1) + if (extra != null) 64.dp else 0.dp)
     BoxWithConstraints(
         modifier
             .fillMaxWidth()
@@ -137,15 +169,22 @@ internal fun DeviceMap(
             .semantics { description?.let { contentDescription = it } },
     ) {
         val w = maxWidth
-        val h = if (extra != null) maxHeight - 56.dp else maxHeight
-        val hubX = w * 0.24f
-        val nodeX = w * 0.76f
+        val h = if (extra != null) maxHeight - 64.dp else maxHeight
+        val half = NODE_W / 2
+        val hubX = (w * 0.24f).coerceAtLeast(half + 12.dp)
         val hubY = h / 2
-        val nodeY: (Int) -> Dp = { i -> h * ((i + 1f) / (nodes.size + 1f)) }
+        // LNK-02: every device gets its own slot, NODE_GAP apart (they used to touch), and every other one steps left so the wires
+        // fan out instead of running parallel. The column stays inside the map whatever its width.
+        val nodeColumn = (w * 0.74f).coerceAtMost(w - half - 12.dp)
+        val stagger = if (nodes.size > 1) minOf(w * 0.08f, 56.dp) else 0.dp
+        val nodeX: (Int) -> Dp = { i -> if (i % 2 == 0) nodeColumn else (nodeColumn - stagger) }
+        val block = NODE_H * nodes.size + NODE_GAP * (nodes.size - 1).coerceAtLeast(0)
+        val top = ((h - block) / 2).coerceAtLeast(NODE_GAP / 2)
+        val nodeY: (Int) -> Dp = { i -> top + NODE_H / 2 + (NODE_H + NODE_GAP) * i }
         Canvas(Modifier.fillMaxSize()) {
             nodes.forEachIndexed { i, n ->
-                val start = Offset((hubX + NODE_W / 2).toPx().coerceAtMost(size.width), hubY.toPx())
-                val end = Offset((nodeX - NODE_W / 2).toPx().coerceAtLeast(0f), nodeY(i).toPx())
+                val start = Offset((hubX + half).toPx().coerceAtMost(this.size.width), hubY.toPx())
+                val end = Offset((nodeX(i) - half).toPx().coerceAtLeast(0f), nodeY(i).toPx())
                 val midX = (start.x + end.x) / 2
                 val path = Path().apply {
                     moveTo(start.x, start.y)
@@ -160,15 +199,16 @@ internal fun DeviceMap(
                     path,
                     color = color,
                     style = Stroke(
-                        width = if (n.state == MapNodeState.CONNECTED) 3.dp.toPx() else 2.dp.toPx(),
-                        pathEffect = if (n.state == MapNodeState.CONNECTED) null else PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx())),
+                        width = if (n.state == MapNodeState.CONNECTED) 3.dp.toPx() else 2.5.dp.toPx(),
+                        cap = StrokeCap.Round,
+                        pathEffect = if (n.state == MapNodeState.CONNECTED) null else PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 7.dp.toPx())),
                     ),
                 )
             }
         }
-        MapNodeBox(hub, isHub = true, selected = selected == hub.id, onSelect = onSelect, modifier = Modifier.offset(hubX - NODE_W / 2, hubY - NODE_H / 2))
+        MapNodeBox(hub, isHub = true, selected = selected == hub.id, onSelect = onSelect, modifier = Modifier.offset(hubX - half, hubY - NODE_H / 2))
         nodes.forEachIndexed { i, n ->
-            MapNodeBox(n, isHub = false, selected = selected == n.id, onSelect = onSelect, modifier = Modifier.offset(nodeX - NODE_W / 2, nodeY(i) - NODE_H / 2))
+            MapNodeBox(n, isHub = false, selected = selected == n.id, onSelect = onSelect, modifier = Modifier.offset(nodeX(i) - half, nodeY(i) - NODE_H / 2))
         }
         if (wireLabel != null && nodes.isNotEmpty()) {
             Surface(

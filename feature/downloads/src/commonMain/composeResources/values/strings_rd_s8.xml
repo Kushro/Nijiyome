@@ -139,6 +139,8 @@
     <string name="rd_s8_storage">Storage</string>
     <string name="rd_s8_auto_checking">Checking…</string>
     <string name="rd_s8_auto_add">Add %1$s</string>
+    <string name="rd_s8_auto_more">Show %1$d more</string>
+    <string name="rd_s8_auto_fewer">Show fewer</string>
 
     <string name="rd_s8_local_folders">Watched folders</string>
     <plurals name="rd_s8_local_unmatched">

@@ -139,4 +139,8 @@
     <string name="rd_s9_store_confirm_install">Install %1$s</string>
     <string name="rd_s9_store_confirm_update">Update %1$s</string>
     <string name="rd_s9_store_permissions_note">Its permissions and the sites it connects to show on its card once installed. Install only extensions you trust.</string>
+    <string name="rd_s9_compat_stub">It uses the Node module “%1$s”, which Nijiyome only imitates. Some of its features may not work.</string>
+    <string name="rd_s9_compat_dynamic">It loads code while it runs, which Nijiyome cannot check beforehand. Some of its features may not work.</string>
+    <string name="rd_s9_compat_missing">It needs the module “%1$s”, which Nijiyome does not provide.</string>
+    <string name="rd_s9_compat_detail">Technical detail</string>
 </resources>

@@ -4,6 +4,8 @@ package app.nijiyome.feature.settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -142,7 +144,8 @@ internal fun CommitBar(
 
 /**
  * Prototype `.setting`: label + optional hint, control on the right; [stack] puts the control under the text (wide segmented,
- * swatches). Rows are separated by a hairline like the prototype.
+ * swatches). [inline] (with [stack]): a short segmented control that sits compact at the right of its label when the row is wide
+ * enough, as in the artifact, and drops under the text on narrow panes. Rows are separated by a hairline like the prototype.
  */
 @Composable
 internal fun SettingRow(
@@ -150,11 +153,30 @@ internal fun SettingRow(
     hint: String? = null,
     stack: Boolean = false,
     divider: Boolean = true,
+    inline: Boolean = false,
     control: @Composable () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
         if (divider) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        if (stack) {
+        if (stack && inline) {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                if (maxWidth >= INLINE_ROW_MIN_WIDTH) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Column(Modifier.weight(1f)) { SettingText(label, hint) }
+                        Box(Modifier.weight(INLINE_CONTROL_WEIGHT)) { control() }
+                    }
+                } else {
+                    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SettingText(label, hint)
+                        control()
+                    }
+                }
+            }
+        } else if (stack) {
             Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SettingText(label, hint)
                 control()
@@ -171,6 +193,12 @@ internal fun SettingRow(
         }
     }
 }
+
+/** Below this row width an [SettingRow] `inline` control goes under its label. */
+private val INLINE_ROW_MIN_WIDTH = 520.dp
+
+/** The control's share of an inline row (the label column has 1). */
+private const val INLINE_CONTROL_WEIGHT = 1.3f
 
 @Composable
 private fun SettingText(label: String, hint: String?) {

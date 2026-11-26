@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.feature.downloads
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -132,10 +141,11 @@ private fun QueueWide(state: DownloadsUiState, env: TransfersEnv, modifier: Modi
             Modifier.width(360.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            StoragePanel(state.usedBytes, state.busy, env.host.verifyResult, env.vm::verify, env.onOpenSettings)
+            // TRA-02: the artifact's order, the switches first (background), then storage, then the longer panels.
             if (state.torrentsAvailable && state.background.acknowledged && desktopDownloadsUi) {
                 BackgroundPanel(state.background.enabled, env.vm::setBackground)
             }
+            StoragePanel(state.usedBytes, state.busy, env.host.verifyResult, env.vm::verify, env.onOpenSettings)
             AutoDownloadPanel(state.rules, env.vm, state.busy, env.host.autoResult)
             TransfersPanel(stringResource(Res.string.downloads_tab_local)) {
                 LocalLibraryHeader(state.library, state.folders, env.host.onlyUnmatched, { env.host.onlyUnmatched = it }, env.vm)
@@ -574,20 +584,57 @@ private fun SortMenu(sort: TransferSort, onSort: (TransferSort) -> Unit) {
     }
 }
 
+/**
+ * TRA-03: the search field at the height of the header buttons (40 dp) with the theme's small shape, instead of a 56 dp Material
+ * outlined field with its own corners.
+ */
 @Composable
 internal fun TransfersSearchField(query: String, onQuery: (String) -> Unit, modifier: Modifier = Modifier) {
-    OutlinedTextField(
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val colors = MaterialTheme.colorScheme
+    val shape = MaterialTheme.shapes.small
+    BasicTextField(
         value = query,
         onValueChange = onQuery,
-        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-        trailingIcon = if (query.isNotEmpty()) {
-            { IconButton(onClick = { onQuery("") }) { Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s8_search_clear)) } }
-        } else {
-            null
-        },
-        placeholder = { Text(stringResource(Res.string.rd_s8_search)) },
         singleLine = true,
-        modifier = modifier,
+        textStyle = MaterialTheme.typography.bodyMedium.copy(color = colors.onSurface),
+        cursorBrush = SolidColor(colors.primary),
+        interactionSource = interaction,
+        modifier = modifier.heightIn(min = 40.dp),
+        decorationBox = { inner ->
+            Row(
+                Modifier
+                    .heightIn(min = 40.dp)
+                    .clip(shape)
+                    .background(colors.surfaceContainerLow)
+                    .border(if (focused) 2.dp else 1.dp, if (focused) colors.primary else colors.outline, shape)
+                    .padding(start = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Icons.Outlined.Search, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    if (query.isEmpty()) {
+                        Text(
+                            stringResource(Res.string.rd_s8_search),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    inner()
+                }
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { onQuery("") }, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s8_search_clear), modifier = Modifier.size(18.dp))
+                    }
+                } else {
+                    Spacer(Modifier.width(4.dp))
+                }
+            }
+        },
     )
 }
 

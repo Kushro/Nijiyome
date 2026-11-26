@@ -2,4 +2,7 @@
 <!-- Sparkles redesign, lane S7: profile and notifications. -->
 <resources>
     <string name="rd_s7_soc_unread">%1$d unread</string>
+    <string name="rd_s7_soc_about_more">Show more</string>
+    <string name="rd_s7_soc_about_less">Show less</string>
+    <string name="rd_s7_soc_publish">Post</string>
 </resources>

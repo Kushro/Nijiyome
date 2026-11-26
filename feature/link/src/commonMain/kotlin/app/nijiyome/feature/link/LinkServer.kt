@@ -129,7 +129,7 @@ private const val PC_NODE = "pc"
 @Composable
 internal fun LinkServerScreen(
     controller: LinkServerController,
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     modifier: Modifier,
     onOpenLinkSettings: (() -> Unit)?,
     onOpenMonitor: (() -> Unit)?,
@@ -324,7 +324,11 @@ private fun ServerMapTop(s: ServerCtx, selected: String, onSelect: (String) -> U
             wireLabel = session?.let { listOfNotNull(it.upscaleLabel, it.frameGenLabel, it.encoder.takeIf { e -> e.isNotBlank() }).joinToString(" · ").ifBlank { it.profileLabel } },
             description = stringResource(Res.string.rd_s9_srv_map_description, pcName, state.devices.size),
             extra = {
-                OutlinedButton(onClick = s.openPairing) {
+                // LNK-01: on its own surface, so the map's texture never runs under the label.
+                OutlinedButton(
+                    onClick = s.openPairing,
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                ) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s9_srv_pair_short), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -464,19 +468,19 @@ private fun DevicePanel(s: ServerCtx, d: LinkServerDevice) {
 @Composable
 private fun ServerCardsTop(s: ServerCtx, selected: String, onSelect: (String) -> Unit) {
     val state = s.state
-    FlowRow(
-        Modifier.fillMaxWidth().decor(DecorRegion.LINK),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    val cards = mutableListOf<@Composable (Modifier) -> Unit>()
+    cards.add { m ->
         StatCard(
             icon = Icons.Outlined.Router,
             title = stringResource(Res.string.rd_s9_srv_link_server),
             state = stringResource(if (state.running) Res.string.rd_s9_srv_listening else Res.string.rd_s9_srv_off_short),
             tone = if (state.running) PillTone.OK else PillTone.NEUTRAL,
             text = if (state.running) stringResource(Res.string.rd_s9_srv_port_addresses, state.port, state.addresses.joinToString(", ")) else stringResource(Res.string.rd_s9_srv_off_body),
+            modifier = m,
         ) { TextButton(onClick = { s.controller.setEnabled(!state.enabled) }) { Text(stringResource(if (state.enabled) Res.string.rd_s9_srv_turn_off else Res.string.rd_s9_srv_turn_on)) } }
-        state.devices.forEach { d ->
+    }
+    state.devices.forEach { d ->
+        cards.add { m ->
             val session = state.activeSessions.firstOrNull { it.deviceId == d.id }
             StatCard(
                 icon = Icons.Outlined.PhoneAndroid,
@@ -484,15 +488,21 @@ private fun ServerCardsTop(s: ServerCtx, selected: String, onSelect: (String) ->
                 state = stringResource(if (d.online) Res.string.rd_s9_srv_connected else Res.string.rd_s9_srv_idle),
                 tone = if (d.online) PillTone.OK else PillTone.NEUTRAL,
                 text = deviceNode(d, session).sub.orEmpty(),
+                modifier = m,
             ) { TextButton(onClick = { onSelect(d.id) }) { Text(stringResource(Res.string.rd_s9_srv_adjust)) } }
         }
+    }
+    cards.add { m ->
         StatCard(
             icon = Icons.Outlined.Memory,
             title = stringResource(Res.string.rd_s9_srv_cache),
             state = stringResource(Res.string.rd_s9_srv_cache_value, LinkServerFormat.mb(state.totalCacheBytes), state.cacheLimitMb),
             tone = PillTone.NEUTRAL,
             text = pluralStringResource(Res.plurals.rd_s9_srv_meta_sessions, state.activeSessions.size, state.activeSessions.size),
+            modifier = m,
         ) { s.onOpenMonitor?.let { open -> TextButton(onClick = open) { Text(stringResource(Res.string.rd_s9_srv_open_monitor)) } } }
+    }
+    cards.add { m ->
         val extBusy = state.extError == "port_in_use"
         StatCard(
             icon = Icons.Outlined.Extension,
@@ -510,6 +520,7 @@ private fun ServerCardsTop(s: ServerCtx, selected: String, onSelect: (String) ->
                 else -> PillTone.NEUTRAL
             },
             text = stringResource(Res.string.rd_s9_srv_ext_card, state.extPort, state.extDevices.size),
+            modifier = m,
         ) {
             if (extBusy) {
                 val alt = LinkServerPorts.alternative(state.extPort, LinkServerPorts.EXT_DEFAULT)
@@ -518,14 +529,18 @@ private fun ServerCardsTop(s: ServerCtx, selected: String, onSelect: (String) ->
                 TextButton(onClick = s.openExtPairing) { Text(stringResource(Res.string.rd_s9_srv_new_code)) }
             }
         }
+    }
+    cards.add { m ->
         StatCard(
             icon = Icons.Outlined.History,
             title = stringResource(Res.string.rd_s9_link_history),
             state = stringResource(if (state.devices.any { it.resyncing }) Res.string.rd_s9_srv_resyncing else Res.string.rd_s9_srv_synced),
             tone = PillTone.OK,
             text = pluralStringResource(Res.plurals.rd_s9_srv_contributed, state.devices.sumOf { it.contributed }, state.devices.sumOf { it.contributed }),
+            modifier = m,
         ) {}
     }
+    StatCardGrid(cards)
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         if (maxWidth >= 900.dp) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

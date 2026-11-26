@@ -883,10 +883,28 @@ private fun CompatBanner(ext: InstalledExtension) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(text, style = MaterialTheme.typography.bodyMedium)
                 ext.compatReason?.takeIf { it.isNotBlank() }?.let { reason ->
-                    Text(stringResource(Res.string.extensions_compat_reason, reason), style = MaterialTheme.typography.bodySmall)
+                    // FUE-02: the analyzer's reason is English for the logs; the user reads it explained, the raw line stays below.
+                    compatExplanation(reason)?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    Text(
+                        stringResource(Res.string.rd_s9_compat_detail) + ": " + reason,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = FontFamily.Monospace,
+                    )
                 }
             }
         }
+    }
+}
+
+/** The reasons `CompatAnalyzer` writes, in the user's language; null for one it does not know (the raw line still shows). */
+@Composable
+private fun compatExplanation(reason: String): String? {
+    val quoted = Regex("'([^']+)'").find(reason)?.groupValues?.get(1)
+    return when {
+        reason.startsWith("Uses stubbed Node module") && quoted != null -> stringResource(Res.string.rd_s9_compat_stub, quoted)
+        reason.startsWith("Uses dynamic require") -> stringResource(Res.string.rd_s9_compat_dynamic)
+        reason.endsWith("which the native runtime does not provide") && quoted != null -> stringResource(Res.string.rd_s9_compat_missing, quoted)
+        else -> null
     }
 }
 

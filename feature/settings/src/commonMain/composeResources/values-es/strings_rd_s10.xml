@@ -99,7 +99,7 @@
     <string name="rd_s10_mp_full">Completo</string>
     <string name="rd_s10_mp_full_desc">Transiciones y el movimiento propio de la dirección.</string>
     <string name="rd_s10_mp_calm">Calmo</string>
-    <string name="rd_s10_mp_calm_desc">Solo fundidos cortos, sin desplazamientos. Equivale a reducir movimiento.</string>
+    <string name="rd_s10_mp_calm_desc">Solo fundidos cortos, nada se desliza ni se balancea. Las animaciones siguen activas.</string>
     <string name="rd_s10_mp_perf">Rendimiento</string>
     <string name="rd_s10_mp_perf_desc">Sin sombras grandes ni desenfoques, una animación a la vez.</string>
     <string name="rd_s10_design_perf">Modo rendimiento</string>
@@ -321,4 +321,7 @@
     <string name="rd_s10_onb_link_body">Es opcional. Tu PC puede mejorar el video para tu teléfono y prestarle sus extensiones.</string>
     <string name="rd_s10_link_moved">Vinculación, dispositivos, puertos, caché, carpeta de biblioteca, firewall y el servidor de extensiones están en la pantalla de Link.</string>
     <string name="rd_s10_link_open_screen">Abrir Nijiyome Link</string>
+    <string name="rd_s10_motion_master_hint">Desactivadas detiene todas las animaciones de la app, igual que Reducir movimiento. Sutiles deja los efectos clásicos (carruseles, cambios de página) en fundidos. Cómo se mueve el rediseño lo decide el perfil de arriba.</string>
+    <string name="rd_s10_motion_off_note">Las animaciones están desactivadas: el perfil se aplica cuando las vuelvas a activar.</string>
+    <string name="rd_s10_appearance_pages">Secciones de Apariencia</string>
 </resources>
