@@ -163,6 +163,25 @@ Device::Device(const Instance& instance, uint64_t deviceUUID) {
         enabledExtensions.push_back(extension);
     }
 
+#if defined(TEMPLE_LSFG_LOCAL) && !defined(__ANDROID__)
+    // Nijiyome desktop embedded framegen: optionally enable zero-copy external memory/semaphore
+    // interop (GL <-> Vulkan on Linux via OPAQUE_FD, D3D12 <-> Vulkan on Windows via WIN32 handles)
+    // whenever the driver advertises them; callers fall back to local staging if unavailable.
+    for (const char* optExt : {
+#if defined(_WIN32)
+        "VK_KHR_external_memory_win32",
+        "VK_KHR_external_semaphore_win32",
+#else
+        "VK_KHR_external_memory_fd",
+        "VK_KHR_external_semaphore_fd",
+#endif
+    }) {
+        if (hasExtension(availableExtensions, optExt)) {
+            enabledExtensions.push_back(optExt);
+        }
+    }
+#endif
+
     const bool hasRobustness2Extension =
         hasExtension(availableExtensions, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     if (hasRobustness2Extension) {

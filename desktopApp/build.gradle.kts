@@ -143,8 +143,16 @@ val appResources = layout.buildDirectory.dir("generated/appResources")
 val stageAppResources = tasks.register<Copy>("stageAppResources") {
     val lsfg = cfg("NIJIYOME_TEMPLE_LSFG")
     val windows = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
+    val fgLibName = if (windows) "nijiyome_fg_desktop.dll" else "libnijiyome_fg_desktop.so"
+    val fgLib = cfg("NIJIYOME_DESKTOP_FRAMEGEN").ifEmpty {
+        listOf(
+            rootProject.file("build/desktop-framegen/$fgLibName"),
+            rootProject.file("build/desktop-framegen/Release/$fgLibName"),
+        ).firstOrNull { it.isFile }?.absolutePath.orEmpty()
+    }
     into(appResources.map { it.dir(if (windows) "windows-x64" else "linux-x64") })
     if (lsfg.isNotEmpty()) from(lsfg) { rename { if (windows) "temple-lsfg.exe" else "temple-lsfg" } }
+    if (fgLib.isNotEmpty()) from(fgLib) { rename { fgLibName } }
     // The notices of what the app ships, readable from Settings › Acerca de › Licencias and next to the binaries.
     from(rootProject.file("LICENSE"))
     from(rootProject.file("THIRD_PARTY_NOTICES.md"))

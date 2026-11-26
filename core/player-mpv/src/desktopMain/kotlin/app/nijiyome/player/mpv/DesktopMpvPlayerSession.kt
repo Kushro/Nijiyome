@@ -62,7 +62,19 @@ class DesktopMpvPlayerSession internal constructor(
     private val onVolume: (PlayerVolume) -> Unit = {},
     /** 1.1: the loopback media proxy (Settings › Red); null = streams open directly. */
     private val mediaRoute: app.nijiyome.model.LocalMediaRoute? = null,
+    /** 1.3.2: desktop player prefs store backing embedded LSFG frame generation (null in audio-only / headless tests). */
+    desktopPrefsStore: app.nijiyome.player.mpv.external.DesktopPlayerPrefsStore? = null,
 ) : PlayerSession {
+    /** 1.3.2: embedded desktop LSFG frame generation controller (zero-copy GL/D3D12 <-> Vulkan + staging fallback). */
+    val frameGen: app.nijiyome.player.mpv.framegen.DesktopFrameGenController? = desktopPrefsStore?.let { store ->
+        app.nijiyome.player.mpv.framegen.DesktopFrameGenController(
+            prefsStore = store,
+            scope = scope,
+            readAudioDelay = { engine.getProperty("audio-delay")?.toDoubleOrNull() },
+            writeAudioDelay = { secs -> engine.setProperty("audio-delay", String.format(java.util.Locale.ROOT, "%.3f", secs)) },
+            onActiveChanged = { active -> setFrameGenActive(active) },
+        )
+    }
     private val _state = MutableStateFlow(PlaybackState(isBuffering = false, fullAss = true))
     override val state: StateFlow<PlaybackState> = _state.asStateFlow()
     private var released = false
@@ -167,6 +179,10 @@ class DesktopMpvPlayerSession internal constructor(
                 }
                 _state.value = mpvPlaybackState(_state.value, m, loaded = loaded, endedHere = endedHere, watched = m.loadId == watchedLoadId)
                 if (wasPlaying && !m.playing && loaded && !released) listener.onProgress(currentPositionMs(), _state.value.durationMs, true)
+                if (wasPlaying != m.playing) {
+                    frameGen?.onPaused(!m.playing)
+                    if (m.playing) engine.videoFps()?.let { frameGen?.onVideoFps(it) }
+                }
                 wasPlaying = m.playing
             }
         }
@@ -179,6 +195,7 @@ class DesktopMpvPlayerSession internal constructor(
         loaded = true
         endedHere = false
         qualityController.onFileStarted()
+        frameGen?.onSeekOrReload()
         startWatch?.cancel()
         prepareJob?.cancel()
         val loadId = engine.beginLoad()
@@ -251,6 +268,7 @@ class DesktopMpvPlayerSession internal constructor(
     override fun seekTo(positionMs: Long) {
         endedHere = false
         qualityController.onPlaybackIdle()
+        frameGen?.onSeekOrReload()
         engine.seekTo(positionMs.coerceAtLeast(0) / 1000.0)
     }
 
@@ -388,13 +406,14 @@ class DesktopMpvPlayerSession internal constructor(
 
     override fun setRemoteProcessing(active: Boolean) = qualityController.setRemoteProcessing(active)
 
-    /** Phone frame generation (worker B) does not exist on desktop, so it never forces mpv's smoothing off. */
-    override fun setFrameGenActive(active: Boolean) = Unit
+    /** Disables mpv's built-in temporal smoothing while embedded LSFG frame generation is active. */
+    override fun setFrameGenActive(active: Boolean) = qualityController.setFrameGenActive(active)
 
     override fun release() {
         if (released) return
         if (loaded) listener.onProgress(currentPositionMs(), _state.value.durationMs, true)
         released = true
+        frameGen?.release()
         ticker.stop()
         monitorJob?.cancel()
         remoteProcessingJob?.cancel()

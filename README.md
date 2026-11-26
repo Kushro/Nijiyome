@@ -8,7 +8,7 @@
 
 **English** · [Español](README.es.md)
 
-[![Release](https://img.shields.io/badge/release-v1.3.1-8b5cf6)](https://github.com/Kushro/Nijiyome/releases/latest)
+[![Release](https://img.shields.io/badge/release-v1.3.2-8b5cf6)](https://github.com/Kushro/Nijiyome/releases/latest)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%C2%B7%20Linux%20%C2%B7%20Windows-555)
 ![Kotlin + Compose Multiplatform](https://img.shields.io/badge/Kotlin-Compose%20Multiplatform-7f52ff)
@@ -72,7 +72,7 @@ Choose between five independent visual directions — **Tanabata**, **Obi**, **N
 
 <p align="center"><img src="docs/readme/phone-home.png" alt="Android Home" width="270"><br><sub>Android: Home</sub></p>
 
-<sub>Version 1.3.1, real screenshots on desktop (Linux) and Android. Some names in older player/extension screenshots are covered with black bars on purpose: source and site names, and network details.</sub>
+<sub>Version 1.3.2, real screenshots on desktop (Linux) and Android. Some names in older player/extension screenshots are covered with black bars on purpose: source and site names, and network details.</sub>
 
 ## ✨ Features
 
@@ -82,8 +82,12 @@ Choose between five independent visual directions — **Tanabata**, **Obi**, **N
   AniList and other metadata sources.
 - 🎬 **libmpv player.** Full ASS subtitles, deband and image options, and upscaling shaders: Anime4K (several modes and
   quality levels), FSR, FSRCNNX, CAS and NVScaler, with automatic step-down when the GPU cannot keep up.
+- ✨ **Built-in Frame Generation (desktop & Android).** Runs LSFG 3.1 / 3.1P directly inside Nijiyome's embedded player using
+  your own `Lossless.dll` (zero-copy OpenGL↔Vulkan on Linux, zero-copy D3D12↔Vulkan on Windows, plus automatic fallback),
+  with live multiplier (`×2`–`×4`), Performance mode, scene-cut anti-artifacts, and automatic audio-delay sync — no external
+  mpv window required.
 - ⚡ **Hardware decoding.** VAAPI on Linux (the settings show what your GPU can decode); software decoding as a fallback.
-- 🪟 **External mpv.** Play in mpv's own window with your mpv config, including frame generation with
+- 🪟 **External mpv.** Optional: play in mpv's own window with your mpv config and `mpv-anime-build` or
   [lsfg-vk](https://github.com/PancakeTAS/lsfg-vk) on Linux.
 - 🧲 **Torrents.** Built-in libtorrent client with streaming while downloading, plus library, downloads, history, files,
   peers and trackers views. On Linux it needs glibc 2.38 or newer.
@@ -109,13 +113,13 @@ the files.
 
 | Platform | File | Notes |
 |---|---|---|
-| 🤖 Android 8.0+ | `Nijiyome-v1.3.1-android-arm64-v8a.apk` | Most phones from the last years. |
-| | `Nijiyome-v1.3.1-android-armeabi-v7a.apk` | Older 32-bit phones. |
-| | `Nijiyome-v1.3.1-android-x86_64.apk` | Emulators and x86 devices. |
-| | `Nijiyome-v1.3.1-android-universal.apk` | Any device, larger download. If unsure, pick this one. |
-| 🐧 Linux x86_64 | `Nijiyome-v1.3.1-linux-x86_64.AppImage` | `chmod +x` it and run it. Torrents need glibc 2.38+ (Ubuntu 24.04, Fedora 39, Arch and newer). |
-| 🪟 Windows x64 | `Nijiyome-v1.3.1-windows-x64-setup.exe` | Installer; can register `nijiyome:` links and offer itself for `magnet:` / `.torrent`. |
-| | `Nijiyome-v1.3.1-windows-x64-portable.zip` | Unzip and run; data still goes to `%APPDATA%\Nijiyome`. |
+| 🤖 Android 8.0+ | `Nijiyome-v1.3.2-android-arm64-v8a.apk` | Most phones from the last years. |
+| | `Nijiyome-v1.3.2-android-armeabi-v7a.apk` | Older 32-bit phones. |
+| | `Nijiyome-v1.3.2-android-x86_64.apk` | Emulators and x86 devices. |
+| | `Nijiyome-v1.3.2-android-universal.apk` | Any device, larger download. If unsure, pick this one. |
+| 🐧 Linux x86_64 | `Nijiyome-v1.3.2-linux-x86_64.AppImage` | `chmod +x` it and run it. Torrents need glibc 2.38+ (Ubuntu 24.04, Fedora 39, Arch and newer). |
+| 🪟 Windows x64 | `Nijiyome-v1.3.2-windows-x64-setup.exe` | Installer; can register `nijiyome:` links and offer itself for `magnet:` / `.torrent`. |
+| | `Nijiyome-v1.3.2-windows-x64-portable.zip` | Unzip and run; data still goes to `%APPDATA%\Nijiyome`. |
 
 On Arch / CachyOS you can also build a package with the `PKGBUILD` in [`packaging/linux`](packaging/linux) (see
 [`packaging/README.md`](packaging/README.md)).

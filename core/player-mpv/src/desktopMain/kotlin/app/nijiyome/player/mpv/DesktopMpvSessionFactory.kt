@@ -35,6 +35,8 @@ class DesktopMpvSessionFactory(
     private val mediaRoute: app.nijiyome.model.LocalMediaRoute? = null,
     /** 1.1: sessions that only play audio clips (the novel narrator): no video track, no wait for a video surface. */
     private val audioOnly: Boolean = false,
+    /** 1.3.2: desktop player prefs store backing embedded Frame Generation settings (null in audioOnly / unit tests). */
+    private val desktopPrefsStore: app.nijiyome.player.mpv.external.DesktopPlayerPrefsStore? = null,
 ) : PlayerSessionFactory {
     private val root = File(cacheDir, "mpv")
     private val shaders by lazy { DesktopShaderInstaller(File(root, "shaders")) }
@@ -53,6 +55,7 @@ class DesktopMpvSessionFactory(
             remoteProcessing = remoteProcessing,
             onVolume = volumeMemory::remember,
             mediaRoute = mediaRoute,
+            desktopPrefsStore = if (audioOnly) null else desktopPrefsStore,
         )
     }
 

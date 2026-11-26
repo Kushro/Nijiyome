@@ -285,9 +285,10 @@ internal actual val PlayerSession.isMedia3: Boolean get() = false
 @Composable
 internal actual fun media3CueTexts(session: PlayerSession): List<String> = emptyList()
 
-/** The phone frame generation does not exist on desktop. */
+/** v1.3.2: embedded desktop Frame Generation (LSFG 3.1/3.1P zero-copy inside MpvVideoSurface). */
 @Composable
-internal actual fun rememberPhoneFrameGen(vm: PlayerViewModel, session: PlayerSession): PhoneFrameGen? = null
+internal actual fun rememberPhoneFrameGen(vm: PlayerViewModel, session: PlayerSession): PhoneFrameGen? =
+    rememberDesktopFrameGen(session)
 
 @Composable
 internal actual fun phoneFrameGenReason(detail: String): PhoneFrameGenReason? = null

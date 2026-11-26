@@ -38,6 +38,8 @@ data class DesktopPlayerPrefs(
     val frameGenMultiplier: Int = 0,
     val frameGenPerformance: Boolean = false,
     val frameGenFlowScale: Float = LsfgVk.DEFAULT_FLOW_SCALE,
+    val frameGenAntiArtifacts: Boolean = true,
+    val frameGenAudioOffsetMs: Int = 0,
     val lsfgDll: String? = null,
     val volume: Int? = null,
     val muted: Boolean = false,
@@ -51,6 +53,8 @@ data class DesktopPlayerPrefs(
             put("frame_gen_multiplier", JsonPrimitive(frameGenMultiplier))
             put("frame_gen_performance", JsonPrimitive(frameGenPerformance))
             put("frame_gen_flow_scale", JsonPrimitive(frameGenFlowScale))
+            put("frame_gen_anti_artifacts", JsonPrimitive(frameGenAntiArtifacts))
+            put("frame_gen_audio_offset_ms", JsonPrimitive(frameGenAudioOffsetMs))
             lsfgDll?.let { put("lsfg_dll", JsonPrimitive(it)) }
             volume?.let { put("volume", JsonPrimitive(it)) }
             put("muted", JsonPrimitive(muted))
@@ -62,6 +66,7 @@ data class DesktopPlayerPrefs(
         mpvPath = mpvPath?.trim()?.takeIf { it.isNotEmpty() },
         frameGenMultiplier = frameGenMultiplier.takeIf { it == 0 || it in 2..4 } ?: 0,
         frameGenFlowScale = frameGenFlowScale.takeIf { it.isFinite() }?.coerceIn(0.25f, 1f) ?: LsfgVk.DEFAULT_FLOW_SCALE,
+        frameGenAudioOffsetMs = frameGenAudioOffsetMs.coerceIn(-500, 500),
         lsfgDll = lsfgDll?.trim()?.takeIf { it.isNotEmpty() },
         volume = volume?.coerceIn(0, 100),
     )
@@ -79,6 +84,8 @@ data class DesktopPlayerPrefs(
                 frameGenMultiplier = p("frame_gen_multiplier")?.intOrNull ?: d.frameGenMultiplier,
                 frameGenPerformance = p("frame_gen_performance")?.booleanOrNull ?: d.frameGenPerformance,
                 frameGenFlowScale = p("frame_gen_flow_scale")?.floatOrNull ?: d.frameGenFlowScale,
+                frameGenAntiArtifacts = p("frame_gen_anti_artifacts")?.booleanOrNull ?: d.frameGenAntiArtifacts,
+                frameGenAudioOffsetMs = p("frame_gen_audio_offset_ms")?.intOrNull ?: d.frameGenAudioOffsetMs,
                 lsfgDll = p("lsfg_dll")?.contentOrNull,
                 volume = p("volume")?.intOrNull,
                 muted = p("muted")?.booleanOrNull ?: d.muted,
