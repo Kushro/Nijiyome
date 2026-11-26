@@ -23,6 +23,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -163,20 +164,34 @@ fun SourcePickerSheet(
     onOpenExtensions: (() -> Unit)? = null,
     episode: Int? = null,
 ) {
-    val wide = windowWidthDp() >= SIDE_SHEET_MIN_WIDTH_DP
+    val windowDp = windowWidthDp()
+    val wide = windowDp >= SIDE_SHEET_MIN_WIDTH_DP
+    // REP-04: the direction's sheet decor goes on the content, inside the sheet's surface (on the sheet's own modifier it was drawn
+    // under the surface and only showed outside the rounded corners as stray marks).
     val content: @Composable () -> Unit = {
-        PickerContent(sources, loading, error, mode, onPick, onDismiss, onRetry, onOpenSettings, onDownload, rememberedPick, onOpenExtensions, episode)
+        Column(Modifier.fillMaxWidth().decor(DecorRegion.SHEET)) {
+            PickerContent(sources, loading, error, mode, onPick, onDismiss, onRetry, onOpenSettings, onDownload, rememberedPick, onOpenExtensions, episode)
+        }
     }
     if (wide) {
         // AdaptiveSheet scrolls its content itself (a nested vertical scroll would crash).
-        AdaptiveSheet(onDismissRequest = onDismiss, modifier = modifier.decor(DecorRegion.SHEET)) { content() }
+        AdaptiveSheet(onDismissRequest = onDismiss, modifier = modifier, sideSheetWidth = sourceSheetWidth(structures.sourcePicker, windowDp).dp) { content() }
     } else {
-        ModalBottomSheet(onDismissRequest = onDismiss, modifier = modifier.decor(DecorRegion.SHEET)) {
+        ModalBottomSheet(onDismissRequest = onDismiss, modifier = modifier) {
             TrackModal()
             Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) { content() }
         }
     }
 }
+
+/**
+ * The side sheet's width (dp) on a wide window (artifact `.nj-a-srcsheet`): 560 for Facetas, and for Comparador (FE-02) the nine-column
+ * table's `min(980px, 92%)`. Never narrower than the default side sheet (400). Pure.
+ */
+internal fun sourceSheetWidth(structure: SourcePickerStructure, windowDp: Float): Float = when (structure) {
+    SourcePickerStructure.FACETS -> 560f
+    SourcePickerStructure.COMPARE -> minOf(980f, windowDp * 0.92f)
+}.coerceAtLeast(400f)
 
 /** The automatic rules (Ajustes › Fuentes de episodios) read live and written back from the sheet; read-only without settings. */
 internal class SourceRules(val prefs: SourcePrefs, val editable: Boolean, val set: (SourcePrefs) -> Unit)
@@ -228,7 +243,7 @@ private fun PickerContent(
     val model = PickerModel(sources, shown, facets, selection, rules, caps, options)
     val onSelection: (FacetSelection) -> Unit = { filters = filters.withSelection(it) }
 
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         PickerHeader(episode, onDismiss)
         ModeBlock(rules, mode, onOpenSettings)
         when {
@@ -570,7 +585,8 @@ private fun DebridAndFacets(model: PickerModel, filters: SourceFilters, onFilter
             selection = model.selection,
             onSelectionChange = onSelection,
             resultCount = model.shown.size,
-            resultText = stringResource(Res.string.rd_s4_src_count, model.shown.size, model.sources.size),
+            // FE-03: the count is said once, in the row under the facets (with "Limpiar filtros").
+            resultText = null,
         )
     }
 }
@@ -652,9 +668,30 @@ private fun FacetsResults(
 
 // ---------------------------------------------------------------- Comparador
 
-private val COL_SOURCE: Dp = 208.dp
-private val COL: Dp = 108.dp
-private val COL_ACTION: Dp = 56.dp
+private val COL_ACTION: Dp = 48.dp
+
+/**
+ * FE-02: the natural width of each column, sized to its header and its values (artifact `.nj-a-cmp`): all nine plus the action column
+ * take 924 dp, what the Comparador sheet leaves on a 1440 dp window. Wider sheets share the extra width out; narrower ones scroll.
+ */
+private fun baseWidth(col: CompareColumn): Dp = when (col) {
+    CompareColumn.SOURCE -> 176.dp
+    CompareColumn.RESOLUTION -> 96.dp
+    CompareColumn.CODEC -> 88.dp
+    CompareColumn.AUDIO -> 68.dp
+    CompareColumn.SUBS -> 88.dp
+    CompareColumn.SIZE -> 84.dp
+    CompareColumn.SEEDERS -> 80.dp
+    CompareColumn.CACHE -> 80.dp
+    CompareColumn.RELIABILITY -> 116.dp
+}
+
+/** The columns' widths for a table [available] wide: the natural widths, scaled up to fill when there is room. */
+private fun columnWidths(available: Dp): Map<CompareColumn, Dp> {
+    val natural = CompareColumn.entries.fold(COL_ACTION) { acc, c -> acc + baseWidth(c) }
+    val scale = if (available > natural) available / natural else 1f
+    return CompareColumn.entries.associateWith { baseWidth(it) * scale }
+}
 
 /** Comparador: a table sorted by any column header; the best resolution, size, seeders and reliability are marked. */
 @Composable
@@ -673,21 +710,28 @@ private fun CompareResults(model: PickerModel, active: Int, onClear: () -> Unit,
     val best = remember(model.shown) { bestValues(model.shown) }
     val scheme = MaterialTheme.colorScheme
     val caption = stringResource(Res.string.rd_s4_src_compare_cd)
-    Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).semantics { contentDescription = caption }) {
-        Surface(shape = MaterialTheme.shapes.large, color = scheme.surfaceContainer, border = BorderStroke(1.dp, scheme.outlineVariant)) {
-            Column {
-                Row(Modifier.background(scheme.surfaceContainerHigh), verticalAlignment = Alignment.CenterVertically) {
-                    CompareColumn.entries.forEach { col ->
-                        HeaderCell(col, sortColumn == col, descending, Modifier.width(if (col == CompareColumn.SOURCE) COL_SOURCE else COL)) {
-                            if (sortColumn == col) descending = !descending else {
-                                sortName = col.name
-                                descending = col.higherIsBetter
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // 2 dp: the table's border on both sides.
+        val widths = columnWidths(maxWidth - 2.dp)
+        val natural = CompareColumn.entries.fold(COL_ACTION) { acc, c -> acc + baseWidth(c) }
+        // Scroll sideways only when the sheet is narrower than the table (a tablet in portrait); a fixed-width child, never a filling one.
+        val scroll = if (maxWidth - 2.dp < natural) Modifier.horizontalScroll(rememberScrollState()) else Modifier
+        Box(Modifier.fillMaxWidth().then(scroll).semantics { contentDescription = caption }) {
+            Surface(shape = MaterialTheme.shapes.large, color = scheme.surfaceContainer, border = BorderStroke(1.dp, scheme.outlineVariant)) {
+                Column {
+                    Row(Modifier.background(scheme.surfaceContainerHigh), verticalAlignment = Alignment.CenterVertically) {
+                        CompareColumn.entries.forEach { col ->
+                            HeaderCell(col, sortColumn == col, descending, Modifier.width(widths.getValue(col))) {
+                                if (sortColumn == col) descending = !descending else {
+                                    sortName = col.name
+                                    descending = col.higherIsBetter
+                                }
                             }
                         }
+                        Spacer(Modifier.width(COL_ACTION))
                     }
-                    Spacer(Modifier.width(COL_ACTION))
+                    rows.forEach { s -> CompareRow(s, best, widths, onPick, onDownload) }
                 }
-                rows.forEach { s -> CompareRow(s, best, onPick, onDownload) }
             }
         }
     }
@@ -723,11 +767,11 @@ private fun HeaderCell(col: CompareColumn, sorted: Boolean, descending: Boolean,
             .heightIn(min = 48.dp)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { stateDescription = state }
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = if (col == CompareColumn.SOURCE) 12.dp else 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+        Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
         Icon(
             when {
                 !sorted -> Icons.Rounded.UnfoldMore
@@ -735,13 +779,19 @@ private fun HeaderCell(col: CompareColumn, sorted: Boolean, descending: Boolean,
                 else -> Icons.Rounded.ArrowUpward
             },
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(14.dp),
         )
     }
 }
 
 @Composable
-private fun CompareRow(s: RankedSource, best: Map<CompareColumn, Double>, onPick: (RankedSource) -> Unit, onDownload: ((RankedSource) -> Unit)?) {
+private fun CompareRow(
+    s: RankedSource,
+    best: Map<CompareColumn, Double>,
+    widths: Map<CompareColumn, Dp>,
+    onPick: (RankedSource) -> Unit,
+    onDownload: ((RankedSource) -> Unit)?,
+) {
     val scheme = MaterialTheme.colorScheme
     val c = s.candidate
     val torrent = c.kind == SourceKind.TORRENT
@@ -757,7 +807,7 @@ private fun CompareRow(s: RankedSource, best: Map<CompareColumn, Double>, onPick
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CompareColumn.entries.forEach { col ->
-            val width = if (col == CompareColumn.SOURCE) COL_SOURCE else COL
+            val width = widths.getValue(col)
             if (col == CompareColumn.SOURCE) {
                 Row(Modifier.width(width).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(
@@ -793,12 +843,12 @@ private fun CompareRow(s: RankedSource, best: Map<CompareColumn, Double>, onPick
             val isBest = best[col]?.let { b -> compareValue(s, col) == b } == true
             Text(
                 text,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = if (isBest) FontWeight.Bold else null,
                 color = if (isBest) ok else if (s.extEnabled) scheme.onSurface else scheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.width(width).padding(horizontal = 12.dp).semantics { if (isBest) contentDescription = "$text $bestLabel" },
+                modifier = Modifier.width(width).padding(horizontal = 6.dp).semantics { if (isBest) contentDescription = "$text $bestLabel" },
             )
         }
         Box(Modifier.width(COL_ACTION), contentAlignment = Alignment.Center) {
