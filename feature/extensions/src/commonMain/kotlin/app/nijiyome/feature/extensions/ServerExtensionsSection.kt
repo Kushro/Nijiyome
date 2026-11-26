@@ -42,6 +42,7 @@ import app.nijiyome.extensionserver.ServerExtension
 import app.nijiyome.model.InstalledExtension
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B closure (16 §3.4, worker t; checklist server.api.extensions): "Extensions on your PC" section of Extensions, one block per
 // linked extension server with the list its `GET /extensions` returns. Pairing and removing servers stay in Linked devices.
@@ -63,7 +64,7 @@ internal fun LazyListScope.serverExtensionSections(
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionHead(stringResource(Res.string.extensions_server_title_pc), stringResource(Res.string.extensions_server_hint_pc))
-                FilledTonalButton(onClick = onOpenServers) {
+                FilledTonalButton(onClick = onOpenServers, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Computer, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.extensions_server_manage), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -207,12 +208,12 @@ private fun ServerExtensionRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     ) {
                         if (onUpdate != null) {
-                            TextButton(onClick = onUpdate, enabled = !running) {
+                            TextButton(onClick = onUpdate, enabled = !running, shape = NijiyomeControls.shape) {
                                 Text(stringResource(Res.string.extensions_server_newer_update), maxLines = 1)
                             }
                         }
                         if (onUpdateFromPc != null) {
-                            FilledTonalButton(onClick = onUpdateFromPc, enabled = !running) {
+                            FilledTonalButton(onClick = onUpdateFromPc, enabled = !running, shape = NijiyomeControls.shape) {
                                 if (running) {
                                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                                     Text(stringResource(Res.string.extensions_server_pc_updating), modifier = Modifier.padding(start = 8.dp), maxLines = 1)

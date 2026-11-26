@@ -42,6 +42,7 @@ import app.nijiyome.feature.extensions.resources.*
 import app.nijiyome.model.LoadState
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles S9, structure TABS ("pestanas"): the five concepts of the old Extensions column and Debrid, each on its own tab with its
 // count. Every tab is a LazyColumn of the same sections the store structure opens in sheets.
@@ -172,13 +173,13 @@ internal fun LazyListScope.serversSection(ctx: SourcesContext) {
             TabHint(stringResource(if (kaiDropAndPaths) Res.string.rd_s9_servers_hint_desktop else Res.string.rd_s9_servers_hint_phone))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (ctx.serversContent == null && ctx.onOpenServers != null) {
-                    FilledTonalButton(onClick = ctx.onOpenServers) {
+                    FilledTonalButton(onClick = ctx.onOpenServers, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Dns, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.rd_s9_servers_configure), modifier = Modifier.padding(start = 8.dp))
                     }
                 }
                 ctx.onOpenLink?.let { open ->
-                    TextButton(onClick = open) {
+                    TextButton(onClick = open, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Devices, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.rd_s9_servers_open_link), modifier = Modifier.padding(start = 8.dp))
                     }

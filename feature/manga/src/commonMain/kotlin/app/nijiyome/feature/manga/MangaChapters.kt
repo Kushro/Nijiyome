@@ -101,6 +101,7 @@ import app.nijiyome.ui.patterns.selectionKeys
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // MNG-08 to MNG-10: the chapter list of the manga details page (sources as radio cards with their reliability, filter, order,
 // language, scanlation group, volumes, multi-selection with undo) and the "Fuentes e idiomas" sheet.
@@ -199,7 +200,7 @@ private fun ChaptersHeader(state: ChapterSectionState, vm: MangaDetailsViewModel
             trailing = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (!state.selection.active) {
-                        TextButton(onClick = { state.selection.start() }) {
+                        TextButton(onClick = { state.selection.start() }, shape = NijiyomeControls.shape) {
                             Icon(Icons.Outlined.Checklist, contentDescription = null)
                             Text(stringResource(Res.string.rd_s11_select), modifier = Modifier.padding(start = 6.dp))
                         }
@@ -219,7 +220,7 @@ private fun ChaptersHeader(state: ChapterSectionState, vm: MangaDetailsViewModel
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(Res.string.rd_s11_source), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-            TextButton(onClick = onOpenSourceSheet) {
+            TextButton(onClick = onOpenSourceSheet, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Translate, contentDescription = null)
                 Text(stringResource(Res.string.manga_source_settings), modifier = Modifier.padding(start = 6.dp))
             }
@@ -514,7 +515,7 @@ internal fun SourceSheet(
                         },
                     )
                 }
-                TextButton(onClick = onOpenExtensions) {
+                TextButton(onClick = onOpenExtensions, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Extension, contentDescription = null)
                     Text(stringResource(Res.string.rd_s11_manage_extensions), modifier = Modifier.padding(start = 6.dp))
                 }

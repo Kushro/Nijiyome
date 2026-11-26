@@ -138,6 +138,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.getKoin
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.model.CardSize as ModelCardSize
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Ajustes › Apariencia (artifact screen `ajustes`, category `apariencia`) with the Sparkles design picker: everything the redesign
 // offers is chosen here and written through `setLook { it.copy(design = …) }`. The picker lists and previews every direction, card
@@ -369,7 +370,7 @@ private fun DesignGroups(state: SettingsUiState, vm: SettingsViewModel, actions:
         SettingAnchor("design_card") { CardStylePicker(look) { id -> vm.setDesign { it.copy(card = id) } } }
         SettingAnchor("design_gallery") {
             SettingRow(stringResource(Res.string.rd_s10_design_gallery), stringResource(Res.string.rd_s10_design_gallery_hint)) {
-                FilledTonalButton(onClick = actions.onOpenGallery) {
+                FilledTonalButton(onClick = actions.onOpenGallery, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Widgets, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s10_design_gallery_open), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -385,6 +386,7 @@ private fun DesignGroups(state: SettingsUiState, vm: SettingsViewModel, actions:
                         vm.setDesign { DesignPrefs(introSeen = true) }
                         showUndo(done) { vm.setDesign { prev } }
                     },
+                    shape = NijiyomeControls.shape,
                 ) {
                     Icon(Icons.Outlined.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s10_design_reset_action), modifier = Modifier.padding(start = 8.dp))

@@ -51,6 +51,7 @@ import app.nijiyome.ui.cards.CardContext
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCard
 import app.nijiyome.ui.cards.TitleCardData
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Parity wave B (worker r, checklist settings.privacy.mature-content): how Home presents adult titles once `showAdult` lets them in.
@@ -95,9 +96,9 @@ fun rememberMatureGate(mode: MatureContentMode): MatureGate {
                     gate.accept(media)
                     pending = null
                     open()
-                }) { Text(stringResource(Res.string.home_mature_continue)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_mature_continue)) }
             },
-            dismissButton = { TextButton(onClick = { pending = null }) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { pending = null }, shape = NijiyomeControls.shape) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
         )
     }
     return gate

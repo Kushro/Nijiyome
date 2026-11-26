@@ -98,6 +98,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // 2026-11 UI refresh: Home "Destacado" (desktop HomeLayout::Spotlight, Hayase-like). A full-width pager of the trending titles drawn
 // under the status bar: banner, fact chips (episodes, format, status, season, score), title, genres, synopsis, Continue / Watch,
@@ -339,7 +340,7 @@ private fun SpotlightPage(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { if (continueEntry != null) onContinue(continueEntry) else onWatch() }) {
+                Button(onClick = { if (continueEntry != null) onContinue(continueEntry) else onWatch() }, shape = NijiyomeControls.shape) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         if (continueEntry != null) {

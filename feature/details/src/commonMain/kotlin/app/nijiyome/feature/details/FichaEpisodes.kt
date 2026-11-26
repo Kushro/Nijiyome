@@ -100,6 +100,7 @@ import app.nijiyome.ui.resources.ui_episode_number
 import app.nijiyome.ui.resources.ui_retry
 import app.nijiyome.ui.state.userMessage
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S4: Ficha › Episodios in its three views (Lista, Tarjetas, Rejilla = Diseño y estilo › Episodios), the same
 // multi-selection and actions in all of them (artifact patterns `eps` and `ctx`), and the Ruta stations. Click plays; Ctrl / Shift +
@@ -323,7 +324,7 @@ private fun EpisodeToolbar(state: DetailsUiState, actions: DetailsActions, ui: F
     val select: @Composable () -> Unit = {
         if (!compact) {
             val selecting = ui.selection.active
-            OutlinedButton(onClick = { if (selecting) ui.selection.exit() else ui.selection.start() }) {
+            OutlinedButton(onClick = { if (selecting) ui.selection.exit() else ui.selection.start() }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.CheckBox, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(
                     stringResource(if (selecting) Res.string.rd_s4_select_done else Res.string.rd_s4_select),
@@ -723,24 +724,24 @@ private fun RouteDetail(media: Media, items: List<EpisodeItem>, state: DetailsUi
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Button(onClick = { actions.onEpisodeClick(n) }) {
+                        Button(onClick = { actions.onEpisodeClick(n) }, shape = NijiyomeControls.shape) {
                             Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(stringResource(if (current) Res.string.details_continue_short else Res.string.rd_s4_play), modifier = Modifier.padding(start = 8.dp))
                         }
                         if (state.panel?.episode == n) {
-                            FilledTonalButton(onClick = { actions.onOpenPicker(false) }) {
+                            FilledTonalButton(onClick = { actions.onOpenPicker(false) }, shape = NijiyomeControls.shape) {
                                 Icon(Icons.AutoMirrored.Outlined.ViewList, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(stringResource(Res.string.rd_s4_ep_sources), modifier = Modifier.padding(start = 8.dp))
                             }
                         }
                         actions.onToggleWatched?.let { toggle ->
-                            OutlinedButton(onClick = { toggle(n) }) {
+                            OutlinedButton(onClick = { toggle(n) }, shape = NijiyomeControls.shape) {
                                 Icon(if (watched) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(stringResource(if (watched) Res.string.rd_s4_mark_unwatched else Res.string.rd_s4_mark_watched), modifier = Modifier.padding(start = 8.dp))
                             }
                         }
                         val done = n in state.downloaded
-                        OutlinedButton(onClick = { actions.onDownloadEpisode(n) }, enabled = !done) {
+                        OutlinedButton(onClick = { actions.onDownloadEpisode(n) }, enabled = !done, shape = NijiyomeControls.shape) {
                             Icon(if (done) Icons.Outlined.DownloadDone else Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(stringResource(if (done) Res.string.rd_s4_downloaded else Res.string.rd_s4_action_download), modifier = Modifier.padding(start = 8.dp))
                         }

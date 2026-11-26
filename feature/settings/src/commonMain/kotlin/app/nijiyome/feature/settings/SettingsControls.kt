@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.PendingActions
 import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * One group of a category (artifact `.nj-b-group`): a titled card with its rows. [commit] marks a group whose changes apply with a
@@ -134,8 +135,8 @@ internal fun CommitBar(
                 modifier = Modifier.weight(1f).politeLiveRegion(),
             )
             if (dirty) {
-                TextButton(onClick = onDiscard, enabled = !busy) { Text(stringResource(Res.string.rd_s10_commit_discard)) }
-                Button(onClick = onApply, enabled = canApply && !busy) { Text(if (busy) stringResource(Res.string.rd_s10_commit_testing) else applyLabel) }
+                TextButton(onClick = onDiscard, enabled = !busy, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s10_commit_discard)) }
+                Button(onClick = onApply, enabled = canApply && !busy, shape = NijiyomeControls.shape) { Text(if (busy) stringResource(Res.string.rd_s10_commit_testing) else applyLabel) }
             }
         }
         if (result != null) result()

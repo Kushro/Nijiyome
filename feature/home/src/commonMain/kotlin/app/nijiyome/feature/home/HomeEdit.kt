@@ -41,6 +41,7 @@ import app.nijiyome.ui.patterns.rememberReorderState
 import app.nijiyome.ui.patterns.reorderContainer
 import app.nijiyome.ui.patterns.reorderPlacement
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S2: "Editar Inicio" (artifact screens-a.js `editPanel`, lab.js pattern `reo`). Every Home row in the user's
 // order with a drag handle (Alt+Up / Alt+Down and TalkBack actions come with the pattern), up / down buttons on wide windows and a
@@ -122,7 +123,7 @@ private fun ColumnScope.EditBody(
 ) {
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(Res.string.rd_s2_edit_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-        Button(onClick = onDone) { Text(stringResource(Res.string.rd_s2_edit_done)) }
+        Button(onClick = onDone, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s2_edit_done)) }
     }
     Text(
         stringResource(if (compact) Res.string.rd_s2_edit_hint_touch else Res.string.rd_s2_edit_hint),
@@ -163,7 +164,7 @@ private fun ColumnScope.EditBody(
         }
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), horizontalArrangement = Arrangement.End) {
-        TextButton(onClick = onReset) {
+        TextButton(onClick = onReset, shape = NijiyomeControls.shape) {
             Icon(Icons.Outlined.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.rd_s2_edit_reset), modifier = Modifier.padding(start = 8.dp))
         }

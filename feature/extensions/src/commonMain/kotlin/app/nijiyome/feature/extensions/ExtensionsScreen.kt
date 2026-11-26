@@ -113,6 +113,7 @@ import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.userMessage
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Fuentes (Sparkles S9; artifact `screens-c.js` screen `fuentes`). The long Extensions column with five concepts becomes one screen in
@@ -262,9 +263,9 @@ fun ExtensionsScreen(
                     viewModel.remove(ext.id)
                     snackbar.show(removedText)
                     pendingRemove = null
-                }) { Text(stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { pendingRemove = null }) { Text(stringResource(UiR.string.ui_close)) } },
+            dismissButton = { TextButton(onClick = { pendingRemove = null }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
         )
     }
     state.downgrade?.let { d ->
@@ -273,8 +274,8 @@ fun ExtensionsScreen(
             onDismissRequest = viewModel::cancelDowngrade,
             title = { Text(stringResource(Res.string.extensions_downgrade_title, d.name)) },
             text = { Text(stringResource(Res.string.extensions_downgrade_message, d.newVersion, d.installedVersion)) },
-            confirmButton = { TextButton(onClick = viewModel::confirmDowngrade) { Text(stringResource(Res.string.extensions_downgrade_confirm)) } },
-            dismissButton = { TextButton(onClick = viewModel::cancelDowngrade) { Text(stringResource(Res.string.extensions_downgrade_cancel)) } },
+            confirmButton = { TextButton(onClick = viewModel::confirmDowngrade, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_downgrade_confirm)) } },
+            dismissButton = { TextButton(onClick = viewModel::cancelDowngrade, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_downgrade_cancel)) } },
         )
     }
     if (showUpdates) UpdatesSheet(hubState, hub, onDismiss = { showUpdates = false })
@@ -456,14 +457,14 @@ private fun SourcesTopBar(ctx: SourcesContext, onBack: (() -> Unit)?) {
                     }
                 }
             } else {
-                OutlinedButton(onClick = ctx.openUpdates, modifier = Modifier.padding(end = 8.dp)) {
+                OutlinedButton(onClick = ctx.openUpdates, modifier = Modifier.padding(end = 8.dp), shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         if (ctx.updateCount > 0) stringResource(Res.string.rd_s9_updates_n, ctx.updateCount) else checkUpdates,
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
-                Button(onClick = ctx.openInstall, enabled = !ctx.state.installing, modifier = Modifier.padding(end = 4.dp)) {
+                Button(onClick = ctx.openInstall, enabled = !ctx.state.installing, modifier = Modifier.padding(end = 4.dp), shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(installKai, modifier = Modifier.padding(start = 8.dp))
                 }
@@ -537,10 +538,10 @@ internal fun InstallPanel(ctx: SourcesContext, modifier: Modifier = Modifier) {
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                FilledTonalButton(onClick = ctx.pickFile, enabled = !installing) {
+                FilledTonalButton(onClick = ctx.pickFile, enabled = !installing, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (installing) Res.string.extensions_installing else Res.string.extensions_install_choose))
                 }
-                TextButton(onClick = ctx.openInstall, enabled = !installing) {
+                TextButton(onClick = ctx.openInstall, enabled = !installing, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (kaiDropAndPaths) Res.string.extensions_install_url_or_path else Res.string.extensions_install_url))
                 }
             }
@@ -562,7 +563,7 @@ internal fun InstalledBanners(ctx: SourcesContext) {
                 TextButton(onClick = {
                     ctx.viewModel.dismissMessage()
                     ctx.pickFile()
-                }) { Text(stringResource(Res.string.rd_s9_install_pick_other)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_install_pick_other)) }
             }
         }
         if (ctx.state.items.isNotEmpty() && ctx.state.items.none { it.enabled }) {
@@ -572,7 +573,7 @@ internal fun InstalledBanners(ctx: SourcesContext) {
                 title = stringResource(Res.string.rd_s9_all_off_title),
                 body = stringResource(Res.string.rd_s9_all_off_body),
             ) {
-                FilledTonalButton(onClick = { ctx.killSwitch(true) }) { Text(stringResource(Res.string.extensions_enable_all)) }
+                FilledTonalButton(onClick = { ctx.killSwitch(true) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_enable_all)) }
             }
         }
         if (ctx.updateCount > 0) {
@@ -582,9 +583,9 @@ internal fun InstalledBanners(ctx: SourcesContext) {
                 title = pluralStringResource(Res.plurals.extensions_updates_badge, ctx.updateCount, ctx.updateCount),
                 body = null,
             ) {
-                TextButton(onClick = ctx.openUpdates) { Text(stringResource(Res.string.extensions_updates_open)) }
+                TextButton(onClick = ctx.openUpdates, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_updates_open)) }
                 if (ctx.updateCount > 1) {
-                    FilledTonalButton(onClick = { ctx.hub.updateAll() }, enabled = ctx.hubState.updating.isEmpty()) {
+                    FilledTonalButton(onClick = { ctx.hub.updateAll() }, enabled = ctx.hubState.updating.isEmpty(), shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.extensions_updates_all))
                     }
                 }
@@ -651,8 +652,8 @@ internal fun InstalledEmpty(ctx: SourcesContext, onBrowse: () -> Unit, browseLab
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = ctx.pickFile, enabled = !ctx.state.installing) { Text(stringResource(Res.string.extensions_install_choose)) }
-            OutlinedButton(onClick = onBrowse) { Text(browseLabel) }
+            Button(onClick = ctx.pickFile, enabled = !ctx.state.installing, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_install_choose)) }
+            OutlinedButton(onClick = onBrowse, shape = NijiyomeControls.shape) { Text(browseLabel) }
         }
     }
 }
@@ -669,12 +670,12 @@ internal fun KillZone(ctx: SourcesContext) {
         body = stringResource(Res.string.rd_s9_kill_body),
     ) {
         if (anyOn) {
-            OutlinedButton(onClick = { ctx.killSwitch(false) }) {
+            OutlinedButton(onClick = { ctx.killSwitch(false) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.PowerSettingsNew, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                 Text(stringResource(Res.string.rd_s9_kill_action), modifier = Modifier.padding(start = 8.dp), color = MaterialTheme.colorScheme.error)
             }
         } else {
-            OutlinedButton(onClick = { ctx.killSwitch(true) }) { Text(stringResource(Res.string.extensions_enable_all)) }
+            OutlinedButton(onClick = { ctx.killSwitch(true) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_enable_all)) }
         }
     }
 }
@@ -787,7 +788,7 @@ internal fun ExtensionDetailBody(ctx: SourcesContext, ext: InstalledExtension, s
         if (update != null) {
             val notes = ctx.hubState.updates.firstOrNull { it.id == ext.id }?.notes?.takeIf { it.isNotBlank() }
             Banner(Icons.Outlined.SystemUpdate, BannerTone.INFO, stringResource(Res.string.rd_s9_version_available, update), notes) {
-                FilledTonalButton(onClick = { ctx.hub.update(ext.id) }, enabled = !updating) {
+                FilledTonalButton(onClick = { ctx.hub.update(ext.id) }, enabled = !updating, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (updating) Res.string.extensions_updating else Res.string.extensions_update))
                 }
             }
@@ -802,7 +803,7 @@ internal fun ExtensionDetailBody(ctx: SourcesContext, ext: InstalledExtension, s
             }
         }
         if (ext.id in ctx.hubState.withPreferences) {
-            OutlinedButton(onClick = { ctx.openPrefs(ext) }) {
+            OutlinedButton(onClick = { ctx.openPrefs(ext) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.extensions_prefs), modifier = Modifier.padding(start = 8.dp))
             }
@@ -817,7 +818,7 @@ internal fun ExtensionDetailBody(ctx: SourcesContext, ext: InstalledExtension, s
             )
             is DetailState.Ready -> detail.detail?.let { FootFacts(it) }
         }
-        TextButton(onClick = { ctx.viewModel.toggleLog(ext.id) }) {
+        TextButton(onClick = { ctx.viewModel.toggleLog(ext.id) }, shape = NijiyomeControls.shape) {
             Icon(Icons.Outlined.Terminal, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(if (logOpen) Res.string.extensions_hide_logs else Res.string.extensions_logs), modifier = Modifier.padding(start = 8.dp))
         }
@@ -828,7 +829,7 @@ internal fun ExtensionDetailBody(ctx: SourcesContext, ext: InstalledExtension, s
             title = stringResource(Res.string.rd_s9_remove_named, ext.name),
             body = stringResource(Res.string.rd_s9_remove_body),
         ) {
-            OutlinedButton(onClick = { ctx.askRemove(ext) }) {
+            OutlinedButton(onClick = { ctx.askRemove(ext) }, shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.rd_s9_remove_action), color = MaterialTheme.colorScheme.error)
             }
         }

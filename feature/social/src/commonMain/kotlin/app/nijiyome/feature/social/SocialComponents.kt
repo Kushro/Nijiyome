@@ -53,6 +53,7 @@ import app.nijiyome.ui.format.relativeTime
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B (16 §3.7, worker t): shared pieces of the social screens.
 
@@ -102,7 +103,7 @@ internal fun <T> PagedFooter(paged: Paged<T>, onMore: () -> Unit, onRetry: () ->
             compact = true,
         )
         paged.hasNext && paged.items.isNotEmpty() -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            OutlinedButton(onClick = onMore) { Text(stringResource(Res.string.social_load_more)) }
+            OutlinedButton(onClick = onMore, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.social_load_more)) }
         }
     }
 }
@@ -206,7 +207,7 @@ internal fun ActivityCard(
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 val likeLabel = stringResource(if (activity.liked) Res.string.social_unlike else Res.string.social_like)
-                TextButton(onClick = onLike, modifier = Modifier.semantics { contentDescription = likeLabel }) {
+                TextButton(onClick = onLike, modifier = Modifier.semantics { contentDescription = likeLabel }, shape = NijiyomeControls.shape) {
                     Icon(
                         if (activity.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                         contentDescription = null,
@@ -216,7 +217,7 @@ internal fun ActivityCard(
                     Text(activity.likes.toString(), modifier = Modifier.padding(start = 6.dp))
                 }
                 if (onOpenThread != null) {
-                    TextButton(onClick = { onOpenThread(activity.id) }) {
+                    TextButton(onClick = { onOpenThread(activity.id) }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.social_replies_count, activity.replyCount), modifier = Modifier.padding(start = 6.dp))
                     }

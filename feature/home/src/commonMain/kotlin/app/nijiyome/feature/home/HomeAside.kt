@@ -48,6 +48,7 @@ import app.nijiyome.model.LinkServerState
 import app.nijiyome.model.LinkState
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S2: the side column of "Esta noche" (artifact `linkPanel`, `transfersPanel`): Nijiyome Link at a glance and
 // the active downloads. Read-only views of the Link server (desktop) or the Link client (phone); actions open their screens.
@@ -152,11 +153,11 @@ private fun ServerPanel(st: LinkServerState, onOpenLink: () -> Unit, onOpenMonit
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            FilledTonalButton(onClick = onOpenLink) {
+            FilledTonalButton(onClick = onOpenLink, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Devices, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.rd_s2_link_open), modifier = Modifier.padding(start = 8.dp))
             }
-            TextButton(onClick = onOpenMonitor) {
+            TextButton(onClick = onOpenMonitor, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.MonitorHeart, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.rd_s2_link_monitor), modifier = Modifier.padding(start = 8.dp))
             }
@@ -221,7 +222,7 @@ internal fun TransfersPanel(activity: DownloadActivity?, onOpen: () -> Unit, mod
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onOpen) { Text(stringResource(Res.string.home_see_all)) }
+            TextButton(onClick = onOpen, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_see_all)) }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         if (activity == null || total == 0) {

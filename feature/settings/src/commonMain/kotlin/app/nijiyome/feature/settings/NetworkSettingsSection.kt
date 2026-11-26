@@ -37,6 +37,7 @@ import app.nijiyome.model.NetworkSettingsController
 import app.nijiyome.ui.patterns.PortPicker
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Desktop network rows (Tatakai Next's server › network), shown only where a NetworkSettingsController is registered. Since the
 // Sparkles redesign they live in two places: the outbound proxy and the local media proxy in Ajustes › Sistema, FlareSolverr in
@@ -162,7 +163,7 @@ internal fun ProxySettings(net: NetworkSettingsController) {
         result = {
             TestResultLine(result)
             if (result is NetTestResult.Failed && dirty) {
-                TextButton(onClick = ::save) { Text(stringResource(Res.string.rd_s10_commit_save_anyway)) }
+                TextButton(onClick = ::save, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s10_commit_save_anyway)) }
             }
             if (saveFailed) Text(stringResource(Res.string.settings_net_invalid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         },
@@ -217,7 +218,7 @@ internal fun FlareSolverrSettings(net: NetworkSettingsController) {
         result = {
             TestResultLine(result)
             if (result is NetTestResult.Failed && url != st.flareSolverrUrl) {
-                TextButton(onClick = ::save) { Text(stringResource(Res.string.rd_s10_commit_save_anyway)) }
+                TextButton(onClick = ::save, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s10_commit_save_anyway)) }
             }
             if (saveFailed) Text(stringResource(Res.string.settings_net_invalid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         },

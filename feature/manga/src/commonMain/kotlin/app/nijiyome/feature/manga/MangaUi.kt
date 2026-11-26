@@ -15,6 +15,7 @@ import app.nijiyome.model.MediaSort
 import app.nijiyome.ui.state.userMessage
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Labels and dialogs shared by the manga screens (AniList status / origin / sort / format words, mature warning, error block).
 
@@ -25,8 +26,8 @@ internal fun MatureWarningDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.manga_mature_title)) },
         text = { Text(stringResource(Res.string.manga_mature_message)) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(Res.string.manga_mature_confirm)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
+        confirmButton = { TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_mature_confirm)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }
 

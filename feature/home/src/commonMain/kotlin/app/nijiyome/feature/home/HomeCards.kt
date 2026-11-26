@@ -47,6 +47,7 @@ import app.nijiyome.ui.media.progressFraction
 import app.nijiyome.ui.patterns.label
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S2: what every Home structure shares to draw a title, a row and its states. Cards are always TitleCard (the
 // style the user picked); this file only fills TitleCardData from Home's data.
@@ -127,7 +128,7 @@ internal fun HomeSection(
                     } else {
                         trailing?.invoke()
                         if (onSeeAll != null) {
-                            TextButton(onClick = onSeeAll) { Text(seeAllLabel ?: stringResource(Res.string.home_see_all)) }
+                            TextButton(onClick = onSeeAll, shape = NijiyomeControls.shape) { Text(seeAllLabel ?: stringResource(Res.string.home_see_all)) }
                         }
                     }
                 }

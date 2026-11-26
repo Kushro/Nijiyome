@@ -73,6 +73,7 @@ import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.ui_retry
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Library (Sparkles screen `biblioteca`): a medium switch (Anime, Manga, Novela), the views Mi lista · Historial · Favoritos, and
@@ -260,7 +261,7 @@ private fun LibraryHeader(
             if (!compact) MediumSwitch(medium, onMedium)
             Spacer(Modifier.weight(1f))
             if (!compact) {
-                TextButton(onClick = onOpenTorrents) {
+                TextButton(onClick = onOpenTorrents, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.SwapVert, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(torrentsLabel, modifier = Modifier.padding(start = 6.dp))
                 }
@@ -328,7 +329,7 @@ private fun SyncLine(state: LibraryUiState, onSyncNow: () -> Unit) {
                 Text(label, style = MaterialTheme.typography.labelLarge)
             }
         } else {
-            TextButton(onClick = onSyncNow) {
+            TextButton(onClick = onSyncNow, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.library_sync_now), modifier = Modifier.padding(start = 6.dp))
             }
@@ -383,7 +384,7 @@ private fun TorrentsHeader(onBack: () -> Unit, onOpenTransfers: (() -> Unit)?) {
                 modifier = Modifier.weight(1f).semantics { heading() },
             )
             if (onOpenTransfers != null) {
-                TextButton(onClick = onOpenTransfers) { Text(stringResource(Res.string.rd_s7_open_transfers)) }
+                TextButton(onClick = onOpenTransfers, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s7_open_transfers)) }
             }
         }
         Text(

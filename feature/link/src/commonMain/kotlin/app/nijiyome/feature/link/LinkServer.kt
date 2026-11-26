@@ -119,6 +119,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles S9: Nijiyome Link on the desktop, the PC side. Everything comes from LinkServerController (registered on desktop only): what
 // this PC serves, the paired phones and tablets, the active sessions with their RAM cache (the monitor, LNK-18), the profile offer, the
@@ -156,12 +157,12 @@ internal fun LinkServerScreen(
         topBar = {
             LinkTopBar(onBack = onBack, meta = serverMeta(state)) {
                 if (onOpenMonitor != null) {
-                    OutlinedButton(onClick = onOpenMonitor, modifier = Modifier.padding(end = 8.dp)) {
+                    OutlinedButton(onClick = onOpenMonitor, modifier = Modifier.padding(end = 8.dp), shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Monitor, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.rd_s9_srv_open_monitor), modifier = Modifier.padding(start = 8.dp))
                     }
                 }
-                Button(onClick = openPairing, modifier = Modifier.padding(end = 8.dp)) {
+                Button(onClick = openPairing, modifier = Modifier.padding(end = 8.dp), shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.QrCode, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s9_srv_pair_device), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -290,9 +291,9 @@ private fun ServerErrorBanner(s: ServerCtx) {
                 modifier = Modifier.weight(1f, fill = false),
             )
             when (error) {
-                "port_in_use" -> FilledTonalButton(onClick = { s.controller.setPort(alt) }) { Text(stringResource(Res.string.rd_s9_srv_use_port, alt)) }
-                "identity" -> FilledTonalButton(onClick = { regen = true }) { Text(stringResource(Res.string.rd_s9_srv_regen)) }
-                else -> FilledTonalButton(onClick = { s.controller.setEnabled(true) }) { Text(stringResource(UiR.string.ui_retry)) }
+                "port_in_use" -> FilledTonalButton(onClick = { s.controller.setPort(alt) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_use_port, alt)) }
+                "identity" -> FilledTonalButton(onClick = { regen = true }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_regen)) }
+                else -> FilledTonalButton(onClick = { s.controller.setEnabled(true) }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
             }
         }
     }
@@ -328,6 +329,7 @@ private fun ServerMapTop(s: ServerCtx, selected: String, onSelect: (String) -> U
                 OutlinedButton(
                     onClick = s.openPairing,
                     colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                    shape = NijiyomeControls.shape,
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s9_srv_pair_short), modifier = Modifier.padding(start = 8.dp))
@@ -422,17 +424,17 @@ private fun DevicePanel(s: ServerCtx, d: LinkServerDevice) {
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (d.historyMode == LinkDeviceHistoryMode.FULL) {
-                OutlinedButton(onClick = { s.controller.useAsHistorySource(d.id) }, enabled = !d.resyncing) {
+                OutlinedButton(onClick = { s.controller.useAsHistorySource(d.id) }, enabled = !d.resyncing, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.SyncAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(if (d.resyncing) Res.string.rd_s9_srv_resyncing else Res.string.rd_s9_srv_use_source), modifier = Modifier.padding(start = 8.dp))
                 }
             }
-            TextButton(onClick = { renaming = true }) {
+            TextButton(onClick = { renaming = true }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.rd_s9_srv_rename), modifier = Modifier.padding(start = 8.dp))
             }
             s.onOpenLogs?.let { open ->
-                TextButton(onClick = open) {
+                TextButton(onClick = open, shape = NijiyomeControls.shape) {
                     Icon(Icons.AutoMirrored.Outlined.ReceiptLong, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s9_srv_logs), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -447,9 +449,9 @@ private fun DevicePanel(s: ServerCtx, d: LinkServerDevice) {
             title = { Text(stringResource(Res.string.rd_s9_srv_rename_title)) },
             text = { OutlinedTextField(value = name, onValueChange = { name = it.take(64) }, label = { Text(stringResource(Res.string.rd_s9_srv_name)) }, singleLine = true) },
             confirmButton = {
-                TextButton(onClick = { s.controller.rename(d.id, name.trim()); renaming = false }, enabled = name.isNotBlank()) { Text(stringResource(Res.string.rd_s9_srv_save)) }
+                TextButton(onClick = { s.controller.rename(d.id, name.trim()); renaming = false }, enabled = name.isNotBlank(), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_save)) }
             },
-            dismissButton = { TextButton(onClick = { renaming = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { renaming = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
     if (revoking) {
@@ -477,7 +479,7 @@ private fun ServerCardsTop(s: ServerCtx, selected: String, onSelect: (String) ->
             tone = if (state.running) PillTone.OK else PillTone.NEUTRAL,
             text = if (state.running) stringResource(Res.string.rd_s9_srv_port_addresses, state.port, state.addresses.joinToString(", ")) else stringResource(Res.string.rd_s9_srv_off_body),
             modifier = m,
-        ) { TextButton(onClick = { s.controller.setEnabled(!state.enabled) }) { Text(stringResource(if (state.enabled) Res.string.rd_s9_srv_turn_off else Res.string.rd_s9_srv_turn_on)) } }
+        ) { TextButton(onClick = { s.controller.setEnabled(!state.enabled) }, shape = NijiyomeControls.shape) { Text(stringResource(if (state.enabled) Res.string.rd_s9_srv_turn_off else Res.string.rd_s9_srv_turn_on)) } }
     }
     state.devices.forEach { d ->
         cards.add { m ->
@@ -489,7 +491,7 @@ private fun ServerCardsTop(s: ServerCtx, selected: String, onSelect: (String) ->
                 tone = if (d.online) PillTone.OK else PillTone.NEUTRAL,
                 text = deviceNode(d, session).sub.orEmpty(),
                 modifier = m,
-            ) { TextButton(onClick = { onSelect(d.id) }) { Text(stringResource(Res.string.rd_s9_srv_adjust)) } }
+            ) { TextButton(onClick = { onSelect(d.id) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_adjust)) } }
         }
     }
     cards.add { m ->
@@ -500,7 +502,7 @@ private fun ServerCardsTop(s: ServerCtx, selected: String, onSelect: (String) ->
             tone = PillTone.NEUTRAL,
             text = pluralStringResource(Res.plurals.rd_s9_srv_meta_sessions, state.activeSessions.size, state.activeSessions.size),
             modifier = m,
-        ) { s.onOpenMonitor?.let { open -> TextButton(onClick = open) { Text(stringResource(Res.string.rd_s9_srv_open_monitor)) } } }
+        ) { s.onOpenMonitor?.let { open -> TextButton(onClick = open, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_open_monitor)) } } }
     }
     cards.add { m ->
         val extBusy = state.extError == "port_in_use"
@@ -524,9 +526,9 @@ private fun ServerCardsTop(s: ServerCtx, selected: String, onSelect: (String) ->
         ) {
             if (extBusy) {
                 val alt = LinkServerPorts.alternative(state.extPort, LinkServerPorts.EXT_DEFAULT)
-                FilledTonalButton(onClick = { s.controller.setExtensionPort(alt) }) { Text(stringResource(Res.string.rd_s9_srv_use_port, alt)) }
+                FilledTonalButton(onClick = { s.controller.setExtensionPort(alt) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_use_port, alt)) }
             } else if (state.extRunning) {
-                TextButton(onClick = s.openExtPairing) { Text(stringResource(Res.string.rd_s9_srv_new_code)) }
+                TextButton(onClick = s.openExtPairing, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_new_code)) }
             }
         }
     }
@@ -561,7 +563,7 @@ private fun PairedList(s: ServerCtx, selected: String, onSelect: (String) -> Uni
     Panel(
         icon = Icons.Outlined.PhoneAndroid,
         title = stringResource(Res.string.rd_s9_srv_paired),
-        trailing = { FilledTonalButton(onClick = s.openPairing) { Text(stringResource(Res.string.rd_s9_srv_pair_short)) } },
+        trailing = { FilledTonalButton(onClick = s.openPairing, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_pair_short)) } },
     ) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(value = selected == PC_NODE, role = Role.Button, onValueChange = { onSelect(PC_NODE) }),
@@ -623,7 +625,7 @@ private fun MonitorPanel(s: ServerCtx) {
     Panel(
         icon = Icons.Outlined.Cast,
         title = pluralStringResource(Res.plurals.rd_s9_srv_sessions_title, state.activeSessions.size, state.activeSessions.size),
-        trailing = { s.onOpenMonitor?.let { open -> TextButton(onClick = open) { Text(stringResource(Res.string.rd_s9_srv_open_monitor)) } } },
+        trailing = { s.onOpenMonitor?.let { open -> TextButton(onClick = open, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_open_monitor)) } } },
     ) {
         if (state.activeSessions.isEmpty()) {
             Hint(stringResource(Res.string.rd_s9_srv_no_sessions))
@@ -646,13 +648,13 @@ private fun MonitorPanel(s: ServerCtx) {
         Meter(stringResource(Res.string.rd_s9_srv_app_ram), stringResource(Res.string.rd_s9_srv_cache_value, ram.first, ram.second), ram.first.toFloat() / ram.second.coerceAtLeast(1))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             s.onOpenTorrents?.let { open ->
-                TextButton(onClick = open) {
+                TextButton(onClick = open, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.SwapVert, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s9_srv_open_transfers), modifier = Modifier.padding(start = 8.dp))
                 }
             }
             s.onOpenLinkSettings?.let { open ->
-                TextButton(onClick = open) {
+                TextButton(onClick = open, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s9_srv_link_settings), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -712,7 +714,7 @@ private fun SessionRow(x: LinkActiveSession, onStop: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                OutlinedButton(onClick = { confirm = true }) {
+                OutlinedButton(onClick = { confirm = true }, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Stop, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                     Text(stringResource(Res.string.rd_s9_srv_stop), modifier = Modifier.padding(start = 8.dp), color = MaterialTheme.colorScheme.error)
                 }
@@ -779,7 +781,7 @@ private fun LinkServerPanel(s: ServerCtx) {
             label = stringResource(Res.string.rd_s9_srv_library),
             hint = stringResource(Res.string.rd_s9_srv_library_hint),
         )
-        if (state.libraryFolder.isNotBlank()) TextButton(onClick = { c.setLibraryFolder("") }) { Text(stringResource(Res.string.rd_s9_srv_library_none)) }
+        if (state.libraryFolder.isNotBlank()) TextButton(onClick = { c.setLibraryFolder("") }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_library_none)) }
         Firewall(s)
         DangerRow(stringResource(Res.string.rd_s9_srv_regen_title), stringResource(Res.string.rd_s9_srv_regen_hint), stringResource(Res.string.rd_s9_srv_regen)) { regen = true }
     }
@@ -791,14 +793,14 @@ private fun Firewall(s: ServerCtx) {
     val state = s.state
     var open by rememberSaveable { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
-    TextButton(onClick = { open = !open }) {
+    TextButton(onClick = { open = !open }, shape = NijiyomeControls.shape) {
         Icon(if (open) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
         Text(stringResource(Res.string.rd_s9_srv_firewall), modifier = Modifier.padding(start = 8.dp))
     }
     AnimatedVisibility(open, enter = motionFadeIn(), exit = motionFadeOut()) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (state.firewallButton) {
-                FilledTonalButton(onClick = { s.controller.allowPrivateNetwork() }, enabled = state.firewall != FirewallResult.RUNNING) { Text(stringResource(Res.string.rd_s9_srv_firewall_allow)) }
+                FilledTonalButton(onClick = { s.controller.allowPrivateNetwork() }, enabled = state.firewall != FirewallResult.RUNNING, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_firewall_allow)) }
                 state.firewall?.let { r ->
                     Hint(
                         stringResource(
@@ -845,17 +847,17 @@ private fun ExtServerPanel(s: ServerCtx) {
                 state.extError == "port_in_use" -> {
                     val alt = LinkServerPorts.alternative(state.extPort, LinkServerPorts.EXT_DEFAULT)
                     Text(stringResource(Res.string.rd_s9_srv_ext_port_busy, state.extPort), color = LocalSignalColors.current.err, style = MaterialTheme.typography.bodyMedium)
-                    FilledTonalButton(onClick = { c.setExtensionPort(alt) }) { Text(stringResource(Res.string.rd_s9_srv_use_port, alt)) }
+                    FilledTonalButton(onClick = { c.setExtensionPort(alt) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_use_port, alt)) }
                 }
                 state.extError != null -> Text(stringResource(Res.string.rd_s9_srv_ext_error, state.extError.orEmpty()), color = LocalSignalColors.current.err, style = MaterialTheme.typography.bodyMedium)
                 state.extRunning -> Text(stringResource(Res.string.rd_s9_srv_ext_serving, state.extUrls.joinToString(", ")), style = MaterialTheme.typography.bodyMedium)
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                FilledTonalButton(onClick = s.openExtPairing, enabled = state.extRunning) {
+                FilledTonalButton(onClick = s.openExtPairing, enabled = state.extRunning, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.QrCode, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s9_srv_new_code_phone), modifier = Modifier.padding(start = 8.dp))
                 }
-                s.onOpenExtensionServers?.let { open -> TextButton(onClick = open) { Text(stringResource(Res.string.rd_s9_srv_other_pcs)) } }
+                s.onOpenExtensionServers?.let { open -> TextButton(onClick = open, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_other_pcs)) } }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -864,9 +866,9 @@ private fun ExtServerPanel(s: ServerCtx) {
                     modifier = Modifier.weight(1f),
                 )
                 if (state.extPasswordSet) {
-                    TextButton(onClick = { c.setExtensionPassword(null) }) { Text(stringResource(Res.string.rd_s9_srv_pw_remove)) }
+                    TextButton(onClick = { c.setExtensionPassword(null) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_pw_remove)) }
                 } else {
-                    TextButton(onClick = { password = true }, enabled = state.extRunning) { Text(stringResource(Res.string.rd_s9_srv_pw_create)) }
+                    TextButton(onClick = { password = true }, enabled = state.extRunning, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_pw_create)) }
                 }
             }
             state.extPasswordResult?.let { r ->
@@ -891,10 +893,10 @@ private fun ExtServerPanel(s: ServerCtx) {
                         Text(d.label, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         d.lastSeenMs?.let { Hint(stringResource(Res.string.rd_s9_srv_seen, relativeTime(it))) }
                     }
-                    TextButton(onClick = { revoke = d.id }) { Text(stringResource(Res.string.rd_s9_srv_revoke_action), color = MaterialTheme.colorScheme.error) }
+                    TextButton(onClick = { revoke = d.id }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_revoke_action), color = MaterialTheme.colorScheme.error) }
                 }
             }
-            TextButton(onClick = { logs = !logs }) {
+            TextButton(onClick = { logs = !logs }, shape = NijiyomeControls.shape) {
                 Icon(if (logs) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.rd_s9_srv_ext_logs, state.extLogs.size), modifier = Modifier.padding(start = 8.dp))
             }
@@ -942,8 +944,8 @@ private fun ExtServerPanel(s: ServerCtx) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 )
             },
-            confirmButton = { TextButton(onClick = { c.setExtensionPassword(pw); pw = ""; password = false }, enabled = ok) { Text(stringResource(Res.string.rd_s9_srv_save)) } },
-            dismissButton = { TextButton(onClick = { password = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            confirmButton = { TextButton(onClick = { c.setExtensionPassword(pw); pw = ""; password = false }, enabled = ok, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_save)) } },
+            dismissButton = { TextButton(onClick = { password = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
 }
@@ -972,7 +974,7 @@ private fun PortRow(port: Int, default: Int, label: String, running: Boolean, on
     )
     if (draft != port) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { onApply(draft) }, enabled = LinkServerPorts.isValid(draft)) { Text(stringResource(Res.string.rd_s9_srv_port_apply, draft)) }
+            Button(onClick = { onApply(draft) }, enabled = LinkServerPorts.isValid(draft), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_port_apply, draft)) }
             Hint(stringResource(Res.string.rd_s9_srv_port_restart), Modifier.weight(1f))
         }
     }
@@ -1006,7 +1008,7 @@ private fun DangerRow(title: String, hint: String, action: String, onClick: () -
                 Text(title, style = MaterialTheme.typography.titleSmall)
                 Hint(hint)
             }
-            OutlinedButton(onClick = onClick) { Text(action, color = MaterialTheme.colorScheme.error) }
+            OutlinedButton(onClick = onClick, shape = NijiyomeControls.shape) { Text(action, color = MaterialTheme.colorScheme.error) }
         }
     }
 }
@@ -1017,8 +1019,8 @@ private fun ConfirmDanger(title: String, body: String, confirm: String, onConfir
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { Text(body) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(confirm, color = MaterialTheme.colorScheme.error) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
+        confirmButton = { TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) { Text(confirm, color = MaterialTheme.colorScheme.error) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }
 
@@ -1065,12 +1067,12 @@ private fun PairingSheet(
             when {
                 code == null -> {
                     Hint(stringResource(Res.string.rd_s9_srv_pair_opening))
-                    FilledTonalButton(onClick = onRenew) { Text(stringResource(Res.string.rd_s9_srv_pair_new)) }
+                    FilledTonalButton(onClick = onRenew, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_pair_new)) }
                 }
                 expired -> {
                     Text(stringResource(Res.string.rd_s9_srv_pair_expired), style = MaterialTheme.typography.titleMedium, color = LocalSignalColors.current.err)
                     Hint(stringResource(Res.string.rd_s9_srv_pair_expired_body))
-                    Button(onClick = onRenew) { Text(stringResource(Res.string.rd_s9_srv_pair_new)) }
+                    Button(onClick = onRenew, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_pair_new)) }
                 }
                 else -> {
                     qr?.let { QrMatrixImage(it, stringResource(Res.string.rd_s9_srv_qr_description), Modifier.width(240.dp)) }
@@ -1084,14 +1086,14 @@ private fun PairingSheet(
                         OutlinedButton(onClick = {
                             clipboard.setText(AnnotatedString(t))
                             snackbar.show(copied)
-                        }) {
+                        }, shape = NijiyomeControls.shape) {
                             Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(stringResource(Res.string.rd_s9_srv_copy_pairing), modifier = Modifier.padding(start = 8.dp))
                         }
                     }
                 }
             }
-            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) { Text(stringResource(Res.string.rd_s9_srv_close_window)) }
+            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_srv_close_window)) }
         }
     }
 }

@@ -61,6 +61,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import java.text.DateFormat
 import java.util.Date
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles S9: Fuentes › Debrid. The accounts (link with a key, check it, unlink with confirmation), their premium state and the three
 // switches that used to sit in Torrents › Debrid and Settings › Torrents. A cached torrent then plays at once over HTTPS.
@@ -119,7 +120,7 @@ internal fun LazyListScope.debridSection(ctx: SourcesContext) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(Res.string.rd_s9_debrid_order_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             ctx.onOpenDebrid?.let { open ->
-                TextButton(onClick = open) {
+                TextButton(onClick = open, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s9_debrid_more), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -202,7 +203,7 @@ private fun DebridServiceCard(ctx: SourcesContext, service: DebridService, accou
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedButton(onClick = { ctx.debrid.recheck(service) }, enabled = !checking) {
+                    OutlinedButton(onClick = { ctx.debrid.recheck(service) }, enabled = !checking, shape = NijiyomeControls.shape) {
                         if (checking) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                         Text(
                             stringResource(if (checking) Res.string.rd_s9_debrid_checking else Res.string.rd_s9_debrid_check),
@@ -210,12 +211,12 @@ private fun DebridServiceCard(ctx: SourcesContext, service: DebridService, accou
                         )
                     }
                     if (expired) {
-                        TextButton(onClick = { openUrl(debridKeyPage(service)) }) {
+                        TextButton(onClick = { openUrl(debridKeyPage(service)) }, shape = NijiyomeControls.shape) {
                             Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(stringResource(Res.string.rd_s9_debrid_renew, service.label), modifier = Modifier.padding(start = 8.dp))
                         }
                     }
-                    TextButton(onClick = { ctx.askUnlinkDebrid(service) }) {
+                    TextButton(onClick = { ctx.askUnlinkDebrid(service) }, shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.rd_s9_debrid_unlink_ellipsis), color = MaterialTheme.colorScheme.error)
                     }
                 }
@@ -242,11 +243,11 @@ private fun DebridServiceCard(ctx: SourcesContext, service: DebridService, accou
                     modifier = Modifier.fillMaxWidth(),
                 )
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    FilledTonalButton(onClick = { ctx.debrid.link(service, key) }, enabled = key.isNotBlank() && !linking) {
+                    FilledTonalButton(onClick = { ctx.debrid.link(service, key) }, enabled = key.isNotBlank() && !linking, shape = NijiyomeControls.shape) {
                         if (linking) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                         Text(stringResource(Res.string.rd_s9_debrid_test_link), modifier = Modifier.padding(start = if (linking) 8.dp else 0.dp))
                     }
-                    TextButton(onClick = { openUrl(debridKeyPage(service)) }) {
+                    TextButton(onClick = { openUrl(debridKeyPage(service)) }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.rd_s9_debrid_get_key, service.label), modifier = Modifier.padding(start = 8.dp))
                     }

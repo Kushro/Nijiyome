@@ -144,6 +144,7 @@ import java.util.Date
 import java.util.Locale
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * `Route.NovelDetails(anilistId)` (NOV-04 to NOV-08), following the manga details page of the Sparkles design: header with cover,
@@ -296,14 +297,14 @@ private fun NovelHeader(
         // the header's inner width (minus its 16 dp padding) decides whether "Quitar de la lista" fits beside the six named statuses
         val besideRemove = !compact && maxWidth - 32.dp >= STATUS_ROW_MIN
         Column(Modifier.fillMaxWidth().decor(DecorRegion.HERO).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            TextButton(onClick = onBack) {
+            TextButton(onClick = onBack, shape = NijiyomeControls.shape) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(Res.string.novel_title))
             }
             val actions: @Composable () -> Unit = {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = vm::readNext) {
+                    Button(onClick = vm::readNext, shape = NijiyomeControls.shape) {
                         Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         val n = ChapterText.formatNumber(nextChapter)
@@ -354,9 +355,9 @@ private fun NovelHeader(
                     labelOf = { stringResource(it.toListStatus().readLabelRes()) },
                     compact = compact,
                 )
-                if (entry != null && besideRemove) TextButton(onClick = remove) { Text(stringResource(UiR.string.list_remove)) }
+                if (entry != null && besideRemove) TextButton(onClick = remove, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.list_remove)) }
             }
-            if (entry != null && !besideRemove) TextButton(onClick = remove) { Text(stringResource(UiR.string.list_remove)) }
+            if (entry != null && !besideRemove) TextButton(onClick = remove, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.list_remove)) }
         }
     }
 }
@@ -396,7 +397,7 @@ private fun ColumnScope.NovelInfo(info: app.nijiyome.manga.MangaInfo, onOpenGenr
         InfoPanel(stringResource(Res.string.rd_s11_synopsis)) {
             var expanded by rememberSaveable { mutableStateOf(false) }
             Text(s, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 5, overflow = TextOverflow.Ellipsis)
-            TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) Res.string.novel_less else Res.string.novel_more)) }
+            TextButton(onClick = { expanded = !expanded }, shape = NijiyomeControls.shape) { Text(stringResource(if (expanded) Res.string.novel_less else Res.string.novel_more)) }
         }
     }
     if (media.genres.isNotEmpty()) {
@@ -435,7 +436,7 @@ private fun LazyListScope.novelChapters(
                 trailing = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (!state.selection.active) {
-                            TextButton(onClick = { state.selection.start() }) {
+                            TextButton(onClick = { state.selection.start() }, shape = NijiyomeControls.shape) {
                                 Icon(Icons.Outlined.Checklist, contentDescription = null)
                                 Text(stringResource(Res.string.rd_s11_select), modifier = Modifier.padding(start = 6.dp))
                             }
@@ -456,7 +457,7 @@ private fun LazyListScope.novelChapters(
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(Res.string.rd_s11_source), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                TextButton(onClick = vm::checkAll, enabled = !ui.checking) {
+                TextButton(onClick = vm::checkAll, enabled = !ui.checking, shape = NijiyomeControls.shape) {
                     if (ui.checking) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Icon(Icons.Outlined.FactCheck, contentDescription = null)
                     Text(stringResource(Res.string.rd_s11_check_all_sources), modifier = Modifier.padding(start = 6.dp))
                 }

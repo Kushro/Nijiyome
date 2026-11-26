@@ -161,6 +161,7 @@ import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
 import java.util.Locale
 import kotlinx.coroutines.delay
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Episode rows built once per data change (not in every pass of the list builder): all of them and the search matches. */
 internal data class EpisodeLists(val all: List<EpisodeItem>, val filtered: List<EpisodeItem>)
@@ -213,7 +214,7 @@ internal fun SourcePanelCard(state: DetailsUiState, actions: DetailsActions, mod
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { actions.onOpenSettings(SettingsSection.PLAYER) }) {
+            TextButton(onClick = { actions.onOpenSettings(SettingsSection.PLAYER) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.details_src_settings), modifier = Modifier.padding(start = 4.dp))
             }
@@ -268,7 +269,7 @@ internal fun SourcePanelCard(state: DetailsUiState, actions: DetailsActions, mod
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        FilledTonalButton(onClick = { actions.onOpenPicker(false) }, modifier = Modifier.fillMaxWidth()) {
+                        FilledTonalButton(onClick = { actions.onOpenPicker(false) }, modifier = Modifier.fillMaxWidth(), shape = NijiyomeControls.shape) {
                             Text(stringResource(Res.string.details_src_all, sources.value.size), modifier = Modifier.weight(1f))
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                         }
@@ -290,7 +291,7 @@ internal fun SendToDevicePanel(state: DetailsUiState, actions: DetailsActions, m
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = actions.onOpenLinked) { Text(stringResource(Res.string.details_send_pair)) }
+            TextButton(onClick = actions.onOpenLinked, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_send_pair)) }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Outlined.Computer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -302,7 +303,7 @@ internal fun SendToDevicePanel(state: DetailsUiState, actions: DetailsActions, m
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Button(onClick = actions.onSendToDevice, enabled = !state.sending) {
+                Button(onClick = actions.onSendToDevice, enabled = !state.sending, shape = NijiyomeControls.shape) {
                     if (state.sending) CircularProgressIndicator(Modifier.size(16.dp).padding(end = 4.dp), strokeWidth = 2.dp)
                     Text(stringResource(if (state.sending) Res.string.details_send_sending else Res.string.details_send_action))
                 }
@@ -335,9 +336,9 @@ internal fun SendToPhonePanel(state: DetailsUiState, actions: DetailsActions, mo
                     Text(stringResource(if (state.sending) Res.string.details_send_sending else Res.string.details_send_action))
                 }
                 if (phone.online) {
-                    Button(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable, content = sendContent)
+                    Button(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable, content = sendContent, shape = NijiyomeControls.shape)
                 } else {
-                    OutlinedButton(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable, content = sendContent)
+                    OutlinedButton(onClick = { actions.onSendToPhone(phone) }, enabled = !state.sending && state.playable, content = sendContent, shape = NijiyomeControls.shape)
                 }
             }
         }
@@ -552,7 +553,7 @@ private fun FactsCards(details: MediaDetails, actions: DetailsActions) {
     if (details.externalLinks.isNotEmpty()) {
         SectionCard(title = stringResource(Res.string.details_links)) {
             details.externalLinks.forEach { (label, url) ->
-                TextButton(onClick = { actions.onOpenUrl(url) }) {
+                TextButton(onClick = { actions.onOpenUrl(url) }, shape = NijiyomeControls.shape) {
                     Text(label, modifier = Modifier.weight(1f, fill = false))
                     Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.padding(start = 6.dp).size(16.dp))
                 }
@@ -589,7 +590,7 @@ private fun TagsCard(tags: List<MediaTag>) {
             }
         }
         if (!all && visible.size > TAGS_COLLAPSED) {
-            TextButton(onClick = { all = true }) { Text(stringResource(Res.string.details_tags_all, visible.size)) }
+            TextButton(onClick = { all = true }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_tags_all, visible.size)) }
         }
     }
 }
@@ -645,7 +646,7 @@ internal fun LazyListScope.charactersItems(state: DetailsUiState, actions: Detai
                         if (c.loading) {
                             DelayedLoading()
                         } else {
-                            OutlinedButton(onClick = actions.onLoadCharacters) { Text(stringResource(Res.string.details_characters_more)) }
+                            OutlinedButton(onClick = actions.onLoadCharacters, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_characters_more)) }
                         }
                     }
                 }

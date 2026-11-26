@@ -49,6 +49,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * 0.4.0 (worker B): Settings › Reproductor › «Generación de cuadros en el teléfono»: the state on this device, the Lossless.dll
@@ -110,7 +111,7 @@ internal fun FrameGenSettingsSection() {
         }
         SettingRow(stringResource(FgR.string.fg_shaders), stringResource(FgR.string.fg_shaders_hint) + "\n" + shadersLine, stack = true) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { pickDll.launch(arrayOf("*/*")) }, enabled = !busy && !libraryMissing) {
+                OutlinedButton(onClick = { pickDll.launch(arrayOf("*/*")) }, enabled = !busy && !libraryMissing, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         stringResource(if (state.shadersImported == true) FgR.string.fg_shaders_reimport else FgR.string.fg_shaders_import),
@@ -128,6 +129,7 @@ internal fun FrameGenSettingsSection() {
                             }
                         },
                         enabled = !busy,
+                        shape = NijiyomeControls.shape,
                     ) {
                         Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(FgR.string.fg_shaders_remove), Modifier.padding(start = 6.dp))

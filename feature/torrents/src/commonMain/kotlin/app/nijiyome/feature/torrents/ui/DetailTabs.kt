@@ -87,6 +87,7 @@ import app.nijiyome.ui.resources.*
 import app.nijiyome.ui.format.formatBytes
 import app.nijiyome.ui.format.formatRate
 import app.nijiyome.ui.labels.labelRes
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // The four per-torrent tabs of 11 §3.3 (desktop C screens of 10 §5.4). Each one: loading / empty / error.
 
@@ -301,7 +302,7 @@ internal fun FilesTab(viewModel: TorrentDetailViewModel, item: TorrentLibraryIte
                 },
             )
             // parity wave A (worker q, torrent.episode-alignment)
-            TextButton(onClick = { aligning = true }, modifier = Modifier.padding(horizontal = 8.dp)) {
+            TextButton(onClick = { aligning = true }, modifier = Modifier.padding(horizontal = 8.dp), shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.torrent_align_title))
             }
             val selected = files.count { it.selected }
@@ -468,7 +469,7 @@ internal fun PeersTab(viewModel: TorrentDetailViewModel) {
                         Text(stringResource(flagLabel(letter)), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-                TextButton(onClick = { legend = false }, modifier = Modifier.align(Alignment.End)) {
+                TextButton(onClick = { legend = false }, modifier = Modifier.align(Alignment.End), shape = NijiyomeControls.shape) {
                     Text(stringResource(UiR.string.ui_close))
                 }
             }

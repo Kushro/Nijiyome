@@ -76,6 +76,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Settings › Nijiyome Link: the phone's client rows on Android ([LinkSection]); on desktop, where a [LinkServerController] is
@@ -139,7 +140,7 @@ internal fun LinkServerSummary(server: LinkServerController, onOpenLinked: () ->
         value = st.serverName,
         onSave = server::setServerName,
     )
-    FilledTonalButton(onClick = onOpenLinked, modifier = Modifier.padding(top = 8.dp)) {
+    FilledTonalButton(onClick = onOpenLinked, modifier = Modifier.padding(top = 8.dp), shape = NijiyomeControls.shape) {
         Text(stringResource(Res.string.rd_s10_link_open_screen))
     }
 }

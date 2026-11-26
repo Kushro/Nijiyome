@@ -94,6 +94,7 @@ import app.nijiyome.ui.resources.*
 import kotlinx.coroutines.flow.emptyFlow
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S8 (Transferencias): pieces both structures share. A row says its kind and its state in words, with an icon
 // and the direction's signal color; progress goes through the direction's `ProgressTrack`.
@@ -477,6 +478,7 @@ internal fun TransferDeleteDialog(items: List<TransferItem>, onConfirm: (deleteF
             TextButton(
                 onClick = { onConfirm(deleteFiles) },
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                shape = NijiyomeControls.shape,
             ) {
                 Text(
                     if (torrents) pluralStringResource(Res.plurals.rd_s8_delete_confirm, n, n)
@@ -485,7 +487,7 @@ internal fun TransferDeleteDialog(items: List<TransferItem>, onConfirm: (deleteF
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) {
                 Text(if (torrents) stringResource(UiR.string.ui_cancel) else stringResource(Res.string.rd_s8_keep_downloading))
             }
         },
@@ -506,9 +508,10 @@ internal fun DangerConfirm(title: String, body: String, confirm: String, onConfi
                     onDismiss()
                 },
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                shape = NijiyomeControls.shape,
             ) { Text(confirm) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }
 

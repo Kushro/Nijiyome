@@ -33,6 +33,7 @@ import app.nijiyome.feature.player.sheets.SheetSection
 import app.nijiyome.feature.player.sheets.StateNote
 import app.nijiyome.feature.player.sheets.ToggleRow
 import app.nijiyome.framegen.R as FgR
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Milestone 4: the phone frame generation of the player screen (:core:framegen is an Android-only module and its texts are its
 // Android resources): the "Mejoras" card and the statistics line, moved verbatim from EnhancementPanel.kt / EnhancementStats.kt, and
@@ -114,7 +115,7 @@ private fun FrameGenSection(fg: FrameGenController, s: FrameGenUiState, onOpenFg
             hintIsWarning = reason != null && reason.kind != FgUnavailableReason.Kind.SUSPENDED,
         )
         if (reason == FgUnavailableReason.SHADERS || s.shadersImported == false) {
-            TextButton(onClick = onOpenFgSettings) { Text(stringResource(Res.string.player_fx_fg_import)) }
+            TextButton(onClick = onOpenFgSettings, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_fx_fg_import)) }
         }
         if (s.active) {
             val view = FgStatsView.from(s, s.liveFps)

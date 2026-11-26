@@ -71,6 +71,7 @@ import app.nijiyome.ui.patterns.selectionKeys
 import app.nijiyome.ui.patterns.toListStatus
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Structure "Lista" (`LibraryStructure.LIST`): a dense list sorted by its column heads, with multi-selection (Ctrl / Shift click,
@@ -211,9 +212,9 @@ private fun PhoneSortLine(state: ListsUiState, count: Int, sel: SelectionState<S
             modifier = Modifier.semantics { contentDescription = sortLabel },
         )
         if (sel.active) {
-            TextButton(onClick = sel::exit) { Text(stringResource(Res.string.rd_s7_done)) }
+            TextButton(onClick = sel::exit, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s7_done)) }
         } else {
-            TextButton(onClick = { sel.start() }) { Text(stringResource(Res.string.rd_s7_select)) }
+            TextButton(onClick = { sel.start() }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s7_select)) }
         }
     }
 }
@@ -258,6 +259,7 @@ private fun SortHead(sort: ListSort, state: ListsUiState, actions: MyListActions
         TextButton(
             onClick = { actions.toggleSort(sort) },
             modifier = Modifier.semantics { if (direction != null) stateDescription = direction },
+            shape = NijiyomeControls.shape,
         ) {
             Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Icon(

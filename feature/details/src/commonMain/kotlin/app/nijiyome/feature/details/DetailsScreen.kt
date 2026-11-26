@@ -118,6 +118,7 @@ import app.nijiyome.ui.state.LoadStateContent
 import app.nijiyome.ui.state.providerLabel
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 @Composable
 fun DetailsScreen(
@@ -501,14 +502,14 @@ private fun SendToDeviceDialog(
         // BUG-039: no "Enviar" while the PC does not answer (the send would fail); check again instead
         confirmButton = {
             if (reachable) {
-                TextButton(onClick = onConfirm) { Text(stringResource(Res.string.details_send_action)) }
+                TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_send_action)) }
             } else {
-                TextButton(onClick = onRecheck, enabled = !checking) {
+                TextButton(onClick = onRecheck, enabled = !checking, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (checking) Res.string.details_send_checking else Res.string.details_send_recheck), maxLines = 1)
                 }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.details_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_cancel)) } },
     )
 }
 
@@ -520,8 +521,8 @@ private fun SendToPhoneDialog(media: Media, episode: Int, phone: PhoneTarget, on
         icon = { Icon(Icons.Outlined.Cast, contentDescription = null) },
         title = { Text(stringResource(Res.string.details_send_device)) },
         text = { Text(stringResource(Res.string.details_send_body, media.title, episode, phone.name)) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(Res.string.details_send_action)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.details_cancel)) } },
+        confirmButton = { TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_send_action)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_cancel)) } },
     )
 }
 
@@ -561,8 +562,8 @@ private fun AdultGate(actions: DetailsActions) {
             message = stringResource(Res.string.details_adult_body),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = actions.onBack) { Text(stringResource(Res.string.details_adult_back)) }
-            Button(onClick = actions.onAcceptAdult) { Text(stringResource(Res.string.details_adult_show)) }
+            OutlinedButton(onClick = actions.onBack, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_adult_back)) }
+            Button(onClick = actions.onAcceptAdult, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_adult_show)) }
         }
     }
 }

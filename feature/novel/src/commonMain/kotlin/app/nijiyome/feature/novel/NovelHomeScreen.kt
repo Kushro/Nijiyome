@@ -103,6 +103,7 @@ import app.nijiyome.ui.patterns.isCompactWindow
 import app.nijiyome.ui.patterns.rememberUndoController
 import app.nijiyome.ui.state.screenInsets
 import org.koin.compose.viewmodel.koinViewModel
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * `Route.Novels(query)` (NOV-01 / NOV-02): the novel home, which follows the manga home of the Sparkles design (artifact screen
@@ -321,7 +322,7 @@ private fun NovelFeed(
                     SectionHeader(
                         stringResource(Res.string.novel_continue_reading),
                         Modifier.padding(horizontal = 16.dp),
-                        trailing = onOpenLibrary?.let { open -> { TextButton(onClick = open) { Text(stringResource(Res.string.rd_s11_library)) } } },
+                        trailing = onOpenLibrary?.let { open -> { TextButton(onClick = open, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_library)) } } },
                     )
                     LazyRow(Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         itemsIndexed(continueReading, key = { _, c -> c.mediaId }) { i, c ->
@@ -428,10 +429,10 @@ private fun NovelFeature(
                             media.synopsis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, maxLines = if (compact) 3 else 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 560.dp)) }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 if (saved != null) {
-                                    Button(onClick = { onOpenReader(novelResumeArgs(saved)) }) { Text(stringResource(Res.string.rd_s11_resume_chapter, ChapterText.formatNumber(saved.chapterNumber) ?: "?")) }
-                                    FilledTonalButton(onClick = { onOpen(media) }) { Text(stringResource(Res.string.novel_hero_open)) }
+                                    Button(onClick = { onOpenReader(novelResumeArgs(saved)) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_resume_chapter, ChapterText.formatNumber(saved.chapterNumber) ?: "?")) }
+                                    FilledTonalButton(onClick = { onOpen(media) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_hero_open)) }
                                 } else {
-                                    Button(onClick = { onOpen(media) }) { Text(stringResource(Res.string.novel_hero_open)) }
+                                    Button(onClick = { onOpen(media) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_hero_open)) }
                                 }
                             }
                         }
@@ -459,7 +460,7 @@ private fun NovelNewsRow(entry: ReadEntry, chapter: NovelChapter, onRead: () -> 
             Text(entry.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(stringResource(Res.string.novel_followed_new_chapter, ChapterText.formatNumber(chapter.number) ?: "?"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        FilledTonalButton(onClick = onRead) { Text(stringResource(Res.string.novel_read)) }
+        FilledTonalButton(onClick = onRead, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_read)) }
         IconButton(onClick = onDismiss) { Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s11_news_dismiss, entry.title)) }
     }
 }

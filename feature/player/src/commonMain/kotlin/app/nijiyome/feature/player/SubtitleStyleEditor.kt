@@ -91,6 +91,7 @@ import org.koin.compose.getKoin
 import java.io.File
 import java.util.Locale
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // ---- drawing ------------------------------------------------------------------------------------------------------------------------------
 
@@ -401,12 +402,12 @@ internal fun SubtitleQuickStyleBody(
             AssModeRow(draft, commit)
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            FilledTonalButton(onClick = onMore) {
+            FilledTonalButton(onClick = onMore, shape = NijiyomeControls.shape) {
                 Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.rd_s6_sub_more_style), Modifier.padding(start = 6.dp))
             }
             Spacer(Modifier.weight(1f))
-            TextButton(onClick = { commit(SubtitleStyle()) }) {
+            TextButton(onClick = { commit(SubtitleStyle()) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Rounded.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.sub_style_reset), Modifier.padding(start = 6.dp))
             }
@@ -620,7 +621,7 @@ fun SubtitleStyleEditor(
             Note(stringResource(Res.string.sub_style_ass_media3))
         }
 
-        TextButton(onClick = { commit(SubtitleStyle()) }) {
+        TextButton(onClick = { commit(SubtitleStyle()) }, shape = NijiyomeControls.shape) {
             Icon(Icons.Rounded.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.sub_style_reset_all), Modifier.padding(start = 6.dp))
         }
@@ -689,7 +690,7 @@ private fun FontPicker(draft: SubtitleStyle, commit: (SubtitleStyle) -> Unit) {
         }
     }
     if (tools != null) {
-        TextButton(onClick = importFonts) {
+        TextButton(onClick = importFonts, shape = NijiyomeControls.shape) {
             Text(stringResource(Res.string.player_settings_fonts_import))
         }
         Note(stringResource(Res.string.player_settings_fonts_hint) + " " + stringResource(Res.string.sub_style_fonts_mpv_note))

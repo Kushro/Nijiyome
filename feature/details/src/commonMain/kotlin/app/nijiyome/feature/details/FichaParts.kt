@@ -125,6 +125,7 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S4: the pieces the three Ficha structures (Panel, Ruta, Cine) share. The structures only arrange them;
 // state, view model and actions are the same (docs/redesign/artefacto/screens-a.js `ficha`).
@@ -703,6 +704,7 @@ internal fun FichaScrollBar(
                                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 ),
+                                shape = NijiyomeControls.shape,
                             ) {
                                 Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(stringResource(Res.string.details_bar_ep, state.continueEpisode), modifier = Modifier.padding(start = 6.dp), maxLines = 1)

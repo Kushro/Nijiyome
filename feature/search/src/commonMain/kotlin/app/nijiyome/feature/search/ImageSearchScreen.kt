@@ -75,6 +75,7 @@ import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
 import kotlin.math.roundToInt
 import org.koin.compose.viewmodel.koinViewModel
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Classic `/image-search` (trace.moe): pick an image (`rememberContentPicker("image/ *")`, or [imageUri] when the screen was opened by
@@ -223,7 +224,7 @@ private fun ImageLinkField(onSearch: (String) -> Unit) {
                 keyboardActions = KeyboardActions(onSearch = { link?.let(onSearch) }),
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { link?.let(onSearch) }, enabled = link != null, modifier = Modifier.padding(start = 8.dp)) {
+            TextButton(onClick = { link?.let(onSearch) }, enabled = link != null, modifier = Modifier.padding(start = 8.dp), shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.search_image_url_search))
             }
         }

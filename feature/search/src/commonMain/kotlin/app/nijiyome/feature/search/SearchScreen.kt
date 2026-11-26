@@ -53,6 +53,7 @@ import app.nijiyome.ui.platform.PlatformBackHandler
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Sparkles Explorar (`Route.Search` / `Route.SearchFor`, lane S3): Buscar and Para ti in one screen, in the structure the user picked
@@ -270,7 +271,7 @@ private fun ListStatusSheet(media: Media, current: ListStatus?, onPick: (ListSta
             Text(media.displayTitle(app.nijiyome.ui.media.LocalTitleLanguage.current), style = MaterialTheme.typography.bodyMedium)
             ListStatusPicker(selected = current?.slot(), onSelect = { onPick(it.toListStatus()) })
             if (current != null) {
-                TextButton(onClick = { onPick(null) }) { Text(stringResource(Res.string.rd_s3_status_remove)) }
+                TextButton(onClick = { onPick(null) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s3_status_remove)) }
             }
         }
     }

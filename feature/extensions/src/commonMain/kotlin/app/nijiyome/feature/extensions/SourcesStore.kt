@@ -87,6 +87,7 @@ import app.nijiyome.ui.resources.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles S9, structure STORE ("tienda"): the extensions of the user's repositories as a store grid with search, filters, install and
 // update (with a confirmation that says what is installed and from where). The installed list and the other sections of Fuentes are one
@@ -174,8 +175,8 @@ internal fun SourcesStore(ctx: SourcesContext) {
                             title = stringResource(Res.string.rd_s9_store_no_repos_title),
                             body = stringResource(Res.string.rd_s9_store_no_repos_body),
                         ) {
-                            Button(onClick = { sheet = StoreSheet.REPOS }) { Text(stringResource(Res.string.rd_s9_store_add_repo)) }
-                            OutlinedButton(onClick = ctx.pickFile) { Text(stringResource(Res.string.extensions_install_choose)) }
+                            Button(onClick = { sheet = StoreSheet.REPOS }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_store_add_repo)) }
+                            OutlinedButton(onClick = ctx.pickFile, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_install_choose)) }
                         }
                     }
                     shown.isEmpty() -> item(key = "no-match", span = { GridItemSpan(maxLineSpan) }, contentType = "state") {
@@ -188,7 +189,7 @@ internal fun SourcesStore(ctx: SourcesContext) {
                                 query = ""
                                 filter = StoreFilter.ALL
                                 repoFilter = null
-                            }) { Text(stringResource(Res.string.rd_s9_store_clear)) }
+                            }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_store_clear)) }
                         }
                     }
                     else -> items(shown, key = { it.key }, contentType = { "tile" }) { item ->
@@ -324,7 +325,7 @@ private fun StoreTile(item: StoreItem, busy: Boolean, onInstall: () -> Unit, onO
             )
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                 when {
-                    e.updateAvailable -> FilledTonalButton(onClick = onInstall, enabled = !busy) {
+                    e.updateAvailable -> FilledTonalButton(onClick = onInstall, enabled = !busy, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(
                             if (busy) stringResource(Res.string.extensions_updating) else stringResource(Res.string.rd_s9_store_update_to, e.version),
@@ -334,9 +335,9 @@ private fun StoreTile(item: StoreItem, busy: Boolean, onInstall: () -> Unit, onO
                     e.installed -> {
                         Pill(stringResource(Res.string.extensions_repo_installed), tone = PillTone.OK, icon = Icons.Outlined.Check)
                         Spacer(Modifier.weight(1f))
-                        TextButton(onClick = onOpen) { Text(stringResource(Res.string.rd_s9_store_open)) }
+                        TextButton(onClick = onOpen, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_store_open)) }
                     }
-                    else -> Button(onClick = onInstall, enabled = !busy) {
+                    else -> Button(onClick = onInstall, enabled = !busy, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(
                             stringResource(if (busy) Res.string.extensions_installing else Res.string.extensions_repo_install),
@@ -376,7 +377,7 @@ private fun StoreSide(ctx: SourcesContext, onOpenSheet: (StoreSheet) -> Unit, on
             else -> {
                 items.take(SIDE_LIMIT).forEach { ext -> ExtensionRow(ctx, ext, selected = false, onSelect = { onOpenExtension(ext.id) }) }
                 if (items.size > SIDE_LIMIT) {
-                    TextButton(onClick = { onOpenSheet(StoreSheet.INSTALLED) }) { Text(stringResource(Res.string.rd_s9_store_all_installed, items.size)) }
+                    TextButton(onClick = { onOpenSheet(StoreSheet.INSTALLED) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_store_all_installed, items.size)) }
                 }
             }
         }
@@ -475,8 +476,8 @@ private fun InstallConfirmSheet(item: StoreItem, onDismiss: () -> Unit, onConfir
             }
             Text(item.entry.url, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) }
-                Button(onClick = onConfirm) {
+                TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) }
+                Button(onClick = onConfirm, shape = NijiyomeControls.shape) {
                     Icon(if (e.updateAvailable) Icons.Outlined.SystemUpdate else Icons.Outlined.Extension, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         stringResource(if (e.updateAvailable) Res.string.extensions_update else Res.string.extensions_repo_install),

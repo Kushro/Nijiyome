@@ -78,6 +78,7 @@ import app.nijiyome.ui.state.userMessage
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Pieces of the manga screens in the Sparkles design (artifact `screens-c.js`, screen `manga`): page header with the medium switch,
 // search field, filter chips with menus, card rows, empty states. Every card is a TitleCard keyed `manga:<id>`.
@@ -166,7 +167,7 @@ internal fun ReadingSearchField(
             keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
             modifier = Modifier.weight(1f).widthIn(max = 720.dp),
         )
-        if (showClear) TextButton(onClick = onClear) { Text(stringResource(Res.string.rd_s11_clear)) }
+        if (showClear) TextButton(onClick = onClear, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_clear)) }
     }
 }
 
@@ -229,7 +230,7 @@ internal fun ActiveFilterRow(filters: List<ActiveFilter>, onClearAll: () -> Unit
                 trailingIcon = { Icon(Icons.Outlined.Close, contentDescription = removeLabel, modifier = Modifier.size(16.dp)) },
             )
         }
-        TextButton(onClick = onClearAll) { Text(stringResource(Res.string.rd_s11_filters_clear)) }
+        TextButton(onClick = onClearAll, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_filters_clear)) }
     }
 }
 
@@ -288,7 +289,7 @@ internal fun MediaCardRow(
                 SectionHeader(
                     title,
                     Modifier.padding(horizontal = 16.dp),
-                    trailing = onSeeAll?.let { see -> { TextButton(onClick = see) { Text(stringResource(Res.string.rd_s11_see_all)) } } },
+                    trailing = onSeeAll?.let { see -> { TextButton(onClick = see, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_see_all)) } } },
                 )
                 CardLazyRow(state.value, cardOf = cardOf, onClick = { m, d -> onCardClick?.invoke(m, d) ?: onOpen(m) })
             }

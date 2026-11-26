@@ -49,6 +49,7 @@ import app.nijiyome.ui.resources.ui_retry
 import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.userMessage
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles Explorar: the two structures of `structures.explore`. Same state, view model and actions; only the arrangement differs.
 
@@ -268,7 +269,7 @@ private fun TrendingSection(state: SearchUiState, actions: ExploreActions) {
         SectionHeader(
             stringResource(Res.string.search_feed_trending),
             Modifier.padding(horizontal = 16.dp),
-            trailing = { TextButton(onClick = { actions.onSelectFeed(FeedKind.TRENDING) }) { Text(stringResource(Res.string.rd_s3_see_all)) } },
+            trailing = { TextButton(onClick = { actions.onSelectFeed(FeedKind.TRENDING) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s3_see_all)) } },
         )
         TrendWindowSwitch(state, actions, Modifier.padding(horizontal = 16.dp))
         when (val row = state.trendingRow) {

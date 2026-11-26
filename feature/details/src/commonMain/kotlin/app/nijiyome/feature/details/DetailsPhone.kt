@@ -83,6 +83,7 @@ import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.displayTitle
 import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Pieces of the Ficha header shared by its structures: the adult badge, the title's quick actions, the mature reveal, the Watch
 // button with its labels and the source line.
@@ -376,7 +377,7 @@ internal fun SourceLine(
             !state.hasExtensions -> {
                 Dot(scheme.outline)
                 Line(stringResource(Res.string.details_no_extension_title), Modifier.weight(1f))
-                TextButton(onClick = actions.onOpenExtensions) { Text(stringResource(Res.string.details_go_extensions), maxLines = 1) }
+                TextButton(onClick = actions.onOpenExtensions, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_go_extensions), maxLines = 1) }
             }
             panel == null || sources == null || sources is LoadState.Loading -> {
                 CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
@@ -385,12 +386,12 @@ internal fun SourceLine(
             sources is LoadState.Err -> {
                 Dot(scheme.error)
                 Line(sources.cause.userMessage(), Modifier.weight(1f))
-                TextButton(onClick = actions.onRetrySources) { Text(stringResource(UiR.string.ui_retry), maxLines = 1) }
+                TextButton(onClick = actions.onRetrySources, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry), maxLines = 1) }
             }
             shown == null -> {
                 Dot(scheme.outline)
                 Line(stringResource(Res.string.details_no_sources_title), Modifier.weight(1f))
-                TextButton(onClick = actions.onOpenExtensions) { Text(stringResource(Res.string.details_open_extensions), maxLines = 1) }
+                TextButton(onClick = actions.onOpenExtensions, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.details_open_extensions), maxLines = 1) }
             }
             else -> {
                 val count = (sources as LoadState.Ok).value.size

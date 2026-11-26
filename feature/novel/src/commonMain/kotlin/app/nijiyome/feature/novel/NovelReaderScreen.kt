@@ -130,6 +130,7 @@ import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * `Route.NovelReader(args)` (NOV-09 to NOV-14, NOV-17) in the Sparkles design (artifact screen `lector`, structure `novela`): a
@@ -264,7 +265,7 @@ fun NovelReaderScreen(
             Column(Modifier.align(Alignment.Center).padding(24.dp).decor(DecorRegion.EMPTY), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(Res.string.novel_reader_failed), color = palette.text, style = MaterialTheme.typography.titleMedium)
                 Text((first.text as LoadState.Err).cause.userMessage(), color = palette.text, textAlign = TextAlign.Center)
-                Button(onClick = vm::retry) { Text(stringResource(UiR.string.ui_retry)) }
+                Button(onClick = vm::retry, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
             }
         } else {
             LazyColumn(
@@ -280,7 +281,7 @@ fun NovelReaderScreen(
                         s == -1 -> Column(width.fillMaxWidth().padding(vertical = 32.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(stringResource(Res.string.novel_reader_end), color = palette.text.copy(alpha = 0.75f), style = MaterialTheme.typography.labelLarge)
                             if (vm.hasNext && !reader.continuousScroll) {
-                                FilledTonalButton(onClick = vm::goNext) {
+                                FilledTonalButton(onClick = vm::goNext, shape = NijiyomeControls.shape) {
                                     Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
                                     Text(stringResource(Res.string.novel_reader_next_chapter), modifier = Modifier.padding(start = 8.dp))
                                 }
@@ -301,7 +302,7 @@ fun NovelReaderScreen(
                         p == -2 -> when (val t = ui.segments[s].text) {
                             is LoadState.Err -> Column(width.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(t.cause.userMessage(), color = palette.text)
-                                OutlinedButton(onClick = vm::retry) { Text(stringResource(UiR.string.ui_retry)) }
+                                OutlinedButton(onClick = vm::retry, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
                             }
                             else -> Box(width.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                         }
@@ -398,7 +399,7 @@ fun NovelReaderScreen(
             ) {
                 NovelTypographyRows(reader, onPreview = { preview = it }) { t -> preview = null; vm.updateReader(t) }
                 Box(Modifier.padding(top = 16.dp)) { NovelFlowRows(reader, onUpdate = vm::updateReader) }
-                TextButton(onClick = { sheet = null; onOpenSettings(SettingsSection.READER) }, modifier = Modifier.padding(vertical = 8.dp)) {
+                TextButton(onClick = { sheet = null; onOpenSettings(SettingsSection.READER) }, modifier = Modifier.padding(vertical = 8.dp), shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Settings, contentDescription = null)
                     Text(stringResource(Res.string.novel_reader_all_settings), modifier = Modifier.padding(start = 6.dp))
                 }
@@ -492,7 +493,7 @@ private fun NarratorBar(
             error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 when (state) {
-                    TtsState.IDLE -> FilledTonalButton(onClick = onPlay) {
+                    TtsState.IDLE -> FilledTonalButton(onClick = onPlay, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.RecordVoiceOver, contentDescription = null)
                         Text(stringResource(Res.string.novel_narration_read_aloud), modifier = Modifier.padding(start = 6.dp))
                     }
@@ -588,7 +589,7 @@ private fun VoicePanel(vm: NovelReaderViewModel, tts: app.nijiyome.model.TtsSett
             Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium) {
                 Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(Res.string.rd_s11_voice_configure_hint, engineName(tts.engine)), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                    TextButton(onClick = onConfigure) { Text(stringResource(Res.string.rd_s11_configure)) }
+                    TextButton(onClick = onConfigure, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_configure)) }
                 }
             }
         }

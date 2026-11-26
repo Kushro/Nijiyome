@@ -69,6 +69,7 @@ import app.nijiyome.player.QualityUiState
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign (lane S6): the "Mejoras" sheet (artifact `shMejoras`). Same actions as the 0.4.0 panel (EnhancementPanel.kt keeps
 // its entry point): every change applies to the running playback; only "Usar como predeterminado" writes Settings. The picture
@@ -167,7 +168,7 @@ private fun ProcessingSection(
             Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp), Alignment.CenterVertically) {
                 CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                 Text(chipLabel(EnhancementChip.Switching(to), rememberChipWords()), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = vm::cancelProcessingSwitch) { Text(stringResource(Res.string.player_fx_switch_cancel)) }
+                TextButton(onClick = vm::cancelProcessingSwitch, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_fx_switch_cancel)) }
             }
         }
         // Why the other places cannot be chosen now, one note per reason, with the way out when there is one.
@@ -276,7 +277,7 @@ private fun Media3Section(vm: PlayerViewModel, onClose: () -> Unit) {
     SheetSection(stringResource(Res.string.player_fx_media3_title)) {
         Text(stringResource(Res.string.player_fx_media3_body), style = MaterialTheme.typography.bodyMedium)
         if (vm.canSwitchToMpvNow()) {
-            Button(onClick = { if (vm.switchToMpvByUser()) onClose() }) { Text(stringResource(Res.string.quality_switch_to_mpv)) }
+            Button(onClick = { if (vm.switchToMpvByUser()) onClose() }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.quality_switch_to_mpv)) }
         } else {
             StateNote(stringResource(Res.string.player_fx_media3_cannot))
         }
@@ -347,7 +348,7 @@ private fun UpscalingSection(vm: PlayerViewModel, session: PlayerSession, state:
         val isDefault = QualityPresets.sanitize(state.settings.playerPreset) == req.preset && state.settings.playerQuality.tier == req.tier
         Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
             Hint(stringResource(Res.string.player_fx_session_only), Modifier.weight(1f))
-            TextButton(onClick = { vm.saveQualityAsDefault(req.preset, req.tier) }, enabled = !isDefault) {
+            TextButton(onClick = { vm.saveQualityAsDefault(req.preset, req.tier) }, enabled = !isDefault, shape = NijiyomeControls.shape) {
                 Text(stringResource(if (isDefault) Res.string.player_fx_is_default else Res.string.player_fx_save_default))
             }
         }
@@ -440,6 +441,6 @@ internal fun sharpenRes(level: SharpenLevel): StringResource = when (level) {
 private fun DesktopFrameGenSection(onOpenSettings: (SettingsSection) -> Unit) {
     SheetSection(stringResource(Res.string.rd_s6_fg_title)) {
         Hint(stringResource(Res.string.rd_s6_fg_desktop_hint))
-        TextButton(onClick = { onOpenSettings(SettingsSection.PLAYER) }) { Text(stringResource(Res.string.rd_s6_fg_desktop_settings)) }
+        TextButton(onClick = { onOpenSettings(SettingsSection.PLAYER) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s6_fg_desktop_settings)) }
     }
 }

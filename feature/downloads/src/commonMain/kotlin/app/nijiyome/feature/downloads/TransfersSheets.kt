@@ -59,6 +59,7 @@ import app.nijiyome.ui.resources.*
 import org.jetbrains.compose.resources.stringResource
 import java.text.DateFormat
 import java.util.Date
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S8 (Transferencias): the quick limits and the history, as sheets (side sheet on wide windows).
 
@@ -167,7 +168,7 @@ internal fun LimitsSheet(
                     TextButton(onClick = {
                         onDismiss()
                         onOpenSettings()
-                    }) {
+                    }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.rd_s8_more_settings), Modifier.padding(start = 6.dp))
                     }
@@ -224,6 +225,7 @@ internal fun HistorySheet(
                         TextButton(
                             onClick = { confirmClear = true },
                             colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            shape = NijiyomeControls.shape,
                         ) {
                             Icon(Icons.Outlined.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(stringResource(Res.string.rd_s8_history_clear), Modifier.padding(start = 6.dp))
@@ -281,7 +283,7 @@ private fun HistoryRow(
                 SignalChip(originLabel(row.session.origin), Icons.Outlined.History, MaterialTheme.colorScheme.outline)
                 if (row.removed && row.session.id !in torrentIds) {
                     SignalChip(stringResource(Res.string.rd_s8_history_removed), Icons.Outlined.DeleteSweep, signals.warn)
-                    TextButton(onClick = { vm.reopenTorrent(row.session) }) { Text(stringResource(Res.string.rd_s8_history_readd)) }
+                    TextButton(onClick = { vm.reopenTorrent(row.session) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_history_readd)) }
                 } else {
                     IconButton(onClick = { vm.reopenTorrent(row.session) }) {
                         Icon(Icons.Outlined.OpenInNew, contentDescription = stringResource(Res.string.rd_s8_menu_open))

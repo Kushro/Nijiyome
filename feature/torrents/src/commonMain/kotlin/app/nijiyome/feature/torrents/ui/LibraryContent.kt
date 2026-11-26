@@ -81,6 +81,7 @@ import app.nijiyome.model.torrent.TorrentLibraryItem
 import app.nijiyome.model.torrent.TorrentState
 import app.nijiyome.ui.format.formatBytes
 import app.nijiyome.ui.media.MediaCover
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Library list (11 §3.2): cards, 3-dot menu, long-press multi-select with a contextual bar. Stateless; the VM lives in the caller. */
 @Composable
@@ -405,7 +406,7 @@ private fun LibraryToolbar(
     FlowRow(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         var open by remember { mutableStateOf(false) }
         Box {
-            TextButton(onClick = { open = true }) {
+            TextButton(onClick = { open = true }, shape = NijiyomeControls.shape) {
                 Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.torrent_desktop_sort) + ": " + sort.label(), modifier = Modifier.padding(start = 6.dp))
             }
@@ -595,8 +596,9 @@ internal fun DeleteDialog(count: Int, onConfirm: (deleteFiles: Boolean) -> Unit,
             TextButton(
                 onClick = { onConfirm(deleteFiles) },
                 colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                shape = NijiyomeControls.shape,
             ) { Text(stringResource(Res.string.torrent_library_delete)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
     )
 }

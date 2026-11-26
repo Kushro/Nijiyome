@@ -33,6 +33,7 @@ import app.nijiyome.player.QualityUiState
 import app.nijiyome.player.decoderInUseLabel
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign (lane S6): the "Imagen" sheet (artifact `shImagen`, parity PLY-08 / PLE-09 / B-OCULTA-03): quality of the stream,
 // aspect and zoom, colour, decoder. Aspect, zoom, colour and decoder were the "Imagen" card of the "Mejoras" panel; the quality was
@@ -138,6 +139,7 @@ internal fun PictureControls(
         TextButton(
             onClick = { session.setImage(ImageAdjust()); session.setAspect(AspectMode.FIT, 100); onAspect?.invoke(AspectMode.FIT) },
             enabled = !img.isNeutral || req.zoomPercent != 100 || req.aspect != AspectMode.FIT,
+            shape = NijiyomeControls.shape,
         ) {
             Icon(Icons.Rounded.RestartAlt, null, Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))

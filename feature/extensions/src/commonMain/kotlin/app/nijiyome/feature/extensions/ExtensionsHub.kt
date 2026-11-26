@@ -89,6 +89,7 @@ import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.ui.format.relativeTime
 import app.nijiyome.ui.state.userMessage
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B (16 §3.4, worker t): the composables of the Extensions hub sections (see ExtensionsHubViewModel).
 
@@ -133,8 +134,8 @@ internal fun KillSwitchDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         icon = { Icon(Icons.Outlined.PowerSettingsNew, contentDescription = null) },
         title = { Text(stringResource(Res.string.extensions_disable_all_title)) },
         text = { Text(stringResource(Res.string.extensions_disable_all_message)) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(Res.string.extensions_disable_all)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_close)) } },
+        confirmButton = { TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_disable_all)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
     )
 }
 
@@ -149,7 +150,7 @@ internal fun UpdatesSheet(state: HubUiState, hub: ExtensionsHubViewModel, onDism
                 Switch(checked = state.updateCheckOnStart, onCheckedChange = hub::setUpdateCheckOnStart)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = hub::checkUpdates, enabled = !state.checkingUpdates) {
+                OutlinedButton(onClick = hub::checkUpdates, enabled = !state.checkingUpdates, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         stringResource(if (state.checkingUpdates) Res.string.extensions_updates_checking else Res.string.extensions_updates_check),
@@ -157,7 +158,7 @@ internal fun UpdatesSheet(state: HubUiState, hub: ExtensionsHubViewModel, onDism
                     )
                 }
                 if (state.updates.size > 1) {
-                    Button(onClick = hub::updateAll, enabled = state.updating.isEmpty()) { Text(stringResource(Res.string.extensions_updates_all)) }
+                    Button(onClick = hub::updateAll, enabled = state.updating.isEmpty(), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_updates_all)) }
                 }
             }
             when {
@@ -198,7 +199,7 @@ private fun UpdateRow(u: ExtensionUpdate, busy: Boolean, onUpdate: () -> Unit) {
                     Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 4, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Button(onClick = onUpdate, enabled = !busy) {
+            Button(onClick = onUpdate, enabled = !busy, shape = NijiyomeControls.shape) {
                 Text(stringResource(if (busy) Res.string.extensions_updating else Res.string.extensions_update))
             }
         }
@@ -252,7 +253,7 @@ internal fun InstallUrlDialog(
                 )
                 Text(stringResource(Res.string.rd_s9_install_trust), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (onPickFile != null) {
-                    TextButton(onClick = onPickFile) {
+                    TextButton(onClick = onPickFile, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.extensions_install_choose), modifier = Modifier.padding(start = 8.dp))
                     }
@@ -260,11 +261,11 @@ internal fun InstallUrlDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (path != null && onInstallPath != null) onInstallPath(path) else onInstall(url.trim()) }, enabled = valid && !installing) {
+            TextButton(onClick = { if (path != null && onInstallPath != null) onInstallPath(path) else onInstall(url.trim()) }, enabled = valid && !installing, shape = NijiyomeControls.shape) {
                 Text(stringResource(if (installing) Res.string.extensions_installing else Res.string.extensions_install_url_confirm))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_close)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
     )
 }
 
@@ -329,9 +330,9 @@ internal fun PreferencesDialog(extensionId: String, extensionName: String, hub: 
                 // TEXT / SECRET fields are saved on "Done"; toggles and selects are saved on change.
                 drafts.forEach { (k, v) -> hub.setPreference(extensionId, k, v.ifEmpty { null }) }
                 onDismiss()
-            }) { Text(stringResource(if (unsaved) Res.string.rd_s9_prefs_save else Res.string.extensions_prefs_done)) }
+            }, shape = NijiyomeControls.shape) { Text(stringResource(if (unsaved) Res.string.rd_s9_prefs_save else Res.string.extensions_prefs_done)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_close)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
     )
 }
 
@@ -372,7 +373,7 @@ private fun PreferenceField(pref: ExtensionPreference, stored: String?, draft: S
                         Text(pref.title, style = MaterialTheme.typography.bodyLarge)
                         Text(stringResource(Res.string.extensions_prefs_secret_saved), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     }
-                    TextButton(onClick = { onSave(null) }) { Text(stringResource(Res.string.extensions_prefs_secret_remove)) }
+                    TextButton(onClick = { onSave(null) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_prefs_secret_remove)) }
                 }
             } else {
                 OutlinedTextField(
@@ -586,7 +587,7 @@ private fun UrlAddRow(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
                 modifier = Modifier.weight(1f),
             )
-            Button(onClick = { onAdd(clean) }, enabled = valid && !working) {
+            Button(onClick = { onAdd(clean) }, enabled = valid && !working, shape = NijiyomeControls.shape) {
                 Text(if (working) stringResource(Res.string.extensions_working) else action)
             }
         }
@@ -629,7 +630,7 @@ private fun RepoCard(repo: ExtensionRepo, busy: Set<String>, hub: ExtensionsHubV
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = { hub.refreshRepository(repo.url) }, enabled = !refreshing) { Text(stringResource(UiR.string.ui_retry)) }
+                    TextButton(onClick = { hub.refreshRepository(repo.url) }, enabled = !refreshing, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
                 }
             }
             repo.entries.forEach { e ->
@@ -642,9 +643,9 @@ private fun RepoCard(repo: ExtensionRepo, busy: Set<String>, hub: ExtensionsHubV
                         }
                     }
                     when {
-                        e.updateAvailable -> Button(onClick = { hub.update(e.id) }, enabled = !working) { Text(stringResource(Res.string.extensions_update)) }
+                        e.updateAvailable -> Button(onClick = { hub.update(e.id) }, enabled = !working, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_update)) }
                         e.installed -> Pill(stringResource(Res.string.extensions_repo_installed), tone = PillTone.OK)
-                        else -> OutlinedButton(onClick = { hub.installEntry(e.url) }, enabled = !working) {
+                        else -> OutlinedButton(onClick = { hub.installEntry(e.url) }, enabled = !working, shape = NijiyomeControls.shape) {
                             Text(stringResource(if (working) Res.string.extensions_installing else Res.string.extensions_repo_install))
                         }
                     }
@@ -679,11 +680,11 @@ private fun AddonCard(addon: StremioAddon, busy: Boolean, hub: ExtensionsHubView
                 Text(stringResource(Res.string.extensions_stremio_no_streams), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = { hub.updateAddon(addon.id) }, enabled = !busy) {
+                TextButton(onClick = { hub.updateAddon(addon.id) }, enabled = !busy, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (busy) Res.string.extensions_updating else Res.string.extensions_stremio_update))
                 }
-                TextButton(onClick = { hub.resetAddonMatches(addon.id) }) { Text(stringResource(Res.string.extensions_stremio_reset)) }
-                TextButton(onClick = onRemove) { Text(stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = { hub.resetAddonMatches(addon.id) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_stremio_reset)) }
+                TextButton(onClick = onRemove, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error) }
             }
         }
     }
@@ -698,11 +699,11 @@ internal fun ConfirmRemoveDialog(title: String, message: String, onConfirm: () -
         title = { Text(title) },
         text = { Text(message) },
         confirmButton = {
-            TextButton(onClick = onConfirm) {
+            TextButton(onClick = onConfirm, shape = NijiyomeControls.shape) {
                 Text(confirmLabel ?: stringResource(Res.string.extensions_remove_confirm), color = MaterialTheme.colorScheme.error)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_close)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_close)) } },
     )
 }
 

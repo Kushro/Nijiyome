@@ -98,6 +98,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S8 (Transferencias): the background notice, the panels (storage, background, auto-download, local library)
 // and the shelves of what is on disk. Shared by both structures.
@@ -136,7 +137,7 @@ internal fun BackgroundNotice(onAccept: () -> Unit, onNotNow: () -> Unit, modifi
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             ActionButton(stringResource(Res.string.rd_s8_bg_accept), onClick = onAccept, emphasis = ActionEmphasis.FILLED)
-            TextButton(onClick = onNotNow) { Text(stringResource(Res.string.rd_s8_bg_not_now)) }
+            TextButton(onClick = onNotNow, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_bg_not_now)) }
         }
     }
 }
@@ -157,13 +158,13 @@ internal fun BackgroundStatusRow(
             SignalChip(stringResource(Res.string.rd_s8_bg_on), Icons.Outlined.CloudDone, signals.ok)
         } else {
             SignalChip(stringResource(Res.string.rd_s8_bg_off), Icons.Outlined.CloudOff, signals.warn)
-            TextButton(onClick = onTurnOn) { Text(stringResource(Res.string.rd_s8_bg_turn_on)) }
+            TextButton(onClick = onTurnOn, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_bg_turn_on)) }
         }
         if (status.waitingForWifi) SignalChip(stringResource(Res.string.rd_s8_bg_wifi), Icons.Outlined.SignalWifiOff, signals.info)
         if (status.pausedLowBattery) SignalChip(stringResource(Res.string.rd_s8_bg_battery), Icons.Outlined.BatteryAlert, signals.warn)
         if (status.pausedBySystem) {
             SignalChip(stringResource(Res.string.rd_s8_bg_system), Icons.Outlined.ReportProblem, signals.warn)
-            TextButton(onClick = onResumeAll) { Text(stringResource(Res.string.rd_s8_bg_resume_all)) }
+            TextButton(onClick = onResumeAll, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_bg_resume_all)) }
         }
     }
 }
@@ -221,14 +222,14 @@ internal fun StoragePanel(
                 enabled = !busy,
             )
             if (openFolder != null && root.isNotBlank()) {
-                TextButton(onClick = { openFolder(root) }) {
+                TextButton(onClick = { openFolder(root) }, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.downloads_desktop_open_folder), Modifier.padding(start = 6.dp), maxLines = 1, softWrap = false)
                 }
             }
         }
         if (onOpenSettings != null) {
-            TextButton(onClick = onOpenSettings) {
+            TextButton(onClick = onOpenSettings, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.rd_s8_more_settings), Modifier.padding(start = 6.dp))
             }
@@ -286,7 +287,7 @@ internal fun AutoDownloadPanel(
                         checked = rule.enabled,
                         onCheckedChange = { on -> vm.setRule(rule.copy(enabled = on)) },
                     )
-                    TextButton(onClick = { vm.preview(rule.ref) }) { Text(stringResource(Res.string.downloads_auto_simulate)) }
+                    TextButton(onClick = { vm.preview(rule.ref) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.downloads_auto_simulate)) }
                 }
             }
         }
@@ -304,7 +305,7 @@ internal fun AutoDownloadPanel(
                 }
             }
             if (offered.size > FOLDED_SUGGESTIONS) {
-                TextButton(onClick = { showAllSuggestions = !showAllSuggestions }) {
+                TextButton(onClick = { showAllSuggestions = !showAllSuggestions }, shape = NijiyomeControls.shape) {
                     Text(
                         if (showAllSuggestions) {
                             stringResource(Res.string.rd_s8_auto_fewer)
@@ -354,7 +355,7 @@ internal fun LocalLibraryHeader(
         if (desktopDownloadsUi) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(Res.string.rd_s8_local_folders), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = pickFolder) {
+                TextButton(onClick = pickFolder, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.CreateNewFolder, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.downloads_desktop_library_add), Modifier.padding(start = 6.dp))
                 }
@@ -431,14 +432,15 @@ internal fun LocalRemoveDialog(item: LocalLibraryItem, onRemove: (deleteFile: Bo
         text = { Text(stringResource(Res.string.downloads_local_remove_body, item.fileName)) },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = { onRemove(false) }) { Text(stringResource(Res.string.downloads_local_remove_entry)) }
+                TextButton(onClick = { onRemove(false) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.downloads_local_remove_entry)) }
                 TextButton(
                     onClick = { onRemove(true) },
                     colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.downloads_local_remove_file)) }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }
 
@@ -527,16 +529,17 @@ internal fun MatchDialog(item: LocalLibraryItem, onDismiss: () -> Unit, onMatch:
                     TextButton(onClick = {
                         onMatch(null, null)
                         onDismiss()
-                    }) { Text(stringResource(Res.string.downloads_local_match_clear)) }
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.downloads_local_match_clear)) }
                 }
                 Spacer(Modifier.width(8.dp))
-                TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) }
+                TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) }
                 TextButton(
                     onClick = {
                         onMatch(picked ?: currentMedia(item), episode.toInt())
                         onDismiss()
                     },
                     enabled = picked != null || item.ref != null,
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.downloads_local_match_save)) }
             }
         },
@@ -614,8 +617,8 @@ internal fun LazyListScope.animeShelf(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                group.ref.anilistId?.let { id -> TextButton(onClick = { onOpenDetails(id) }) { Text(stringResource(Res.string.rd_s8_open_details)) } }
-                TextButton(onClick = { onDeleteTitle(group) }) { Text(stringResource(Res.string.rd_s8_delete_all)) }
+                group.ref.anilistId?.let { id -> TextButton(onClick = { onOpenDetails(id) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_open_details)) } }
+                TextButton(onClick = { onDeleteTitle(group) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_delete_all)) }
             }
         }
         items(group.episodes, key = { "e:" + it.id }) { ep -> EpisodeShelfRow(ep, onPlay, onRedownload, onDeleteEpisode) }
@@ -692,7 +695,7 @@ private fun EpisodeShelfRow(item: DownloadItem, onPlay: (DownloadItem) -> Unit, 
         }
         if (broken) {
             SignalChip(stringResource(Res.string.rd_s8_broken), Icons.Outlined.BrokenImage, LocalSignalColors.current.err)
-            TextButton(onClick = { onRedownload(item) }) { Text(stringResource(Res.string.downloads_redownload)) }
+            TextButton(onClick = { onRedownload(item) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.downloads_redownload)) }
         } else {
             IconButton(onClick = { onPlay(item) }) { Icon(Icons.Outlined.PlayArrow, contentDescription = stringResource(Res.string.downloads_play)) }
         }
@@ -733,7 +736,7 @@ internal fun LazyListScope.chapterShelf(
             ) {
                 MediaCover(url = first.poster, modifier = Modifier.width(44.dp))
                 Text(first.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
-                TextButton(onClick = { onDeleteAll(chapters) }) { Text(stringResource(Res.string.rd_s8_delete_all)) }
+                TextButton(onClick = { onDeleteAll(chapters) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_delete_all)) }
             }
         }
         items(chapters.sortedBy { it.chapterNumber ?: Double.MAX_VALUE }, key = { "c:" + it.id }) { c ->
@@ -756,7 +759,7 @@ internal fun LazyListScope.chapterShelf(
                     }
                 }
                 when {
-                    failed -> TextButton(onClick = { onRetry(c) }) { Text(stringResource(Res.string.rd_s8_retry)) }
+                    failed -> TextButton(onClick = { onRetry(c) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_retry)) }
                     done -> IconButton(onClick = { onOpen(c) }) {
                         Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = stringResource(Res.string.rd_s8_read_offline))
                     }

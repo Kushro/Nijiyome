@@ -145,6 +145,7 @@ import java.util.Locale
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles Explorar (lane S3): the pieces both structures (Facetas, Lienzo) compose. They read the shared SearchUiState and call the
 // shared ExploreActions; only the arrangement changes between structures.
@@ -455,12 +456,12 @@ private fun MoreFiltersChip(state: SearchUiState, actions: ExploreActions) {
                     ) {
                         RangeAndTagFilters(draft, onDraftChange = { draft = it }, tagOptions = state.tagOptions, tagsLoading = state.tagsLoading)
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(onClick = { draft = draft.withoutMoreFilters() }) { Text(stringResource(Res.string.search_filters_clear)) }
+                            TextButton(onClick = { draft = draft.withoutMoreFilters() }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.search_filters_clear)) }
                             Box(Modifier.weight(1f))
                             Button(onClick = {
                                 if (draft != state.filters) actions.onFiltersChange(draft)
                                 open = false
-                            }) { Text(stringResource(Res.string.rd_s3_done)) }
+                            }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s3_done)) }
                         }
                     }
                 }
@@ -589,7 +590,7 @@ internal fun RecentSearches(state: SearchUiState, actions: ExploreActions, onRes
                 val before = state.history
                 actions.onClearHistory()
                 snackbar.show(cleared, undo) { onRestore(before) }
-            }) { Text(stringResource(Res.string.search_history_clear)) }
+            }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.search_history_clear)) }
         }
     }
 }
@@ -786,7 +787,7 @@ private fun LoadMoreFooter(results: SearchResults.Ok, onLoadMore: () -> Unit) {
         if (results.loadingMore) {
             LoadingIndicator(Modifier.size(40.dp))
         } else {
-            OutlinedButton(onClick = onLoadMore) { Text(stringResource(Res.string.search_load_more)) }
+            OutlinedButton(onClick = onLoadMore, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.search_load_more)) }
         }
     }
 }
@@ -979,7 +980,7 @@ private fun RateLimitBanner(error: AppError.RateLimited, onRetry: () -> Unit) {
                     )
                 }
             }
-            TextButton(onClick = onRetry) { Text(stringResource(Res.string.rd_s3_retry_now)) }
+            TextButton(onClick = onRetry, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s3_retry_now)) }
             IconButton(onClick = { hidden = true }) {
                 Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.rd_s3_hide_notice))
             }

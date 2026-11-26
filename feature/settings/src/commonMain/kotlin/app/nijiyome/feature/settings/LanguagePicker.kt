@@ -42,6 +42,7 @@ import app.nijiyome.feature.settings.resources.*
 import app.nijiyome.ui.labels.languageName
 import org.jetbrains.compose.resources.stringResource
 import java.util.Locale
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Every ISO 639-1 language, by code. */
 private val ISO_LANGUAGES: List<String> by lazy { Locale.getISOLanguages().toList() }
@@ -68,7 +69,7 @@ internal fun LanguagePickerRow(label: String, value: String, common: List<String
                     leadingIcon = if (code == value) ({ Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }) else null,
                 )
             }
-            OutlinedButton(onClick = { open = true }) {
+            OutlinedButton(onClick = { open = true }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.rd_s10_lang_other), modifier = Modifier.padding(start = 8.dp))
             }

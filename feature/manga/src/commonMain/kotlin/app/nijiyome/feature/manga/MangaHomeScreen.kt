@@ -107,6 +107,7 @@ import java.time.LocalDate
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import kotlinx.coroutines.delay
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * `Route.Manga(query)` (MNG-01 to MNG-04): the manga home in the Sparkles design (artifact screen `manga`, structure `catalogo`):
@@ -176,9 +177,9 @@ fun MangaHomeScreen(
                 Button(onClick = {
                     gateOpen = false
                     vm.acceptAdultGate()
-                }) { Text(stringResource(Res.string.manga_adult_gate_confirm)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_adult_gate_confirm)) }
             },
-            dismissButton = { TextButton(onClick = { gateOpen = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { gateOpen = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
     pendingMature?.let { media ->
@@ -376,7 +377,7 @@ private fun MangaResults(state: MangaHomeState, actions: MangaHomeActions, modif
                         item(span = { GridItemSpan(maxLineSpan) }) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(err.userMessage(), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                                TextButton(onClick = actions.onLoadMore) { Text(stringResource(UiR.string.ui_retry)) }
+                                TextButton(onClick = actions.onLoadMore, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
                             }
                         }
                     }
@@ -432,7 +433,7 @@ private fun MangaFeed(
                     SectionHeader(
                         stringResource(Res.string.manga_continue_reading),
                         Modifier.padding(horizontal = 16.dp),
-                        trailing = actions.onOpenLibrary?.let { open -> { TextButton(onClick = open) { Text(stringResource(Res.string.rd_s11_library)) } } },
+                        trailing = actions.onOpenLibrary?.let { open -> { TextButton(onClick = open, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_library)) } } },
                     )
                     LazyRow(
                         Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT),
@@ -570,14 +571,14 @@ private fun FeatureSlide(media: Media, state: MangaHomeState, actions: MangaHome
             media.synopsis?.let { Text(it, style = MaterialTheme.typography.bodyMedium, maxLines = if (compact) 3 else 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 560.dp)) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (saved != null) {
-                    Button(onClick = { actions.onOpenReader(resumeArgs(saved)) }) {
+                    Button(onClick = { actions.onOpenReader(resumeArgs(saved)) }, shape = NijiyomeControls.shape) {
                         Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(Res.string.rd_s11_resume_chapter, ChapterText.formatNumber(saved.chapterNumber) ?: "?"))
                     }
-                    FilledTonalButton(onClick = { actions.onOpen(media) }) { Text(stringResource(Res.string.manga_hero_open)) }
+                    FilledTonalButton(onClick = { actions.onOpen(media) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_hero_open)) }
                 } else {
-                    Button(onClick = { actions.onOpen(media) }) { Text(stringResource(Res.string.manga_hero_open)) }
+                    Button(onClick = { actions.onOpen(media) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_hero_open)) }
                 }
             }
         }
@@ -608,7 +609,7 @@ private fun NewsRow(entry: ReadEntry, chapter: MangaChapter, onRead: () -> Unit,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        FilledTonalButton(onClick = onRead) { Text(stringResource(Res.string.manga_read)) }
+        FilledTonalButton(onClick = onRead, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_read)) }
         IconButton(onClick = onDismiss) { Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s11_news_dismiss, entry.title)) }
     }
 }
@@ -630,13 +631,13 @@ private fun AdultZone(state: MangaHomeState, actions: MangaHomeActions, modifier
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Outlined.Shield, contentDescription = null)
                 Text(stringResource(Res.string.manga_adult_zone), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).semantics { heading() })
-                if (adult != null && state.adultAccepted) TextButton(onClick = actions.onHideAdult) { Text(stringResource(Res.string.manga_adult_hide)) }
+                if (adult != null && state.adultAccepted) TextButton(onClick = actions.onHideAdult, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_adult_hide)) }
             }
             when {
                 !settings.showAdult -> Text(stringResource(Res.string.manga_adult_disabled), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 !state.adultAccepted -> {
                     Text(stringResource(Res.string.rd_s11_adult_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    FilledTonalButton(onClick = actions.onShowAdult) { Text(stringResource(Res.string.manga_adult_show)) }
+                    FilledTonalButton(onClick = actions.onShowAdult, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_adult_show)) }
                 }
                 adult == null -> CardRowPlaceholder(Modifier.padding(horizontal = 0.dp))
                 else -> AdultRow(adult, settings, actions)

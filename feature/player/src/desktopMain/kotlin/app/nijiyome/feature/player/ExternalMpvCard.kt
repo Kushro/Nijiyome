@@ -75,6 +75,7 @@ import app.nijiyome.player.mpv.external.ExternalMpvMode
 import app.nijiyome.player.mpv.external.ExternalMpvPlayerSession
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Hito 4, paso D: what the Nijiyome window shows while mpv plays in its own window, as in Tatakai Next (tk-ui/src/screens/player/
 // mod.rs, the `tk-xmpv` card, and flow.rs `pump_external`): the title, how mpv runs (its config, frame generation), the time and a
@@ -261,11 +262,11 @@ private fun ExternalMpvCard(
             )
             if (mode.forcedByFrameGen) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
-                    FilledTonalButton(onClick = onWithoutFrameGen) {
+                    FilledTonalButton(onClick = onWithoutFrameGen, shape = NijiyomeControls.shape) {
                         Icon(Icons.Rounded.PlayArrow, contentDescription = null)
                         Text(stringResource(Res.string.player_xmpv_without_fg), Modifier.padding(start = 8.dp))
                     }
-                    TextButton(onClick = onFrameGenSettings) {
+                    TextButton(onClick = onFrameGenSettings, shape = NijiyomeControls.shape) {
                         Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.player_xmpv_fg_settings), Modifier.padding(start = 8.dp))
                     }
@@ -273,23 +274,23 @@ private fun ExternalMpvCard(
             }
             Spacer(Modifier.height(4.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
-                Button(onClick = onStop) {
+                Button(onClick = onStop, shape = NijiyomeControls.shape) {
                     Icon(Icons.Rounded.Stop, contentDescription = null)
                     Text(stringResource(Res.string.player_external_stop), Modifier.padding(start = 8.dp))
                 }
                 if (canPickSource) {
-                    FilledTonalButton(onClick = onOpenPicker) {
+                    FilledTonalButton(onClick = onOpenPicker, shape = NijiyomeControls.shape) {
                         Icon(Icons.Rounded.Tune, contentDescription = null)
                         Text(stringResource(Res.string.player_xmpv_sources), Modifier.padding(start = 8.dp))
                     }
                 }
-                TextButton(onClick = onBack) {
+                TextButton(onClick = onBack, shape = NijiyomeControls.shape) {
                     Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
                     Text(stringResource(Res.string.player_back), Modifier.padding(start = 8.dp))
                 }
                 val sender = send
                 if (sender != null) sender.phones.forEach { phone ->
-                    TextButton(onClick = { sender.send(phone) }, enabled = !sender.busy) {
+                    TextButton(onClick = { sender.send(phone) }, enabled = !sender.busy, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.SendToMobile, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.rd_s5_send_to, phone.name), Modifier.padding(start = 8.dp))
                     }

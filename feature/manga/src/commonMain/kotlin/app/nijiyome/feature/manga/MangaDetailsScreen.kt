@@ -117,6 +117,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * `Route.Details(MediaKind.MANGA, anilistId)` (MNG-06 to MNG-11) in the Sparkles design (artifact screen `manga`, the `ficha` view):
@@ -358,7 +359,7 @@ private fun FichaHeader(
         // the header's inner width (minus its 16 dp padding) decides where "Quitar de la lista" goes
         val besideRemove = !compact && maxWidth - 32.dp >= STATUS_ROW_MIN
         Column(Modifier.fillMaxWidth().decor(DecorRegion.HERO).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            TextButton(onClick = onBack) {
+            TextButton(onClick = onBack, shape = NijiyomeControls.shape) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(Res.string.manga_title))
@@ -408,7 +409,7 @@ private fun FichaHeader(
                         val previous = entry
                         vm.setStatus(null)
                         undo.show(removed, undo = { vm.restoreEntry(previous) })
-                    }) { Text(stringResource(UiR.string.list_remove)) }
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.list_remove)) }
                 }
             }
             if (entry != null && !besideRemove) {
@@ -416,7 +417,7 @@ private fun FichaHeader(
                     val previous = entry
                     vm.setStatus(null)
                     undo.show(removed, undo = { vm.restoreEntry(previous) })
-                }) { Text(stringResource(UiR.string.list_remove)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.list_remove)) }
             }
         }
     }
@@ -429,7 +430,7 @@ private val STATUS_ROW_MIN = 860.dp
 @Composable
 private fun ReadActions(ui: MangaDetailsUi, entry: ReadEntry?, total: Int?, hasProgress: Boolean, nextChapter: Double?, vm: MangaDetailsViewModel) {
     FlowRowCompat {
-        Button(onClick = vm::readNext, enabled = !ui.opening) {
+        Button(onClick = vm::readNext, enabled = !ui.opening, shape = NijiyomeControls.shape) {
             if (ui.opening) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             val n = ChapterText.formatNumber(nextChapter)
@@ -478,7 +479,7 @@ private fun ColumnScope.InfoPanels(
         Panel(stringResource(Res.string.rd_s11_synopsis)) {
             var expanded by rememberSaveable { mutableStateOf(false) }
             Text(synopsis, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 5, overflow = TextOverflow.Ellipsis)
-            TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) Res.string.manga_less else Res.string.manga_more)) }
+            TextButton(onClick = { expanded = !expanded }, shape = NijiyomeControls.shape) { Text(stringResource(if (expanded) Res.string.manga_less else Res.string.manga_more)) }
         }
     }
     if (media.genres.isNotEmpty() || info.tags.isNotEmpty()) {
@@ -493,7 +494,7 @@ private fun ColumnScope.InfoPanels(
                 Text(tags.joinToString(" · ") { t -> t.rank?.let { r -> "${t.name} $r %" } ?: t.name }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (info.tags.any { it.isSpoiler }) {
-                TextButton(onClick = { spoilers = !spoilers }) { Text(stringResource(if (spoilers) Res.string.manga_hide_spoilers else Res.string.manga_show_spoilers)) }
+                TextButton(onClick = { spoilers = !spoilers }, shape = NijiyomeControls.shape) { Text(stringResource(if (spoilers) Res.string.manga_hide_spoilers else Res.string.manga_show_spoilers)) }
             }
         }
     }

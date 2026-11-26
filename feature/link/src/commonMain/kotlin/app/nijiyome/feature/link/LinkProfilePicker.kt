@@ -38,6 +38,7 @@ import app.nijiyome.model.LinkProfile
 import app.nijiyome.model.LinkProfileFallback
 import app.nijiyome.model.ProfileSupport
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles S9 (LNK-06 "lista de 15 radios -> selector de dos ejes Escalado × Cuadros"): the PC's profiles read from their stable ids
 // (ProfileName) as two axes. Profiles whose id this build does not know still appear in "Ver todos los perfiles" (the full radio list).
@@ -169,7 +170,7 @@ internal fun ProfileAxisPicker(
             if (from != null && to != null) Hint(stringResource(Res.string.linked_profile_fallback, profileLabel(from), profileLabel(to)))
         }
         // Every profile (the ones this build cannot place on the axes too), with the reason of the disabled ones.
-        TextButton(onClick = { showAll = !showAll }) {
+        TextButton(onClick = { showAll = !showAll }, shape = NijiyomeControls.shape) {
             Icon(if (showAll) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(if (showAll) Res.string.rd_s9_profile_hide_all else Res.string.rd_s9_profile_show_all, profiles.size))
         }

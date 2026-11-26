@@ -68,6 +68,7 @@ import app.nijiyome.feature.player.resources.Res
 import app.nijiyome.feature.player.resources.*
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign (lane S6): the building blocks every player sheet uses. The shared pickers of lane I1 (core/ui patterns) did not
 // exist when this lane started, so the small ones the sheets need (choice chips, option tiles, stepper, slider with units, state note)
@@ -374,7 +375,7 @@ internal fun StateNote(text: String, tone: NoteTone = NoteTone.INFO, action: Str
             }
             if (action != null && onAction != null) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onAction) { Text(action) }
+                    TextButton(onClick = onAction, shape = NijiyomeControls.shape) { Text(action) }
                 }
             }
         }

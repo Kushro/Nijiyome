@@ -78,6 +78,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.ui_retry
 import app.nijiyome.ui.resources.list_queued_offline
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** The list's write outcomes on the app snackbar ("Se sincronizará", "No se pudo guardar"). */
 @Composable
@@ -208,7 +209,7 @@ internal fun ContinueOnlyPane(continueWatching: LoadState<List<HistoryEntry>>, s
                 title = stringResource(Res.string.library_empty_title),
                 message = stringResource(Res.string.library_empty_message),
                 modifier = modifier,
-            ) { Button(onClick = screen.onExplore) { Text(stringResource(Res.string.library_explore)) } }
+            ) { Button(onClick = screen.onExplore, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.library_explore)) } }
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 128.dp),
@@ -243,7 +244,7 @@ internal fun HistoryPane(history: LoadState<List<HistoryEntry>>, screen: Library
                 title = stringResource(Res.string.library_history_empty_title),
                 message = stringResource(Res.string.library_history_empty_message),
                 modifier = modifier,
-            ) { Button(onClick = screen.onExplore) { Text(stringResource(Res.string.library_explore)) } }
+            ) { Button(onClick = screen.onExplore, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.library_explore)) } }
         } else {
             LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
                 item(key = "head", contentType = "head") {
@@ -318,7 +319,7 @@ internal fun FavoritesPane(screen: LibraryActions, modifier: Modifier = Modifier
                 modifier = modifier,
             ) {
                 if (state.accounts.isEmpty()) {
-                    OutlinedButton(onClick = screen.onOpenAccounts) { Text(stringResource(Res.string.library_lists_link)) }
+                    OutlinedButton(onClick = screen.onOpenAccounts, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.library_lists_link)) }
                 }
             }
         } else {

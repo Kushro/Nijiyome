@@ -68,6 +68,7 @@ import app.nijiyome.ui.format.formatBytes
 import app.nijiyome.ui.format.formatDuration
 import app.nijiyome.ui.format.formatRate
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Live torrent entry summary shown in the Link Monitor and the Desktop system tray. */
 data class ActiveTorrentSummary(
@@ -162,7 +163,7 @@ fun LinkMonitorDialog(
                         }
                         Text(subtitle, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                     }
-                    TextButton(onClick = { onDismiss(); onOpenLinkSettings() }) {
+                    TextButton(onClick = { onDismiss(); onOpenLinkSettings() }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(texts.linkSettings)
@@ -241,7 +242,7 @@ fun LinkMonitorDialog(
                                 color = scheme.primary,
                             )
                         }
-                        TextButton(onClick = { onDismiss(); onOpenTorrents() }) {
+                        TextButton(onClick = { onDismiss(); onOpenTorrents() }, shape = NijiyomeControls.shape) {
                             Text(texts.openTransfers)
                         }
                     }
@@ -415,7 +416,7 @@ private fun ActiveLinkSessionCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                OutlinedButton(onClick = onStop) {
+                OutlinedButton(onClick = onStop, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.StopCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(texts.stop)

@@ -76,6 +76,7 @@ import app.nijiyome.ui.resources.list_add
 import app.nijiyome.ui.resources.list_favorite
 import app.nijiyome.ui.resources.list_queued_offline
 import app.nijiyome.ui.resources.list_remove
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave A origin (worker q). Sparkles S7: the entry editor uses the shared status picker and progress stepper (pattern `stp`);
 // `ListButton` (mounted by Details and Home) keeps its signature.
@@ -164,7 +165,7 @@ internal fun ListEntryEditor(
                     OutlinedButton(onClick = {
                         favorite = !favorite
                         onFavorite(favorite)
-                    }) {
+                    }, shape = NijiyomeControls.shape) {
                         Icon(if (favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(
                             stringResource(if (favorite) Res.string.rd_s7_favorite_on else Res.string.rd_s7_add_favorite),
@@ -183,6 +184,7 @@ internal fun ListEntryEditor(
                                 }
                             },
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            shape = NijiyomeControls.shape,
                         ) {
                             Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(stringResource(UiR.string.list_remove), modifier = Modifier.padding(start = 6.dp))
@@ -256,7 +258,7 @@ fun ListButton(
                 Icon(if (current != null) Icons.Outlined.Bookmarks else Icons.Outlined.BookmarkAdd, contentDescription = null)
             }
         } else {
-            FilledTonalButton(onClick = { menu = true }) {
+            FilledTonalButton(onClick = { menu = true }, shape = NijiyomeControls.shape) {
                 Icon(if (current != null) Icons.Outlined.Bookmarks else Icons.Outlined.BookmarkAdd, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(label, modifier = Modifier.padding(horizontal = 6.dp))
                 if (favorite) {

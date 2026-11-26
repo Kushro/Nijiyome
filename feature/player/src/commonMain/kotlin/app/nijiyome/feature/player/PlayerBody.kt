@@ -52,6 +52,7 @@ import app.nijiyome.ui.state.userMessage
 import org.koin.compose.getKoin
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** The view model key of one player entry: a new episode / source / session is a new view model. */
 internal fun playerViewModelKey(args: PlayerArgs): String =
@@ -252,7 +253,7 @@ private fun StatusBody(
         PlayerPhase.MANUAL -> Centered {
             // BUG-079: a state line, not the sheet's words (the sheet opened on top repeated "Elige una fuente para este episodio").
             Text(stringResource(Res.string.player_no_source_yet), color = onColor, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-            FilledTonalButton(onClick = onPick) { Text(stringResource(Res.string.player_pick_source)) }
+            FilledTonalButton(onClick = onPick, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_pick_source)) }
         }
         PlayerPhase.NO_SOURCES -> Centered {
             EmptyState(

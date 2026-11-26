@@ -39,6 +39,7 @@ import app.nijiyome.player.SubtitleDelay
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import java.util.Locale
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign (lane S6): the "Pistas" sheet (artifact `shPistas`, parity PLY-09 / PLY-10 / PLE-16 / PLE-17 / PLE-26): audio and
 // subtitles side by side instead of two sheets, with the delay, the second track, the quick style with its live preview (and the full
@@ -127,7 +128,7 @@ private fun SubtitleSection(data: PlayerSheetData, actions: PlayerSheetActions) 
             }
         })
         actions.onLoadSubtitleFile?.let { load ->
-            OutlinedButton(onClick = load) {
+            OutlinedButton(onClick = load, shape = NijiyomeControls.shape) {
                 Icon(Icons.Rounded.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(Res.string.player_sub_load))
@@ -220,7 +221,7 @@ private fun TranslationControls(
         }
         translation.error?.let { StateNote(it, NoteTone.ERROR, toSettings) { openSettings(SettingsSection.PLAYER) } }
         if (translation.enabled) {
-            TextButton(onClick = { vm.pretranslate(); onClose() }) { Text(stringResource(Res.string.player_sub_pretranslate)) }
+            TextButton(onClick = { vm.pretranslate(); onClose() }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_sub_pretranslate)) }
         }
     }
 }

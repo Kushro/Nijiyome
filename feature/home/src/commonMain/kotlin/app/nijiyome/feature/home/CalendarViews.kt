@@ -131,6 +131,7 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * `Route.Calendar` (Sparkles redesign, lane S2). The structure picked in Ajustes › Apariencia (`structures.calendar`, also switchable
@@ -192,7 +193,7 @@ fun CalendarScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifie
                         item(key = "head", contentType = "head") {
                             Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(stringResource(Res.string.rd_s2_calendar_title), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
-                                if (onBack != null) TextButton(onClick = onBack) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_back)) }
+                                if (onBack != null) TextButton(onClick = onBack, shape = NijiyomeControls.shape) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_back)) }
                             }
                         }
                     }
@@ -372,7 +373,7 @@ private fun PeriodNav(state: CalendarUiState, onShift: (Long) -> Unit, onToday: 
             Text(t, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         }
         IconButton(onClick = { onShift(1) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = next) }
-        if (!current) OutlinedButton(onClick = onToday) { Text(stringResource(Res.string.rd_s2_today)) }
+        if (!current) OutlinedButton(onClick = onToday, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s2_today)) }
     }
 }
 
@@ -1047,7 +1048,7 @@ private fun FollowedRow(
         ) {
             Icon(if (on) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsOff, contentDescription = description)
         }
-        TextButton(onClick = { onUnfollow(show.ref) }) { Text(stringResource(Res.string.home_unfollow)) }
+        TextButton(onClick = { onUnfollow(show.ref) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_unfollow)) }
     }
 }
 
@@ -1068,7 +1069,7 @@ private fun MiniMonth(state: CalendarUiState, onSelect: (LocalDate) -> Unit, onV
                 Text(formatMonthYear(month), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 if (onView != null) {
                     val showingMonth = state.view == CalendarView.MONTH
-                    TextButton(onClick = { onView(if (showingMonth) CalendarView.WEEK else CalendarView.MONTH) }) {
+                    TextButton(onClick = { onView(if (showingMonth) CalendarView.WEEK else CalendarView.MONTH) }, shape = NijiyomeControls.shape) {
                         Text(stringResource(if (showingMonth) Res.string.home_cal_view_week else Res.string.home_cal_view_month))
                     }
                 }

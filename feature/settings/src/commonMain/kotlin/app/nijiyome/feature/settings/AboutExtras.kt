@@ -66,6 +66,7 @@ import app.nijiyome.ui.platform.rememberOpenFolder
 import app.nijiyome.ui.state.userMessage
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // parity wave A (15 §3.4, worker q; checklist system.update-check, system.open-logs): rows of Settings › Acerca de.
 
@@ -86,7 +87,7 @@ internal fun UpdateCheckRow(system: SystemViewModel, updateCheckEnabled: Boolean
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val update = state.update
-        FilledTonalButton(onClick = system::checkUpdates, enabled = update != UpdateCheckState.Checking) {
+        FilledTonalButton(onClick = system::checkUpdates, enabled = update != UpdateCheckState.Checking, shape = NijiyomeControls.shape) {
             if (update == UpdateCheckState.Checking) {
                 LoadingIndicator(Modifier.size(20.dp))
             } else {
@@ -97,7 +98,7 @@ internal fun UpdateCheckRow(system: SystemViewModel, updateCheckEnabled: Boolean
         when (update) {
             UpdateCheckState.Idle, UpdateCheckState.Checking -> Unit
             UpdateCheckState.UpToDate -> Pill(stringResource(Res.string.settings_update_up_to_date), tone = PillTone.OK)
-            is UpdateCheckState.Available -> TextButton(onClick = { openUrl(update.info.url) }) {
+            is UpdateCheckState.Available -> TextButton(onClick = { openUrl(update.info.url) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.NewReleases, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text(stringResource(Res.string.settings_update_available, update.info.version), modifier = Modifier.padding(start = 8.dp))
             }
@@ -161,7 +162,7 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                     }
                 }
             }
-            TextButton(onClick = system::clearLogs, enabled = lines.isNotEmpty()) {
+            TextButton(onClick = system::clearLogs, enabled = lines.isNotEmpty(), shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.DeleteSweep, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text(stringResource(Res.string.settings_logs_clear), modifier = Modifier.padding(start = 4.dp))
             }
@@ -170,6 +171,7 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                     if (!shareLog()) snackbar.show(shareFailed)
                 },
                 enabled = lines.isNotEmpty(),
+                shape = NijiyomeControls.shape,
             ) {
                 Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text(stringResource(Res.string.settings_logs_share), modifier = Modifier.padding(start = 4.dp))
@@ -209,6 +211,7 @@ internal fun LogsSheet(system: SystemViewModel, onDismiss: () -> Unit) {
                     FilledTonalButton(
                         onClick = system::pushLogsToPc,
                         enabled = !state.pushingLogs,
+                        shape = NijiyomeControls.shape,
                     ) {
                         if (state.pushingLogs) {
                             LoadingIndicator(Modifier.size(18.dp))

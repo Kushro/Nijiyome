@@ -134,6 +134,7 @@ import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Nijiyome Link (Sparkles S9; artifact `screens-c.js` screen `link`), its own screen in the two structures of `structures.link`:
@@ -362,9 +363,9 @@ private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
                     modifier = m,
                 ) {
                     if (online) {
-                        TextButton(onClick = a.onContinue, enabled = state.continueEntry != null && !state.handingOff) { Text(stringResource(Res.string.linked_continue)) }
+                        TextButton(onClick = a.onContinue, enabled = state.continueEntry != null && !state.handingOff, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.linked_continue)) }
                     } else {
-                        TextButton(onClick = a.onRetry) { Text(stringResource(UiR.string.ui_retry)) }
+                        TextButton(onClick = a.onRetry, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
                     }
                 }
             }
@@ -389,7 +390,7 @@ private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
                     text = state.lastHistorySyncMs?.let { stringResource(Res.string.rd_s9_link_history_synced, relativeTime(it)) } ?: stringResource(Res.string.rd_s9_link_history_not_yet),
                     modifier = m,
                 ) {
-                    a.onSyncHistory?.let { sync -> TextButton(onClick = sync, enabled = !state.historySyncing) { Text(stringResource(Res.string.rd_s9_link_sync_now)) } }
+                    a.onSyncHistory?.let { sync -> TextButton(onClick = sync, enabled = !state.historySyncing, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_link_sync_now)) } }
                 }
             }
             cards.add { m ->
@@ -409,7 +410,7 @@ private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
                 ) {
                     val remote = state.remote
                     if (remote != null) {
-                        TextButton(onClick = { a.onRemote(RemoteAction.PLAY_PAUSE) }, enabled = !state.remoteBusy) {
+                        TextButton(onClick = { a.onRemote(RemoteAction.PLAY_PAUSE) }, enabled = !state.remoteBusy, shape = NijiyomeControls.shape) {
                             Text(stringResource(if (remote.playing) Res.string.linked_remote_pause else Res.string.linked_remote_play))
                         }
                     }
@@ -424,7 +425,7 @@ private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
                         tone = PillTone.NEUTRAL,
                         text = stringResource(Res.string.extserver_entry_body),
                         modifier = m,
-                    ) { TextButton(onClick = open) { Text(stringResource(Res.string.rd_s9_link_manage)) } }
+                    ) { TextButton(onClick = open, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s9_link_manage)) } }
                 }
             }
             StatCardGrid(cards)
@@ -531,16 +532,16 @@ private fun UnpairedContent(state: LinkUiState, linkPairing: Boolean, a: ClientA
                 },
                 modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.large),
             )
-            TextButton(onClick = { scanning = false }) { Text(stringResource(Res.string.linked_scan_cancel)) }
+            TextButton(onClick = { scanning = false }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.linked_scan_cancel)) }
         } else {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (qrCameraAvailable) {
-                    Button(onClick = { if (permission.isGranted()) scanning = true else permission.request() }, enabled = !pairing) {
+                    Button(onClick = { if (permission.isGranted()) scanning = true else permission.request() }, enabled = !pairing, shape = NijiyomeControls.shape) {
                         if (pairing) LoadingIndicator(Modifier.size(20.dp)) else Icon(Icons.Outlined.PhotoCamera, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         Text(stringResource(if (pairing) Res.string.linked_pairing else Res.string.linked_scan), modifier = Modifier.padding(start = 8.dp))
                     }
                 }
-                FilledTonalButton(onClick = { pasting = true }, enabled = !pairing) {
+                FilledTonalButton(onClick = { pasting = true }, enabled = !pairing, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Text(stringResource(Res.string.linked_paste), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -666,11 +667,11 @@ private fun PasteCodeDialog(isValid: (String) -> Boolean, onDismiss: () -> Unit,
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (isValid(code)) onPair(code.trim()) else showError = true }, enabled = code.isNotBlank()) {
+            TextButton(onClick = { if (isValid(code)) onPair(code.trim()) else showError = true }, enabled = code.isNotBlank(), shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.linked_pair))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }
 
@@ -691,7 +692,7 @@ private fun FailedPanel(message: String, a: ClientActions) {
             Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             RecoveryTips()
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Button(onClick = a.onRetry) {
+                Button(onClick = a.onRetry, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Text(stringResource(UiR.string.ui_retry), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -767,6 +768,7 @@ private fun StatusCard(state: LinkUiState, paired: LinkState.Paired, a: ClientAc
                                 onClick = { full = !full },
                                 contentPadding = PaddingValues(horizontal = 0.dp),
                                 colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current),
+                                shape = NijiyomeControls.shape,
                             ) {
                                 Text(
                                     stringResource(if (full) Res.string.linked_fingerprint_hide else Res.string.linked_fingerprint_show),
@@ -795,7 +797,7 @@ private fun StatusCard(state: LinkUiState, paired: LinkState.Paired, a: ClientAc
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 if (online) {
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        FilledTonalButton(onClick = a.onContinue, enabled = state.continueEntry != null && !state.handingOff) {
+                        FilledTonalButton(onClick = a.onContinue, enabled = state.continueEntry != null && !state.handingOff, shape = NijiyomeControls.shape) {
                             if (state.handingOff) LoadingIndicator(Modifier.size(20.dp)) else Icon(Icons.Outlined.Cast, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                             Text(stringResource(Res.string.linked_continue), modifier = Modifier.padding(start = 8.dp))
                         }
@@ -809,7 +811,7 @@ private fun StatusCard(state: LinkUiState, paired: LinkState.Paired, a: ClientAc
                         )
                     }
                 } else {
-                    FilledTonalButton(onClick = a.onRetry) {
+                    FilledTonalButton(onClick = a.onRetry, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         Text(stringResource(UiR.string.ui_retry), modifier = Modifier.padding(start = 8.dp))
                     }
@@ -845,7 +847,7 @@ private fun HistoryPanel(state: LinkUiState, a: ClientActions) {
             }
         }
         a.onSyncHistory?.let { sync ->
-            OutlinedButton(onClick = sync, enabled = !state.historySyncing) {
+            OutlinedButton(onClick = sync, enabled = !state.historySyncing, shape = NijiyomeControls.shape) {
                 if (state.historySyncing) LoadingIndicator(Modifier.size(18.dp)) else Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(if (state.historySyncing) Res.string.rd_s9_link_syncing else Res.string.rd_s9_link_sync_now), modifier = Modifier.padding(start = 8.dp))
             }
@@ -939,7 +941,7 @@ private fun EnhanceSection(state: LinkUiState, onStart: (String) -> Unit) {
         Text(problem.orEmpty(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
     }
     state.sessionError?.let { Text(it.userMessage(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
-    Button(onClick = { onStart(url) }, enabled = canStart) {
+    Button(onClick = { onStart(url) }, enabled = canStart, shape = NijiyomeControls.shape) {
         if (state.startingSession) LoadingIndicator(Modifier.padding(end = 8.dp).size(20.dp))
         Text(stringResource(if (state.startingSession) Res.string.linked_enhance_starting else Res.string.linked_enhance_start))
     }
@@ -1011,11 +1013,11 @@ private fun HandoffCard(h: LinkHandoff, onPlay: () -> Unit, onDismiss: () -> Uni
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onPlay) {
+                Button(onClick = onPlay, shape = NijiyomeControls.shape) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Text(stringResource(Res.string.linked_handoff_play), modifier = Modifier.padding(start = 8.dp))
                 }
-                TextButton(onClick = onDismiss) { Text(stringResource(Res.string.linked_handoff_dismiss)) }
+                TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.linked_handoff_dismiss)) }
             }
         }
     }
@@ -1060,7 +1062,7 @@ private fun DiscoveredPanel(
                         Text(pc.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("${pc.host}:${pc.port}", style = MaterialTheme.typography.bodySmall.copy(fontFamily = NijiyomeFonts.jetBrainsMono))
                     }
-                    FilledTonalButton(onClick = { target = pc }, enabled = enabled && !pairing) { Text(stringResource(Res.string.linked_pair)) }
+                    FilledTonalButton(onClick = { target = pc }, enabled = enabled && !pairing, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.linked_pair)) }
                 }
             }
         }
@@ -1102,9 +1104,9 @@ private fun DiscoveredPairDialog(pc: DiscoveredPc, fingerprint: String?, onDismi
             }
         },
         confirmButton = {
-            TextButton(onClick = { onPair(code.trim()) }, enabled = valid && fingerprint != null) { Text(stringResource(Res.string.linked_discovered_pair_confirm)) }
+            TextButton(onClick = { onPair(code.trim()) }, enabled = valid && fingerprint != null, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.linked_discovered_pair_confirm)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
     )
 }
 
@@ -1119,7 +1121,7 @@ private suspend fun linkErrorText(error: app.nijiyome.model.AppError): String = 
 private fun ForgetButton(onForget: () -> Unit) {
     var confirming by rememberSaveable { mutableStateOf(false) }
     // BUG-090: a secondary, destructive action (error-coloured text button) next to the card's main action
-    TextButton(onClick = { confirming = true }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+    TextButton(onClick = { confirming = true }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error), shape = NijiyomeControls.shape) {
         Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
         Text(stringResource(Res.string.linked_forget), modifier = Modifier.padding(start = 8.dp), maxLines = 1)
     }
@@ -1136,9 +1138,10 @@ private fun ForgetButton(onForget: () -> Unit) {
                         onForget()
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.linked_forget)) }
             },
-            dismissButton = { TextButton(onClick = { confirming = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { confirming = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
 }
@@ -1149,7 +1152,7 @@ private fun ForgetButton(onForget: () -> Unit) {
 private fun ExtensionServerCard(onOpen: () -> Unit) {
     Panel(icon = Icons.Outlined.Extension, title = stringResource(Res.string.extserver_entry_title)) {
         Hint(stringResource(Res.string.extserver_entry_body))
-        FilledTonalButton(onClick = onOpen) {
+        FilledTonalButton(onClick = onOpen, shape = NijiyomeControls.shape) {
             Icon(Icons.Outlined.QrCode, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
             Text(stringResource(Res.string.extserver_entry_open), modifier = Modifier.padding(start = 8.dp))
         }

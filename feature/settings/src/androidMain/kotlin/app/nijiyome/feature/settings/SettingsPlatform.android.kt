@@ -56,6 +56,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 internal actual val systemCategoryOffered: Boolean = false
 
@@ -286,7 +287,7 @@ internal actual fun OnboardingNotifications() {
             if (allowed) {
                 Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                FilledTonalButton(onClick = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
+                FilledTonalButton(onClick = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }, shape = NijiyomeControls.shape) {
                     Text(stringResource(Res.string.settings_onboarding_notifications_allow))
                 }
             }

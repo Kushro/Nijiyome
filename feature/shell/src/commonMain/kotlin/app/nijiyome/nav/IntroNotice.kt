@@ -30,6 +30,7 @@ import app.nijiyome.feature.shell.resources.rd_s1_intro_dismiss
 import app.nijiyome.feature.shell.resources.rd_s1_intro_open
 import app.nijiyome.feature.shell.resources.rd_s1_intro_title
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * The one-time notice after updating to Sparkles (`DesignPrefs.introSeen == false`, wizard already done): a slim band on top of
@@ -53,8 +54,8 @@ internal fun IntroNotice(onOpen: () -> Unit, onDismiss: () -> Unit, modifier: Mo
             val title = stringResource(Res.string.rd_s1_intro_title)
             val body = stringResource(Res.string.rd_s1_intro_body)
             val buttons: @Composable () -> Unit = {
-                TextButton(onClick = onDismiss) { Text(stringResource(Res.string.rd_s1_intro_dismiss)) }
-                Button(onClick = onOpen) { Text(stringResource(Res.string.rd_s1_intro_open)) }
+                TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s1_intro_dismiss)) }
+                Button(onClick = onOpen, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s1_intro_open)) }
             }
             if (oneLine) {
                 Row(

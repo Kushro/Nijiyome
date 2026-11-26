@@ -89,6 +89,7 @@ import app.nijiyome.ui.resources.nav_novels
 import app.nijiyome.ui.resources.ui_for_you_summary
 import app.nijiyome.ui.resources.ui_nav_for_you
 import app.nijiyome.ui.resources.ui_retry
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // android wave contract (docs/redesign/12 §3.13). Name and signature FIXED; new parameters only with defaults.
 
@@ -327,6 +328,7 @@ private fun AccountCard(overview: YouOverview, syncing: Boolean, onSyncNow: () -
                     onClick = onSyncNow,
                     enabled = !syncing,
                     modifier = Modifier.heightIn(min = 48.dp).semantics { if (syncing) liveRegion = LiveRegionMode.Polite },
+                    shape = NijiyomeControls.shape,
                 ) {
                     if (syncing) {
                         LoadingIndicator(Modifier.size(20.dp))
@@ -335,7 +337,7 @@ private fun AccountCard(overview: YouOverview, syncing: Boolean, onSyncNow: () -
                     }
                     Text(stringResource(if (syncing) Res.string.you_syncing else Res.string.you_sync_now), modifier = Modifier.padding(start = 8.dp))
                 }
-                OutlinedButton(onClick = onOpenAccounts, modifier = Modifier.heightIn(min = 48.dp)) {
+                OutlinedButton(onClick = onOpenAccounts, modifier = Modifier.heightIn(min = 48.dp), shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.ManageAccounts, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         stringResource(if (overview.accounts.isEmpty()) Res.string.you_sign_in else Res.string.you_accounts),

@@ -62,6 +62,7 @@ import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** "4.2 MB/s · 12 peers · 37 % of the file". */
 @Composable
@@ -203,7 +204,7 @@ internal fun FlashToast(notice: PlayerNotice, onDone: () -> Unit, modifier: Modi
             )
             Text(text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f, fill = false))
             if (undo != null) {
-                TextButton(onClick = undo) { Text(stringResource(Res.string.quality_undo), color = scheme.inversePrimary) }
+                TextButton(onClick = undo, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.quality_undo), color = scheme.inversePrimary) }
             }
         }
     }
@@ -239,7 +240,7 @@ internal fun SkipButton(kind: SkipKind, onClick: () -> Unit, modifier: Modifier 
         SkipKind.OUTRO -> Res.string.player_jump_outro
         SkipKind.RECAP -> Res.string.player_jump_recap
     }
-    FilledTonalButton(onClick = onClick, modifier = modifier) {
+    FilledTonalButton(onClick = onClick, modifier = modifier, shape = NijiyomeControls.shape) {
         Icon(Icons.Rounded.FastForward, contentDescription = null, modifier = Modifier.size(18.dp))
         Text(stringResource(label), Modifier.padding(start = 8.dp))
     }
@@ -283,12 +284,12 @@ internal fun MeteredDialog(prompt: MeteredPrompt, onWatch: () -> Unit, onWeb: ()
                     prompt.sizeBytes?.let { stringResource(Res.string.player_metered_body, formatBytes(it)) }
                         ?: stringResource(Res.string.player_metered_body_unknown),
                 )
-                TextButton(onClick = onSettings) { Text(stringResource(Res.string.player_metered_settings)) }
+                TextButton(onClick = onSettings, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_metered_settings)) }
             }
         },
-        confirmButton = { Button(onClick = onWatch) { Text(stringResource(Res.string.player_metered_watch)) } },
+        confirmButton = { Button(onClick = onWatch, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_metered_watch)) } },
         dismissButton = {
-            TextButton(onClick = onWeb) {
+            TextButton(onClick = onWeb, shape = NijiyomeControls.shape) {
                 Text(stringResource(if (prompt.hasWeb) Res.string.player_metered_web else Res.string.player_cancel))
             }
         },
@@ -358,20 +359,20 @@ internal fun PlaybackErrorView(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onRetry) { Text(stringResource(UiR.string.ui_retry)) }
-            if (state.canPickSource) OutlinedButton(onClick = onPick) { Text(stringResource(Res.string.player_pick_source)) }
+            Button(onClick = onRetry, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
+            if (state.canPickSource) OutlinedButton(onClick = onPick, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_pick_source)) }
         }
         if (onPlayOnPhone != null && state.linkPhoneFallback && !state.remoteless) {
-            FilledTonalButton(onClick = onPlayOnPhone) { Text(stringResource(Res.string.player_link_play_on_phone)) }
+            FilledTonalButton(onClick = onPlayOnPhone, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_link_play_on_phone)) }
         }
         if (state.lastFailedTorrent && state.hasWeb) {
-            FilledTonalButton(onClick = onUseWeb) { Text(stringResource(Res.string.player_use_web)) }
+            FilledTonalButton(onClick = onUseWeb, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_use_web)) }
         }
         if (noFile != null) {
-            FilledTonalButton(onClick = { onOpenTorrent(noFile) }) { Text(stringResource(Res.string.player_torrent_pick_file)) }
+            FilledTonalButton(onClick = { onOpenTorrent(noFile) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_torrent_pick_file)) }
         }
         // Extensions play no part in a Link session (BUG-026)
-        if (state.remoteless) TextButton(onClick = onOpenExtensions) { Text(stringResource(Res.string.player_go_extensions)) }
+        if (state.remoteless) TextButton(onClick = onOpenExtensions, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_go_extensions)) }
     }
 }
 

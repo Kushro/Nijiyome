@@ -69,6 +69,7 @@ import app.nijiyome.ui.format.formatRate
 import app.nijiyome.ui.platform.rememberNotificationPermission
 import kotlinx.coroutines.flow.catch
 import org.koin.compose.koinInject
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * The "Entiendo / Ahora no" warning (11 §3.4): full screen, not a dismissable dialog. Explains CPU, battery, storage and data use,
@@ -138,10 +139,10 @@ internal fun BackgroundWarning(onAccept: () -> Unit, onNotNow: () -> Unit, modif
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Button(onClick = onAccept, modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp)) {
+        Button(onClick = onAccept, modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp), shape = NijiyomeControls.shape) {
             Text(stringResource(Res.string.torrent_downloads_warn_accept))
         }
-        TextButton(onClick = onNotNow) { Text(stringResource(Res.string.torrent_android_not_now)) }
+        TextButton(onClick = onNotNow, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_android_not_now)) }
     }
 }
 

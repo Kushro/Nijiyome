@@ -80,6 +80,7 @@ import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * What the wizard covers, in order ([onboardingSteps] drops what a device does not need). DOWNLOADS and SYSTEM are platform steps
@@ -214,7 +215,7 @@ fun OnboardingScreen(onDone: () -> Unit, modifier: Modifier = Modifier) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StepStrip(pages.map { it.first }, index, Modifier.weight(1f))
-                    TextButton(onClick = finish, modifier = Modifier.padding(start = 8.dp)) { Text(stringResource(Res.string.settings_onboarding_skip)) }
+                    TextButton(onClick = finish, modifier = Modifier.padding(start = 8.dp), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.settings_onboarding_skip)) }
                 }
                 AnimatedContent(targetState = page, modifier = Modifier.weight(1f), label = "onboarding") { current ->
                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -227,9 +228,9 @@ fun OnboardingScreen(onDone: () -> Unit, modifier: Modifier = Modifier) {
                     }
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    if (index > 0) TextButton(onClick = { index -= 1 }) { Text(stringResource(Res.string.settings_onboarding_back)) }
+                    if (index > 0) TextButton(onClick = { index -= 1 }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.settings_onboarding_back)) }
                     Spacer(Modifier.weight(1f))
-                    Button(onClick = { if (last) finish() else index += 1 }) {
+                    Button(onClick = { if (last) finish() else index += 1 }, shape = NijiyomeControls.shape) {
                         Text(
                             stringResource(
                                 when {

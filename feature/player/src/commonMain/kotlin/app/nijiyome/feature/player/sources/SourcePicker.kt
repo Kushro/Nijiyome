@@ -130,6 +130,7 @@ import app.nijiyome.ui.state.userMessage
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import kotlinx.coroutines.launch
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // android wave contract (docs/redesign/12 §3.11). Owner: worker d; also called by worker c (Details). Names and signatures FIXED.
 // Sparkles redesign, lane S4 (docs/redesign/artefacto/screens-a.js `fuentes-episodio`): the sheet in two structures chosen in
@@ -308,7 +309,7 @@ private fun ModeBlock(rules: SourceRules, mode: SourceMode, onOpenSettings: () -
                 small = true,
             )
             Spacer(Modifier.weight(1f))
-            TextButton(onClick = onOpenSettings) {
+            TextButton(onClick = onOpenSettings, shape = NijiyomeControls.shape) {
                 Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.src_picker_settings), modifier = Modifier.padding(start = 6.dp))
             }
@@ -602,7 +603,7 @@ private fun CountRow(model: PickerModel, active: Int, onClear: () -> Unit, trail
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         )
-        if (active > 0) TextButton(onClick = onClear) { Text(stringResource(Res.string.rd_s4_src_clear_n, active)) }
+        if (active > 0) TextButton(onClick = onClear, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s4_src_clear_n, active)) }
         Spacer(Modifier.weight(1f))
         trailing()
     }
@@ -614,7 +615,7 @@ private fun NoMatch(onClear: () -> Unit) {
         EmptyArt(EmptyKind.SEARCH)
         Text(stringResource(Res.string.src_filter_empty_title), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(Res.string.src_filter_empty_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FilledTonalButton(onClick = onClear) { Text(stringResource(Res.string.src_filter_clear)) }
+        FilledTonalButton(onClick = onClear, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.src_filter_clear)) }
     }
 }
 
@@ -915,12 +916,12 @@ private fun StateBlock(kind: EmptyKind, title: String, body: String, onRetry: ()
         Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
         Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.widthIn(max = 420.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilledTonalButton(onClick = onRetry) {
+            FilledTonalButton(onClick = onRetry, shape = NijiyomeControls.shape) {
                 Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(retryLabel, modifier = Modifier.padding(start = 8.dp))
             }
             if (onOpenExtensions != null) {
-                OutlinedButton(onClick = onOpenExtensions) {
+                OutlinedButton(onClick = onOpenExtensions, shape = NijiyomeControls.shape) {
                     Icon(Icons.Rounded.Extension, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.rd_s4_src_manage_ext), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -936,7 +937,7 @@ private fun PartialError(error: AppError, onRetry: () -> Unit) {
         Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Rounded.WarningAmber, contentDescription = null, modifier = Modifier.size(20.dp))
             Text(stringResource(Res.string.rd_s4_src_ext_error, error.userMessage()), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            TextButton(onClick = onRetry) { Text(stringResource(UiR.string.ui_retry)) }
+            TextButton(onClick = onRetry, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
         }
     }
 }
@@ -1034,7 +1035,7 @@ private fun SourceRowContent(
             ReliabilityBar(c.reliability)
             WhyNotRow(whyNot)
             if (onDownload != null && torrent) {
-                TextButton(onClick = onDownload, enabled = enabled) {
+                TextButton(onClick = onDownload, enabled = enabled, shape = NijiyomeControls.shape) {
                     Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(Res.string.src_picker_download))

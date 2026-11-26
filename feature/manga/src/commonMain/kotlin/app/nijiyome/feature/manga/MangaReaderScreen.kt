@@ -151,6 +151,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * `Route.MangaReader(args)` (checklist manga.reader.*): paginado / vertical / webtoon, doble página, LTR/RTL, ajuste, fondo, brillo,
@@ -472,7 +473,7 @@ fun MangaReaderScreen(
                     },
                     zonesShown = zonesShown,
                 )
-                TextButton(onClick = { sheet = null; onOpenSettings(SettingsSection.READER) }, modifier = Modifier.padding(vertical = 8.dp)) {
+                TextButton(onClick = { sheet = null; onOpenSettings(SettingsSection.READER) }, modifier = Modifier.padding(vertical = 8.dp), shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Keyboard, contentDescription = null)
                     Text(stringResource(Res.string.rd_s11_all_reader_settings), modifier = Modifier.padding(start = 6.dp))
                 }
@@ -873,8 +874,8 @@ private fun PageImage(
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                 Text(stringResource(Res.string.manga_reader_page_failed, index + 1), color = textColor)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                    OutlinedButton(onClick = { retry++ }) { Text(stringResource(UiR.string.ui_retry)) }
-                    Button(onClick = onSwitch) { Text(stringResource(Res.string.manga_reader_switch_source)) }
+                    OutlinedButton(onClick = { retry++ }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
+                    Button(onClick = onSwitch, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_reader_switch_source)) }
                 }
             }
         } else {
@@ -908,8 +909,8 @@ private fun PagesError(message: String, onRetry: () -> Unit, onSwitch: () -> Uni
         Text(stringResource(Res.string.manga_reader_pages_failed), style = MaterialTheme.typography.titleMedium, color = color)
         Text(message, style = MaterialTheme.typography.bodySmall, color = color, textAlign = TextAlign.Center)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onRetry) { Text(stringResource(UiR.string.ui_retry)) }
-            Button(onClick = onSwitch) { Text(stringResource(Res.string.manga_reader_switch_source)) }
+            OutlinedButton(onClick = onRetry, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
+            Button(onClick = onSwitch, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_reader_switch_source)) }
         }
     }
 }
@@ -919,7 +920,7 @@ private fun EndCard(hasNext: Boolean, onNext: () -> Unit, color: Color, infinite
     Column(Modifier.fillMaxWidth().padding(vertical = 48.dp, horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(Res.string.manga_reader_chapter_end), color = color, style = MaterialTheme.typography.titleMedium)
         if (hasNext) {
-            if (!infinite) Button(onClick = onNext, modifier = Modifier.padding(top = 12.dp)) { Text(stringResource(Res.string.manga_reader_next_chapter)) }
+            if (!infinite) Button(onClick = onNext, modifier = Modifier.padding(top = 12.dp), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_reader_next_chapter)) }
         } else {
             Text(stringResource(Res.string.manga_reader_last_chapter), color = color, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
         }

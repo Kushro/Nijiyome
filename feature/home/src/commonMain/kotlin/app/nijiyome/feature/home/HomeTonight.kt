@@ -76,6 +76,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S2: the "Esta noche" pieces (artifact screens-a.js `tonight`, `agenda`, `agendaList`): the row that joins
 // what to resume with what came out and what airs later today, the agenda of today with a "now" marker and a bell per title.
@@ -370,6 +371,7 @@ private fun AgendaList(items: List<AiringEpisode>, ctx: HomeRowCtx) {
                 TextButton(
                     onClick = ctx.actions.onOpenCalendar,
                     colors = ButtonDefaults.textButtonColors(contentColor = onAiring(MaterialTheme.colorScheme.primary, LocalContentColor.current)),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.rd_s2_agenda_earlier, from)) }
             }
         }

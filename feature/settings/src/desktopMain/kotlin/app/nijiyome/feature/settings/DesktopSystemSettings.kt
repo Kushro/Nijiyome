@@ -52,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** The desktop-only system preferences (Tatakai Next's `SystemPrefs` / `flow.discord_presence`, same defaults). */
 data class DesktopSystemPrefs(
@@ -193,6 +194,7 @@ private fun SecretsUnreadableNotice(control: DesktopSystemControl) {
                 },
                 modifier = Modifier.align(Alignment.End),
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer),
+                shape = NijiyomeControls.shape,
             ) { Text(stringResource(Res.string.settings_system_secrets_unreadable_ok)) }
         }
     }

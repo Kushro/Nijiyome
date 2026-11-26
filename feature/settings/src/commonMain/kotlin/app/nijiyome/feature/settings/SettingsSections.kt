@@ -102,6 +102,7 @@ import app.nijiyome.ui.state.userMessage
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Navigation a category may need; built once by `SettingsScreen`. */
 internal class SettingsActions(
@@ -464,7 +465,7 @@ private fun MetadataCategory(state: SettingsUiState, vm: SettingsViewModel) {
             SettingRow(stringResource(Res.string.settings_metadata_cache), cacheSummary(state.storage), divider = false) {
                 // Desktop empties only the metadata responses here (Android's row has no button).
                 if (metadataCacheClearOffered) {
-                    TextButton(onClick = vm::clearMetadataCache, enabled = !state.clearingCache && state.storage is LoadState.Ok) {
+                    TextButton(onClick = vm::clearMetadataCache, enabled = !state.clearingCache && state.storage is LoadState.Ok, shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.settings_metadata_cache_clear))
                     }
                 }
@@ -555,7 +556,7 @@ private fun providerSubRes(id: String): StringResource? = when (id) {
 @Composable
 internal fun LinkSection(state: SettingsUiState, vm: SettingsViewModel, onOpenLinked: () -> Unit) {
     SectionHint(stringResource(Res.string.settings_link_hint))
-    FilledTonalButton(onClick = onOpenLinked) {
+    FilledTonalButton(onClick = onOpenLinked, shape = NijiyomeControls.shape) {
         Icon(Icons.Outlined.Computer, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
         Text(stringResource(Res.string.settings_link_open), modifier = Modifier.padding(start = 8.dp))
     }
@@ -607,6 +608,7 @@ internal fun LinkSection(state: SettingsUiState, vm: SettingsViewModel, onOpenLi
             onClick = vm::syncNow,
             enabled = state.linkPaired && state.settings.historySyncOverLink && !state.syncing,
             modifier = Modifier.padding(top = 8.dp),
+            shape = NijiyomeControls.shape,
         ) {
             if (state.syncing) {
                 LoadingIndicator(Modifier.size(20.dp))
@@ -717,7 +719,7 @@ private fun DataCategory(state: SettingsUiState, vm: SettingsViewModel) {
                 Pill(stringResource(Res.string.settings_telemetry_none), tone = PillTone.OK)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                OutlinedButton(onClick = { confirmClear = true }, enabled = !state.clearingCache) {
+                OutlinedButton(onClick = { confirmClear = true }, enabled = !state.clearingCache, shape = NijiyomeControls.shape) {
                     if (state.clearingCache) {
                         LoadingIndicator(Modifier.size(20.dp))
                     } else {
@@ -750,9 +752,10 @@ private fun DataCategory(state: SettingsUiState, vm: SettingsViewModel) {
                         vm.clearCache()
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.settings_clear_cache)) }
             },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
 }
@@ -831,12 +834,12 @@ private fun AboutCategory(state: SettingsUiState, vm: SettingsViewModel) {
         }
         SettingAnchor("about_licenses", "about_logs") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                FilledTonalButton(onClick = { showLicenses = true }) {
+                FilledTonalButton(onClick = { showLicenses = true }, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Text(stringResource(Res.string.settings_licenses), modifier = Modifier.padding(start = 8.dp))
                 }
                 if (system.hasLogs) {
-                    TextButton(onClick = { showLogs = true }) {
+                    TextButton(onClick = { showLogs = true }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.Terminal, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         Text(stringResource(Res.string.settings_logs), modifier = Modifier.padding(start = 8.dp))
                     }

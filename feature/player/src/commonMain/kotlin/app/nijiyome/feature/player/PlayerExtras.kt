@@ -95,6 +95,7 @@ import kotlinx.coroutines.delay
 import java.io.File
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // parity wave A (docs/redesign/15 §3.2 / §5 p, worker p): the player's new sheets, panels and helpers. Pure UI over PlayerViewModel.
 
@@ -228,7 +229,7 @@ internal fun PretranslateOverlay(progress: Pair<Int, Int>, onSkip: () -> Unit, m
                 progress = { if (progress.second > 0) progress.first.toFloat() / progress.second else 0f },
                 modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(onClick = onSkip) { Text(stringResource(Res.string.player_pretranslate_skip)) }
+            TextButton(onClick = onSkip, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_pretranslate_skip)) }
         }
     }
 }
@@ -292,7 +293,7 @@ internal fun LockOverlay(visible: Boolean, onShow: () -> Unit, onUnlock: () -> U
     ) {
         if (visible) {
             Column(Modifier.padding(start = 32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(onClick = onUnlock) {
+                FilledTonalButton(onClick = onUnlock, shape = NijiyomeControls.shape) {
                     Icon(Icons.Rounded.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.player_unlock), Modifier.padding(start = 8.dp))
                 }

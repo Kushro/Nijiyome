@@ -87,6 +87,7 @@ import org.koin.compose.getKoin
 import app.nijiyome.ui.resources.ui_cancel
 import java.io.File
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Settings › Lectores y narrador › Novela (NOV-12, NOV-15 to NOV-18; lane S10 embeds it right after `ReaderSettingsSection`):
@@ -214,7 +215,7 @@ internal fun NovelTypographyRows(
                     TextButton(onClick = {
                         runCatching { File(installed).delete() }
                         onUpdate { it.copy(customFontPath = null, font = if (it.font == "custom") "serif" else it.font) }
-                    }) { Text(stringResource(Res.string.novel_settings_font_remove)) }
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_settings_font_remove)) }
                 }
             }
             if (fontError) Text(stringResource(Res.string.novel_settings_font_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -336,7 +337,7 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
             Column {
                 val current = voices?.firstOrNull { it.id == tts.voice }?.label ?: tts.voice ?: stringResource(Res.string.novel_narration_voice_default)
                 Box {
-                    OutlinedButton(onClick = { voiceMenu = true }, enabled = !voices.isNullOrEmpty()) { Text(current) }
+                    OutlinedButton(onClick = { voiceMenu = true }, enabled = !voices.isNullOrEmpty(), shape = NijiyomeControls.shape) { Text(current) }
                     DropdownMenu(expanded = voiceMenu, onDismissRequest = { voiceMenu = false }) {
                         DropdownMenuItem(text = { Text(stringResource(Res.string.novel_narration_voice_default)) }, onClick = { voiceMenu = false; onUpdate { it.copy(voice = null) } })
                         voices.orEmpty().forEach { v ->
@@ -351,7 +352,7 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
                     var manual by remember(tts.engine) { mutableStateOf(tts.voice.orEmpty()) }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                         OutlinedTextField(value = manual, onValueChange = { manual = it }, singleLine = true, label = { Text(stringResource(Res.string.novel_narration_voice_id)) }, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { onUpdate { it.copy(voice = manual.trim().ifEmpty { null }) } }) { Text(stringResource(Res.string.novel_save)) }
+                        TextButton(onClick = { onUpdate { it.copy(voice = manual.trim().ifEmpty { null }) } }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_save)) }
                     }
                 }
             }
@@ -398,7 +399,7 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(onClick = { onUpdate { it.copy(endpoint = endpoint.trim(), model = model.trim()) } }) { Text(stringResource(Res.string.novel_save)) }
+            TextButton(onClick = { onUpdate { it.copy(endpoint = endpoint.trim(), model = model.trim()) } }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_save)) }
         }
         // API key (SecretStore, SecretKeys.ttsApiKey): "saved" / "remove", never shown.
         val secretKey = SecretKeys.ttsApiKey(tts.engine.id)
@@ -436,10 +437,11 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
                                 }
                             },
                             enabled = secrets != null && keyInput.isNotBlank(),
+                            shape = NijiyomeControls.shape,
                         ) { Text(stringResource(Res.string.novel_save)) }
                     }
                     if (saved) {
-                        TextButton(onClick = { scope.launch { runCatching { secrets?.put(secretKey, null) }; keyVersion++ } }) { Text(stringResource(Res.string.novel_narration_key_remove)) }
+                        TextButton(onClick = { scope.launch { runCatching { secrets?.put(secretKey, null) }; keyVersion++ } }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_narration_key_remove)) }
                     }
                 }
             },
@@ -468,8 +470,9 @@ private fun NarratorRows(tts: TtsSettings, narrator: Narrator?, secrets: SecretS
                 }
             },
             enabled = !testing,
+            shape = NijiyomeControls.shape,
         ) { Text(stringResource(if (testing) Res.string.novel_narration_testing else Res.string.novel_narration_test)) }
-        if (testing) TextButton(onClick = { narrator?.stop(); testing = false }) { Text(stringResource(Res.string.novel_narration_stop)) }
+        if (testing) TextButton(onClick = { narrator?.stop(); testing = false }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_narration_stop)) }
     }
     testError?.let { Text(ttsErrorText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp)) }
 }
@@ -527,7 +530,7 @@ private fun LocalVoiceRows(local: LocalVoiceInstaller, tts: TtsSettings, onChang
                             installed = local.installed(model.id)
                             onChanged()
                         }
-                    }) { Text(stringResource(Res.string.novel_narration_key_remove)) }
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_narration_key_remove)) }
                 } else {
                     FilledTonalButton(onClick = {
                         error = null
@@ -536,7 +539,7 @@ private fun LocalVoiceRows(local: LocalVoiceInstaller, tts: TtsSettings, onChang
                             installed = local.installed(model.id)
                             onChanged()
                         }
-                    }) { Text(stringResource(Res.string.novel_narration_local_download)) }
+                    }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.novel_narration_local_download)) }
                 }
             }
         },
@@ -579,11 +582,11 @@ private fun InstalledFontDialog(current: String?, onPick: (String) -> Unit, onDi
             }
         },
         confirmButton = {
-            TextButton(onClick = { onPick(query.trim()) }, enabled = query.isNotBlank() && installedFontFamily(query.trim()) != null) {
+            TextButton(onClick = { onPick(query.trim()) }, enabled = query.isNotBlank() && installedFontFamily(query.trim()) != null, shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.novel_font_installed_use))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
     )
 }
 

@@ -122,6 +122,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.1, worker r). Signatures FINAL (the shell and Details
 // wire them).
@@ -247,7 +248,7 @@ fun ForYouPreview(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(
             stringResource(Res.string.home_for_you_title),
-            trailing = { TextButton(onClick = onSeeAll) { Text(stringResource(Res.string.home_see_all)) } },
+            trailing = { TextButton(onClick = onSeeAll, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_see_all)) } },
         )
         Text(
             stringResource(Res.string.rd_s3_for_you_local),
@@ -298,7 +299,7 @@ fun TasteAtlas(onMediaClick: (Media) -> Unit, modifier: Modifier = Modifier) {
         SectionHeader(
             stringResource(Res.string.rd_s3_atlas_title),
             trailing = {
-                TextButton(onClick = { names = !names }) {
+                TextButton(onClick = { names = !names }, shape = NijiyomeControls.shape) {
                     Text(stringResource(if (names) Res.string.rd_s3_atlas_hide_names else Res.string.rd_s3_atlas_show_names))
                 }
             },
@@ -408,7 +409,7 @@ private fun RecRow(item: RecommendationItem, onClick: () -> Unit, onNotIntereste
             ) {
                 item.reasons.forEach { InfoChip(reasonLabel(it)) }
             }
-            TextButton(onClick = onNotInterested, contentPadding = PaddingValues(horizontal = 0.dp)) { Text(stringResource(Res.string.home_recs_not_interested)) }
+            TextButton(onClick = onNotInterested, contentPadding = PaddingValues(horizontal = 0.dp), shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_recs_not_interested)) }
         }
     }
 }
@@ -502,7 +503,7 @@ fun FollowShowRow(media: Media, modifier: Modifier = Modifier) {
                     Text(stringResource(Res.string.home_follow_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (following) {
-                    OutlinedButton(onClick = { scope.launch { runCatching { airing.unfollow(media.ref) } } }) {
+                    OutlinedButton(onClick = { scope.launch { runCatching { airing.unfollow(media.ref) } } }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.NotificationsActive, contentDescription = null)
                         Text(stringResource(Res.string.home_following), Modifier.padding(start = 6.dp))
                     }
@@ -510,7 +511,7 @@ fun FollowShowRow(media: Media, modifier: Modifier = Modifier) {
                     FilledTonalButton(onClick = {
                         if (platformPostsNotifications) askPermission()
                         scope.launch { runCatching { airing.follow(media, remind = platformPostsNotifications) } }
-                    }) {
+                    }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.NotificationAdd, contentDescription = null)
                         Text(stringResource(Res.string.home_follow), Modifier.padding(start = 6.dp))
                     }

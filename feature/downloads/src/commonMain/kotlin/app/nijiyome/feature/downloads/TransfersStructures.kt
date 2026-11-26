@@ -98,6 +98,7 @@ import app.nijiyome.ui.resources.*
 import org.jetbrains.compose.resources.stringResource
 import java.text.DateFormat
 import java.util.Date
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S8 (Transferencias): the two structures. Both read the same state and call the same actions ([TransfersEnv]);
 // only the composition changes.
@@ -258,7 +259,7 @@ internal fun LazyListScope.queueHeader(state: DownloadsUiState, env: TransfersEn
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     if (showHint && state.queue.isNotEmpty()) {
-                        TextButton(onClick = { if (env.selection.active) env.selection.exit() else env.selection.start() }) {
+                        TextButton(onClick = { if (env.selection.active) env.selection.exit() else env.selection.start() }, shape = NijiyomeControls.shape) {
                             Icon(if (env.selection.active) Icons.Outlined.Check else Icons.Outlined.Checklist, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(
                                 stringResource(if (env.selection.active) Res.string.rd_s8_select_done else Res.string.rd_s8_select),
@@ -275,7 +276,7 @@ internal fun LazyListScope.queueHeader(state: DownloadsUiState, env: TransfersEn
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Outlined.Info, contentDescription = null, tint = LocalSignalColors.current.info, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.rd_s8_queue_filtered, state.query), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = { env.vm.setQuery("") }) { Text(stringResource(Res.string.rd_s8_search_clear)) }
+                TextButton(onClick = { env.vm.setQuery("") }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_search_clear)) }
             }
         }
     }
@@ -322,10 +323,10 @@ private fun QueueEmpty(state: DownloadsUiState, env: TransfersEnv) {
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             env.addTorrent?.let { ActionButton(stringResource(Res.string.rd_s8_add_torrent), onClick = it, icon = Icons.Outlined.Add) }
-            env.onOpenDebrid?.let { TextButton(onClick = it) { Text(stringResource(Res.string.rd_s8_setup_debrid)) } }
+            env.onOpenDebrid?.let { TextButton(onClick = it, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s8_setup_debrid)) } }
         }
         if (state.stored.isNotEmpty()) {
-            TextButton(onClick = { env.host.section = TransfersSection.DONE }) {
+            TextButton(onClick = { env.host.section = TransfersSection.DONE }, shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.rd_s8_queue_empty_stored, state.stored.size))
             }
         }
@@ -565,7 +566,7 @@ private fun TransferSort.label(): String = stringResource(
 private fun SortMenu(sort: TransferSort, onSort: (TransferSort) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        TextButton(onClick = { open = true }) {
+        TextButton(onClick = { open = true }, shape = NijiyomeControls.shape) {
             Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.rd_s8_sort_by, sort.label()), Modifier.padding(start = 6.dp))
         }

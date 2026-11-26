@@ -76,6 +76,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S2: every Home row by its HomeRowIds id. The three structures place these rows in the user's order
 // (DesignPrefs.homeRows); each row loads, fails and retries on its own (inline compact error), as before.
@@ -307,7 +308,7 @@ private fun ExtensionRow(row: ExtensionHomeRow, ctx: HomeRowCtx) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            TextButton(onClick = { a.onOpenProvider(row.extensionId, row.sourceId) }) { Text(stringResource(Res.string.home_see_all)) }
+            TextButton(onClick = { a.onOpenProvider(row.extensionId, row.sourceId) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.home_see_all)) }
         }
         HomeCardRow {
             items(row.items, key = { "ext:" + row.extensionId + ":" + it.id }) { item ->

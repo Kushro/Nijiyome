@@ -48,6 +48,7 @@ import app.nijiyome.model.MediaTag
 import app.nijiyome.ui.labels.genreLabel
 import java.time.Year
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 internal val SEASONS = listOf("WINTER", "SPRING", "SUMMER", "FALL")
 internal val STATUSES = listOf("RELEASING", "FINISHED", "NOT_YET_RELEASED", "CANCELLED", "HIATUS")
@@ -165,8 +166,8 @@ internal fun SearchFiltersSheet(
                 TextButton(onClick = {
                     draft = SearchFilters()
                     onApply(SearchFilters(), draftAdult)
-                }) { Text(stringResource(Res.string.search_filters_clear)) }
-                Button(onClick = { onApply(draft, draftAdult) }) { Text(stringResource(Res.string.search_apply)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.search_filters_clear)) }
+                Button(onClick = { onApply(draft, draftAdult) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.search_apply)) }
             }
         }
     }
@@ -247,7 +248,7 @@ internal fun RangeAndTagFilters(
                         }
                     }
                     if (!allTags && tagQuery.isBlank() && visible.size > TAGS_COLLAPSED) {
-                        TextButton(onClick = { allTags = true }) {
+                        TextButton(onClick = { allTags = true }, shape = NijiyomeControls.shape) {
                             Text(stringResource(Res.string.search_tags_all, visible.size))
                         }
                     }

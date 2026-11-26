@@ -78,6 +78,7 @@ import app.nijiyome.model.ReaderSettings
 import app.nijiyome.model.TitleLanguage
 import app.nijiyome.ui.resources.ui_cancel
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Settings › Lector (`SettingsSection.READER`; MNG-20 / MNG-21): every `ReaderSettings` field + `AppSettings.mangaTitleLanguage` +
@@ -305,7 +306,7 @@ internal fun ReaderSettingsGroups(
         }
         if (paged && onShowZones != null) {
             SettingsGroup(stringResource(Res.string.rd_s11_tap_zones), stringResource(Res.string.rd_s11_tap_zones_hint)) {
-                TextButton(onClick = onShowZones) {
+                TextButton(onClick = onShowZones, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.TouchApp, contentDescription = null)
                     Text(stringResource(if (zonesShown) Res.string.rd_s11_zones_hide else Res.string.rd_s11_zones_show), modifier = Modifier.padding(start = 6.dp))
                 }
@@ -394,7 +395,7 @@ private fun ReaderShortcutRows(reader: ReaderSettings, onUpdate: ((ReaderSetting
             }
         }
     }
-    TextButton(onClick = { onUpdate { it.copy(keymap = ReaderKeymap.reset()) } }, enabled = reader.keymap.isNotEmpty()) {
+    TextButton(onClick = { onUpdate { it.copy(keymap = ReaderKeymap.reset()) } }, enabled = reader.keymap.isNotEmpty(), shape = NijiyomeControls.shape) {
         Text(stringResource(Res.string.manga_settings_shortcuts_reset))
     }
     editing?.let { action ->
@@ -432,9 +433,9 @@ private fun ReaderShortcutRows(reader: ReaderSettings, onUpdate: ((ReaderSetting
                     val key = k ?: return@TextButton
                     onUpdate { it.copy(keymap = ReaderKeymap.bind(it.keymap, action, key)) }
                     editing = null
-                }, enabled = k != null && !reserved) { Text(stringResource(Res.string.manga_settings_save)) }
+                }, enabled = k != null && !reserved, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.manga_settings_save)) }
             },
-            dismissButton = { TextButton(onClick = { editing = null }) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { editing = null }, shape = NijiyomeControls.shape) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_cancel)) } },
         )
     }
 }

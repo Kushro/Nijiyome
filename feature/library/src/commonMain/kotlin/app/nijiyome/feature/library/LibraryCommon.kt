@@ -81,6 +81,7 @@ import app.nijiyome.ui.patterns.icon
 import app.nijiyome.ui.patterns.label
 import org.jetbrains.compose.resources.stringResource
 import java.util.Locale
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S7: pieces shared by the three structures of Library › Mi lista and by Favoritos.
 
@@ -382,7 +383,7 @@ internal fun ListAccountsLine(state: ListsUiState, onOpenAccounts: () -> Unit, m
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (state.accounts.isEmpty()) {
             Pill(stringResource(Res.string.library_lists_local), tone = PillTone.NEUTRAL)
-            TextButton(onClick = onOpenAccounts) { Text(stringResource(Res.string.library_lists_link)) }
+            TextButton(onClick = onOpenAccounts, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.library_lists_link)) }
         } else {
             val anilist = stringResource(ListProvider.ANILIST.labelRes())
             val mal = stringResource(ListProvider.MAL.labelRes())

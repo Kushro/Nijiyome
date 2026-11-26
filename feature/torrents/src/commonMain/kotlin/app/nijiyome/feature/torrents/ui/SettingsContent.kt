@@ -46,6 +46,7 @@ import app.nijiyome.ui.labels.labelRes
 import app.nijiyome.ui.patterns.QuantityPicker
 import app.nijiyome.ui.patterns.speedUnits
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Preset stops of the speed limits in KiB/s (0 = unlimited); the picker accepts any value up to MAX_LIMIT_KIB. */
 internal val LIMIT_STEPS = listOf(0, 128, 256, 512, 1_024, 2_048, 5_120, 10_240, 25_600, 51_200)
@@ -217,7 +218,7 @@ internal fun TorrentSettingsBody(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 if (userFolder != null) {
-                    OutlinedButton(onClick = { treePicker() }) { Text(stringResource(Res.string.torrent_android_storage_change)) }
+                    OutlinedButton(onClick = { treePicker() }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_android_storage_change)) }
                 }
             }
             when (storage) {
@@ -294,12 +295,12 @@ private fun DesktopDownloadFolder(chosen: String, current: String, onChange: () 
         modifier = Modifier.padding(vertical = 8.dp),
     )
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(onClick = onChange) { Text(stringResource(Res.string.torrent_android_storage_change)) }
+        OutlinedButton(onClick = onChange, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_android_storage_change)) }
         if (chosen.isNotBlank()) {
-            TextButton(onClick = onDefault) { Text(stringResource(Res.string.torrent_desktop_folder_default)) }
+            TextButton(onClick = onDefault, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_desktop_folder_default)) }
         }
         if (onOpen != null && shown.isNotBlank()) {
-            TextButton(onClick = { onOpen(shown) }) { Text(stringResource(Res.string.torrent_desktop_open_folder)) }
+            TextButton(onClick = { onOpen(shown) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_desktop_open_folder)) }
         }
     }
 }

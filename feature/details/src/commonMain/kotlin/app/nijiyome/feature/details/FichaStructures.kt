@@ -79,6 +79,7 @@ import app.nijiyome.ui.resources.ui_back
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S4: the Ficha in the three structures of the artifact (screens-a.js `ficha`), chosen once here from
 // Ajustes › Apariencia (`structures.details`). Panel = header, tabs and a side column (Continuar, sources, Enviar); Ruta = the episodes
@@ -374,7 +375,7 @@ private fun CinemaWide(media: Media, state: DetailsUiState, actions: DetailsActi
                 FloatingBack(actions.onBack, Modifier.padding(start = 0.dp))
                 CinemaInfo(media, state, actions, ui, head, Modifier.widthIn(max = 720.dp))
                 FallbackBanner(state, actions)
-                FilledTonalButton(onClick = { ui.drawerOpen = !ui.drawerOpen }, modifier = Modifier.heightIn(min = 48.dp)) {
+                FilledTonalButton(onClick = { ui.drawerOpen = !ui.drawerOpen }, modifier = Modifier.heightIn(min = 48.dp), shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.VideoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         stringResource(if (ui.drawerOpen) Res.string.rd_s4_drawer_hide else Res.string.rd_s4_drawer_show),

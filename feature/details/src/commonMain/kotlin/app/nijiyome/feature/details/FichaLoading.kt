@@ -41,6 +41,7 @@ import app.nijiyome.ui.resources.ui_back
 import app.nijiyome.ui.resources.ui_retry
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * The Ficha while its title loads: the header's shape in placeholders (artwork, poster, title, facts, status, the first episodes)
@@ -90,8 +91,8 @@ internal fun FichaLoading(state: DetailsUiState, actions: DetailsActions, modifi
                             TextButton(onClick = {
                                 attempt++
                                 actions.onRetry()
-                            }) { Text(stringResource(UiR.string.ui_retry)) }
-                            TextButton(onClick = actions.onBack) { Text(stringResource(UiR.string.ui_back)) }
+                            }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
+                            TextButton(onClick = actions.onBack, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_back)) }
                         }
                     }
                 }

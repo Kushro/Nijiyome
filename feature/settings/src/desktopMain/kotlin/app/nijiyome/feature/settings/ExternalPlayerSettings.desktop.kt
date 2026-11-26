@@ -77,6 +77,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import java.util.Locale
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Hito 4, paso D: Settings › Reproductor on desktop for mpv in its own window (Tatakai Next's tk-ui/src/screens/settings/player.rs:
 // the external mpv, "Integrado mejorado" with mpv-anime-build, and frame generation). What cannot run says why instead of hiding.
@@ -132,7 +133,7 @@ internal actual fun ExternalPlayerSettingsRows(state: SettingsUiState, vm: Setti
                 Text(stringResource(Res.string.settings_xmpv_downloading, (p * 100).toInt()), style = MaterialTheme.typography.bodySmall)
                 LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth())
             } else {
-                FilledTonalButton(onClick = control::startInstall) { Text(stringResource(Res.string.settings_xmpv_download, size)) }
+                FilledTonalButton(onClick = control::startInstall, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.settings_xmpv_download, size)) }
             }
             failure?.let {
                 Text(stringResource(Res.string.settings_xmpv_download_failed, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
@@ -275,8 +276,8 @@ internal fun PathField(value: String, label: String, hint: String, onDone: (Stri
             modifier = Modifier.fillMaxWidth().onFocusLost { if (text != value) onDone(text.trim().ifEmpty { null }) },
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilledTonalButton(onClick = pick) { Text(stringResource(Res.string.rd_s10_path_pick)) }
-            if (value.isNotEmpty()) TextButton(onClick = { onDone(null) }) { Text(stringResource(Res.string.rd_s10_path_auto)) }
+            FilledTonalButton(onClick = pick, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s10_path_pick)) }
+            if (value.isNotEmpty()) TextButton(onClick = { onDone(null) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s10_path_auto)) }
         }
     }
 }

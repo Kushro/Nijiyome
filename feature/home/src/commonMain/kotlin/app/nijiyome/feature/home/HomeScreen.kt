@@ -89,6 +89,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Home (Sparkles redesign, lane S2). The structure the user picked in Ajustes › Apariencia (`structures.home`) decides the
@@ -409,7 +410,7 @@ private fun HomeTonightLayout(ctx: HomeRowCtx, rows: List<String>, frame: HomeFr
                         frame.wide -> Column(m.fillMaxWidth()) {
                             TonightRow(ctx)
                             // HOME-07 "Ver todo" -> Biblioteca › Continuar (the wide header has no row title to carry it).
-                            TextButton(onClick = a.onOpenLibrary, modifier = Modifier.align(Alignment.End).padding(end = 16.dp)) {
+                            TextButton(onClick = a.onOpenLibrary, modifier = Modifier.align(Alignment.End).padding(end = 16.dp), shape = NijiyomeControls.shape) {
                                 Text(stringResource(Res.string.rd_s2_tonight_all))
                             }
                         }
@@ -478,7 +479,7 @@ private fun TonightEmpty(onOpenCalendar: () -> Unit, modifier: Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onOpenCalendar) { Text(stringResource(Res.string.rd_s2_open_calendar)) }
+            TextButton(onClick = onOpenCalendar, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s2_open_calendar)) }
         }
     }
 }
@@ -615,7 +616,7 @@ private fun HomeHeader(title: String, subtitle: String, accent: Boolean, frame: 
             Text(title, style = MaterialTheme.typography.headlineMedium, fontFamily = font, maxLines = 1)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        OutlinedButton(onClick = frame.onEdit) {
+        OutlinedButton(onClick = frame.onEdit, shape = NijiyomeControls.shape) {
             Icon(Icons.Outlined.DashboardCustomize, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.rd_s2_edit_title), modifier = Modifier.padding(start = 8.dp))
         }
@@ -677,7 +678,7 @@ private fun OfflineNotice(onRetry: () -> Unit) {
         Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Outlined.CloudOff, contentDescription = null, tint = LocalSignalColors.current.warn)
             Text(stringResource(Res.string.rd_s2_offline_notice), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            TextButton(onClick = onRetry) { Text(stringResource(UiR.string.ui_retry)) }
+            TextButton(onClick = onRetry, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
         }
     }
 }
@@ -704,11 +705,11 @@ private fun LazyListScope.emptyHome(ctx: HomeRowCtx, frame: HomeFrame) {
                 textAlign = TextAlign.Center,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = ctx.actions.onRefreshAll) {
+                Button(onClick = ctx.actions.onRefreshAll, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(UiR.string.ui_retry), modifier = Modifier.padding(start = 8.dp))
                 }
-                OutlinedButton(onClick = ctx.actions.onOpenMetadataSettings) {
+                OutlinedButton(onClick = ctx.actions.onOpenMetadataSettings, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.home_sources), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -721,11 +722,11 @@ private fun LazyListScope.emptyHome(ctx: HomeRowCtx, frame: HomeFrame) {
 @Composable
 private fun EndRow(onEdit: () -> Unit, onRefresh: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
-        OutlinedButton(onClick = onEdit) {
+        OutlinedButton(onClick = onEdit, shape = NijiyomeControls.shape) {
             Icon(Icons.Outlined.DashboardCustomize, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.rd_s2_edit_title), modifier = Modifier.padding(start = 8.dp))
         }
-        TextButton(onClick = onRefresh) {
+        TextButton(onClick = onRefresh, shape = NijiyomeControls.shape) {
             Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.rd_s2_refresh), modifier = Modifier.padding(start = 8.dp))
         }

@@ -115,6 +115,7 @@ import java.text.DateFormat
 import java.util.Date
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // parity wave A (docs/redesign/15-parity-wave-a-contract-android.md §3.9, worker q): Añadir torrent, Alinear episodios, Historial,
 // Debrid, re-announce and the new torrent settings.
@@ -204,13 +205,13 @@ internal fun AddTorrentSheet(vm: AddTorrentViewModel, onDismiss: () -> Unit, onA
                 // Sparkles (TOR-23): pick a .torrent or paste a magnet / info-hash from the clipboard.
                 val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { picker() }) {
+                    OutlinedButton(onClick = { picker() }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.AttachFile, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         Text(stringResource(Res.string.torrent_add_pick_file), modifier = Modifier.padding(start = 8.dp))
                     }
                     OutlinedButton(onClick = {
                         runCatching { clipboard.getText()?.text }.getOrNull()?.trim()?.takeIf { it.isNotEmpty() }?.let { vm.setSource(it) }
-                    }) {
+                    }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         Text(stringResource(Res.string.rd_s8_tor_add_from_clipboard), modifier = Modifier.padding(start = 8.dp))
                     }
@@ -294,11 +295,12 @@ internal fun AddTorrentSheet(vm: AddTorrentViewModel, onDismiss: () -> Unit, onA
             )
             state.error?.let { Text(torrentErrorMessage(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.ui_cancel)) }
+                TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) }
                 Button(
                     onClick = vm::add,
                     enabled = state.canAdd,
                     modifier = Modifier.padding(start = 8.dp),
+                    shape = NijiyomeControls.shape,
                 ) {
                     if (state.adding) LoadingIndicator(Modifier.size(20.dp))
                     Text(stringResource(if (state.adding) Res.string.torrent_add_adding else Res.string.torrent_add_confirm), modifier = Modifier.padding(start = 4.dp))
@@ -362,7 +364,7 @@ private fun AddTorrentPreviewStatus(preview: LoadState<TorrentPreview>, progress
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onRetry) { Text(stringResource(UiR.string.ui_retry)) }
+            TextButton(onClick = onRetry, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_retry)) }
         }
         is LoadState.Ok -> Unit
     }
@@ -398,10 +400,10 @@ private fun AddTorrentFiles(
         style = monoStyle(MaterialTheme.typography.bodySmall),
     )
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        TextButton(onClick = { onChoose(files.map { it.index }.toSet()) }) { Text(stringResource(Res.string.torrent_desktop_add_files_all)) }
-        TextButton(onClick = { onChoose(emptySet()) }) { Text(stringResource(Res.string.torrent_desktop_add_files_none)) }
+        TextButton(onClick = { onChoose(files.map { it.index }.toSet()) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_desktop_add_files_all)) }
+        TextButton(onClick = { onChoose(emptySet()) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_desktop_add_files_none)) }
         if (videos.isNotEmpty() && videos.size != files.size) {
-            TextButton(onClick = { onChoose(videos.map { it.index }.toSet()) }) { Text(stringResource(Res.string.torrent_desktop_add_files_videos)) }
+            TextButton(onClick = { onChoose(videos.map { it.index }.toSet()) }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_desktop_add_files_videos)) }
         }
     }
     LazyColumn(Modifier.fillMaxWidth().heightIn(max = 320.dp)) {
@@ -494,7 +496,7 @@ internal fun AlignmentSheet(files: List<TorrentFile>, vm: TorrentDetailViewModel
                 TextButton(onClick = {
                     vm.setAlignment(null)
                     onDismiss()
-                }) { Text(stringResource(Res.string.torrent_align_reset)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_align_reset)) }
                 Button(
                     onClick = {
                         vm.setAlignment(EpisodeAlignment(first, offset))
@@ -502,6 +504,7 @@ internal fun AlignmentSheet(files: List<TorrentFile>, vm: TorrentDetailViewModel
                     },
                     enabled = videos.isNotEmpty(),
                     modifier = Modifier.padding(start = 8.dp),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.torrent_align_save)) }
             }
         }
@@ -513,7 +516,7 @@ internal fun AlignmentSheet(files: List<TorrentFile>, vm: TorrentDetailViewModel
 @Composable
 internal fun ReannounceButton(vm: TorrentDetailViewModel, modifier: Modifier = Modifier) {
     val busy by vm.reannouncing.collectAsStateWithLifecycle()
-    FilledTonalButton(onClick = vm::reannounce, enabled = !busy, modifier = modifier) {
+    FilledTonalButton(onClick = vm::reannounce, enabled = !busy, modifier = modifier, shape = NijiyomeControls.shape) {
         if (busy) LoadingIndicator(Modifier.size(20.dp)) else Icon(Icons.Outlined.Bolt, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
         Text(stringResource(Res.string.torrent_trackers_reannounce), modifier = Modifier.padding(start = 8.dp))
     }
@@ -555,7 +558,7 @@ internal fun HistorySection(onOpenTorrent: (String) -> Unit, modifier: Modifier 
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = { confirm = true }) {
+                    TextButton(onClick = { confirm = true }, shape = NijiyomeControls.shape) {
                         Icon(Icons.Outlined.DeleteSweep, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                         Text(stringResource(Res.string.torrent_history_clear), modifier = Modifier.padding(start = 4.dp))
                     }
@@ -575,9 +578,9 @@ internal fun HistorySection(onOpenTorrent: (String) -> Unit, modifier: Modifier 
                 TextButton(onClick = {
                     confirm = false
                     vm.clear()
-                }) { Text(stringResource(Res.string.torrent_history_clear)) }
+                }, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_history_clear)) }
             },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(UiR.string.ui_cancel)) } },
+            dismissButton = { TextButton(onClick = { confirm = false }, shape = NijiyomeControls.shape) { Text(stringResource(UiR.string.ui_cancel)) } },
         )
     }
 }
@@ -736,12 +739,12 @@ private fun DebridCard(
                 )
                 Text(stringResource(Res.string.torrent_debrid_key_saved), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onCheck, enabled = !checking) {
+                    OutlinedButton(onClick = onCheck, enabled = !checking, shape = NijiyomeControls.shape) {
                         if (checking) LoadingIndicator(Modifier.size(20.dp))
                         Text(stringResource(Res.string.torrent_debrid_check), modifier = Modifier.padding(start = if (checking) 4.dp else 0.dp))
                     }
-                    if (position != null && position > 0) OutlinedButton(onClick = onPrefer) { Text(stringResource(Res.string.torrent_debrid_prefer)) }
-                    TextButton(onClick = onUnlink, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                    if (position != null && position > 0) OutlinedButton(onClick = onPrefer, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.torrent_debrid_prefer)) }
+                    TextButton(onClick = onUnlink, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error), shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.torrent_debrid_unlink))
                     }
                 }
@@ -758,7 +761,7 @@ private fun DebridCard(
                     supportingText = error?.let { e -> { Text(debridErrorText(e)) } },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                FilledTonalButton(onClick = { onLink(key) }, enabled = key.isNotBlank() && !linking) {
+                FilledTonalButton(onClick = { onLink(key) }, enabled = key.isNotBlank() && !linking, shape = NijiyomeControls.shape) {
                     if (linking) LoadingIndicator(Modifier.size(20.dp))
                     Text(stringResource(Res.string.torrent_debrid_test_link), modifier = Modifier.padding(start = 4.dp))
                 }
@@ -867,7 +870,7 @@ internal fun ParityTorrentSettings(settings: TorrentSettings, onChange: ((Torren
             modifier = Modifier.fillMaxWidth(),
         )
         val parsed = text.lines().map(String::trim).filter(String::isNotEmpty)
-        OutlinedButton(onClick = { onChange { it.copy(trackers = parsed) } }, enabled = parsed != settings.trackers) {
+        OutlinedButton(onClick = { onChange { it.copy(trackers = parsed) } }, enabled = parsed != settings.trackers, shape = NijiyomeControls.shape) {
             Text(stringResource(Res.string.torrent_trackers_custom_save))
         }
     }

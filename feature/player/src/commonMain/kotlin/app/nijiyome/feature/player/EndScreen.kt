@@ -73,6 +73,7 @@ import app.nijiyome.model.ListProvider
 import app.nijiyome.model.ListStatus
 import app.nijiyome.ui.media.MediaCover
 import coil3.compose.AsyncImage
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // 0.4.1 (user report 2026-11-17): "al llegar al final del video, una bonita pantalla post capítulo terminado" with the next
 // episode, watch again, the episode list and the way back to the title's page. It sits over the last frame (the engines keep it)
@@ -383,6 +384,7 @@ private fun NextUpButtons(next: NextUpUi, onPlayNext: () -> Unit, onCancelCountd
                     onClick = onPlayNext,
                     modifier = Modifier.weight(1f).heightIn(min = BIG_BUTTON_DP),
                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    shape = NijiyomeControls.shape,
                 ) {
                     Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp))
                     Text(
@@ -394,7 +396,7 @@ private fun NextUpButtons(next: NextUpUi, onPlayNext: () -> Unit, onCancelCountd
                     )
                 }
                 if (next.secondsLeft != null) {
-                    TextButton(onClick = onCancelCountdown, modifier = Modifier.heightIn(min = BIG_BUTTON_DP)) {
+                    TextButton(onClick = onCancelCountdown, modifier = Modifier.heightIn(min = BIG_BUTTON_DP), shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.player_cancel))
                     }
                 }
@@ -411,7 +413,7 @@ private fun FinishedCard(ui: EndScreenUi, onDetails: (() -> Unit)?, onBack: () -
                 Text(stringResource(Res.string.player_end_series_done_body), style = MaterialTheme.typography.bodyLarge, color = scheme.onSurfaceVariant)
             }
             val label = if (onDetails != null) Res.string.player_end_details_open else Res.string.player_back
-            Button(onClick = onDetails ?: onBack, modifier = Modifier.fillMaxWidth().heightIn(min = BIG_BUTTON_DP)) {
+            Button(onClick = onDetails ?: onBack, modifier = Modifier.fillMaxWidth().heightIn(min = BIG_BUTTON_DP), shape = NijiyomeControls.shape) {
                 Icon(if (onDetails != null) Icons.Rounded.Info else Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(22.dp))
                 Text(stringResource(label), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.titleMedium)
             }
@@ -445,9 +447,9 @@ private fun EndButton(icon: ImageVector, label: String, onClick: () -> Unit, ton
     }
     val m = Modifier.heightIn(min = BIG_BUTTON_DP)
     if (tonal) {
-        FilledTonalButton(onClick = onClick, modifier = m, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) { content() }
+        FilledTonalButton(onClick = onClick, modifier = m, contentPadding = ButtonDefaults.ButtonWithIconContentPadding, shape = NijiyomeControls.shape) { content() }
     } else {
-        OutlinedButton(onClick = onClick, modifier = m, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) { content() }
+        OutlinedButton(onClick = onClick, modifier = m, contentPadding = ButtonDefaults.ButtonWithIconContentPadding, shape = NijiyomeControls.shape) { content() }
     }
 }
 

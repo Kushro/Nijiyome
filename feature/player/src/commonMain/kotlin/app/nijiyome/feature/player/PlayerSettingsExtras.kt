@@ -77,6 +77,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.compose.getKoin
 import kotlin.math.roundToInt
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /**
  * Parity wave A contract (docs/redesign/15-parity-wave-a-contract-android.md §3.2). Owner: worker p. Mounted by Settings › Reproductor
@@ -289,7 +290,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
                 OutlinedTextField(value = region, onValueChange = { region = it }, label = { Text(stringResource(Res.string.player_settings_region)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             }
             val dirty = endpoint != t.endpoint || model != t.model || region != t.region
-            FilledTonalButton(onClick = { update { it.copy(endpoint = endpoint.trim(), model = model.trim(), region = region.trim()) } }, enabled = dirty) {
+            FilledTonalButton(onClick = { update { it.copy(endpoint = endpoint.trim(), model = model.trim(), region = region.trim()) } }, enabled = dirty, shape = NijiyomeControls.shape) {
                 Text(stringResource(Res.string.player_settings_save))
             }
         }
@@ -315,7 +316,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
             },
             trailingContent = if (keySaved == true && secrets != null) {
                 {
-                    TextButton(onClick = { scope.launch { runCatching { secrets.put(secretKey, null) }; keySaved = false } }) {
+                    TextButton(onClick = { scope.launch { runCatching { secrets.put(secretKey, null) }; keySaved = false } }, shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.player_settings_key_remove))
                     }
                 }
@@ -347,6 +348,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
                         }
                     },
                     enabled = keyInput.isNotBlank(),
+                    shape = NijiyomeControls.shape,
                 ) { Text(stringResource(Res.string.player_settings_save)) }
             }
         }
@@ -392,6 +394,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
                     )
                 }
             },
+            shape = NijiyomeControls.shape,
         ) { Text(stringResource(if (testing) Res.string.player_settings_testing else Res.string.player_settings_test)) }
         testResult?.let {
             Text(
@@ -410,7 +413,7 @@ private fun TranslationRows(settings: AppSettings, onUpdate: ((AppSettings) -> A
             headlineContent = { Text(stringResource(Res.string.player_settings_cache)) },
             supportingContent = { Text(stringResource(Res.string.player_settings_cache_size, formatBytes(size))) },
             trailingContent = {
-                TextButton(onClick = { scope.launch { tools.translationCache.clear(); size = tools.translationCache.sizeBytes() } }, enabled = size > 0) {
+                TextButton(onClick = { scope.launch { tools.translationCache.clear(); size = tools.translationCache.sizeBytes() } }, enabled = size > 0, shape = NijiyomeControls.shape) {
                     Text(stringResource(Res.string.player_settings_cache_clear))
                 }
             },
@@ -443,7 +446,7 @@ private fun ShortcutRows(settings: AppSettings, onUpdate: ((AppSettings) -> AppS
             modifier = Modifier.clickable { editing = action },
         )
     }
-    TextButton(onClick = { onUpdate { it.copy(playerKeymap = PlayerKeymap.reset()) } }, enabled = settings.playerKeymap.isNotEmpty(), modifier = Modifier.padding(horizontal = 8.dp)) {
+    TextButton(onClick = { onUpdate { it.copy(playerKeymap = PlayerKeymap.reset()) } }, enabled = settings.playerKeymap.isNotEmpty(), modifier = Modifier.padding(horizontal = 8.dp), shape = NijiyomeControls.shape) {
         Text(stringResource(Res.string.player_settings_shortcuts_reset))
     }
     HorizontalDivider(Modifier.padding(top = 8.dp))
@@ -493,8 +496,8 @@ private fun KeyCaptureDialog(action: String, keymap: Map<String, String>, onSave
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { key?.let(onSave) }, enabled = key != null && !reserved) { Text(stringResource(Res.string.player_settings_save)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.player_cancel)) } },
+        confirmButton = { TextButton(onClick = { key?.let(onSave) }, enabled = key != null && !reserved, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_settings_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.player_cancel)) } },
     )
 }
 

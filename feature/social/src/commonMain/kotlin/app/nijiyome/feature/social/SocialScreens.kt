@@ -110,6 +110,7 @@ import app.nijiyome.ui.state.userMessage
 import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.7, worker t). Signatures FINAL. Every screen shows
 // "Conecta AniList" (EmptyState → [onOpenAccounts]) when there is no linked AniList account (`SOCIAL_NOT_LINKED`).
@@ -330,7 +331,7 @@ private fun ProfileContent(
                                     maxLines = 4,
                                 )
                                 // PER-02: a labelled "Publicar" button (the artifact's), not a bare grey arrow.
-                                Button(onClick = { vm.postStatus(draft) }, enabled = draft.isNotBlank() && !state.posting) {
+                                Button(onClick = { vm.postStatus(draft) }, enabled = draft.isNotBlank() && !state.posting, shape = NijiyomeControls.shape) {
                                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Text(stringResource(Res.string.rd_s7_soc_publish), modifier = Modifier.padding(start = 8.dp))
                                 }
@@ -416,24 +417,24 @@ private fun ProfileHeader(user: SocialUser, followBusy: Boolean, onFollow: () ->
                 }
                 // Followers and following on the name's line block (artifact), not a row of their own.
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(onClick = { onTab(ProfileTab.FOLLOWERS) }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    TextButton(onClick = { onTab(ProfileTab.FOLLOWERS) }, contentPadding = PaddingValues(horizontal = 8.dp), shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.social_followers_count, user.followers), style = MaterialTheme.typography.bodyMedium)
                     }
-                    TextButton(onClick = { onTab(ProfileTab.FOLLOWING) }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    TextButton(onClick = { onTab(ProfileTab.FOLLOWING) }, contentPadding = PaddingValues(horizontal = 8.dp), shape = NijiyomeControls.shape) {
                         Text(stringResource(Res.string.social_following_count, user.following), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
             when {
-                user.isViewer -> OutlinedButton(onClick = onEdit) {
+                user.isViewer -> OutlinedButton(onClick = onEdit, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.social_edit_profile), modifier = Modifier.padding(start = 8.dp))
                 }
-                user.isFollowing -> OutlinedButton(onClick = onFollow, enabled = !followBusy) {
+                user.isFollowing -> OutlinedButton(onClick = onFollow, enabled = !followBusy, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.PersonRemove, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.social_following_button), modifier = Modifier.padding(start = 8.dp))
                 }
-                else -> Button(onClick = onFollow, enabled = !followBusy) {
+                else -> Button(onClick = onFollow, enabled = !followBusy, shape = NijiyomeControls.shape) {
                     Icon(Icons.Outlined.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(Res.string.social_follow), modifier = Modifier.padding(start = 8.dp))
                 }
@@ -457,7 +458,7 @@ private fun ProfileAbout(about: String) {
             onTextLayout = { if (!expanded) overflows = it.hasVisualOverflow },
         )
         if (overflows || expanded) {
-            TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+            TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 8.dp), shape = NijiyomeControls.shape) {
                 Text(stringResource(if (expanded) Res.string.rd_s7_soc_about_less else Res.string.rd_s7_soc_about_more))
             }
         }
@@ -690,7 +691,7 @@ fun NotificationsScreen(
                                 Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
                                     Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text(stringResource(Res.string.social_permission_hint), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                        TextButton(onClick = permission::request) {
+                                        TextButton(onClick = permission::request, shape = NijiyomeControls.shape) {
                                             Text(stringResource(Res.string.social_permission_allow))
                                         }
                                     }
@@ -756,7 +757,7 @@ fun AniListSocialSlot(media: Media, modifier: Modifier = Modifier) {
                 Text(stringResource(Res.string.social_reviews_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
                 media.score?.let { Text(stringResource(Res.string.social_mean_score, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
-            TextButton(onClick = { openUrl(reviewEditorUrl(id)) }) {
+            TextButton(onClick = { openUrl(reviewEditorUrl(id)) }, shape = NijiyomeControls.shape) {
                 Icon(Icons.Outlined.RateReview, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(Res.string.social_write_review), modifier = Modifier.padding(start = 8.dp))
             }
@@ -811,8 +812,8 @@ private fun ReviewCard(r: Review, onOpen: () -> Unit) {
             Text(r.summary, style = MaterialTheme.typography.bodyMedium)
             if (expanded) Text(r.body, style = MaterialTheme.typography.bodySmall)
             Row {
-                TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) Res.string.social_review_collapse else Res.string.social_review_expand)) }
-                TextButton(onClick = onOpen) { Text(stringResource(Res.string.social_open_anilist)) }
+                TextButton(onClick = { expanded = !expanded }, shape = NijiyomeControls.shape) { Text(stringResource(if (expanded) Res.string.social_review_collapse else Res.string.social_review_expand)) }
+                TextButton(onClick = onOpen, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.social_open_anilist)) }
             }
         }
     }
