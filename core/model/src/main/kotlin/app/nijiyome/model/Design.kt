@@ -310,6 +310,11 @@ data class DesignPrefs(
     /** Home row ids in the user's order; ids missing from it keep their [HomeRowIds.DEFAULT_ORDER] position after the listed ones. */
     val homeRowOrder: List<String> = emptyList(),
     val homeRowsHidden: Set<String> = emptySet(),
+    /**
+     * Hanging strip cards (the tanzaku styles) rest a degree or two off true, each its own way. Off by default: the design settles
+     * them straight. Only drawn under the full motion level.
+     */
+    val hangingTilt: Boolean = false,
     /** The one-time "elige tu estilo" notice after updating from a pre-Sparkles version was shown or dismissed. */
     val introSeen: Boolean = false,
 ) {

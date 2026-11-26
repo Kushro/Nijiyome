@@ -463,6 +463,14 @@ private fun MotionGroup(state: SettingsUiState, vm: SettingsViewModel) {
                 }
             }
         }
+        SettingAnchor("design_hanging_tilt") {
+            SwitchRow(
+                stringResource(Res.string.rd_s10_design_hanging_tilt),
+                design.hangingTilt,
+                { on -> vm.setDesign { it.copy(hangingTilt = on) } },
+                hint = stringResource(Res.string.rd_s10_design_hanging_tilt_hint),
+            )
+        }
         SettingAnchor("design_motion_moments") {
             SettingRow(stringResource(Res.string.rd_s10_design_moments), stringResource(Res.string.rd_s10_design_moments_hint), stack = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

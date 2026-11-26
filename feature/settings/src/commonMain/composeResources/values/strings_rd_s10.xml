@@ -324,4 +324,6 @@
     <string name="rd_s10_motion_master_hint">Off stops every animation in the app, the same as Reduce motion. Subtle keeps the older effects (carousels, page changes) to fades. How the redesign moves is the profile above.</string>
     <string name="rd_s10_motion_off_note">Animations are off: the profile applies when you turn them back on.</string>
     <string name="rd_s10_appearance_pages">Appearance sections</string>
+    <string name="rd_s10_design_hanging_tilt">Tilted strips at rest</string>
+    <string name="rd_s10_design_hanging_tilt_hint">Hanging tanzaku cards rest slightly tilted, each its own way, like papers on a cord. Only with full motion.</string>
 </resources>

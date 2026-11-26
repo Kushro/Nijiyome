@@ -324,4 +324,6 @@
     <string name="rd_s10_motion_master_hint">Desactivadas detiene todas las animaciones de la app, igual que Reducir movimiento. Sutiles deja los efectos clásicos (carruseles, cambios de página) en fundidos. Cómo se mueve el rediseño lo decide el perfil de arriba.</string>
     <string name="rd_s10_motion_off_note">Las animaciones están desactivadas: el perfil se aplica cuando las vuelvas a activar.</string>
     <string name="rd_s10_appearance_pages">Secciones de Apariencia</string>
+    <string name="rd_s10_design_hanging_tilt">Tiras inclinadas en reposo</string>
+    <string name="rd_s10_design_hanging_tilt_hint">Las tarjetas tanzaku colgadas descansan con una leve inclinación, cada una distinta, como papeles en un cordel. Solo con movimiento completo.</string>
 </resources>

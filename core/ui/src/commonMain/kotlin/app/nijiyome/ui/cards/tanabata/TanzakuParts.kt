@@ -260,13 +260,14 @@ internal fun Modifier.tzThread(
 private val TZ_REST_TILT = floatArrayOf(-1.4f, 1.1f, -0.7f, 1.6f, -1.1f, 0.8f, -1.7f, 1.3f)
 
 /**
- * A hanging strip rests a degree or two off true, each its own way, so a row reads as papers on a cord and not as a grid. It turns
+ * When the user turns it on, a hanging strip rests a degree or two off true, each its own way, so a row reads as papers on a cord and not as a grid. It turns
  * around the top of the thread, like the sway, and only under the full motion level (the calm, light and off levels hang them
  * straight, as reduced motion does). The position comes from [LocalCardIndex], else from the title's key.
  */
 @Composable
 internal fun Modifier.tzRestTilt(key: String): Modifier {
-    if (LocalMotion.current.level != MotionLevel.FULL) return this
+    // Opt-in (Ajustes › Apariencia › Movimiento): the design itself settles the strips straight.
+    if (!LocalLook.current.design.hangingTilt || LocalMotion.current.level != MotionLevel.FULL) return this
     val index = LocalCardIndex.current.takeIf { it >= 0 } ?: (key.hashCode() and 0x7fffffff)
     val angle = TZ_REST_TILT[index % TZ_REST_TILT.size]
     return this.graphicsLayer {
