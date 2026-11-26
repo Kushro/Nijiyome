@@ -77,7 +77,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.nijiyome.designsystem.components.EmptyState
+import app.nijiyome.designsystem.components.AppSnackbarHost
 import app.nijiyome.designsystem.components.LocalAppSnackbar
+import app.nijiyome.designsystem.components.rememberAppSnackbarController
 import app.nijiyome.designsystem.components.Pill
 import app.nijiyome.designsystem.components.PillTone
 import app.nijiyome.designsystem.components.Segmented
@@ -186,6 +188,10 @@ fun SettingsModalDialog(
 ) {
     TrackModal()
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        // The dialog is its own window: the shell's snackbar host draws under it. Notices Settings raises while it is a modal
+        // ("Diseño restablecido · Deshacer", account and log results) get a host of their own, on top, where Undo can be pressed.
+        val modalSnackbar = rememberAppSnackbarController()
+        CompositionLocalProvider(LocalAppSnackbar provides modalSnackbar) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -209,7 +215,9 @@ fun SettingsModalDialog(
                         Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s10_close_settings))
                     }
                 }
+                AppSnackbarHost(modalSnackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp))
             }
+        }
         }
     }
 }
