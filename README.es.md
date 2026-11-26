@@ -8,7 +8,7 @@
 
 [English](README.md) · **Español**
 
-[![Versión](https://img.shields.io/badge/versi%C3%B3n-v1.3.0-8b5cf6)](https://github.com/Kushro/Nijiyome/releases/latest)
+[![Versión](https://img.shields.io/badge/versi%C3%B3n-v1.3.1-8b5cf6)](https://github.com/Kushro/Nijiyome/releases/latest)
 [![Licencia: AGPL-3.0-or-later](https://img.shields.io/badge/licencia-AGPL--3.0--or--later-blue)](LICENSE)
 ![Plataformas](https://img.shields.io/badge/plataformas-Android%20%C2%B7%20Linux%20%C2%B7%20Windows-555)
 ![Kotlin + Compose Multiplatform](https://img.shields.io/badge/Kotlin-Compose%20Multiplatform-7f52ff)
@@ -72,7 +72,7 @@ Elige entre cinco direcciones visuales independientes — **Tanabata**, **Obi**,
 
 <p align="center"><img src="docs/readme/phone-home.png" alt="Inicio en Android" width="270"><br><sub>Android: Inicio</sub></p>
 
-<sub>Versión 1.3.0, capturas reales en escritorio (Linux) y Android. Algunos nombres en capturas anteriores del reproductor y extensiones están tapados con barras negras a propósito: nombres de fuentes y sitios, y datos de red.</sub>
+<sub>Versión 1.3.1, capturas reales en escritorio (Linux) y Android. Algunos nombres en capturas anteriores del reproductor y extensiones están tapados con barras negras a propósito: nombres de fuentes y sitios, y datos de red.</sub>
 
 ## ✨ Funciones
 
@@ -111,13 +111,13 @@ archivos.
 
 | Plataforma | Archivo | Notas |
 |---|---|---|
-| 🤖 Android 8.0+ | `Nijiyome-v1.3.0-android-arm64-v8a.apk` | La mayoría de los teléfonos de los últimos años. |
-| | `Nijiyome-v1.3.0-android-armeabi-v7a.apk` | Teléfonos antiguos de 32 bits. |
-| | `Nijiyome-v1.3.0-android-x86_64.apk` | Emuladores y equipos x86. |
-| | `Nijiyome-v1.3.0-android-universal.apk` | Cualquier equipo, descarga más grande. Si dudas, elige este. |
-| 🐧 Linux x86_64 | `Nijiyome-v1.3.0-linux-x86_64.AppImage` | Dale `chmod +x` y ejecútalo. Los torrents piden glibc 2.38+ (Ubuntu 24.04, Fedora 39, Arch o más nuevos). |
-| 🪟 Windows x64 | `Nijiyome-v1.3.0-windows-x64-setup.exe` | Instalador; puede registrar los enlaces `nijiyome:` y ofrecerse para `magnet:` / `.torrent`. |
-| | `Nijiyome-v1.3.0-windows-x64-portable.zip` | Descomprime y ejecuta; los datos igual van a `%APPDATA%\Nijiyome`. |
+| 🤖 Android 8.0+ | `Nijiyome-v1.3.1-android-arm64-v8a.apk` | La mayoría de los teléfonos de los últimos años. |
+| | `Nijiyome-v1.3.1-android-armeabi-v7a.apk` | Teléfonos antiguos de 32 bits. |
+| | `Nijiyome-v1.3.1-android-x86_64.apk` | Emuladores y equipos x86. |
+| | `Nijiyome-v1.3.1-android-universal.apk` | Cualquier equipo, descarga más grande. Si dudas, elige este. |
+| 🐧 Linux x86_64 | `Nijiyome-v1.3.1-linux-x86_64.AppImage` | Dale `chmod +x` y ejecútalo. Los torrents piden glibc 2.38+ (Ubuntu 24.04, Fedora 39, Arch o más nuevos). |
+| 🪟 Windows x64 | `Nijiyome-v1.3.1-windows-x64-setup.exe` | Instalador; puede registrar los enlaces `nijiyome:` y ofrecerse para `magnet:` / `.torrent`. |
+| | `Nijiyome-v1.3.1-windows-x64-portable.zip` | Descomprime y ejecuta; los datos igual van a `%APPDATA%\Nijiyome`. |
 
 En Arch / CachyOS también puedes construir un paquete con el `PKGBUILD` de [`packaging/linux`](packaging/linux) (ver
 [`packaging/README.md`](packaging/README.md)).
