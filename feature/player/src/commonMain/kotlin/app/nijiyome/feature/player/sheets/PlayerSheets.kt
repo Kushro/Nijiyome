@@ -104,10 +104,16 @@ internal fun sheetTitle(kind: PlayerSheetKind): StringResource = when (kind) {
     PlayerSheetKind.MORE -> Res.string.player_more
 }
 
+/** REP-03: the sheets that change what the video looks like leave it undimmed; the others dim it lightly. */
+internal fun sheetScrim(kind: PlayerSheetKind): Float = when (kind) {
+    PlayerSheetKind.PICTURE, PlayerSheetKind.ENHANCEMENTS, PlayerSheetKind.TRACKS -> SHEET_SCRIM_NONE
+    PlayerSheetKind.SPEED, PlayerSheetKind.MORE -> SHEET_SCRIM_LIGHT
+}
+
 /** A player sheet over the video, in the common container ([PlayerSheetFrame]). */
 @Composable
 internal fun PlayerSheetHost(kind: PlayerSheetKind, data: PlayerSheetData, actions: PlayerSheetActions, onDismiss: () -> Unit) {
-    PlayerSheetFrame(title = stringResource(sheetTitle(kind)), onDismiss = onDismiss) {
+    PlayerSheetFrame(title = stringResource(sheetTitle(kind)), onDismiss = onDismiss, scrimAlpha = sheetScrim(kind)) {
         PlayerSheetContent(kind, data, actions, onClose = onDismiss)
     }
 }

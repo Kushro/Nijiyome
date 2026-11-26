@@ -161,11 +161,11 @@ internal fun PictureControls(
 @Composable
 private fun AspectSection(aspect: AspectMode, zoom: Int?, onAspect: (AspectMode) -> Unit, onZoom: (Int) -> Unit) {
     SheetSection(stringResource(Res.string.player_fx_aspect)) {
-        Segmented(
-            options = AspectMode.entries.map { SegmentedOption(it, stringResource(aspectRes(it))) },
+        // REP-05: five options do not fit a sheet's width as one segmented row (it scrolled and cut "4:3"); chips wrap instead.
+        ChoiceChips(
+            choices = AspectMode.entries.map { Choice(it, stringResource(aspectRes(it))) },
             selected = aspect,
             onSelect = onAspect,
-            small = true,
         )
         if (zoom != null) {
             ValueSlider(

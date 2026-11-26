@@ -78,24 +78,39 @@ import kotlin.math.roundToInt
 /**
  * The common container of the player's sheets: a side panel on wide windows (the video stays visible beside it) and a bottom sheet
  * on phones, both through [AdaptiveSheet]. Title, an optional back arrow (a step inside the sheet) and Close.
+ * [scrimAlpha]: how much the video behind darkens (REP-03: 0 for the sheets that adjust the picture, so the change stays visible).
  */
 @Composable
 internal fun PlayerSheetFrame(
     title: String,
     onDismiss: () -> Unit,
     onBack: (() -> Unit)? = null,
+    scrimAlpha: Float = SHEET_SCRIM_LIGHT,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    AdaptiveSheet(onDismissRequest = onDismiss, modifier = Modifier.decor(DecorRegion.SHEET)) {
-        SheetHeader(title, onDismiss, onBack)
-        AdaptiveSheetScrollColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp), content = content)
+    AdaptiveSheet(onDismissRequest = onDismiss, scrimAlpha = scrimAlpha) {
+        // REP-04: the direction's sheet decor goes on the content, inside the sheet's surface. On the sheet's own modifier it was drawn
+        // under the surface and only showed outside its rounded corners (stray marks).
+        Column(Modifier.fillMaxWidth().decor(DecorRegion.SHEET)) {
+            SheetHeader(title, onDismiss, onBack)
+            AdaptiveSheetScrollColumn(Modifier.fillMaxWidth().padding(horizontal = SHEET_SIDE_PADDING), content = content)
+        }
     }
 }
+
+/** The side margin of a sheet's content (artifact `.nj-a-psheet > .nj-a-scroll`: 20 px). */
+internal val SHEET_SIDE_PADDING = 20.dp
+
+/** The scrim of the player's sheets: the artifact draws none over the video; a light one still says a sheet is open. */
+internal const val SHEET_SCRIM_LIGHT = 0.24f
+
+/** No scrim: the sheet adjusts what the video looks like (Imagen, Mejoras, the subtitle style of Pistas). */
+internal const val SHEET_SCRIM_NONE = 0f
 
 @Composable
 internal fun SheetHeader(title: String, onClose: (() -> Unit)?, onBack: (() -> Unit)? = null) {
     Row(
-        Modifier.fillMaxWidth().padding(start = if (onBack != null) 4.dp else 16.dp, end = 4.dp, bottom = 4.dp),
+        Modifier.fillMaxWidth().padding(start = if (onBack != null) 4.dp else SHEET_SIDE_PADDING, end = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (onBack != null) {
