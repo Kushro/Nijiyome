@@ -1,56 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sparkles redesign: day and month names and date patterns (app.nijiyome.ui.format.DateNames), independent of the JDK locale data. -->
+<!-- Sparkles redesign: the order of the pieces of a date (app.nijiyome.ui.format.DateNames); the names come from java.time. -->
 <resources>
-    <string name="rd_date_wd_short_1">Mon</string>
-    <string name="rd_date_wd_short_2">Tue</string>
-    <string name="rd_date_wd_short_3">Wed</string>
-    <string name="rd_date_wd_short_4">Thu</string>
-    <string name="rd_date_wd_short_5">Fri</string>
-    <string name="rd_date_wd_short_6">Sat</string>
-    <string name="rd_date_wd_short_7">Sun</string>
-    <string name="rd_date_wd_long_1">Monday</string>
-    <string name="rd_date_wd_long_2">Tuesday</string>
-    <string name="rd_date_wd_long_3">Wednesday</string>
-    <string name="rd_date_wd_long_4">Thursday</string>
-    <string name="rd_date_wd_long_5">Friday</string>
-    <string name="rd_date_wd_long_6">Saturday</string>
-    <string name="rd_date_wd_long_7">Sunday</string>
-    <string name="rd_date_wd_narrow_1">M</string>
-    <string name="rd_date_wd_narrow_2">T</string>
-    <string name="rd_date_wd_narrow_3">W</string>
-    <string name="rd_date_wd_narrow_4">T</string>
-    <string name="rd_date_wd_narrow_5">F</string>
-    <string name="rd_date_wd_narrow_6">S</string>
-    <string name="rd_date_wd_narrow_7">S</string>
-    <string name="rd_date_mo_short_1">Jan</string>
-    <string name="rd_date_mo_short_2">Feb</string>
-    <string name="rd_date_mo_short_3">Mar</string>
-    <string name="rd_date_mo_short_4">Apr</string>
-    <string name="rd_date_mo_short_5">May</string>
-    <string name="rd_date_mo_short_6">Jun</string>
-    <string name="rd_date_mo_short_7">Jul</string>
-    <string name="rd_date_mo_short_8">Aug</string>
-    <string name="rd_date_mo_short_9">Sep</string>
-    <string name="rd_date_mo_short_10">Oct</string>
-    <string name="rd_date_mo_short_11">Nov</string>
-    <string name="rd_date_mo_short_12">Dec</string>
-    <string name="rd_date_mo_long_1">January</string>
-    <string name="rd_date_mo_long_2">February</string>
-    <string name="rd_date_mo_long_3">March</string>
-    <string name="rd_date_mo_long_4">April</string>
-    <string name="rd_date_mo_long_5">May</string>
-    <string name="rd_date_mo_long_6">June</string>
-    <string name="rd_date_mo_long_7">July</string>
-    <string name="rd_date_mo_long_8">August</string>
-    <string name="rd_date_mo_long_9">September</string>
-    <string name="rd_date_mo_long_10">October</string>
-    <string name="rd_date_mo_long_11">November</string>
-    <string name="rd_date_mo_long_12">December</string>
+    <!-- 1: day of month, 2: short month -->
     <string name="rd_date_day_month">%2$s %1$d</string>
+    <!-- 1: short weekday, 2: day of month -->
     <string name="rd_date_weekday_day">%1$s %2$d</string>
+    <!-- 1: weekday, 2: day of month, 3: month -->
     <string name="rd_date_weekday_day_month">%1$s, %3$s %2$d</string>
-    <string name="rd_date_full">%1$s, %3$s %2$d, %4$d</string>
+    <!-- 1: month, 2: year -->
     <string name="rd_date_month_year">%1$s %2$d</string>
+    <!-- 1: first day, 2: last day, 3: short month -->
     <string name="rd_date_range_same_month">%3$s %1$d – %2$d</string>
+    <!-- 1: first day, 2: its short month, 3: last day, 4: its short month -->
     <string name="rd_date_range">%2$s %1$d – %4$s %3$d</string>
 </resources>

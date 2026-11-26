@@ -64,7 +64,7 @@ internal fun LibraryShelves(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (state.query.isBlank() && continueWatching.isNotEmpty()) {
-            item(key = "continue", contentType = "continue") { ContinueShelf(continueWatching, actions.play) }
+            item(key = "continue", contentType = "continue") { ContinueShelf(continueWatching, actions.play, statusOf = { state.statusOf(it) }) }
         }
         item(key = "filters", contentType = "filters") {
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

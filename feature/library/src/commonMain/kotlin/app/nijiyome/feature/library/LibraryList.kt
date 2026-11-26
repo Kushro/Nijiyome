@@ -100,7 +100,7 @@ internal fun LibraryList(
             contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp),
         ) {
             if (state.query.isBlank() && continueWatching.isNotEmpty()) {
-                item(key = "continue", contentType = "continue") { ContinueShelf(continueWatching, actions.play, Modifier.padding(bottom = 16.dp)) }
+                item(key = "continue", contentType = "continue") { ContinueShelf(continueWatching, actions.play, Modifier.padding(bottom = 16.dp), statusOf = { state.statusOf(it) }) }
             }
             item(key = "filters", contentType = "filters") {
                 Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
