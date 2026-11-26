@@ -5,6 +5,7 @@ package app.nijiyome.feature.player.sources
 
 import app.nijiyome.feature.player.resources.Res
 import app.nijiyome.feature.player.resources.*
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -571,6 +572,7 @@ private fun DebridAndFacets(model: PickerModel, filters: SourceFilters, onFilter
             onSelectionChange = onSelection,
             resultCount = model.shown.size,
             resultText = stringResource(Res.string.rd_s4_src_count, model.shown.size, model.sources.size),
+            showLabel = pluralStringResource(Res.plurals.rd_s4_src_show, model.shown.size, model.shown.size),
         )
     }
 }

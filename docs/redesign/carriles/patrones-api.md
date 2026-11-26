@@ -146,8 +146,8 @@ data class Facet(val id: String, val label: String, val options: List<FacetOptio
 typealias FacetSelection = Map<String, Set<String>>
 fun FacetSelection.isActive(facet: Facet): Boolean; fun FacetSelection.with(facet: Facet, picked: Set<String>): FacetSelection
 fun facetSummary(facet: Facet, selection: FacetSelection): String          // "Género: Acción, Drama +2"
-@Composable fun FacetBar(facets, selection, onSelectionChange: (FacetSelection) -> Unit, resultCount: Int, modifier = Modifier, resultText: String? = null, compact = isCompactWindow())
-@Composable fun FacetPanel(facet, picked: Set<String>, onPickedChange: (Set<String>) -> Unit, resultCount: Int, onDone: () -> Unit, modifier = Modifier)
+@Composable fun FacetBar(facets, selection, onSelectionChange: (FacetSelection) -> Unit, resultCount: Int, modifier = Modifier, resultText: String? = null, compact = isCompactWindow(), showLabel: String? = null)
+@Composable fun FacetPanel(facet, picked: Set<String>, onPickedChange: (Set<String>) -> Unit, resultCount: Int, onDone: () -> Unit, modifier = Modifier, showLabel: String? = null)
 ```
 Los conteos por opción (`FacetOption.count`) y el total los calcula la pantalla (un `derivedStateOf` sobre la lista filtrada con las
 demás facetas). Cada faceta activa muestra su valor y una × para quitarla.
