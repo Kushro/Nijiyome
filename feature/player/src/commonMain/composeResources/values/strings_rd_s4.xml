@@ -64,4 +64,8 @@
     <string name="rd_s4_src_why_dub">%1$s audio</string>
     <string name="rd_s4_src_why_rel">reliability %1$d %</string>
     <string name="rd_s4_src_why_subs">%1$s subtitles</string>
+    <plurals name="rd_s4_src_show">
+        <item quantity="one">Show %1$d source</item>
+        <item quantity="other">Show %1$d sources</item>
+    </plurals>
 </resources>

@@ -61,6 +61,7 @@ import app.nijiyome.ui.resources.rd_i1_fac_search
 import app.nijiyome.ui.resources.rd_i1_fac_show
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `fac` of docs/redesign/artefacto/lab.js: every chip says its current value, opens a popover (a
 // sheet on phones) with a search box and multi-selection, and clears with ×. Each option shows how many titles would remain and the
@@ -126,6 +127,8 @@ fun FacetBar(
     modifier: Modifier = Modifier,
     resultText: String? = null,
     compact: Boolean = isCompactWindow(),
+    /** Text of the panels' confirm button; null = "Show N titles". Pass the right noun when the results are not titles (sources). */
+    showLabel: String? = null,
 ) {
     var open by remember { mutableStateOf<String?>(null) }
     val chips: @Composable () -> Unit = {
@@ -139,6 +142,7 @@ fun FacetBar(
                 onSelectionChange = onSelectionChange,
                 resultCount = resultCount,
                 compact = compact,
+                showLabel = showLabel,
             )
         }
     }
@@ -185,6 +189,7 @@ private fun FacetChip(
     onSelectionChange: (FacetSelection) -> Unit,
     resultCount: Int,
     compact: Boolean,
+    showLabel: String?,
 ) {
     val active = selection.isActive(facet)
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -201,7 +206,7 @@ private fun FacetChip(
                         facet = facet,
                         picked = selection[facet.id].orEmpty(),
                         onPickedChange = { onSelectionChange(selection.with(facet, it)) },
-                        resultCount = resultCount,
+                        resultCount = resultCount, showLabel = showLabel,
                         onDone = onClose,
                         modifier = Modifier.width(320.dp).padding(horizontal = 8.dp),
                     )
@@ -229,7 +234,7 @@ private fun FacetChip(
                 facet = facet,
                 picked = selection[facet.id].orEmpty(),
                 onPickedChange = { onSelectionChange(selection.with(facet, it)) },
-                resultCount = resultCount,
+                resultCount = resultCount, showLabel = showLabel,
                 onDone = onClose,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             )
@@ -239,7 +244,7 @@ private fun FacetChip(
 
 /**
  * The inside of a facet's popover or sheet: search (when [Facet.searchable]), the options with their counts, "Clear" and the
- * "Show N titles" button. Usable on its own, e.g. inside a filters side panel.
+ * "Show N titles" button ([showLabel] replaces its text). Usable on its own, e.g. inside a filters side panel.
  */
 @Composable
 fun FacetPanel(
@@ -249,6 +254,8 @@ fun FacetPanel(
     resultCount: Int,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Text of the confirm button; null = "Show N titles" ([resultCount]). */
+    showLabel: String? = null,
 ) {
     var query by remember(facet.id) { mutableStateOf("") }
     val visible = if (query.isBlank()) facet.options else facet.options.filter { it.label.contains(query.trim(), ignoreCase = true) }
@@ -289,9 +296,9 @@ fun FacetPanel(
             }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (picked.isNotEmpty()) TextButton(onClick = { onPickedChange(emptySet()) }) { Text(stringResource(Res.string.rd_i1_fac_clear)) }
+            if (picked.isNotEmpty()) TextButton(shape = NijiyomeControls.shape, onClick = { onPickedChange(emptySet()) }) { Text(stringResource(Res.string.rd_i1_fac_clear)) }
             Spacer(Modifier.weight(1f))
-            Button(onClick = onDone) { Text(pluralStringResource(Res.plurals.rd_i1_fac_show, resultCount, resultCount)) }
+            Button(shape = NijiyomeControls.shape, onClick = onDone) { Text(showLabel ?: pluralStringResource(Res.plurals.rd_i1_fac_show, resultCount, resultCount)) }
         }
     }
 }

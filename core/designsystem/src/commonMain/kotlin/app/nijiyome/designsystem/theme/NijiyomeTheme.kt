@@ -86,6 +86,7 @@ fun NijiyomeTheme(
         LocalStatusColors provides palette.status(tone),
         LocalSignalColors provides palette.signal(tone),
         LocalAccentFont provides direction.accentFont(),
+        LocalControlShape provides controlShapeOf(direction),
     ) {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,

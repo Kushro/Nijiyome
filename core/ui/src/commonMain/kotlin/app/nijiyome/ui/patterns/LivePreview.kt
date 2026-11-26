@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import app.nijiyome.ui.resources.Res
 import app.nijiyome.ui.resources.rd_i1_sub_reset
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `sub` of docs/redesign/artefacto/lab.js: the control and its effect side by side. Each change
 // moves the preview at once with the same computation the real feature uses; Reset leaves an undo. Wide windows: controls on the
@@ -132,7 +133,7 @@ fun LivePreviewScaffold(
  */
 @Composable
 fun ResetStyleButton(enabled: Boolean, modifier: Modifier = Modifier, label: String = stringResource(Res.string.rd_i1_sub_reset), onReset: () -> Unit) {
-    TextButton(onClick = onReset, enabled = enabled, modifier = modifier) {
+    TextButton(shape = NijiyomeControls.shape, onClick = onReset, enabled = enabled, modifier = modifier) {
         Icon(Icons.Outlined.Restore, contentDescription = null)
         Text(label, modifier = Modifier.padding(start = 8.dp))
     }

@@ -113,7 +113,7 @@ internal fun StripCardBody(
             .tzSized(context, stripWidth(size))
             .tzClickable(interaction, onClick, onLongClick)
             .tzHeroStub(hero)
-            .then(if (hangs) Modifier.tzThread(threadH) else Modifier)
+            .then(if (hangs) Modifier.tzRestTilt(data.key).tzThread(threadH) else Modifier)
             .padding(top = threadH),
     ) {
         Column(Modifier.tzFocusRing(state).tanzakuPaper(paper).tzHole()) {
@@ -141,7 +141,8 @@ internal fun StripCardBody(
                 }
                 if (wish != null) {
                     val big = hero || context == CardContext.WISH
-                    Text(wish, style = TzType.sub(if (big) 14.sp else 12.5.sp), color = TanabataMaterials.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    // Two lines: "Episodio 8 · hace 1 día" lost its unit of time at one line on a 150 dp strip.
+                    Text(wish, style = TzType.sub(if (big) 14.sp else 12.5.sp), color = TanabataMaterials.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -204,7 +205,7 @@ internal fun VerticalCardBody(
             .tzSized(context, verticalWidth(size))
             .tzClickable(interaction, onClick, onLongClick, description)
             .tzHeroStub(hero)
-            .then(if (hangs) Modifier.tzThread(threadH) else Modifier)
+            .then(if (hangs) Modifier.tzRestTilt(data.key).tzThread(threadH) else Modifier)
             .padding(top = threadH),
     ) {
         Column(

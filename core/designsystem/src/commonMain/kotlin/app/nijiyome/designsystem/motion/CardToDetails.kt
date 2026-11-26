@@ -5,7 +5,9 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
@@ -95,6 +97,12 @@ internal object TapTracker {
 /** A press older than this did not open the Details that is composing now. */
 private const val PENDING_MS = 1_500L
 
+/**
+ * For a Details target that appears late (its screen showed a loading skeleton first, so the shared transition had already ended):
+ * a press this recent still explains it.
+ */
+private const val LATE_PENDING_MS = 4_000L
+
 /** One card poster that can open Details. [bounds] in root coordinates, refreshed on every placement (no snapshot state). */
 internal class CardSource(val key: String, val id: Long) {
     var bounds: Rect = Rect.Zero
@@ -111,7 +119,15 @@ internal class CardToDetailsState(val shared: SharedTransitionScope) {
         sources.add(source)
     }
 
+    /**
+     * The pressed card whose screen has since left the composition (navigation disposes the list): kept so a Details target that
+     * appears late can still start from its bounds.
+     */
+    private var departed: CardSource? = null
+
     fun remove(source: CardSource) {
+        val tap = TapTracker.peek()
+        if (tap != null && source.bounds.contains(tap.position)) departed = source
         sources.remove(source)
     }
 
@@ -132,8 +148,12 @@ internal class CardToDetailsState(val shared: SharedTransitionScope) {
     }
 
     /** Bounds of the card with [key] that was just pressed, if Details is opening from one. Read once, at composition. */
-    fun pendingBounds(key: String): Rect? {
-        return pressed(key, TapTracker.peek())?.bounds?.takeIf { it.width > 0f && it.height > 0f }
+    fun pendingBounds(key: String, maxAgeMs: Long = PENDING_MS): Rect? {
+        val tap = TapTracker.peek()
+        if (tap == null || TapTracker.nowMs() - tap.atMs > maxAgeMs) return null
+        val hit = sources.firstOrNull { it.key == key && it.bounds.contains(tap.position) }
+            ?: departed?.takeIf { it.key == key && it.bounds.contains(tap.position) }
+        return hit?.bounds?.takeIf { it.width > 0f && it.height > 0f }
     }
 }
 
@@ -212,6 +232,7 @@ internal fun Modifier.cardToDetailsSourceMotion(key: String): Modifier {
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 internal fun Modifier.cardToDetailsTargetMotion(key: String): Modifier {
     val state = LocalCardToDetails.current ?: return this
@@ -222,7 +243,13 @@ internal fun Modifier.cardToDetailsTargetMotion(key: String): Modifier {
     val entry = LocalCardToDetailsEntry.current
     val transform = level == MotionLevel.FULL || level == MotionLevel.PERF
 
-    if (entry != null && variant == "ct" && transform) {
+    // Details often composes its target only once its data has loaded (a skeleton first): by then the screen transition has ended
+    // and a shared element finds nothing to match. Decided once: a target that first appears on a settled entry plays its own
+    // entrance from the pressed card's bounds instead, as when the shell is not wired.
+    val late = remember(key) {
+        entry != null && !entry.transition.isRunning && entry.transition.currentState == EnterExitState.Visible
+    }
+    if (entry != null && !late && variant == "ct" && transform) {
         val (enterMs, exitMs) = transformMs(level)
         return with(state.shared) {
             this@cardToDetailsTargetMotion.sharedBounds(
@@ -237,9 +264,9 @@ internal fun Modifier.cardToDetailsTargetMotion(key: String): Modifier {
         }
     }
     // Wired shell: the shared axis is the whole screen moving (cardToDetailsEnterTransform), not the hero alone.
-    if (entry != null && variant == "axis") return this
+    if (entry != null && !late && variant == "axis") return this
 
-    val from = remember(key) { state.pendingBounds(key) } ?: return this
+    val from = remember(key) { state.pendingBounds(key, if (late) LATE_PENDING_MS else PENDING_MS) } ?: return this
     val kind = when {
         level == MotionLevel.CALM -> TargetKind.FADE
         variant == "axis" -> TargetKind.AXIS

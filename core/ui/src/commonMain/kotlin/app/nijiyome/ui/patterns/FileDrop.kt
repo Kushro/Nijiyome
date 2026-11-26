@@ -81,6 +81,7 @@ import app.nijiyome.ui.resources.rd_i1_drop_verb_unknown
 import app.nijiyome.ui.resources.rd_i1_drop_verb_unsupported
 import app.nijiyome.ui.resources.rd_i1_drop_verb_video
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `drop` of docs/redesign/artefacto/lab.js: one target layer covers the window while something is
 // dragged over it and says what will happen; on drop a dialog (a sheet on phones) offers the concrete actions, and what Nijiyome cannot
@@ -351,7 +352,7 @@ private fun ColumnScope.FileDropResultBody(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        TextButton(onClick = onDismiss) {
+        TextButton(shape = NijiyomeControls.shape, onClick = onDismiss) {
             Text(stringResource(if (actions.isEmpty()) Res.string.rd_i1_drop_ok else Res.string.rd_i1_drop_cancel))
         }
         actions.forEachIndexed { i, action ->

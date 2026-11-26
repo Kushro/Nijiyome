@@ -49,6 +49,9 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.LocalStatusColors
@@ -67,10 +70,12 @@ import app.nijiyome.ui.resources.rd_i1_stp_plus
 import app.nijiyome.ui.resources.rd_i1_stp_remove
 import app.nijiyome.ui.resources.rd_i1_stp_status
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `stp` of docs/redesign/artefacto/lab.js: the six list statuses in view with their color, icon and
 // name, as a real radio group (a tap or the arrow keys), and the progress beside them with a stepper instead of another dialog.
-// Wide windows: one row of six; phones: a 3 x 2 grid of 64 dp tiles. Each tile draws the direction's StatusMark.
+// Wide windows: one row of six when the names fit, else 3 x 2 or fewer columns; phones: a 3 x 2 grid of 64 dp tiles. Each tile
+// draws the direction's StatusMark with the full name.
 
 /** [ListStatus] of a [StatusSlot] (the inverse of `ListStatus.slot()`). */
 fun StatusSlot.toListStatus(): ListStatus = when (this) {
@@ -134,21 +139,42 @@ fun ListStatusPicker(
         true
     }
     val group = modifier.decor(DecorRegion.STATUS_PICKER).selectableGroup().semantics { contentDescription = groupLabel }.then(keys)
-    if (compact) {
-        Column(group, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            statuses.chunked(3).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { slot ->
-                        StatusTile(slot, labels.getValue(slot), slot == selected, disabledReason(slot), { onSelect(slot) }, requesters.getValue(slot), tall = true, Modifier.weight(1f))
-                    }
-                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
+    // Every status always shows its full name: the tiles keep their natural width and wrap to fewer columns (6, 3, 2, 1) instead of
+    // squeezing six weighted tiles into one row, which cut the names to "Pend..." or to nothing on narrow columns.
+    StatusGrid(group, columns = if (compact) listOf(3, 2, 1) else listOf(statuses.size, 3, 2, 1), gap = 8.dp) {
+        statuses.forEach { slot ->
+            StatusTile(slot, labels.getValue(slot), slot == selected, disabledReason(slot), { onSelect(slot) }, requesters.getValue(slot), tall = compact)
         }
-    } else {
-        Row(group, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            statuses.forEach { slot ->
-                StatusTile(slot, labels.getValue(slot), slot == selected, disabledReason(slot), { onSelect(slot) }, requesters.getValue(slot), tall = false, Modifier.weight(1f))
+    }
+}
+
+/**
+ * Lays the status tiles out in equal columns: the first count of [columns] whose tiles fit at their natural width (the widest
+ * tile's max intrinsic width), each row as tall as its tallest tile. Cells stretch to share the available width.
+ */
+@Composable
+private fun StatusGrid(modifier: Modifier, columns: List<Int>, gap: Dp, content: @Composable () -> Unit) {
+    Layout(content, modifier) { measurables, constraints ->
+        val n = measurables.size
+        if (n == 0) return@Layout layout(constraints.minWidth, constraints.minHeight) {}
+        val gapPx = gap.roundToPx()
+        val natural = measurables.maxOf { it.maxIntrinsicWidth(Constraints.Infinity) }
+        val candidates = (columns.filter { it in 1..n } + 1).distinct()
+        val widest = candidates.first()
+        val available = if (constraints.hasBoundedWidth) constraints.maxWidth else natural * widest + gapPx * (widest - 1)
+        val cols = candidates.firstOrNull { c -> natural * c + gapPx * (c - 1) <= available } ?: 1
+        val cellW = ((available - gapPx * (cols - 1)) / cols).coerceAtLeast(0)
+        val rows = measurables.chunked(cols).map { row ->
+            val rowH = row.maxOf { it.maxIntrinsicHeight(cellW) }
+            row.map { it.measure(Constraints(minWidth = cellW, maxWidth = cellW, minHeight = rowH)) }
+        }
+        val heights = rows.map { r -> r.maxOf { it.height } }
+        val totalH = heights.sum() + gapPx * (rows.size - 1)
+        layout(maxOf(available, constraints.minWidth), maxOf(totalH, constraints.minHeight)) {
+            var y = 0
+            rows.forEachIndexed { r, row ->
+                row.forEachIndexed { i, p -> p.placeRelative(i * (cellW + gapPx), y) }
+                y += heights[r] + gapPx
             }
         }
     }
@@ -163,11 +189,11 @@ private fun StatusTile(
     onClick: () -> Unit,
     requester: FocusRequester,
     tall: Boolean,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val color = LocalStatusColors.current.of(slot)
     Surface(
-        shape = MaterialTheme.shapes.medium,
+        shape = NijiyomeControls.shape,
         color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) color else MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier
@@ -177,27 +203,26 @@ private fun StatusTile(
             .selectable(selected = selected, enabled = reason == null, role = Role.RadioButton, onClick = onClick)
             .semantics { if (reason != null) stateDescription = reason },
     ) {
-        val content: @Composable () -> Unit = {
-            Icon(slot.icon, contentDescription = null, tint = color, modifier = Modifier.size(if (tall) 24.dp else 20.dp))
-            StatusMark(slot, label, selected = selected)
-        }
         if (tall) {
             Column(
                 Modifier.padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
             ) {
-                content()
+                Icon(slot.icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+                StatusMark(slot, label, selected = selected)
                 if (reason != null) {
                     Text(reason, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
         } else {
+            // Wide: the direction's mark alone (its own color, shape and name); a Material icon beside a seal or a paper strip was a
+            // second mark for the same status and took the width the name needed.
             Row(
-                Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-            ) { content() }
+                horizontalArrangement = Arrangement.Center,
+            ) { StatusMark(slot, label, selected = selected) }
         }
     }
 }
@@ -287,7 +312,7 @@ fun ListStatusEditor(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             ProgressStepper(progress, onProgressChange, max = aired, total = total, modifier = Modifier.weight(1f))
             if (status != null) {
-                TextButton(onClick = onRemove, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                TextButton(shape = NijiyomeControls.shape, onClick = onRemove, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                     Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(Res.string.rd_i1_stp_remove))

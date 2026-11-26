@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -92,6 +93,7 @@ import app.nijiyome.ui.resources.rd_i1_pk_use
 import app.nijiyome.ui.resources.rd_i1_pk_use_default
 import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.launch
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `pk` of docs/redesign/artefacto/lab.js: every value has a picker made for it instead of a raw text
 // field: the port with a stepper and "Test", the folder with the system picker and its path as breadcrumbs, a time of day and a time
@@ -152,6 +154,8 @@ fun NumberStepperField(
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        // The direction's control radius, like the buttons that sit beside a stepper (Test, Use default).
+        shape = NijiyomeControls.shape,
         modifier = modifier.width(width).onPreviewKeyEvent { e ->
             if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
             val base = parsed ?: value
@@ -200,6 +204,7 @@ fun PortPicker(
             NumberStepperField(port.toLong(), { onPortChange(it.toInt()) }, min = 1, max = 65535, label = label)
             if (onTest != null) {
                 FilledTonalButton(
+                    shape = NijiyomeControls.shape,
                     onClick = {
                         busy = true
                         scope.launch {
@@ -211,7 +216,8 @@ fun PortPicker(
                         }
                     },
                     enabled = !busy,
-                    modifier = Modifier.padding(top = 8.dp),
+                    // As tall as the field's box (56 dp below its 8 dp label inset), not a 40 dp button beside a taller field.
+                    modifier = Modifier.padding(top = 8.dp).height(56.dp),
                 ) {
                     Icon(Icons.Outlined.NetworkCheck, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(if (busy) Res.string.rd_i1_pk_testing else Res.string.rd_i1_pk_test), modifier = Modifier.padding(start = 8.dp))
@@ -247,7 +253,7 @@ private fun ResultLine(icon: ImageVector, color: Color, text: String, action: Pa
     ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium, color = color, modifier = Modifier.weight(1f, fill = false))
-        if (action != null) TextButton(onClick = action.second) { Text(action.first) }
+        if (action != null) TextButton(shape = NijiyomeControls.shape, onClick = action.second) { Text(action.first) }
     }
 }
 
@@ -311,7 +317,7 @@ fun FolderPathPicker(
                 }
             }
         }
-        OutlinedButton(onClick = pick) {
+        OutlinedButton(shape = NijiyomeControls.shape, onClick = pick) {
             Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(Res.string.rd_i1_pk_change_folder), modifier = Modifier.padding(start = 8.dp))
         }

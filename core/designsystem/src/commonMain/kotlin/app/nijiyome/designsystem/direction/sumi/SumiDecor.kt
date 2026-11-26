@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -108,9 +109,14 @@ internal object SumiDecor : DirectionDecor {
                     }
                 }
             }
-            // Sheets and side panels: a paper edge on top.
-            DecorRegion.SHEET -> Modifier.drawBehind {
-                drawLine(scheme.outlineVariant, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx())
+            // Sheets and side panels: a paper edge on top, drawn over the sheet's own surface (behind it, only the rounded corners
+            // showed it, as stray marks) and kept clear of those corners.
+            DecorRegion.SHEET -> Modifier.drawWithContent {
+                drawContent()
+                val inset = 24.dp.toPx()
+                if (size.width > inset * 2f) {
+                    drawLine(scheme.outlineVariant, Offset(inset, 0.5.dp.toPx()), Offset(size.width - inset, 0.5.dp.toPx()), strokeWidth = 1.dp.toPx())
+                }
             }
             else -> Modifier
         }

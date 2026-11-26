@@ -79,6 +79,7 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.input.pointer.isCtrlPressed as pointerCtrl
 import androidx.compose.ui.input.pointer.isMetaPressed as pointerMeta
 import androidx.compose.ui.input.pointer.isShiftPressed as pointerShift
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `eps` of docs/redesign/artefacto/lab.js: a visible selection mode with an anchor.
 // Desktop: click / Ctrl+click toggles, Shift+click adds the range from the anchor, Ctrl+A takes everything selectable, Esc leaves.
@@ -407,7 +408,7 @@ fun SelectionActionBar(
                     }
                     if (onSelectAll != null) {
                         Spacer(Modifier.width(4.dp))
-                        TextButton(onClick = onSelectAll) { Text(selectAllLabel ?: stringResource(Res.string.rd_i1_sel_select_all), maxLines = 1) }
+                        TextButton(shape = NijiyomeControls.shape, onClick = onSelectAll) { Text(selectAllLabel ?: stringResource(Res.string.rd_i1_sel_select_all), maxLines = 1) }
                     }
                     IconButton(onClick = onExit) {
                         Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_i1_sel_exit))
@@ -436,10 +437,11 @@ fun ActionButton(
         Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
     when (emphasis) {
-        ActionEmphasis.FILLED -> Button(onClick = onClick, modifier = modifier, enabled = enabled) { content() }
-        ActionEmphasis.TONAL -> FilledTonalButton(onClick = onClick, modifier = modifier, enabled = enabled) { content() }
-        ActionEmphasis.OUTLINED -> OutlinedButton(onClick = onClick, modifier = modifier, enabled = enabled) { content() }
+        ActionEmphasis.FILLED -> Button(shape = NijiyomeControls.shape, onClick = onClick, modifier = modifier, enabled = enabled) { content() }
+        ActionEmphasis.TONAL -> FilledTonalButton(shape = NijiyomeControls.shape, onClick = onClick, modifier = modifier, enabled = enabled) { content() }
+        ActionEmphasis.OUTLINED -> OutlinedButton(shape = NijiyomeControls.shape, onClick = onClick, modifier = modifier, enabled = enabled) { content() }
         ActionEmphasis.DANGER -> Button(
+            shape = NijiyomeControls.shape,
             onClick = onClick,
             modifier = modifier,
             enabled = enabled,
@@ -458,7 +460,7 @@ private fun CompactActionButton(action: SelectionAction, armed: Boolean, enabled
         armed || action.emphasis == ActionEmphasis.DANGER -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurface
     }
-    TextButton(onClick = onClick, enabled = enabled, modifier = modifier.heightIn(min = 56.dp)) {
+    TextButton(shape = NijiyomeControls.shape, onClick = onClick, enabled = enabled, modifier = modifier.heightIn(min = 56.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Icon(action.icon, contentDescription = null, tint = color)
             Text(

@@ -88,6 +88,7 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.input.pointer.isCtrlPressed as pointerCtrl
 import androidx.compose.ui.input.pointer.isMetaPressed as pointerMeta
 import androidx.compose.ui.input.pointer.isShiftPressed as pointerShift
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane I1. Pattern `dnd` of docs/redesign/artefacto/lab.js: drag a title onto a list status (a kanban column, a rail
 // entry) or one of the user's lists. While dragging every target reacts: the valid ones are outlined, the others fade and say why. A drag
@@ -466,6 +467,7 @@ fun <T : Any> DropHereButton(state: DragDropState<T>, targetKey: Any, modifier: 
     if (state.active == null) return
     val refusal = state.refusal(targetKey)
     TextButton(
+        shape = NijiyomeControls.shape,
         onClick = { state.dropOn(targetKey) },
         enabled = refusal == null,
         modifier = modifier.semantics { if (refusal != null) stateDescription = refusal },
@@ -495,7 +497,7 @@ fun PickedBanner(itemLabel: String, onCancel: () -> Unit, modifier: Modifier = M
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
             )
-            TextButton(onClick = onCancel) { Text(stringResource(Res.string.rd_i1_dnd_cancel)) }
+            TextButton(shape = NijiyomeControls.shape, onClick = onCancel) { Text(stringResource(Res.string.rd_i1_dnd_cancel)) }
         }
     }
 }

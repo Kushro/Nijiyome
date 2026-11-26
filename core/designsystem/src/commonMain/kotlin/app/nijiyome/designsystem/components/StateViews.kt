@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** Full-area loading state (M3E LoadingIndicator). Callers may delay it to avoid flashes (02 §5). */
 @Composable
@@ -60,7 +61,7 @@ fun EmptyState(
             )
         }
         if (actionLabel != null && onAction != null) {
-            Button(onClick = onAction) { Text(actionLabel) }
+            Button(shape = NijiyomeControls.shape, onClick = onAction) { Text(actionLabel) }
         }
     }
 }
@@ -88,7 +89,7 @@ fun ErrorState(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = onRetry) { Text(retryLabel) }
+            TextButton(shape = NijiyomeControls.shape, onClick = onRetry) { Text(retryLabel) }
         }
     } else {
         Column(
@@ -109,7 +110,7 @@ fun ErrorState(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            Button(onClick = onRetry) { Text(retryLabel) }
+            Button(shape = NijiyomeControls.shape, onClick = onRetry) { Text(retryLabel) }
         }
     }
 }

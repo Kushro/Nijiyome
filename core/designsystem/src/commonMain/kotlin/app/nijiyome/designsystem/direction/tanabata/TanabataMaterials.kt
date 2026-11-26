@@ -69,6 +69,12 @@ object TanabataMaterials {
     /** Fibres of the washi texture over a paper: a lighter version of the paper itself. */
     fun fibre(paper: Color): Color = lerp(paper, Color.White, 0.55f)
 
+    /**
+     * Opacity of [fibre] where the washi tile is densest. The tile averages about 29 % coverage, so a paper moves on average about
+     * 3 % toward white and about 12 % on the brightest fibres: a grain, not streaks (ink on paper keeps its 6.7:1).
+     */
+    const val FIBRE_ALPHA: Float = 0.22f
+
     /** Shadow color under paper (artifact `--tz-paper-shadow`). */
     fun paperShadow(tone: ThemeTone): Color = if (tone == ThemeTone.LIGHT) Color(0x591E2250) else Color(0xB302030E)
 }

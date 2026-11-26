@@ -5,6 +5,7 @@ package app.nijiyome.feature.player.sources
 
 import app.nijiyome.feature.player.resources.Res
 import app.nijiyome.feature.player.resources.*
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -587,6 +588,7 @@ private fun DebridAndFacets(model: PickerModel, filters: SourceFilters, onFilter
             resultCount = model.shown.size,
             // FE-03: the count is said once, in the row under the facets (with "Limpiar filtros").
             resultText = null,
+            showLabel = pluralStringResource(Res.plurals.rd_s4_src_show, model.shown.size, model.shown.size),
         )
     }
 }
