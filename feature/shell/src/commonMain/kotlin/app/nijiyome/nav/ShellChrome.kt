@@ -109,6 +109,10 @@ class ShellChrome internal constructor() {
         internal set
     var medium: ShellMedium by mutableStateOf(ShellMedium.ANIME)
         internal set
+
+    /** Ajustes is a visible destination of the shell's rail: a host bar then needs no Settings button of its own. */
+    var settingsInRail: Boolean by mutableStateOf(false)
+        internal set
     internal var selectMedium: (ShellMedium) -> Unit = {}
     internal var openPalette: () -> Unit = {}
     internal var openNotifications: (() -> Unit)? by mutableStateOf<(() -> Unit)?>(null)

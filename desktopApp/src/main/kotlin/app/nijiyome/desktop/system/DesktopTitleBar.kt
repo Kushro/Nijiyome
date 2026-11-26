@@ -65,6 +65,7 @@ import app.nijiyome.designsystem.direction.BrandMark
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.LocalDirection
 import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.nav.LocalShellChrome
 import app.nijiyome.nav.ShellCommandField
 import app.nijiyome.nav.ShellMediumSelector
 import app.nijiyome.nav.ShellNotificationsButton
@@ -224,9 +225,14 @@ fun DesktopTitleBar(
                     }
                     // The direction's logo beside the name (Sumi's kitsune tile); the others keep the name alone.
                     if (LocalDirection.current.decor.hasBrandMark) BrandMark(Modifier.size(26.dp))
+                    // `.nj-brand`: the direction's title face (Dela Gothic in Obi, the display face in Tanabata and Tránsito).
+                    val titleFace = MaterialTheme.typography.titleLarge
                     Text(
                         text = "Nijiyome",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontFamily = titleFace.fontFamily,
+                            fontWeight = titleFace.fontWeight ?: FontWeight.SemiBold,
+                        ),
                         color = scheme.onSurface,
                         maxLines = 1,
                     )
@@ -247,7 +253,8 @@ fun DesktopTitleBar(
                     if (!pip) ShellCommandField()
                     if (!pip && centred) Spacer(Modifier.weight(1f))
                     if (!pip) ShellNotificationsButton(Modifier.size(32.dp))
-                    if (!pip && onOpenSettings != null) {
+                    // Ajustes already sits in the rail: the bar keeps the gear only where the rail does not show it (player, wizard).
+                    if (!pip && onOpenSettings != null && LocalShellChrome.current?.settingsInRail != true) {
                         TitleBarIconButton(
                             icon = Icons.Outlined.Settings,
                             contentDescription = texts.settings,
