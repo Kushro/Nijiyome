@@ -27,7 +27,10 @@ import app.nijiyome.model.torrent.TorrentRepository
 import kotlinx.coroutines.Job
 import app.nijiyome.ui.media.distinctByKey
 import app.nijiyome.ui.media.mediaKey
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import app.nijiyome.ui.state.runCatchingApp
 import app.nijiyome.ui.state.toAppError
@@ -170,6 +173,9 @@ class HomeViewModel(
     private var becauseJob: Job? = null
     private var genreJob: Job? = null
 
+    /** A-02: every metadata request of Home goes through it (see [RequestPacer]). */
+    private val pacer = RequestPacer(PACE_PARALLEL, PACE_GAP_MS)
+
     private val providers = settings?.settings?.map { it.providerPriority }?.distinctUntilChanged()
         ?: flowOf(AppSettings.DEFAULT_PROVIDER_PRIORITY)
 
@@ -194,15 +200,18 @@ class HomeViewModel(
     private val adult: Boolean get() = settings?.settings?.value?.showAdult ?: false
 
     init {
-        HOME_FEEDS.forEach(::load)
+        // A-02: asked in the order the first screen shows them (Esta noche and today's agenda, the novelties, the hero, then the
+        // rows below); the pacer starts them a few at a time, so they appear one after another instead of 25 requests at once.
+        loadToday()
+        loadFollowed()
+        load(HERO_FEED)
+        HOME_FEEDS.filter { it != HERO_FEED }.forEach(::load)
         loadLatest()
         loadTop10(TopWindow.TODAY)
+        loadForYou()
         loadUpcoming()
         loadFavourites()
         loadGenreCloud()
-        loadFollowed()
-        loadForYou()
-        loadToday()
         lists?.let { repo ->
             viewModelScope.launch {
                 repo.entries(null).catch { emit(emptyList()) }.collect { list -> discover.update { it.copy(listEntries = list) } }
@@ -322,7 +331,7 @@ class HomeViewModel(
     private fun <T> launchRow(set: (HomeDiscoverState, LoadState<T>) -> HomeDiscoverState, block: suspend () -> T) {
         discover.update { set(it, LoadState.Loading) }
         viewModelScope.launch {
-            val r = runCatchingApp { block() }
+            val r = runCatchingApp { pacer.run { block() } }
             discover.update { set(it, r.fold(onSuccess = { v -> LoadState.Ok(v) }, onFailure = { e -> LoadState.Err(e.toAppError()) })) }
         }
     }
@@ -380,7 +389,7 @@ class HomeViewModel(
         }
         discover.update { it.copy(because = BecauseRow(entry.title, LoadState.Loading)) }
         becauseJob = viewModelScope.launch {
-            val r = runCatchingApp { metadata.recommendations(MediaRef(anilistId = id, malId = entry.malId)).map { it.media }.distinctByKey() }
+            val r = runCatchingApp { pacer.run { metadata.recommendations(MediaRef(anilistId = id, malId = entry.malId)).map { it.media }.distinctByKey() } }
             discover.update {
                 it.copy(because = BecauseRow(entry.title, r.fold(onSuccess = { v -> LoadState.Ok(v) }, onFailure = { e -> LoadState.Err(e.toAppError()) })))
             }
@@ -398,7 +407,7 @@ class HomeViewModel(
     /** Genre catalogue of the provider (falls back to the genres of the loaded rows in the screen). */
     fun loadGenreCloud() {
         viewModelScope.launch {
-            val genres = runCatchingApp { metadata.genres(MediaKind.ANIME) }.getOrNull().orEmpty()
+            val genres = runCatchingApp { pacer.run { metadata.genres(MediaKind.ANIME) } }.getOrNull().orEmpty()
                 .filterNot { it.equals("Hentai", ignoreCase = true) && !adult }
             discover.update { it.copy(genreCloud = genres, genreRowsDone = genres.isEmpty()) }
         }
@@ -425,7 +434,9 @@ class HomeViewModel(
 
     private suspend fun fillGenre(genre: String) {
         val r = runCatchingApp {
-            metadata.searchAdvanced(MediaKind.ANIME, MediaSearchQuery(genres = listOf(genre), sort = MediaSort.POPULARITY, adult = adult)).items.distinctByKey()
+            pacer.run {
+                metadata.searchAdvanced(MediaKind.ANIME, MediaSearchQuery(genres = listOf(genre), sort = MediaSort.POPULARITY, adult = adult)).items.distinctByKey()
+            }
         }
         val st: LoadState<List<Media>> = r.fold(onSuccess = { LoadState.Ok(it) }, onFailure = { LoadState.Err(it.toAppError()) })
         discover.update { s -> s.copy(genreRows = s.genreRows.map { if (it.genre == genre) it.copy(state = st) else it }) }
@@ -482,7 +493,7 @@ class HomeViewModel(
 
     private fun load(kind: FeedKind) {
         viewModelScope.launch {
-            val result = runCatchingApp { metadata.feed(MediaKind.ANIME, kind).items.distinctByKey() }
+            val result = runCatchingApp { pacer.run { metadata.feed(MediaKind.ANIME, kind).items.distinctByKey() } }
             setRow(
                 kind,
                 result.fold(
@@ -523,5 +534,26 @@ class HomeViewModel(
         const val FOR_YOU_PREVIEW = 10
         const val MAX_PROVIDER_SOURCES = 6
         const val HERO_ART_PARALLEL = 3
+        const val PACE_PARALLEL = 2
+        const val PACE_GAP_MS = 250L
+    }
+}
+
+/**
+ * A-02: AniList answered 429 to the burst of about 25 queries Home fired at start-up (every row at once). Requests run [parallel] at
+ * a time and each one starts at least [gapMs] after the previous start, in the order they were asked (the semaphore and the mutex
+ * are fair), so the first screen's rows come first and the rest follow. A retry goes through the same queue.
+ */
+internal class RequestPacer(parallel: Int, private val gapMs: Long) {
+    private val permits = Semaphore(parallel)
+    private val starts = Mutex()
+    private var started = false
+
+    suspend fun <T> run(block: suspend () -> T): T = permits.withPermit {
+        starts.withLock {
+            if (started) delay(gapMs)
+            started = true
+        }
+        block()
     }
 }
