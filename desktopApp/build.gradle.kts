@@ -172,6 +172,9 @@ compose.desktop {
                 "java.compiler", "java.instrument", "java.management", "java.naming", "java.net.http", "java.prefs", "java.rmi",
                 "java.scripting", "java.security.jgss", "java.sql", "jdk.crypto.ec", "jdk.crypto.cryptoki", "jdk.unsupported",
                 "jdk.management", "jdk.net", "jdk.zipfs", "jdk.security.auth",
+                // Locale data beyond English: without it java.time and Locale display names fall back to English in the packaged app
+                // (dates such as "Wed 25 Nov" and language names under a Spanish interface).
+                "jdk.localedata",
             )
             linux {
                 iconFile.set(rootProject.file("packaging/icons/nijiyome-512.png"))
