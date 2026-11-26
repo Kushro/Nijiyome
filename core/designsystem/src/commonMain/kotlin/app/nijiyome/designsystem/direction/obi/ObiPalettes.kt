@@ -23,7 +23,8 @@ import org.jetbrains.compose.resources.stringResource
 //   background = --nj-bg, surface = --nj-surface (OLED: pure black), surfaceContainer = --nj-surface-2,
 //   surfaceContainerHigh = --nj-surface-3, surfaceContainerHighest = --obi-shelf (the shelf edge), outline = --nj-line-strong,
 //   outlineVariant = --nj-line, primary = --nj-accent, primaryContainer = --nj-accent-soft,
-//   secondary / secondaryContainer = --nj-text (a selected chip or segment is filled with ink), tertiaryContainer = --obi-new
+//   secondary = --nj-text, secondaryContainer = --nj-accent-soft (Material fills tonal buttons, the selected settings category,
+//   navigation indicators, chips and segments with it: ink there made a bone-white block compete with the red), tertiaryContainer = --obi-new
 //   (the novelty band), tertiary = --obi-new where it reads as text (dark) or the planning amber (light), inverseSurface = ink
 //   (the snackbar is an ink band).
 // Every text pair was checked at >= 4.5:1 (status marks >= 3:1) for the four palettes in light, dark and OLED.
@@ -148,8 +149,8 @@ internal class ObiPalette(
             inversePrimary = Color(other.accent),
             secondary = text,
             onSecondary = bg,
-            secondaryContainer = text,
-            onSecondaryContainer = bg,
+            secondaryContainer = Color(t.accentSoft),
+            onSecondaryContainer = Color(t.onAccentSoft),
             tertiary = tertiary,
             onTertiary = if (isLight) Color.White else Color(t.onNew),
             tertiaryContainer = Color(t.new),
