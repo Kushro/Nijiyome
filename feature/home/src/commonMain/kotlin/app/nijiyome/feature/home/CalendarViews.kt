@@ -76,6 +76,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -766,6 +767,8 @@ private fun BoardRow(ep: AiringEpisode, ctx: CalendarCtx, wide: Boolean) {
         onClick = { ctx.onOpen(ep.media) },
         shape = MaterialTheme.shapes.small,
         color = if (tracked) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+        // ALT-04: the departure on air now is framed in the warning amber; the past ones are dimmed below.
+        border = if (state == BoardState.AIRING) BorderStroke(1.5.dp, LocalSignalColors.current.warn) else null,
         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
     ) {
         Row(
@@ -774,7 +777,16 @@ private fun BoardRow(ep: AiringEpisode, ctx: CalendarCtx, wide: Boolean) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val dim = if (past) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
-            Text(ctx.timeOf(ep), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = dim, modifier = Modifier.width(BOARD_TIME_WIDTH))
+            // ALT-04: board digits, monospaced and large.
+            Text(
+                ctx.timeOf(ep),
+                style = MaterialTheme.typography.titleLarge,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = dim,
+                maxLines = 1,
+                modifier = Modifier.width(BOARD_TIME_WIDTH),
+            )
             if (wide) {
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     MediaCover(url = ep.media.cover, modifier = Modifier.width(28.dp))
@@ -873,6 +885,8 @@ private fun EventRow(ep: AiringEpisode, ctx: CalendarCtx) {
         onClick = { ctx.onOpen(ep.media) },
         color = if (tracked) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.medium,
+        // ALT-13: the episode on air now framed in the warning amber.
+        border = if (airing) BorderStroke(1.5.dp, LocalSignalColors.current.warn) else null,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1160,7 +1174,7 @@ private val WEEK_COL_MIN = 112.dp
 private val WEEK_COL_GAP = 8.dp
 private val ASIDE_MIN = 1000.dp
 private val ASIDE_WIDTH = 320.dp
-private val BOARD_TIME_WIDTH = 64.dp
+private val BOARD_TIME_WIDTH = 80.dp
 private val BOARD_EP_WIDTH = 96.dp
 private val BOARD_STATE_WIDTH = 120.dp
 private const val LOADING_ROWS = 5
