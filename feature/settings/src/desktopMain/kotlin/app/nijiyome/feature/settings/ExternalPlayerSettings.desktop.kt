@@ -186,28 +186,51 @@ internal actual fun platformHint(res: StringResource): StringResource = desktopH
 
 internal actual val mpvTlsSettingShown: Boolean = false
 
-/** Frame generation with lsfg-vk (Linux): on the external mpv window whatever the engine. */
+/** Frame generation (v1.3.2): embedded zero-copy LSFG inside the built-in player (Linux + Windows), or lsfg-vk on external mpv. */
 @Composable
 internal actual fun FrameGenSettingsSlot() {
     val control = rememberExternalControl() ?: return
     val prefs by control.store.prefs.collectAsState()
+    val embeddedProbe by produceState<app.nijiyome.player.mpv.framegen.DesktopFgProbe?>(null, prefs.lsfgDll) {
+        value = withContext(Dispatchers.IO) {
+            app.nijiyome.player.mpv.framegen.DesktopFrameGenController.probeEmbeddedAvailability(prefs.lsfgDll)
+        }
+    }
+    val detectedDll by produceState<java.io.File?>(null, prefs.lsfgDll) {
+        value = withContext(Dispatchers.IO) {
+            app.nijiyome.player.mpv.framegen.DesktopFrameGenNative.findLosslessDll(prefs.lsfgDll)
+        }
+    }
     val availability by produceState<LsfgVk.Availability?>(null, prefs.lsfgDll) {
         value = withContext(Dispatchers.IO) { control.frameGen() }
     }
     val mpvMissing by produceState(false, prefs.mpvPath) { value = withContext(Dispatchers.IO) { control.mpv() == null } }
+    val emb = embeddedProbe
     val a = availability
-    val reason = when (a?.missing) {
-        LsfgVk.Missing.LAYER -> stringResource(Res.string.settings_fg_no_layer)
-        LsfgVk.Missing.DLL -> stringResource(Res.string.settings_fg_no_dll)
-        LsfgVk.Missing.NOT_LINUX -> stringResource(Res.string.settings_fg_not_linux)
-        null -> a?.dll?.let { stringResource(Res.string.settings_fg_found, it.name) }
+    val embeddedUsable = emb?.ok == true
+    val externalUsable = a?.available == true && !mpvMissing
+    val usable = embeddedUsable || externalUsable
+
+    val reason = when {
+        embeddedUsable -> {
+            val mode = if (emb.zeroCopyVk) "zero-copy" else "staging"
+            val gpu = emb.deviceName.ifBlank { "Vulkan" }
+            stringResource(Res.string.settings_fg_embedded_ready, mode, gpu)
+        }
+        externalUsable -> a.dll?.let { stringResource(Res.string.settings_fg_found, it.name) }
+        emb?.errorCode == "no_dll" || emb?.errorCode == "dll_unreadable" || emb?.errorCode == "missing_spirv" ->
+            stringResource(Res.string.settings_fg_no_dll)
+        a?.missing == LsfgVk.Missing.LAYER -> stringResource(Res.string.settings_fg_no_layer)
+        a?.missing == LsfgVk.Missing.DLL -> stringResource(Res.string.settings_fg_no_dll)
+        a?.missing == LsfgVk.Missing.NOT_LINUX -> stringResource(Res.string.settings_fg_not_linux)
+        else -> null
     }
     val hint = listOfNotNull(
         stringResource(Res.string.settings_fg_hint),
         reason,
-        stringResource(Res.string.settings_fg_needs_mpv).takeIf { mpvMissing },
+        stringResource(Res.string.settings_fg_needs_mpv).takeIf { !embeddedUsable && mpvMissing },
     ).joinToString(" ")
-    val usable = a?.available == true && !mpvMissing
+
     SwitchRow(
         label = stringResource(Res.string.settings_fg),
         checked = prefs.frameGen && usable,
@@ -236,16 +259,20 @@ internal actual fun FrameGenSettingsSlot() {
             onChange = { on -> control.store.update { it.copy(frameGenPerformance = on) } },
             hint = stringResource(Res.string.settings_fg_performance_hint),
         )
+        SwitchRow(
+            label = stringResource(Res.string.settings_fg_anti_artifacts),
+            checked = prefs.frameGenAntiArtifacts,
+            onChange = { on -> control.store.update { it.copy(frameGenAntiArtifacts = on) } },
+            hint = stringResource(Res.string.settings_fg_anti_artifacts_hint),
+        )
     }
-    if (a != null && a.missing != LsfgVk.Missing.NOT_LINUX && a.layer != null) {
-        SettingRow(stringResource(Res.string.settings_fg_dll), stringResource(Res.string.settings_fg_dll_hint), stack = true) {
-            PathField(
-                value = prefs.lsfgDll.orEmpty(),
-                label = stringResource(Res.string.settings_fg_dll),
-                hint = a.dll?.path.orEmpty(),
-                onDone = { path -> control.store.update { it.copy(lsfgDll = path) } },
-            )
-        }
+    SettingRow(stringResource(Res.string.settings_fg_dll), stringResource(Res.string.settings_fg_dll_hint), stack = true) {
+        PathField(
+            value = prefs.lsfgDll.orEmpty(),
+            label = stringResource(Res.string.settings_fg_dll),
+            hint = detectedDll?.path ?: a?.dll?.path.orEmpty(),
+            onDone = { path -> control.store.update { it.copy(lsfgDll = path) } },
+        )
     }
 }
 

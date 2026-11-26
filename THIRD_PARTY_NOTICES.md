@@ -241,3 +241,7 @@ independently. It is built with CMake and shipped next to the desktop executable
 | [pe-parse](https://github.com/trailofbits/pe-parse) 31ac5966 | MIT, Copyright (c) 2013 Andrew Ruef (`third_party/pe-parse/LICENSE`) | Keep the notice |
 | Vulkan headers (Khronos, `VK_HEADER_VERSION` 275) | Apache-2.0 (`third_party/vulkan-headers/LICENSE-Apache-2.0.txt`) | Keep the license text |
 | Lossless Scaling `Lossless.dll` | Proprietary (its authors) | **Never shipped**: the helper reads the user's own copy in memory |
+
+## desktop-framegen (Built-in Desktop Frame Generation, v1.3.2)
+
+Source in `native/desktop-framegen/`, built with CMake into `libnijiyome_fg_desktop.so` (Linux) / `nijiyome_fg_desktop.dll` (Windows) and shipped in desktop app resources. Links the vendored `lsfg-vk` framegen core, `volk`, `pe-parse`, and `shader_loader.cpp` from `native/temple-lsfg/`, plus `core/framegen/src/main/cpp/fg/fg_pacing.cpp`. Combined work under **GPL-3.0-only** (compatible with AGPL-3.0-or-later under GPL-3.0 section 13); its corresponding source is this repository. `Lossless.dll` is **never shipped**: the library reads SPIR-V shaders in memory from the user's own copy of Lossless Scaling.

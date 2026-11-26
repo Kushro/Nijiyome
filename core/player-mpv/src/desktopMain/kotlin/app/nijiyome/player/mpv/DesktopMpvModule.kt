@@ -41,6 +41,7 @@ fun desktopMpvPlayerModule(cacheDir: File, fontsDir: File = File(File(cacheDir, 
             fontsDir = fontsDir,
             volumeMemory = get(),
             mediaRoute = getOrNull(),
+            desktopPrefsStore = getOrNull<DesktopPlayerPrefsStore>(),
         )
     }
 }

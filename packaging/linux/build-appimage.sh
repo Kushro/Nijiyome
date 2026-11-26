@@ -52,7 +52,11 @@ if [ -z "$image" ]; then
     if [ -z "$lsfg" ] && [ "$no_lsfg" -eq 0 ]; then
         lsfg="$(bash "$here/build-temple-lsfg.sh" | tail -n1)"
     fi
-    (cd "$repo" && NIJIYOME_TEMPLE_LSFG="$lsfg" NIJIYOME_VERSION_NAME="$version" \
+    fg_lib="${NIJIYOME_DESKTOP_FRAMEGEN:-}"
+    if [ -z "$fg_lib" ] && [ "$no_lsfg" -eq 0 ] && [ -d "$repo/native/desktop-framegen" ]; then
+        fg_lib="$(bash "$here/build-desktop-framegen.sh" | tail -n1)"
+    fi
+    (cd "$repo" && NIJIYOME_TEMPLE_LSFG="$lsfg" NIJIYOME_DESKTOP_FRAMEGEN="$fg_lib" NIJIYOME_VERSION_NAME="$version" \
         bash gradlew :desktopApp:createReleaseDistributable --no-daemon --console=plain)
     image="$repo/desktopApp/build/compose/binaries/main-release/app/Nijiyome"
 fi

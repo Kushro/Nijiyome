@@ -50,10 +50,28 @@ if (-not $NoLsfg -and -not $Lsfg) {
     $Lsfg = $exe.FullName
 }
 
+# --- desktop-framegen (embedded zero-copy D3D12 <-> Vulkan LSFG JNI library) ----------------------------------------------------
+$FgLib = $env:NIJIYOME_DESKTOP_FRAMEGEN
+if (-not $NoLsfg -and -not $FgLib -and (Test-Path (Join-Path $repo 'native\desktop-framegen'))) {
+    $fgBuild = Join-Path $repo 'build\desktop-framegen'
+    if (Get-Command ninja -ErrorAction SilentlyContinue) {
+        cmake -S (Join-Path $repo 'native\desktop-framegen') -B $fgBuild -G Ninja -DCMAKE_BUILD_TYPE=Release
+    } else {
+        cmake -S (Join-Path $repo 'native\desktop-framegen') -B $fgBuild -G 'Visual Studio 17 2022' -A x64
+    }
+    if ($LASTEXITCODE -ne 0) { throw "desktop-framegen cmake configure failed ($LASTEXITCODE)" }
+    cmake --build $fgBuild --config Release --parallel
+    if ($LASTEXITCODE -ne 0) { throw "desktop-framegen cmake build failed ($LASTEXITCODE)" }
+    $dll = Get-ChildItem $fgBuild -Recurse -Filter nijiyome_fg_desktop.dll | Select-Object -First 1
+    if (-not $dll) { throw 'nijiyome_fg_desktop.dll was not built' }
+    $FgLib = $dll.FullName
+}
+
 # --- app image ------------------------------------------------------------------------------------------------------------------
 Push-Location $repo
 try {
     $env:NIJIYOME_TEMPLE_LSFG = if ($Lsfg) { $Lsfg } else { '' }
+    $env:NIJIYOME_DESKTOP_FRAMEGEN = if ($FgLib) { $FgLib } else { '' }
     $env:NIJIYOME_VERSION_NAME = $Version
     & .\gradlew.bat :desktopApp:createReleaseDistributable --no-daemon --console=plain
     if ($LASTEXITCODE -ne 0) { throw "gradle failed ($LASTEXITCODE)" }

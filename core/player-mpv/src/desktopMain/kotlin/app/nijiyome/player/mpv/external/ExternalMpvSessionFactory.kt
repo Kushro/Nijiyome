@@ -40,6 +40,10 @@ class ExternalMpvSessionFactory(
     /** Environment changes of every mpv (null = remove; tests: an empty `MPV_HOME`, gamescope's display). */
     private val extraEnv: Map<String, String?> = emptyMap(),
     private val frameGenAvailability: (DesktopPlayerPrefs) -> LsfgVk.Availability = { LsfgVk.detect(it.lsfgDll, env) },
+    /** v1.3.2: embedded desktop framegen handles FG inside the app window when available; only fall back to external mpv if embedded is unavailable. */
+    private val embeddedFrameGenAvailable: (DesktopPlayerPrefs) -> Boolean = {
+        app.nijiyome.player.mpv.framegen.DesktopFrameGenController.probeEmbeddedAvailability(it.lsfgDll).ok
+    },
     private val refreshHz: () -> Float? = ::displayRefreshRate,
     /** Finds mpv from the custom path setting ([findMpv]). */
     private val mpvLookup: (String?) -> File? = { findMpv(it, env) },
@@ -56,7 +60,14 @@ class ExternalMpvSessionFactory(
     /** Frame generation can run now (switch on, layer and shaders found). */
     fun frameGenReady(p: DesktopPlayerPrefs = prefs()): LsfgVk.Availability? = if (p.frameGen) frameGenAvailability(p) else null
 
-    override fun wants(engine: PlayerEngine): Boolean = engine == PlayerEngine.EXTERNAL || frameGenReady()?.available == true
+    override fun wants(engine: PlayerEngine): Boolean {
+        if (engine == PlayerEngine.EXTERNAL) return true
+        val p = prefs()
+        if (!p.frameGen) return false
+        // v1.3.2: embedded libmpv runs LSFG in-app (zero-copy GL/D3D12 <-> Vulkan); only redirect to external mpv if embedded FG is unavailable.
+        if (embeddedFrameGenAvailable(p)) return false
+        return frameGenReady(p)?.available == true
+    }
 
     override fun unavailableReason(): String? {
         val custom = prefs().mpvPath
