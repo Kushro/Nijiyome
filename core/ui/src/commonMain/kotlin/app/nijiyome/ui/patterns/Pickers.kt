@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -153,6 +154,8 @@ fun NumberStepperField(
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        // The direction's control radius, like the buttons that sit beside a stepper (Test, Use default).
+        shape = NijiyomeControls.shape,
         modifier = modifier.width(width).onPreviewKeyEvent { e ->
             if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
             val base = parsed ?: value
@@ -213,7 +216,8 @@ fun PortPicker(
                         }
                     },
                     enabled = !busy,
-                    modifier = Modifier.padding(top = 8.dp),
+                    // As tall as the field's box (56 dp below its 8 dp label inset), not a 40 dp button beside a taller field.
+                    modifier = Modifier.padding(top = 8.dp).height(56.dp),
                 ) {
                     Icon(Icons.Outlined.NetworkCheck, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(stringResource(if (busy) Res.string.rd_i1_pk_testing else Res.string.rd_i1_pk_test), modifier = Modifier.padding(start = 8.dp))
