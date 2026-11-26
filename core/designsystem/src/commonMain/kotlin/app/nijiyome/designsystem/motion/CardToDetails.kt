@@ -411,8 +411,10 @@ fun MotionChoices.cardToDetailsEnterTransform(density: Density): ContentTransfor
             }
             else -> {
                 val (enterMs, _) = transformMs(level)
-                fadeIn(tween(enterMs / 2, delayMillis = enterMs / 3, easing = LinearEasing)) togetherWith
-                    fadeOut(tween(enterMs / 3, easing = LinearEasing))
+                // MOV-01: fade-through (list exits cleanly before Details text fades in) so both screens never read on top of each other.
+                val outMs = enterMs / 4
+                fadeIn(tween(enterMs / 2, delayMillis = outMs, easing = LinearEasing)) togetherWith
+                    fadeOut(tween(outMs, easing = LinearEasing))
             }
         }
     }

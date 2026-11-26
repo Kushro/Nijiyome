@@ -332,7 +332,7 @@ fun DetailsScreen(
         // The minute ticker drives the "Al día" -> "Continuar" switch and the unaired marks (no clock reads in getters).
         val nowSec = rememberNowSec()
         val clocked = remember(state, nowSec) { state.copy(clockSec = nowSec) }
-        DetailsContent(state = clocked, actions = actions, modifier = modifier)
+        DetailsContent(state = clocked, actions = actions, targetKey = "${kind.name.lowercase()}:$anilistId", modifier = modifier)
         state.picker?.let { request ->
             val panel = state.panel?.takeIf { it.episode == request.episode }
             SourcePickerSheet(
@@ -454,9 +454,10 @@ internal fun DetailsContent(
     state: DetailsUiState,
     actions: DetailsActions,
     modifier: Modifier = Modifier,
+    targetKey: String? = null,
 ) {
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        LoadStateContent(state = state.media, onRetry = actions.onRetry, loading = { FichaLoading(state, actions) }) { media ->
+        LoadStateContent(state = state.media, onRetry = actions.onRetry, loading = { FichaLoading(state, actions, targetKey = targetKey) }) { media ->
             if (state.adultGate) AdultGate(actions) else FichaRoot(media, state, actions)
         }
         // Loading, error and the 18+ gate have no header of their own: only the back button.

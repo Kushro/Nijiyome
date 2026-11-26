@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
@@ -246,8 +247,11 @@ internal fun WatchButton(
     val action = state.watchAction
     val labels = watchLabels(state)
     val playable = state.playable
-    val radius = height / 2
-    val leading = RoundedCornerShape(topStart = radius, bottomStart = radius, topEnd = 6.dp, bottomEnd = 6.dp)
+    // OBI-02 / T-02: outer corners follow the direction's control shape (pill in Canon, 10 dp in Tanabata, 4 dp in Obi).
+    val ctrl = NijiyomeControls.shape
+    val inner = CornerSize(4.dp)
+    val leading = ctrl.copy(topEnd = inner, bottomEnd = inner)
+    val trailing = ctrl.copy(topStart = inner, bottomStart = inner)
     val style = MaterialTheme.typography.titleMedium
     val candidates = when {
         shortLabel -> listOf(labels.card)
@@ -320,7 +324,7 @@ internal fun WatchButton(
             Button(
                 onClick = { actions.onOpenPicker(true) },
                 enabled = playable && state.panel != null && state.hasExtensions,
-                shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = radius, bottomEnd = radius),
+                shape = trailing,
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.width(chevronWidth).fillMaxHeight(),
             ) {

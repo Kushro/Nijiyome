@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.motion.LoadingPlaceholder
+import app.nijiyome.designsystem.motion.cardToDetailsTarget
 import app.nijiyome.feature.details.resources.Res
 import app.nijiyome.feature.details.resources.rd_s4_loading_cd
 import app.nijiyome.feature.details.resources.rd_s4_loading_slow
@@ -49,7 +50,7 @@ import app.nijiyome.designsystem.theme.NijiyomeControls
  * line that says it is slow with Reintentar and Volver. The same in every structure: none of them has anything to arrange yet.
  */
 @Composable
-internal fun FichaLoading(state: DetailsUiState, actions: DetailsActions, modifier: Modifier = Modifier) {
+internal fun FichaLoading(state: DetailsUiState, actions: DetailsActions, modifier: Modifier = Modifier, targetKey: String? = null) {
     val compact = isCompactWindow()
     var attempt by remember { mutableIntStateOf(0) }
     var slow by remember { mutableStateOf(false) }
@@ -65,7 +66,13 @@ internal fun FichaLoading(state: DetailsUiState, actions: DetailsActions, modifi
         }
         Column(Modifier.padding(horizontal = FichaGutter), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
-                LoadingPlaceholder(Modifier.width(if (compact) 96.dp else 120.dp).height(if (compact) 136.dp else 170.dp))
+                // MOV-01: keep the card-to-Details target mounted from frame 0 while the title loads so sharedBounds runs forward too.
+                LoadingPlaceholder(
+                    Modifier
+                        .width(if (compact) 96.dp else 120.dp)
+                        .height(if (compact) 136.dp else 170.dp)
+                        .then(if (targetKey != null) Modifier.cardToDetailsTarget(targetKey) else Modifier),
+                )
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     LoadingPlaceholder(Modifier.fillMaxWidth(0.7f).height(32.dp))
                     LoadingPlaceholder(Modifier.fillMaxWidth(0.45f).height(18.dp))

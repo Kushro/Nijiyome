@@ -52,7 +52,11 @@ internal fun BoxScope.CinemaChrome(model: PlayerChromeModel, actions: PlayerChro
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BoxScope.PointerCinema(model: PlayerChromeModel, actions: PlayerChromeActions, visible: Boolean, inPanel: Boolean) {
-    val compact = windowWidthDp() < COMPACT_WIDTH_DP
+    // REP-02: in Panel mode the 420 dp side panel narrows the video stage; move status chips to the sub-row so the source chip
+    // never collides with the download action.
+    val stageWidth = if (inPanel) windowWidthDp() - 420f else windowWidthDp()
+    val compact = stageWidth < COMPACT_WIDTH_DP
+    val chipsBelow = compact || inPanel
     PlayerControlsTransition(visible, ControlsEdge.TOP, Modifier.align(Alignment.TopCenter).fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().background(TopShade).statusBarsPadding().padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 28.dp)) {
             Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(4.dp), Alignment.CenterVertically) {
@@ -64,13 +68,15 @@ private fun BoxScope.PointerCinema(model: PlayerChromeModel, actions: PlayerChro
                     PipAndFullscreen(model, actions)
                     MoreButton(actions)
                 } else {
-                    ChromeTitle(model, Modifier.widthIn(max = 320.dp))
-                    Spacer(Modifier.width(8.dp))
-                    StatusChips(model, actions, Modifier.weight(1f))
+                    ChromeTitle(model, if (chipsBelow) Modifier.weight(1f) else Modifier.widthIn(max = 320.dp))
+                    if (!chipsBelow) {
+                        Spacer(Modifier.width(8.dp))
+                        StatusChips(model, actions, Modifier.weight(1f))
+                    }
                     WideTopActions(model, actions, episodes = !inPanel)
                 }
             }
-            if (compact) StatusChips(model, actions, Modifier.padding(start = 52.dp, top = 2.dp))
+            if (chipsBelow) StatusChips(model, actions, Modifier.padding(start = 52.dp, top = 2.dp))
         }
     }
     if (model.buffering) {

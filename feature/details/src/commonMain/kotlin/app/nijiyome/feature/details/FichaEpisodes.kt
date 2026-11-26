@@ -308,7 +308,7 @@ private fun EpisodeToolbar(state: DetailsUiState, actions: DetailsActions, ui: F
             modifier = m,
         )
     }
-    val views: @Composable () -> Unit = {
+    val views: @Composable (Boolean) -> Unit = { iconsOnly ->
         Segmented(
             options = listOf(
                 SegmentedOption(EpisodeView.LIST, stringResource(Res.string.rd_s4_view_list), icon = Icons.AutoMirrored.Outlined.ViewList),
@@ -318,7 +318,7 @@ private fun EpisodeToolbar(state: DetailsUiState, actions: DetailsActions, ui: F
             selected = state.episodeView,
             onSelect = actions.onEpisodeView,
             small = true,
-            iconOnly = compact,
+            iconOnly = iconsOnly,
         )
     }
     val select: @Composable () -> Unit = {
@@ -338,6 +338,8 @@ private fun EpisodeToolbar(state: DetailsUiState, actions: DetailsActions, ui: F
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         // phones keep one row: their view switch is icons only
         val oneRow = compact || maxWidth >= TOOLBAR_ONE_ROW
+        // CIN-01: inside the 440 dp Cinema drawer, labelled segments + Seleccionar clipped "Rejilla" to "R"; icon-only fits cleanly.
+        val iconViews = compact || maxWidth < 460.dp
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (route) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -352,13 +354,13 @@ private fun EpisodeToolbar(state: DetailsUiState, actions: DetailsActions, ui: F
             } else if (oneRow) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     search(Modifier.weight(1f))
-                    views()
+                    views(iconViews)
                     select()
                 }
             } else {
                 search(Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f)) { views() }
+                    Box(Modifier.weight(1f)) { views(iconViews) }
                     select()
                 }
             }
@@ -496,16 +498,22 @@ private fun FichaEpisode(
                 EpisodeSide(item, state, actions, tag, watched, current, compact, entries)
             }
             when (view) {
-                EpisodeView.LIST -> Row(
-                    Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = 8.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SelectionCheckbox(selected, visible = selection.active && !item.unaired)
-                    mark()
-                    if (!compact) EpisodeThumb(episode, fallbackArt, Modifier.width(112.dp), numbered = false)
-                    EpisodeText(heading, meta, fraction, Modifier.weight(1f))
-                    side()
+                EpisodeView.LIST -> BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    // CIN-01: in a narrow pane (440 dp Cinema drawer) a 112 dp thumb + inline air-date tag left ~40 dp for the title.
+                    // Move the tag under the title and use the compact menu so episode titles stay readable.
+                    val narrow = compact || maxWidth < 500.dp
+                    val stackedMeta = if (narrow) listOfNotNull(tag, meta).joinToString(" · ").takeIf { it.isNotEmpty() } else meta
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = 8.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        SelectionCheckbox(selected, visible = selection.active && !item.unaired)
+                        mark()
+                        if (!narrow) EpisodeThumb(episode, fallbackArt, Modifier.width(112.dp), numbered = false)
+                        EpisodeText(heading, stackedMeta, fraction, Modifier.weight(1f), lines = if (narrow) 2 else 1)
+                        EpisodeSide(item, state, actions, if (narrow) null else tag, watched, current, narrow, entries)
+                    }
                 }
                 EpisodeView.CARDS -> Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box {

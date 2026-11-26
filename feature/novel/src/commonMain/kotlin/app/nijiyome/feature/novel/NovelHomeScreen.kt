@@ -438,7 +438,8 @@ private fun NovelFeature(
                         }
                     }
                     Row(Modifier.fillMaxWidth().padding(if (compact) 16.dp else 20.dp), horizontalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 24.dp), verticalAlignment = if (compact) Alignment.CenterVertically else Alignment.Bottom) {
-                        Box(Modifier.width(if (compact) 112.dp else 220.dp)) { TitleCard(data, onClick = { onOpen(media) }, context = CardContext.HERO, modifier = Modifier.cardToDetailsSource(data.key)) }
+                        // MAN-02: 184 dp keeps the tanzaku poster + display title cleanly inside FeaturePager's 420 dp cap without clipping descenders.
+                        Box(Modifier.width(if (compact) 112.dp else 184.dp)) { TitleCard(data, onClick = { onOpen(media) }, context = CardContext.HERO, modifier = Modifier.cardToDetailsSource(data.key)) }
                         Box(Modifier.weight(1f)) { text() }
                     }
                 }

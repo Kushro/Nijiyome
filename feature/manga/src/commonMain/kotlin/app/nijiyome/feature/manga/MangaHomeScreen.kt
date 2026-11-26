@@ -590,7 +590,8 @@ private fun FeatureSlide(media: Media, state: MangaHomeState, actions: MangaHome
         }
     } else {
         Row(Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Bottom) {
-            Box(Modifier.width(220.dp)) { TitleCard(data, onClick = { actions.onOpen(media) }, context = CardContext.HERO, modifier = Modifier.cardToDetailsSource(data.key)) }
+            // MAN-02: 184 dp keeps the tanzaku poster + display title cleanly inside FeaturePager's 420 dp cap without clipping descenders.
+            Box(Modifier.width(184.dp)) { TitleCard(data, onClick = { actions.onOpen(media) }, context = CardContext.HERO, modifier = Modifier.cardToDetailsSource(data.key)) }
             Box(Modifier.weight(1f)) { text() }
         }
     }

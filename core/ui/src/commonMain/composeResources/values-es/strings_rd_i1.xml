@@ -54,7 +54,7 @@
     <string name="rd_i1_drop_title_video">Reproducir archivo local</string>
     <string name="rd_i1_drop_title_subtitle">Cargar subtítulo</string>
     <string name="rd_i1_drop_title_unsupported">Este archivo no se puede abrir</string>
-    <string name="rd_i1_drop_detail_extension">Compatible con Tatakai. Queda activa al instalarla y la puedes revisar o desactivar en Fuentes.</string>
+    <string name="rd_i1_drop_detail_extension">Paquete de extensión .kai. Queda activa al instalarla y la puedes revisar o desactivar en Fuentes.</string>
     <string name="rd_i1_drop_detail_torrent">Puedes elegir archivos antes de empezar. Se transmite mientras baja.</string>
     <string name="rd_i1_drop_detail_magnet">Los metadatos llegan de los pares; los archivos se muestran en cuanto estén.</string>
     <string name="rd_i1_drop_detail_video">Emparejarlo con un título guarda el progreso en tu lista.</string>

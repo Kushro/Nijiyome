@@ -54,7 +54,7 @@
     <string name="rd_i1_drop_title_video">Play local file</string>
     <string name="rd_i1_drop_title_subtitle">Load subtitle</string>
     <string name="rd_i1_drop_title_unsupported">This file cannot be opened</string>
-    <string name="rd_i1_drop_detail_extension">Compatible with Tatakai. It is active once installed; review or turn it off in Sources.</string>
+    <string name="rd_i1_drop_detail_extension">A .kai extension package. It is active once installed; review or turn it off in Sources.</string>
     <string name="rd_i1_drop_detail_torrent">You can choose files before it starts. It streams while it downloads.</string>
     <string name="rd_i1_drop_detail_magnet">The metadata comes from the peers; the files show as soon as they arrive.</string>
     <string name="rd_i1_drop_detail_video">Matching it to a title saves the progress in your list.</string>

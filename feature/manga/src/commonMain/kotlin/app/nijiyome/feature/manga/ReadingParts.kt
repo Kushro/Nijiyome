@@ -162,10 +162,10 @@ internal fun ReadingSearchField(
             singleLine = true,
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             placeholder = { Text(placeholder) },
-            shape = RoundedCornerShape(28.dp),
+            shape = NijiyomeControls.shape,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
-            modifier = Modifier.weight(1f).widthIn(max = 720.dp),
+            modifier = Modifier.weight(1f).widthIn(max = 560.dp),
         )
         if (showClear) TextButton(onClick = onClear, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_clear)) }
     }

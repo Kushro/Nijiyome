@@ -129,6 +129,9 @@ fun SettingsScreen(
     onOpenDebrid: () -> Unit = {},
     initialItemId: String? = null,
     onOpenCalendar: (() -> Unit)? = null,
+    jumpSection: SettingsSection? = null,
+    jumpItemId: String? = null,
+    jumpTick: Int = 0,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = LocalAppSnackbar.current
@@ -168,6 +171,9 @@ fun SettingsScreen(
         onOpenDebrid = onOpenDebrid,
         onOpenCalendar = onOpenCalendar,
         onBack = onBack,
+        jumpSection = jumpSection,
+        jumpItemId = jumpItemId,
+        jumpTick = jumpTick,
         modifier = modifier,
     )
 }
@@ -279,6 +285,9 @@ private fun SettingsContent(
     onOpenDebrid: () -> Unit,
     onOpenCalendar: (() -> Unit)?,
     onBack: (() -> Unit)?,
+    jumpSection: SettingsSection? = null,
+    jumpItemId: String? = null,
+    jumpTick: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val koin = getKoin()
@@ -292,6 +301,18 @@ private fun SettingsContent(
         SettingsNav(categories, initialCategory ?: categories.first(), open = initialCategory != null)
     }
     val jump = remember(initialSection, initialItemId) { SettingsJumpState(targetItem) }
+    // AJ-07: live jump from Ctrl+K when Settings is already open (switch category + scroll + highlight in place).
+    var lastHandledJump by remember { mutableIntStateOf(jumpTick) }
+    LaunchedEffect(jumpTick) {
+        if (jumpTick > lastHandledJump) {
+            lastHandledJump = jumpTick
+            val item = jumpItemId ?: jumpSection?.defaultItem()
+            val cat = (SettingsCatalog.categoryOf(item) ?: jumpSection?.toCategory())
+                ?.let { c -> if (c in categories) c else if (c == SettingsCategory.SYSTEM) SettingsCategory.SOURCES else null }
+            if (cat != null) nav.select(cat)
+            if (item != null) jump.jumpTo(item)
+        }
+    }
     val catalog = SettingsCatalog.items
     val allowed = remember(categories) { categories.toSet() }
     val results = remember(nav.query, catalog, allowed) { SettingsCatalog.search(nav.query, catalog, allowed) }

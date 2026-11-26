@@ -72,8 +72,8 @@ class MaterialCard private constructor(override val id: String, private val styl
         when {
             context == CardContext.COMPACT -> MaterialCompactRow(data, show, onClick, onLongClick, modifier.fillMaxWidth())
             context == CardContext.HERO -> MaterialBanner(data, show, onClick, onLongClick, modifier.fillMaxWidth())
-            context == CardContext.CONTINUE && style != CardStyle.MINIMAL ->
-                MaterialContinue(data, size, show, onClick, onLongClick, modifier)
+            // CAN-02: every Material card style (including legacy MINIMAL) uses the wide resume card in CONTINUE.
+            context == CardContext.CONTINUE -> MaterialContinue(data, size, show, onClick, onLongClick, modifier)
             else -> {
                 val sized = when (context) {
                     CardContext.ROW, CardContext.CONTINUE, CardContext.WISH -> modifier.width(cardWidth())

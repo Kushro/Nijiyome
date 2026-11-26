@@ -169,12 +169,14 @@ internal fun CardLookRows(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) 
  */
 @Composable
 internal fun MotionLookRow(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit) {
+    // MOV-05: stack full-width so "Desactivadas" never clips to "Desactiva…" beside the label.
     LookSegmented(
         Res.string.settings_look_motion,
         Motion.entries,
         look.motion,
         { it.labelRes() },
         hint = stringResource(Res.string.rd_s10_motion_master_hint),
+        inline = false,
     ) { v -> onChange { it.copy(motion = v) } }
 }
 
@@ -198,10 +200,11 @@ private fun <T> LookSegmented(
     optionLabel: (T) -> StringResource,
     hint: String? = null,
     small: Boolean = false,
+    inline: Boolean = options.size <= 4,
     onSelect: (T) -> Unit,
 ) {
     // Up to four short options sit beside the label on wide rows (artifact density); more go under it.
-    SettingRow(stringResource(labelRes), hint = hint, stack = true, inline = options.size <= 4) {
+    SettingRow(stringResource(labelRes), hint = hint, stack = true, inline = inline) {
         Segmented(
             options = options.map { SegmentedOption(it, stringResource(optionLabel(it))) },
             selected = selected,

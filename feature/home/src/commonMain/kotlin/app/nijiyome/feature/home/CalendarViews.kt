@@ -214,7 +214,12 @@ fun CalendarScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifie
                             structure = structure,
                             state = state,
                             wide = wide,
-                            onStructure = { s -> updateDesign { it.copy(structures = it.structures.copy(calendar = s)) } },
+                            onStructure = { s ->
+                                if (s == CalendarStructure.WEEK && state.view == CalendarView.MONTH) {
+                                    vm.setView(CalendarView.WEEK)
+                                }
+                                updateDesign { it.copy(structures = it.structures.copy(calendar = s)) }
+                            },
                             onShift = vm::shift,
                             onToday = vm::goToday,
                             onOnlyFollowed = { vm.setOnlyFollowed(!state.onlyFollowed) },
@@ -307,9 +312,14 @@ private fun CalendarToolbar(
     onToday: () -> Unit,
     onOnlyFollowed: () -> Unit,
 ) {
+    val showingMonth = structure == CalendarStructure.WEEK && state.view == CalendarView.MONTH
     val options = listOf(
         SegmentedOption(CalendarStructure.DEPARTURES, stringResource(Res.string.rd_s2_cal_board), icon = Icons.Outlined.DepartureBoard),
-        SegmentedOption(CalendarStructure.WEEK, stringResource(Res.string.home_cal_view_week), icon = Icons.Outlined.ViewWeek),
+        SegmentedOption(
+            CalendarStructure.WEEK,
+            stringResource(if (showingMonth) Res.string.home_cal_view_month else Res.string.home_cal_view_week),
+            icon = if (showingMonth) Icons.Outlined.CalendarMonth else Icons.Outlined.ViewWeek,
+        ),
         SegmentedOption(CalendarStructure.AGENDA, stringResource(Res.string.home_cal_view_agenda), icon = Icons.Outlined.ViewAgenda),
     )
     val filter: @Composable () -> Unit = {
@@ -611,9 +621,15 @@ private fun MonthGrid(days: List<CalendarDay>, selected: LocalDate, wide: Boolea
                     Box(
                         Modifier
                             .weight(1f)
-                            .aspectRatio(if (wide) 0.9f else 0.8f)
+                            .aspectRatio(if (wide) 1.25f else 0.85f)
                             .clip(MaterialTheme.shapes.small)
-                            .background(if (isSel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)
+                            .background(
+                                when {
+                                    isSel -> MaterialTheme.colorScheme.primaryContainer
+                                    inMonth -> MaterialTheme.colorScheme.surfaceContainer
+                                    else -> MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.6f)
+                                },
+                            )
                             .then(if (day.date == ctx.today) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
                             .clickable { onSelect(day.date) }
                             .semantics {
@@ -630,7 +646,8 @@ private fun MonthGrid(days: List<CalendarDay>, selected: LocalDate, wide: Boolea
                                 color = when {
                                     isSel -> onSel
                                     inMonth -> MaterialTheme.colorScheme.onSurface
-                                    else -> MaterialTheme.colorScheme.outline
+                                    // MES-01: muted neutral ink instead of scheme.outline (which carries a green tint under Tanabata).
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
                                 },
                             )
                             if (wide) {

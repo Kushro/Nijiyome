@@ -51,7 +51,7 @@ All four are differentiators the design should make visible (confirmed):
 
 - Real screenshots of the current app (desktop, Android) and of Hayase: `docs/redesign/capturas/`.
 - Reference study of LiMusic Forge (the owner's own app): `docs/redesign/referencia-limusic-forge.md`.
-- No user research, analytics or testimonials exist; none may be invented.
+- No user research, usage metrics or testimonials exist; none may be invented.
 
 ## Product Principles
 

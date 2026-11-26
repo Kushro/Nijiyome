@@ -90,7 +90,7 @@ import app.nijiyome.designsystem.theme.NijiyomeControls
 
 /** What a dropped or shared file is, by its name (or a magnet link). */
 enum class DropKind {
-    /** A Tatakai `.kai` extension. */
+    /** A `.kai` extension bundle (compatible with Tatakai Next). */
     EXTENSION,
     TORRENT,
     MAGNET,

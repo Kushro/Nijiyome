@@ -75,7 +75,6 @@ import org.jetbrains.compose.resources.stringResource
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import app.nijiyome.designsystem.theme.NijiyomeControls
 
 // Sparkles redesign, lane S2: the "Esta noche" pieces (artifact screens-a.js `tonight`, `agenda`, `agendaList`): the row that joins
@@ -454,11 +453,13 @@ internal fun NowTick(vertical: Boolean, nowSec: Long) {
     }
 }
 
-private val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+// HORA-01: explicit 24 h pattern ("09:30", "21:00") so bundling jdk.localedata never flips bare "es" locales to 12 h "a. m. / p. m."
+// and the departure board's monospaced time column always fits without clipping.
+private val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-/** Short local time ("19:30"), in the locale the app runs in now (Ajustes › Idioma can change it while the app is open). */
+/** Short local 24 h time ("19:30"). */
 internal fun formatTime(epochSec: Long): String =
-    Instant.ofEpochSecond(epochSec).atZone(ZoneId.systemDefault()).format(TIME_FORMAT.withLocale(java.util.Locale.getDefault()))
+    Instant.ofEpochSecond(epochSec).atZone(ZoneId.systemDefault()).format(TIME_FORMAT)
 
 private fun timeOf(ep: AiringEpisode): String = formatTime(ep.airingAtEpochSec)
 

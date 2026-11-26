@@ -489,10 +489,12 @@ private fun FichaAction(
     val container = if (on) scheme.secondaryContainer else Color.Transparent
     val contentColor = if (on) scheme.onSecondaryContainer else scheme.onSurface
     Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
+        // OBI-02 / T-02: action buttons follow the direction's control radius instead of forcing pills.
+        val shape = NijiyomeControls.shape
         if (checked != null) {
-            Surface(checked = checked, onCheckedChange = { onClick() }, enabled = enabled, shape = CircleShape, color = container, contentColor = contentColor, border = border, modifier = semantics, content = content)
+            Surface(checked = checked, onCheckedChange = { onClick() }, enabled = enabled, shape = shape, color = container, contentColor = contentColor, border = border, modifier = semantics, content = content)
         } else {
-            Surface(onClick = onClick, enabled = enabled, shape = CircleShape, color = container, contentColor = contentColor, border = border, modifier = semantics, content = content)
+            Surface(onClick = onClick, enabled = enabled, shape = shape, color = container, contentColor = contentColor, border = border, modifier = semantics, content = content)
         }
     }
 }
@@ -606,7 +608,7 @@ private fun ReminderChip(reminder: Reminder, modifier: Modifier = Modifier) {
         Surface(
             checked = reminder.on,
             onCheckedChange = reminder.set,
-            shape = CircleShape,
+            shape = NijiyomeControls.shape,
             color = Color.Transparent,
             contentColor = if (reminder.on) scheme.primary else scheme.onSurfaceVariant,
             border = BorderStroke(1.dp, scheme.outlineVariant),

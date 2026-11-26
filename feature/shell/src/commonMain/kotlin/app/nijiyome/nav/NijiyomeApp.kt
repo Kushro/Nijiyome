@@ -387,6 +387,10 @@ private fun AppShell(
     var settingsModalOpen by remember { mutableStateOf(false) }
     var settingsModalSection by remember { mutableStateOf<SettingsSection?>(null) }
     var settingsModalItemId by remember { mutableStateOf<String?>(null) }
+    // AJ-07: live jump into the already-open Settings page (no stacked second Settings page or duplicate header).
+    var settingsPageSection by remember { mutableStateOf<SettingsSection?>(null) }
+    var settingsPageItemId by remember { mutableStateOf<String?>(null) }
+    var settingsPageJumpTick by remember { mutableStateOf(0) }
 
     val allowedSettingsSections = remember(koin) {
         val hasLists = koin.getOrNull<ListsRepository>() != null
@@ -414,14 +418,11 @@ private fun AppShell(
     fun openSettings(section: SettingsSection?, itemId: String?) {
         val top = backStack.lastOrNull()
         if (top == Route.Settings || top is Route.SettingsSection) {
-            // AJ-07: already on the Settings page: go to the setting there instead of stacking the modal over the page.
-            if (section != null) {
-                val target = Route.SettingsSection(section, itemId)
-                if (top != target) {
-                    // The rail's Settings page stays under it (Back returns there); a section page is replaced.
-                    if (top is Route.SettingsSection) backStack.removeLastOrNull()
-                    backStack.add(target)
-                }
+            // AJ-07: already on the Settings page: jump in place instead of stacking a second Settings page or modal.
+            if (section != null || itemId != null) {
+                settingsPageSection = section
+                settingsPageItemId = itemId
+                settingsPageJumpTick++
             }
         } else if (wide && shortcuts != null) {
             settingsModalSection = section
@@ -569,6 +570,9 @@ private fun AppShell(
                                         backStack, wide, available, snackbar, shortcuts,
                                         openSettingsAt = { section -> openSettings(section, null) },
                                         openLinkMonitor = openLinkMonitor,
+                                        settingsPageSection = settingsPageSection,
+                                        settingsPageItemId = settingsPageItemId,
+                                        settingsPageJumpTick = settingsPageJumpTick,
                                     )
                                 }
                             }
@@ -692,14 +696,14 @@ private fun AppNavDisplay(
     shortcuts: ShellShortcuts?,
     openSettingsAt: (SettingsSection) -> Unit,
     openLinkMonitor: (() -> Unit)?,
+    settingsPageSection: SettingsSection? = null,
+    settingsPageItemId: String? = null,
+    settingsPageJumpTick: Int = 0,
 ) {
-    // List-detail on expanded windows: Search/Library are list panes, Details the detail pane.
-    // BUG-045: two panes only when the window really is wide and tall enough (read from the configuration, which follows rotation at
-    // once); a phone in portrait showed Search + a ~510 px Details with the title split letter by letter.
-    // Tablet landscape (Galaxy Tab S9+, 1318 dp): a list pane alone (Library, Search, Calendar...) got half the width and an empty
-    // detail pane beside it, so the screen looked like a phone in portrait. Two panes only while a detail is open next to its list.
+    // List-detail on expanded windows: Character / ProviderItem / ActivityThread open beside their list;
+    // Details (anime, manga, novel) always opens full width (MAN-04 / NOV-01 / EXP-05).
     val detailOnTop = when (backStack.lastOrNull()) {
-        is Route.Details, is Route.Character, is Route.ProviderItem, is Route.NovelDetails, is Route.ActivityThread -> true
+        is Route.Character, is Route.ProviderItem, is Route.ActivityThread -> true
         else -> false
     }
     val twoPanes = detailOnTop && windowWidthDp() >= TWO_PANE_MIN_WIDTH_DP && windowHeightDp() >= RAIL_MIN_HEIGHT_DP
@@ -971,13 +975,9 @@ private fun AppNavDisplay(
                     )
                 }
             }
-            // MAN-04 / NOV-01: manga and novel Details are never a detail pane. They have their own main + information columns;
-            // beside the catalog (or Biblioteca) they became three squeezed columns. They open full width, like the artifact.
-            entry<Route.Details>(
-                metadata = { key: Route.Details ->
-                    if (key.kind == MediaKind.MANGA) CardToDetailsMetadata else ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata
-                },
-            ) { key ->
+            // MAN-04 / NOV-01 / EXP-05: Details (anime, manga and novel) always opens full width; it already has its own two-column
+            // layout (main + sources/info/drawer), so pairing it as a detailPane beside Search, Calendar or Library crushed all three.
+            entry<Route.Details>(metadata = CardToDetailsMetadata) { key ->
                 if (key.kind == MediaKind.MANGA) {
                     // parity wave B (16 §3.5, worker s): manga details (own screen, same route so every Media click works).
                     MangaDetailsScreen(
@@ -1060,6 +1060,9 @@ private fun AppNavDisplay(
                     onBack = if (wide) null else ::back,
                     onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
                     onOpenCalendar = { backStack.navigateTop(Route.Calendar) },
+                    jumpSection = settingsPageSection,
+                    jumpItemId = settingsPageItemId,
+                    jumpTick = settingsPageJumpTick,
                 )
             }
             entry<Route.SettingsSection> { key ->
@@ -1072,6 +1075,9 @@ private fun AppNavDisplay(
                     onOpenDebrid = { push(Route.Torrents(TorrentSection.DEBRID)) },
                     initialItemId = key.itemId,
                     onOpenCalendar = { backStack.navigateTop(Route.Calendar) },
+                    jumpSection = settingsPageSection,
+                    jumpItemId = settingsPageItemId,
+                    jumpTick = settingsPageJumpTick,
                 )
             }
             entry<Route.Extensions> {
