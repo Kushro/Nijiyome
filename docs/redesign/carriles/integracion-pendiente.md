@@ -161,3 +161,11 @@ S10 (`worktree-agent-a3ddd9e8644dce002`), S11 (`worktree-agent-ab0875c549f612bf4
   Hoy `PlayerSeekLegend` solo se llama desde `chrome/CinemaChrome.kt`. Agregarla a `chrome/` Mínimo y Panel.
 - **B-OCULTA-01 (falta, conocido):** fuente de manga preferida global.
 - Textos sin uso que aún dicen «Torrents › Descargas»: `torrent_android_background_off`, `torrent_settings_background_locked`.
+
+## Tras la revisión visual (correctores)
+
+- Textura de hoja aplicada por fuera de la superficie (deja marcas en las esquinas): mismo defecto que REP-04 en `feature/manga` y
+  `feature/novel` (hojas del lector, LEC-03), `feature/search` y `feature/home/HomeEdit` (rama de hoja inferior).
+- FE-03: el texto «Ver N títulos» del botón de facetas vive en `core/ui/.../patterns/Facets.kt` (plural `rd_i1_fac_show`); en el
+  selector de fuentes debería decir «fuentes».
+- `AdaptiveSheet` ganó `sideSheetWidth` y `scrimAlpha` (opcionales).
