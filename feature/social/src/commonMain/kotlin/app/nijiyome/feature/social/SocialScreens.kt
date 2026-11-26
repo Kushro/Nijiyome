@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -160,7 +161,8 @@ fun ProfileScreen(
         contentWindowInsets = app.nijiyome.ui.state.screenInsets,
         topBar = {
             TopAppBar(
-                title = { Text(user?.name ?: stringResource(Res.string.social_profile_title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                // PER-01: the name is the header's; the bar keeps the page name so it is not said twice.
+                title = { Text(stringResource(Res.string.social_profile_title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
@@ -327,8 +329,10 @@ private fun ProfileContent(
                                     modifier = Modifier.weight(1f),
                                     maxLines = 4,
                                 )
-                                IconButton(onClick = { vm.postStatus(draft) }, enabled = draft.isNotBlank() && !state.posting) {
-                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(Res.string.social_post))
+                                // PER-02: a labelled "Publicar" button (the artifact's), not a bare grey arrow.
+                                Button(onClick = { vm.postStatus(draft) }, enabled = draft.isNotBlank() && !state.posting) {
+                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Text(stringResource(Res.string.rd_s7_soc_publish), modifier = Modifier.padding(start = 8.dp))
                                 }
                             }
                             FilterChip(
@@ -385,11 +389,13 @@ private fun ProfileTab.labelRes(): StringResource = when (this) {
 @Composable
 private fun ProfileHeader(user: SocialUser, followBusy: Boolean, onFollow: () -> Unit, onEdit: () -> Unit, onTab: (ProfileTab) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.fillMaxWidth()) {
+        // PER-01: the banner keeps its 3.2:1 shape up to 200 dp tall (artifact), so activity shows on the first screen.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val bannerHeight = (maxWidth / 3.2f).coerceAtMost(PROFILE_BANNER_MAX)
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .aspectRatio(3.2f)
+                    .height(bannerHeight)
                     .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .decor(DecorRegion.HERO),
@@ -403,9 +409,20 @@ private fun ProfileHeader(user: SocialUser, followBusy: Boolean, onFollow: () ->
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 28.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(user.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
-                if (user.isFollower && !user.isViewer) Pill(stringResource(Res.string.social_follows_you), tone = PillTone.NEUTRAL)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(user.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+                    if (user.isFollower && !user.isViewer) Pill(stringResource(Res.string.social_follows_you), tone = PillTone.NEUTRAL)
+                }
+                // Followers and following on the name's line block (artifact), not a row of their own.
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { onTab(ProfileTab.FOLLOWERS) }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        Text(stringResource(Res.string.social_followers_count, user.followers), style = MaterialTheme.typography.bodyMedium)
+                    }
+                    TextButton(onClick = { onTab(ProfileTab.FOLLOWING) }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        Text(stringResource(Res.string.social_following_count, user.following), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
             when {
                 user.isViewer -> OutlinedButton(onClick = onEdit) {
@@ -422,17 +439,33 @@ private fun ProfileHeader(user: SocialUser, followBusy: Boolean, onFollow: () ->
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            TextButton(onClick = { onTab(ProfileTab.FOLLOWERS) }) {
-                Text(stringResource(Res.string.social_followers_count, user.followers), style = MaterialTheme.typography.bodyMedium)
-            }
-            TextButton(onClick = { onTab(ProfileTab.FOLLOWING) }) {
-                Text(stringResource(Res.string.social_following_count, user.following), style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-        user.about?.let { Text(it, style = MaterialTheme.typography.bodyMedium, maxLines = 12, overflow = TextOverflow.Ellipsis) }
+        user.about?.let { about -> ProfileAbout(about) }
     }
 }
+
+/** PER-01: the bio in four lines (artifact), the rest one tap away. */
+@Composable
+private fun ProfileAbout(about: String) {
+    var expanded by rememberSaveable(about) { mutableStateOf(false) }
+    var overflows by remember(about) { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            about,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = if (expanded) Int.MAX_VALUE else PROFILE_ABOUT_LINES,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { if (!expanded) overflows = it.hasVisualOverflow },
+        )
+        if (overflows || expanded) {
+            TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                Text(stringResource(if (expanded) Res.string.rd_s7_soc_about_less else Res.string.rd_s7_soc_about_more))
+            }
+        }
+    }
+}
+
+private val PROFILE_BANNER_MAX = 200.dp
+private const val PROFILE_ABOUT_LINES = 4
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
