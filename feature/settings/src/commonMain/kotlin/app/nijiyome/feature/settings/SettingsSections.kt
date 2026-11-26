@@ -156,7 +156,7 @@ private fun PlaybackCategory(state: SettingsUiState, vm: SettingsViewModel) {
     val s = state.settings
     SettingsGroup(stringResource(Res.string.rd_s10_grp_engine)) {
         SettingAnchor("player_engine") {
-            SettingRow(stringResource(Res.string.settings_engine), stringResource(s.playerEngine.shown().hintRes()), stack = true, divider = false) {
+            SettingRow(stringResource(Res.string.settings_engine), stringResource(s.playerEngine.shown().hintRes()), stack = true, divider = false, inline = true) {
                 Segmented(options = engineOptions(), selected = s.playerEngine.shown(), onSelect = vm::setPlayerEngine, fillWidth = true)
             }
             // What the External engine needs is the platform's (Android: the app to hand the video to; desktop: mpv).
@@ -286,7 +286,7 @@ private fun presetHintRes(id: String): StringResource = when (id) {
 /** Defaults of the libmpv quality engine under the preset. Each playback starts from these; the player changes them live. */
 @Composable
 private fun QualityDefaultsRows(q: PlayerQualityPrefs, onChange: ((PlayerQualityPrefs) -> PlayerQualityPrefs) -> Unit) {
-    SettingRow(stringResource(Res.string.settings_quality_tier), stringResource(Res.string.settings_quality_tier_hint), stack = true) {
+    SettingRow(stringResource(Res.string.settings_quality_tier), stringResource(Res.string.settings_quality_tier_hint), stack = true, inline = true) {
         Segmented(
             options = listOf(
                 SegmentedOption(QualityTier.FAST, stringResource(Res.string.settings_quality_tier_fast)),
@@ -400,7 +400,7 @@ private fun SourcesCategory(state: SettingsUiState, vm: SettingsViewModel, actio
     val prefs = s.sourcePrefs
     SettingsGroup(stringResource(Res.string.rd_s10_grp_selection)) {
         SettingAnchor("player_sources") {
-            SettingRow(stringResource(Res.string.settings_source_mode), stringResource(Res.string.settings_source_mode_hint), stack = true, divider = false) {
+            SettingRow(stringResource(Res.string.settings_source_mode), stringResource(Res.string.settings_source_mode_hint), stack = true, divider = false, inline = true) {
                 Segmented(
                     options = listOf(
                         SegmentedOption(SourceMode.AUTO, stringResource(UiR.string.src_mode_auto)),
@@ -411,7 +411,7 @@ private fun SourcesCategory(state: SettingsUiState, vm: SettingsViewModel, actio
                     fillWidth = true,
                 )
             }
-            SettingRow(stringResource(Res.string.settings_prefer), stack = true) {
+            SettingRow(stringResource(Res.string.settings_prefer), stack = true, inline = true) {
                 Segmented(
                     options = listOf<SegmentedOption<SourceKind?>>(
                         SegmentedOption(null, stringResource(Res.string.settings_prefer_any)),
@@ -425,7 +425,7 @@ private fun SourcesCategory(state: SettingsUiState, vm: SettingsViewModel, actio
             }
         }
         SettingAnchor("src_min_quality") {
-            SettingRow(stringResource(Res.string.settings_min_quality), stack = true) {
+            SettingRow(stringResource(Res.string.settings_min_quality), stack = true, inline = true) {
                 Segmented(
                     options = listOf(Quality.P480, Quality.P720, Quality.P1080).map { SegmentedOption(it, it.label()) },
                     selected = prefs.minQuality,
@@ -471,7 +471,7 @@ private fun MetadataCategory(state: SettingsUiState, vm: SettingsViewModel) {
             }
         }
         SettingAnchor("metadata_ttl") {
-            SettingRow(stringResource(Res.string.settings_metadata_ttl), stringResource(Res.string.settings_metadata_ttl_hint), stack = true) {
+            SettingRow(stringResource(Res.string.settings_metadata_ttl), stringResource(Res.string.settings_metadata_ttl_hint), stack = true, inline = true) {
                 Segmented(
                     options = TTL_HOURS.map { h ->
                         SegmentedOption(h, if (h < 48) stringResource(Res.string.settings_ttl_hours, h) else stringResource(Res.string.settings_ttl_days, h / 24))

@@ -202,7 +202,7 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
     // ---- Tema y color
     SettingsGroup(stringResource(Res.string.rd_s10_grp_theme), icon = Icons.Outlined.Contrast) {
         SettingAnchor("theme_mode") {
-            SettingRow(stringResource(Res.string.settings_mode), stack = true, divider = false) {
+            SettingRow(stringResource(Res.string.settings_mode), stack = true, divider = false, inline = true) {
                 Segmented(
                     options = listOf(
                         SegmentedOption(ThemeMode.SYSTEM, stringResource(Res.string.settings_mode_system)),
@@ -233,7 +233,7 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
         }
         SettingAnchor("contrast") {
             val contrastEnabled = !(s.dynamicColor && dynamicColorSupported)
-            SettingRow(stringResource(Res.string.settings_contrast), hint = if (contrastEnabled) null else stringResource(Res.string.rd_s10_contrast_needs_palette), stack = true) {
+            SettingRow(stringResource(Res.string.settings_contrast), hint = if (contrastEnabled) null else stringResource(Res.string.rd_s10_contrast_needs_palette), stack = true, inline = true) {
                 Segmented(
                     options = ContrastPref.entries.map { SegmentedOption(it, stringResource(it.labelRes()), enabled = contrastEnabled) },
                     selected = s.contrast,
@@ -243,7 +243,7 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
             }
         }
         SettingAnchor("language") {
-            SettingRow(stringResource(Res.string.settings_language), stack = true) {
+            SettingRow(stringResource(Res.string.settings_language), stack = true, inline = true) {
                 Segmented(
                     options = listOf(
                         SegmentedOption(AppLanguage.SYSTEM, stringResource(Res.string.settings_lang_system)),

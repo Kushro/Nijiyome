@@ -197,7 +197,8 @@ private fun <T> LookSegmented(
     small: Boolean = false,
     onSelect: (T) -> Unit,
 ) {
-    SettingRow(stringResource(labelRes), hint = hint, stack = true) {
+    // Up to four short options sit beside the label on wide rows (artifact density); more go under it.
+    SettingRow(stringResource(labelRes), hint = hint, stack = true, inline = options.size <= 4) {
         Segmented(
             options = options.map { SegmentedOption(it, stringResource(optionLabel(it))) },
             selected = selected,
