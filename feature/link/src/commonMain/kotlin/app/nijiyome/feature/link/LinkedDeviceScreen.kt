@@ -153,7 +153,8 @@ import app.nijiyome.ui.resources.*
  */
 @Composable
 fun LinkedDeviceScreen(
-    onBack: () -> Unit,
+    /** Null on a rail destination (wide windows): no back arrow next to the title (LNK-03). */
+    onBack: (() -> Unit)?,
     onPlay: (PlayerArgs) -> Unit,
     modifier: Modifier = Modifier,
     /** docs/redesign/13 §3.10: opens the PC extension server screen; null hides its entry card. */
@@ -179,7 +180,7 @@ fun LinkedDeviceScreen(
 }
 
 @Composable
-private fun LinkUnavailable(onBack: () -> Unit, modifier: Modifier) {
+private fun LinkUnavailable(onBack: (() -> Unit)?, modifier: Modifier) {
     Scaffold(
         modifier = modifier,
         contentWindowInsets = screenInsets,
@@ -197,7 +198,7 @@ private fun LinkUnavailable(onBack: () -> Unit, modifier: Modifier) {
 }
 
 @Composable
-internal fun LinkTopBar(onBack: () -> Unit, meta: String?, actions: @Composable () -> Unit = {}) {
+internal fun LinkTopBar(onBack: (() -> Unit)?, meta: String?, actions: @Composable () -> Unit = {}) {
     TopAppBar(
         title = {
             Column {
@@ -206,7 +207,9 @@ internal fun LinkTopBar(onBack: () -> Unit, meta: String?, actions: @Composable 
             }
         },
         navigationIcon = {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
+            if (onBack != null) {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }
+            }
         },
         actions = { actions() },
     )
@@ -216,7 +219,7 @@ internal fun LinkTopBar(onBack: () -> Unit, meta: String?, actions: @Composable 
 
 @Composable
 private fun LinkClientScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     onPlay: (PlayerArgs) -> Unit,
     modifier: Modifier,
     onOpenExtensionServers: (() -> Unit)?,
@@ -347,18 +350,16 @@ private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
         is LinkState.Failed -> FailedPanel(link.message, a)
         is LinkState.Paired -> {
             state.pendingHandoff?.let { h -> HandoffCard(h, onPlay = a.onPlayHandoff, onDismiss = a.onDismissHandoff) }
-            FlowRow(
-                Modifier.fillMaxWidth().decor(DecorRegion.LINK),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                val online = link.reachable
+            val online = link.reachable
+            val cards = mutableListOf<@Composable (Modifier) -> Unit>()
+            cards.add { m ->
                 StatCard(
                     icon = Icons.Outlined.Link,
                     title = state.device?.serverName ?: link.pc.serverName,
                     state = stringResource(if (online) Res.string.linked_connected else Res.string.linked_unreachable),
                     tone = if (online) PillTone.OK else PillTone.ERR,
                     text = state.latencyMs?.takeIf { online }?.let { stringResource(Res.string.rd_s9_link_latency, it) } ?: stringResource(Res.string.linked_unreachable_hint),
+                    modifier = m,
                 ) {
                     if (online) {
                         TextButton(onClick = a.onContinue, enabled = state.continueEntry != null && !state.handingOff) { Text(stringResource(Res.string.linked_continue)) }
@@ -366,6 +367,8 @@ private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
                         TextButton(onClick = a.onRetry) { Text(stringResource(UiR.string.ui_retry)) }
                     }
                 }
+            }
+            cards.add { m ->
                 val caps = (state.capabilities as? LoadState.Ok)?.value
                 val current = caps?.profiles?.firstOrNull { it.id == (state.selectedProfile ?: caps.defaultProfile) }
                 StatCard(
@@ -374,16 +377,22 @@ private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
                     state = current?.let { sustainText(it) } ?: stringResource(Res.string.rd_s9_link_profile_unknown),
                     tone = if (current?.measuredSustain == "true") PillTone.OK else PillTone.NEUTRAL,
                     text = current?.let { profileLabel(it) } ?: stringResource(Res.string.rd_s9_link_profile_default),
+                    modifier = m,
                 ) {}
+            }
+            cards.add { m ->
                 StatCard(
                     icon = Icons.Outlined.History,
                     title = stringResource(Res.string.rd_s9_link_history),
                     state = stringResource(historyStateRes(state)),
                     tone = if (state.historyMode == LinkHistoryMode.PAUSED) PillTone.WARN else PillTone.OK,
                     text = state.lastHistorySyncMs?.let { stringResource(Res.string.rd_s9_link_history_synced, relativeTime(it)) } ?: stringResource(Res.string.rd_s9_link_history_not_yet),
+                    modifier = m,
                 ) {
                     a.onSyncHistory?.let { sync -> TextButton(onClick = sync, enabled = !state.historySyncing) { Text(stringResource(Res.string.rd_s9_link_sync_now)) } }
                 }
+            }
+            cards.add { m ->
                 StatCard(
                     icon = Icons.Outlined.PhoneAndroid,
                     title = stringResource(Res.string.linked_remote),
@@ -396,23 +405,29 @@ private fun ClientPanelLayout(state: LinkUiState, a: ClientActions) {
                     ),
                     tone = if (state.remote?.playing == true) PillTone.OK else PillTone.NEUTRAL,
                     text = state.remote?.title ?: stringResource(Res.string.linked_remote_idle),
+                    modifier = m,
                 ) {
-                    if (state.remote != null) {
+                    val remote = state.remote
+                    if (remote != null) {
                         TextButton(onClick = { a.onRemote(RemoteAction.PLAY_PAUSE) }, enabled = !state.remoteBusy) {
-                            Text(stringResource(if (state.remote.playing) Res.string.linked_remote_pause else Res.string.linked_remote_play))
+                            Text(stringResource(if (remote.playing) Res.string.linked_remote_pause else Res.string.linked_remote_play))
                         }
                     }
                 }
-                a.onOpenExtensionServers?.let { open ->
+            }
+            a.onOpenExtensionServers?.let { open ->
+                cards.add { m ->
                     StatCard(
                         icon = Icons.Outlined.Extension,
                         title = stringResource(Res.string.extserver_entry_title),
                         state = stringResource(Res.string.rd_s9_link_servers_state),
                         tone = PillTone.NEUTRAL,
                         text = stringResource(Res.string.extserver_entry_body),
+                        modifier = m,
                     ) { TextButton(onClick = open) { Text(stringResource(Res.string.rd_s9_link_manage)) } }
                 }
             }
+            StatCardGrid(cards)
             PairedPanels(state, link, a)
         }
     }
@@ -429,8 +444,8 @@ internal fun StatCard(
     modifier: Modifier = Modifier,
     action: @Composable () -> Unit,
 ) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large, modifier = modifier.widthIn(min = 260.dp, max = 420.dp)) {
-        Column(Modifier.width(300.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large, modifier = modifier) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).semantics { heading() })
