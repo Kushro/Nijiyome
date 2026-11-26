@@ -51,6 +51,11 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.3.1" date="2026-11-26">
+      <description>
+        <p>Linux startup fix: packs the desktop classpath into a pathing JAR so the jpackage launcher no longer hits OpenJDK JDK-8380085 (SIGSEGV on launch when mounted from an AppImage or long install path with 200+ JARs).</p>
+      </description>
+    </release>
     <release version="1.3.0" date="2026-11-26">
       <description>
         <p>Full visual redesign across Desktop and Android: five independent visual directions (Tanabata, Obi, Night Transit, Sumi &amp; Hanko, and Material), 16 card styles, curated palettes per direction (light, dark, OLED), and per-screen customizable layouts (Tonight / Stage / Shelves for Home; Panel / Route / Cinema for Details; Week / Departure Board / Agenda / Month for Calendar; Cinema / Panel / Minimal for the player).</p>

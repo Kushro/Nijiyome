@@ -1,6 +1,9 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import java.util.jar.Attributes
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
 
 // Desktop entry point (Linux and Windows): the window, the main(), the dependency wiring and the packaging.
 // Screens and logic live in the shared modules.
@@ -194,3 +197,45 @@ compose.desktop {
     }
 }
 tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(stageAppResources) }
+
+// Workaround for OpenJDK JDK-8380085 (fixed in JDK 27): on Linux, the native jpackage launcher passes the serialized
+// JvmLauncherData struct across a pipe using a single read/write; once the expanded classpath exceeds a single pipe chunk
+// (~200+ JARs under a long mount path such as an AppImage), the struct is truncated and the launcher crashes with SIGSEGV
+// in setenv() before starting the JVM. Replacing the individual app.classpath entries in Nijiyome.cfg with a single
+// pathing JAR preserves exact classpath order while keeping the launcher config under 1 KiB.
+tasks.matching { it.name in setOf("createDistributable", "createReleaseDistributable") }.configureEach {
+    doLast {
+        if (!System.getProperty("os.name").orEmpty().contains("Linux", ignoreCase = true)) return@doLast
+        val variantDir = if (name == "createReleaseDistributable") "main-release" else "main"
+        val appDir = layout.buildDirectory.dir("compose/binaries/$variantDir/app/Nijiyome/lib/app").get().asFile
+        val cfgFile = appDir.resolve("Nijiyome.cfg")
+        if (!cfgFile.isFile) return@doLast
+
+        val prefix = "app.classpath=\$APPDIR/"
+        val lines = cfgFile.readLines()
+        val jars = lines.mapNotNull { line -> line.removePrefix(prefix).takeIf { line.startsWith(prefix) } }
+        val pathingJarName = "nijiyome-classpath.jar"
+        if (jars.size <= 1 || jars == listOf(pathingJarName)) return@doLast
+
+        val manifest = Manifest().apply {
+            mainAttributes[Attributes.Name.MANIFEST_VERSION] = "1.0"
+            mainAttributes[Attributes.Name.CLASS_PATH] = jars.joinToString(" ") { it.replace(" ", "%20") }
+        }
+        JarOutputStream(appDir.resolve(pathingJarName).outputStream(), manifest).use { }
+
+        var inserted = false
+        val rewritten = buildList {
+            for (line in lines) {
+                if (line.startsWith(prefix)) {
+                    if (!inserted) {
+                        add("$prefix$pathingJarName")
+                        inserted = true
+                    }
+                } else {
+                    add(line)
+                }
+            }
+        }
+        cfgFile.writeText(rewritten.joinToString("\n", postfix = "\n"))
+    }
+}
