@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rediseño Sparkles: nombres de días y meses y patrones de fecha (app.nijiyome.ui.format.DateNames), sin depender de los datos regionales del JDK. -->
+<resources>
+    <string name="rd_date_wd_short_1">Lun</string>
+    <string name="rd_date_wd_short_2">Mar</string>
+    <string name="rd_date_wd_short_3">Mié</string>
+    <string name="rd_date_wd_short_4">Jue</string>
+    <string name="rd_date_wd_short_5">Vie</string>
+    <string name="rd_date_wd_short_6">Sáb</string>
+    <string name="rd_date_wd_short_7">Dom</string>
+    <string name="rd_date_wd_long_1">lunes</string>
+    <string name="rd_date_wd_long_2">martes</string>
+    <string name="rd_date_wd_long_3">miércoles</string>
+    <string name="rd_date_wd_long_4">jueves</string>
+    <string name="rd_date_wd_long_5">viernes</string>
+    <string name="rd_date_wd_long_6">sábado</string>
+    <string name="rd_date_wd_long_7">domingo</string>
+    <string name="rd_date_wd_narrow_1">L</string>
+    <string name="rd_date_wd_narrow_2">M</string>
+    <string name="rd_date_wd_narrow_3">M</string>
+    <string name="rd_date_wd_narrow_4">J</string>
+    <string name="rd_date_wd_narrow_5">V</string>
+    <string name="rd_date_wd_narrow_6">S</string>
+    <string name="rd_date_wd_narrow_7">D</string>
+    <string name="rd_date_mo_short_1">ene</string>
+    <string name="rd_date_mo_short_2">feb</string>
+    <string name="rd_date_mo_short_3">mar</string>
+    <string name="rd_date_mo_short_4">abr</string>
+    <string name="rd_date_mo_short_5">may</string>
+    <string name="rd_date_mo_short_6">jun</string>
+    <string name="rd_date_mo_short_7">jul</string>
+    <string name="rd_date_mo_short_8">ago</string>
+    <string name="rd_date_mo_short_9">sep</string>
+    <string name="rd_date_mo_short_10">oct</string>
+    <string name="rd_date_mo_short_11">nov</string>
+    <string name="rd_date_mo_short_12">dic</string>
+    <string name="rd_date_mo_long_1">enero</string>
+    <string name="rd_date_mo_long_2">febrero</string>
+    <string name="rd_date_mo_long_3">marzo</string>
+    <string name="rd_date_mo_long_4">abril</string>
+    <string name="rd_date_mo_long_5">mayo</string>
+    <string name="rd_date_mo_long_6">junio</string>
+    <string name="rd_date_mo_long_7">julio</string>
+    <string name="rd_date_mo_long_8">agosto</string>
+    <string name="rd_date_mo_long_9">septiembre</string>
+    <string name="rd_date_mo_long_10">octubre</string>
+    <string name="rd_date_mo_long_11">noviembre</string>
+    <string name="rd_date_mo_long_12">diciembre</string>
+    <string name="rd_date_day_month">%1$d %2$s</string>
+    <string name="rd_date_weekday_day">%1$s %2$d</string>
+    <string name="rd_date_weekday_day_month">%1$s %2$d de %3$s</string>
+    <string name="rd_date_full">%1$s, %2$d de %3$s de %4$d</string>
+    <string name="rd_date_month_year">%1$s de %2$d</string>
+    <string name="rd_date_range_same_month">%1$d al %2$d %3$s</string>
+    <string name="rd_date_range">%1$d %2$s al %3$d %4$s</string>
+</resources>

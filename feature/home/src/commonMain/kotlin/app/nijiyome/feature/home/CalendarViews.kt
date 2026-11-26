@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
@@ -99,6 +102,14 @@ import app.nijiyome.model.Media
 import app.nijiyome.model.MetadataFallbackState
 import app.nijiyome.model.MetadataRepository
 import app.nijiyome.model.SettingsRepository
+import app.nijiyome.ui.format.formatDayRange
+import app.nijiyome.ui.format.formatFullDate
+import app.nijiyome.ui.format.formatLongDate
+import app.nijiyome.ui.format.formatMonthYear
+import app.nijiyome.ui.format.formatWeekdayDay
+import app.nijiyome.ui.format.weekdayLong
+import app.nijiyome.ui.format.weekdayNarrow
+import app.nijiyome.ui.format.weekdayShort
 import app.nijiyome.ui.look.lookFadeSpec
 import app.nijiyome.ui.look.structures
 import app.nijiyome.ui.media.LocalTitleLanguage
@@ -115,10 +126,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.time.format.TextStyle
-import java.util.Locale
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
@@ -183,7 +190,7 @@ fun CalendarScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifie
                     if (wide) {
                         item(key = "head", contentType = "head") {
                             Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text(stringResource(Res.string.rd_s2_calendar_title), style = MaterialTheme.typography.displaySmall, modifier = Modifier.weight(1f))
+                                Text(stringResource(Res.string.rd_s2_calendar_title), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
                                 if (onBack != null) TextButton(onClick = onBack) { Text(stringResource(app.nijiyome.ui.resources.Res.string.ui_back)) }
                             }
                         }
@@ -217,7 +224,7 @@ fun CalendarScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifie
                             app.nijiyome.ui.state.AppErrorState(cause = days.cause, onRetry = vm::load, modifier = Modifier.padding(horizontal = 16.dp))
                         }
                         is LoadState.Ok -> when (structure) {
-                            CalendarStructure.WEEK -> weekStructure(days.value, ctx, wide, onView = vm::setView, onSelect = vm::selectDay)
+                            CalendarStructure.WEEK -> weekStructure(days.value, ctx, wide, monthSwitch = !aside, onView = vm::setView, onSelect = vm::selectDay)
                             CalendarStructure.DEPARTURES -> boardStructure(days.value, ctx, wide, onSelect = vm::selectDay, onShowAll = { vm.setOnlyFollowed(false) })
                             CalendarStructure.AGENDA -> agendaStructure(days.value, ctx, onShowAll = { vm.setOnlyFollowed(false) })
                         }
@@ -236,7 +243,12 @@ fun CalendarScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifie
                         Modifier.width(ASIDE_WIDTH).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, end = 16.dp, bottom = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        MiniMonth(state, onSelect = vm::selectDay)
+                        MiniMonth(
+                            state,
+                            onSelect = vm::selectDay,
+                            // CAL-03: with the side column, Semana's Mes switch is the link in the month's header (one switch, not two).
+                            onView = if (structure == CalendarStructure.WEEK) vm::setView else null,
+                        )
                         FollowedPanel(state, ctx, askPermission, vm::setReminder, vm::unfollow)
                     }
                 }
@@ -334,11 +346,11 @@ private fun PeriodNav(state: CalendarUiState, onShift: (Long) -> Unit, onToday: 
     val title = when (view) {
         CalendarView.WEEK, CalendarView.AGENDA -> {
             val monday = CalendarLogic.mondayOf(anchor)
-            val range = monday.format(DAY_MONTH) + " – " + monday.plusDays(6).format(DAY_MONTH)
+            val range = formatDayRange(monday, monday.plusDays(6))
             if (monday == CalendarLogic.mondayOf(today)) stringResource(Res.string.rd_s2_cal_this_week, range) else stringResource(Res.string.home_calendar_week_of, range)
         }
-        CalendarView.MONTH -> anchor.format(DateTimeFormatter.ofPattern("LLLL yyyy")).replaceFirstChar { it.titlecase() }
-        CalendarView.DAY -> anchor.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)).replaceFirstChar { it.titlecase() }
+        CalendarView.MONTH -> formatMonthYear(YearMonth.from(anchor)).replaceFirstChar { it.titlecase() }
+        CalendarView.DAY -> formatFullDate(anchor)
     }
     val current = when (view) {
         CalendarView.WEEK, CalendarView.AGENDA -> CalendarLogic.mondayOf(anchor) == CalendarLogic.mondayOf(today)
@@ -376,11 +388,12 @@ private fun LazyListScope.weekStructure(
     days: List<CalendarDay>,
     ctx: CalendarCtx,
     wide: Boolean,
+    monthSwitch: Boolean,
     onView: (CalendarView) -> Unit,
     onSelect: (LocalDate) -> Unit,
 ) {
     val month = ctx.state.view == CalendarView.MONTH
-    item(key = "week-month", contentType = "switch") {
+    if (monthSwitch) item(key = "week-month", contentType = "switch") {
         Segmented(
             options = listOf(
                 SegmentedOption(CalendarView.WEEK, stringResource(Res.string.home_cal_view_week), icon = Icons.Outlined.CalendarViewWeek),
@@ -439,7 +452,7 @@ private fun WeekStrip(days: List<CalendarDay>, selected: LocalDate, today: Local
                 Column(Modifier.padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     val onSel = MaterialTheme.colorScheme.onPrimaryContainer
                     Text(
-                        day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()).take(3),
+                        weekdayShort(day.date.dayOfWeek),
                         style = MaterialTheme.typography.labelSmall,
                         color = if (isSel) onSel else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -465,30 +478,41 @@ private fun WeekStrip(days: List<CalendarDay>, selected: LocalDate, today: Local
     }
 }
 
-/** Wide week: seven columns, each with its episodes and their bells; the row scrolls when narrower than 7 × 150 dp. */
+/**
+ * Wide week: seven columns, each with its episodes and their bells. The columns share the width left of the side column (CAL-01:
+ * Sunday is never cut by it); the row scrolls only when a column would fall under [WEEK_COL_MIN]. Today is outlined (CAL-04).
+ */
 @Composable
 private fun WeekColumns(days: List<CalendarDay>, ctx: CalendarCtx) {
     BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-        val colWidth = ((maxWidth - 48.dp) / 7).coerceAtLeast(150.dp)
+        val gaps = WEEK_COL_GAP * (days.size - 1).coerceAtLeast(0)
+        val colWidth = ((maxWidth - gaps) / days.size.coerceAtLeast(1)).coerceAtLeast(WEEK_COL_MIN)
+        val fits = colWidth * days.size + gaps <= maxWidth
         Row(
-            Modifier.horizontalScroll(rememberScrollState()).decor(DecorRegion.AIRING),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            (if (fits) Modifier else Modifier.horizontalScroll(rememberScrollState())).decor(DecorRegion.AIRING),
+            horizontalArrangement = Arrangement.spacedBy(WEEK_COL_GAP),
         ) {
             days.forEach { day ->
                 val isToday = day.date == ctx.today
                 Surface(
                     shape = MaterialTheme.shapes.medium,
                     color = if (isToday) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow,
+                    border = if (isToday) BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) else null,
                     modifier = Modifier.width(colWidth),
                 ) {
                     Column(Modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            Modifier.padding(start = 2.dp, top = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
                             Text(
-                                day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                                weekdayShort(day.date.dayOfWeek),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
                             )
-                            Text(day.date.dayOfMonth.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(day.date.dayOfMonth.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
                             if (isToday) TodayPill()
                         }
                         if (day.episodes.isEmpty()) {
@@ -506,7 +530,10 @@ private fun WeekColumns(days: List<CalendarDay>, ctx: CalendarCtx) {
     }
 }
 
-/** A compact episode of a week column: time, title, episode and the bell. */
+/**
+ * A compact episode of a week column (CAL-02): the time with a small bell in the corner, then the poster with the title (two lines at
+ * most) and the episode. The episode on air now is framed in the warning color (CAL-04).
+ */
 @Composable
 private fun EventCard(ep: AiringEpisode, ctx: CalendarCtx) {
     val tracked = ctx.state.isTracked(ep.media.ref)
@@ -515,21 +542,35 @@ private fun EventCard(ep: AiringEpisode, ctx: CalendarCtx) {
         onClick = { ctx.onOpen(ep.media) },
         shape = MaterialTheme.shapes.small,
         color = if (tracked) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+        border = if (airing) BorderStroke(1.5.dp, LocalSignalColors.current.warn) else null,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(Modifier.padding(start = 6.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            MediaCover(url = ep.media.cover, modifier = Modifier.width(30.dp))
-            Column(Modifier.weight(1f)) {
+        Column(Modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     if (airing) stringResource(Res.string.rd_s2_cal_time_now, ctx.timeOf(ep)) else ctx.timeOf(ep),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
-                Text(ep.media.displayTitle(LocalTitleLanguage.current), style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(episodeLabel(ep), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FollowBell(ep, ctx, compact = true)
             }
-            FollowBell(ep, ctx)
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                MediaCover(url = ep.media.cover, modifier = Modifier.width(28.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(ep.media.displayTitle(LocalTitleLanguage.current), style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        episodeLabel(ep),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }
@@ -549,7 +590,7 @@ private fun MonthGrid(days: List<CalendarDay>, selected: LocalDate, wide: Boolea
             Row(Modifier.fillMaxWidth()) {
                 days.take(7).forEach { d ->
                     Text(
-                        d.date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+                        weekdayNarrow(d.date.dayOfWeek),
                         style = MaterialTheme.typography.labelSmall,
                         color = airingSecondaryText(),
                         textAlign = TextAlign.Center,
@@ -667,12 +708,12 @@ private fun BoardHead(day: LocalDate, isToday: Boolean, ctx: CalendarCtx, onSele
                     if (isToday) {
                         stringResource(Res.string.rd_s2_board_today)
                     } else {
-                        stringResource(Res.string.rd_s2_board_day, day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()))
+                        stringResource(Res.string.rd_s2_board_day, weekdayLong(day.dayOfWeek))
                     },
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    stringResource(Res.string.rd_s2_board_sub, day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))),
+                    stringResource(Res.string.rd_s2_board_sub, formatFullDate(day)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -694,7 +735,7 @@ private fun BoardHead(day: LocalDate, isToday: Boolean, ctx: CalendarCtx, onSele
                 FilterChip(
                     selected = d == day,
                     onClick = { onSelect(d) },
-                    label = { Text(d.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()) + " " + d.dayOfMonth) },
+                    label = { Text(formatWeekdayDay(d)) },
                 )
             }
         }
@@ -853,7 +894,7 @@ private fun EventRow(ep: AiringEpisode, ctx: CalendarCtx) {
 
 /** The bell of an episode: follow the series (with its reminder) or stop following it, with undo. */
 @Composable
-private fun FollowBell(ep: AiringEpisode, ctx: CalendarCtx) {
+private fun FollowBell(ep: AiringEpisode, ctx: CalendarCtx, compact: Boolean = false) {
     val followed = ctx.state.isFollowed(ep.media.ref)
     val title = ep.media.displayTitle(LocalTitleLanguage.current)
     val description = stringResource(if (followed) Res.string.rd_s2_unfollow_title else Res.string.rd_s2_follow_title, title)
@@ -861,14 +902,27 @@ private fun FollowBell(ep: AiringEpisode, ctx: CalendarCtx) {
     val unfollowedMsg = stringResource(Res.string.rd_s2_unfollowed_msg, title)
     val showUndo = rememberShowUndo()
     val snackbar = app.nijiyome.designsystem.components.LocalAppSnackbar.current
-    IconToggleButton(
-        checked = followed,
-        onCheckedChange = {
-            ctx.onToggleFollow(ep)
-            if (followed) showUndo(unfollowedMsg) { ctx.onToggleFollow(ep) } else snackbar.show(followedMsg)
-        },
-    ) {
-        Icon(if (followed) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationAdd, contentDescription = description)
+    val button: @Composable (Modifier) -> Unit = { m ->
+        IconToggleButton(
+            checked = followed,
+            onCheckedChange = {
+                ctx.onToggleFollow(ep)
+                if (followed) showUndo(unfollowedMsg) { ctx.onToggleFollow(ep) } else snackbar.show(followedMsg)
+            },
+            modifier = m,
+        ) {
+            Icon(
+                if (followed) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationAdd,
+                contentDescription = description,
+                modifier = if (compact) Modifier.size(18.dp) else Modifier,
+            )
+        }
+    }
+    if (compact) {
+        // A small bell in the corner of a week cell: it takes 24 dp of the layout, its 48 dp target overflows around it.
+        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { button(Modifier.wrapContentSize(unbounded = true)) }
+    } else {
+        button(Modifier)
     }
 }
 
@@ -963,7 +1017,7 @@ private fun FollowedRow(
             Text(
                 next?.let {
                     val at = Instant.ofEpochSecond(it.airingAtEpochSec).atZone(ZoneId.systemDefault())
-                    at.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()) + " " + formatTime(it.airingAtEpochSec)
+                    weekdayShort(at.dayOfWeek) + " " + formatTime(it.airingAtEpochSec)
                 } ?: stringResource(Res.string.rd_s2_cal_no_date),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -983,9 +1037,12 @@ private fun FollowedRow(
     }
 }
 
-/** Desktop side column: the month of the selected day; a day jumps there (and reloads when it is outside the range). */
+/**
+ * Desktop side column: the month of the selected day; a day jumps there (and reloads when it is outside the range). Days of the
+ * neighbour months are left blank (CAL-05). With [onView] the header's link switches Semana between the week and the month grid.
+ */
 @Composable
-private fun MiniMonth(state: CalendarUiState, onSelect: (LocalDate) -> Unit) {
+private fun MiniMonth(state: CalendarUiState, onSelect: (LocalDate) -> Unit, onView: ((CalendarView) -> Unit)?) {
     val anchor = state.anchor
     val month = YearMonth.from(anchor)
     val today = LocalDate.now()
@@ -994,49 +1051,68 @@ private fun MiniMonth(state: CalendarUiState, onSelect: (LocalDate) -> Unit) {
     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    anchor.format(DateTimeFormatter.ofPattern("LLLL yyyy")).replaceFirstChar { it.titlecase() },
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(stringResource(Res.string.home_cal_view_month), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(formatMonthYear(month), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                if (onView != null) {
+                    val showingMonth = state.view == CalendarView.MONTH
+                    TextButton(onClick = { onView(if (showingMonth) CalendarView.WEEK else CalendarView.MONTH) }) {
+                        Text(stringResource(if (showingMonth) Res.string.home_cal_view_week else Res.string.home_cal_view_month))
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth()) {
+                cells.take(7).forEach { d ->
+                    Text(
+                        weekdayNarrow(d.dayOfWeek),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
             cells.chunked(7).forEach { week ->
                 Row(Modifier.fillMaxWidth()) {
                     week.forEach { day ->
-                        val isSel = day == anchor
-                        val n = counts[day]
-                        val label = dayTitle(day) + (n?.let { ", " + pluralStringResource(Res.plurals.home_cal_episodes, it, it) } ?: "")
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clip(CircleShape)
-                                .background(if (isSel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow)
-                                .then(if (day == today) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier)
-                                .clickable { onSelect(day) }
-                                .semantics {
-                                    contentDescription = label
-                                    this.selected = isSel
-                                },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                day.dayOfMonth.toString(),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = when {
-                                    isSel -> MaterialTheme.colorScheme.onPrimaryContainer
-                                    day.month == month.month -> MaterialTheme.colorScheme.onSurface
-                                    else -> MaterialTheme.colorScheme.outline
-                                },
-                            )
-                            if (n != null && n > 0) {
-                                Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 3.dp).size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                            }
+                        if (day.month != month.month) {
+                            Box(Modifier.weight(1f).aspectRatio(1f))
+                        } else {
+                            MiniMonthDay(day, isSel = day == anchor, isToday = day == today, count = counts[day], onSelect = onSelect)
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.MiniMonthDay(day: LocalDate, isSel: Boolean, isToday: Boolean, count: Int?, onSelect: (LocalDate) -> Unit) {
+    val label = dayTitle(day) + (count?.let { ", " + pluralStringResource(Res.plurals.home_cal_episodes, it, it) } ?: "")
+    Box(
+        Modifier
+            .weight(1f)
+            .aspectRatio(1f)
+            .clip(CircleShape)
+            .background(if (isSel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow)
+            .then(if (isToday) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier)
+            .clickable { onSelect(day) }
+            .semantics {
+                contentDescription = label
+                this.selected = isSel
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            day.dayOfMonth.toString(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isToday) FontWeight.Bold else null,
+            color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+        )
+        if (count != null && count > 0) {
+            Box(
+                Modifier.align(Alignment.BottomCenter).padding(bottom = 3.dp).size(4.dp).clip(CircleShape)
+                    .background(if (isSel) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary),
+            )
         }
     }
 }
@@ -1047,8 +1123,8 @@ private fun MiniMonth(state: CalendarUiState, onSelect: (LocalDate) -> Unit) {
 private fun episodeLabel(ep: AiringEpisode): String =
     if (ep.episode == 1) stringResource(Res.string.rd_s2_cal_premiere, ep.episode) else stringResource(Res.string.rd_s2_ep_short, ep.episode)
 
-private fun dayTitle(date: LocalDate): String =
-    date.format(DateTimeFormatter.ofPattern("EEEE d MMM")).replaceFirstChar { it.titlecase() }
+@Composable
+private fun dayTitle(date: LocalDate): String = formatLongDate(date)
 
 /** Writes a change of `LookPrefs.design` (the structure switch of this screen). */
 @Composable
@@ -1079,8 +1155,9 @@ private fun rememberAiringRemindersOn(): Boolean {
 }
 
 private val NO_FALLBACK: StateFlow<MetadataFallbackState?> = MutableStateFlow(null)
-private val DAY_MONTH: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM")
 private val WIDE_MIN = 600.dp
+private val WEEK_COL_MIN = 112.dp
+private val WEEK_COL_GAP = 8.dp
 private val ASIDE_MIN = 1000.dp
 private val ASIDE_WIDTH = 320.dp
 private val BOARD_TIME_WIDTH = 64.dp
