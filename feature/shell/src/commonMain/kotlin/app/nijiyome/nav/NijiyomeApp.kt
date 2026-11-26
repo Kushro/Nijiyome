@@ -9,6 +9,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -84,8 +85,11 @@ import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.designsystem.motion.CardToDetailsEntry
 import app.nijiyome.designsystem.motion.CardToDetailsHost
 import app.nijiyome.designsystem.motion.LocalMotion
+import app.nijiyome.designsystem.motion.MotionDurations
 import app.nijiyome.designsystem.motion.cardToDetailsEnterTransform
 import app.nijiyome.designsystem.motion.cardToDetailsPopTransform
+import app.nijiyome.designsystem.motion.motionFadeIn
+import app.nijiyome.designsystem.motion.motionFadeOut
 import app.nijiyome.designsystem.motion.rememberLowEndDevice
 import app.nijiyome.designsystem.theme.LocalReduceMotion
 import app.nijiyome.designsystem.theme.NijiyomeTheme
@@ -406,7 +410,18 @@ private fun AppShell(
      * the exact setting to land on (Settings scrolls to it and highlights it).
      */
     fun openSettings(section: SettingsSection?, itemId: String?) {
-        if (wide && shortcuts != null) {
+        val top = backStack.lastOrNull()
+        if (top == Route.Settings || top is Route.SettingsSection) {
+            // AJ-07: already on the Settings page: go to the setting there instead of stacking the modal over the page.
+            if (section != null) {
+                val target = Route.SettingsSection(section, itemId)
+                if (top != target) {
+                    // The rail's Settings page stays under it (Back returns there); a section page is replaced.
+                    if (top is Route.SettingsSection) backStack.removeLastOrNull()
+                    backStack.add(target)
+                }
+            }
+        } else if (wide && shortcuts != null) {
             settingsModalSection = section
             settingsModalItemId = itemId
             settingsModalOpen = true
@@ -442,6 +457,7 @@ private fun AppShell(
         chrome.wide = wide
         chrome.viewer = onPlayer
         chrome.medium = medium
+        chrome.settingsInRail = useCustomRail && Route.Settings in destinations
         chrome.selectMedium = { m -> backStack.navigateTop(m.home()) }
         chrome.openPalette = { paletteOpen = true }
         chrome.openNotifications = openNotifications
@@ -789,6 +805,11 @@ private fun AppNavDisplay(
     val density = LocalDensity.current
     val baseEnter = remember { defaultTransitionSpec<NavKey>() }
     val basePop = remember { defaultPopTransitionSpec<NavKey>() }
+    // MOV-04: where the platform's default screen change is a hard cut (desktop), screens cross-fade at the motion level instead
+    // (200 ms in, 140 ms out; calm 150 ms; off none). Platforms with their own default transition keep it.
+    val screenFade = motionFadeIn(MotionDurations.STATE) togetherWith motionFadeOut(MotionDurations.STATE)
+    fun ContentTransform.orScreenFade(): ContentTransform =
+        if (targetContentEnter == EnterTransition.None && initialContentExit == ExitTransition.None) screenFade else this
     // Gives each entry its AnimatedVisibilityScope so the poster and the Details header share bounds.
     val cardToDetailsDecorator = remember {
         NavEntryDecorator<NavKey>({ _ -> }) { entry -> CardToDetailsEntry(LocalNavAnimatedContentScope.current) { entry.Content() } }
@@ -802,14 +823,14 @@ private fun AppNavDisplay(
             when {
                 reduceMotion -> instant
                 targetState.entries.lastOrNull().isCardToDetailsTarget() -> motion.cardToDetailsEnterTransform(density)
-                else -> baseEnter()
+                else -> baseEnter().orScreenFade()
             }
         },
         popTransitionSpec = {
             when {
                 reduceMotion -> instant
                 initialState.entries.lastOrNull().isCardToDetailsTarget() -> motion.cardToDetailsPopTransform(density)
-                else -> basePop()
+                else -> basePop().orScreenFade()
             }
         },
         predictivePopTransitionSpec = if (reduceMotion) ({ _ -> instant }) else defaultPredictivePopTransitionSpec<NavKey>(),
@@ -941,7 +962,13 @@ private fun AppNavDisplay(
                     )
                 }
             }
-            entry<Route.Details>(metadata = ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata) { key ->
+            // MAN-04 / NOV-01: manga and novel Details are never a detail pane. They have their own main + information columns;
+            // beside the catalog (or Biblioteca) they became three squeezed columns. They open full width, like the artifact.
+            entry<Route.Details>(
+                metadata = { key: Route.Details ->
+                    if (key.kind == MediaKind.MANGA) CardToDetailsMetadata else ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata
+                },
+            ) { key ->
                 if (key.kind == MediaKind.MANGA) {
                     // parity wave B (16 §3.5, worker s): manga details (own screen, same route so every Media click works).
                     MangaDetailsScreen(
@@ -1113,7 +1140,7 @@ private fun AppNavDisplay(
                     onOpenLibrary = { push(Route.LibraryTab(LibraryTab.NOVELS)) },
                 )
             }
-            entry<Route.NovelDetails>(metadata = ListDetailSceneStrategy.detailPane() + CardToDetailsMetadata) { key ->
+            entry<Route.NovelDetails>(metadata = CardToDetailsMetadata) { key ->
                 NovelDetailsScreen(
                     anilistId = key.anilistId,
                     onBack = ::back,
