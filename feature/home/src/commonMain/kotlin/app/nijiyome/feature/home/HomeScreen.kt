@@ -73,6 +73,7 @@ import app.nijiyome.model.HomeStructure
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.Media
 import app.nijiyome.model.PlayerArgs
+import app.nijiyome.ui.format.formatLongDate
 import app.nijiyome.ui.look.LocalLook
 import app.nijiyome.ui.look.structures
 import app.nijiyome.ui.media.toResumeArgs
@@ -86,8 +87,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -612,7 +611,8 @@ private fun HomeHeader(title: String, subtitle: String, accent: Boolean, frame: 
     ) {
         Column(Modifier.weight(1f)) {
             val font: FontFamily? = if (accent) LocalAccentFont.current else null
-            Text(title, style = MaterialTheme.typography.displaySmall, fontFamily = font, maxLines = 1)
+            // T-03: one page-title size on every screen (headlineMedium, the artifact's 27 px); only Home keeps the accent face.
+            Text(title, style = MaterialTheme.typography.headlineMedium, fontFamily = font, maxLines = 1)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         OutlinedButton(onClick = frame.onEdit) {
@@ -748,7 +748,7 @@ private fun greeting(): String {
 /** "Miércoles 25 de noviembre · 6 para ver", with the greeting first when it is on. */
 @Composable
 private fun tonightSubtitle(count: Int, withGreeting: Boolean): String {
-    val date = remember { LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.getDefault())).replaceFirstChar { it.titlecase() } }
+    val date = formatLongDate(LocalDate.now())
     val line = stringResource(Res.string.rd_s2_tonight_sub, date, count)
     return if (withGreeting) greeting() + " · " + line else line
 }

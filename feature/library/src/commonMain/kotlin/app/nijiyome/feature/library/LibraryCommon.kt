@@ -78,6 +78,7 @@ import app.nijiyome.ui.patterns.MenuEntry
 import app.nijiyome.ui.patterns.MenuSheetHeader
 import app.nijiyome.ui.patterns.MenuSubmenu
 import app.nijiyome.ui.patterns.icon
+import app.nijiyome.ui.patterns.label
 import org.jetbrains.compose.resources.stringResource
 import java.util.Locale
 
@@ -184,10 +185,23 @@ internal fun ListEntry.cardData(labels: LibraryLabels): TitleCardData {
     )
 }
 
-/** "Continuar" card of a history row: what plays next and how far the current episode went. */
+/** The list status of the title of a history row, when it is on the list (matched by AniList or MAL id). */
+internal fun ListsUiState.statusOf(entry: HistoryEntry): ListStatus? {
+    val list = (all as? app.nijiyome.model.LoadState.Ok)?.value ?: return null
+    return list.firstOrNull { e ->
+        (entry.anilistId != null && e.ref.anilistId == entry.anilistId) || (entry.malId != null && e.ref.malId == entry.malId)
+    }?.status
+}
+
+/**
+ * "Continuar" card of a history row: what plays next and how far the current episode went, with the title's list [status] so the
+ * card wears the same status color as on Home (BIB-03).
+ */
 @Composable
-internal fun HistoryEntry.continueCardData(): TitleCardData = TitleCardData(
+internal fun HistoryEntry.continueCardData(status: ListStatus? = null): TitleCardData = TitleCardData(
     key = "anime:" + (anilistId ?: malId ?: animeId),
+    listStatus = status?.slot(),
+    listStatusLabel = status?.slot()?.label(),
     title = title,
     coverUrl = poster,
     subtitle = if (completed || progressSec <= 0) {
@@ -232,9 +246,16 @@ internal fun EntryCard(
 
 /** Continuar: what was playing, at the top of the shelves (and above the board and the list). Plays on click. */
 @Composable
-internal fun ContinueShelf(entries: List<HistoryEntry>, onPlay: (HistoryEntry) -> Unit, modifier: Modifier = Modifier) {
+internal fun ContinueShelf(
+    entries: List<HistoryEntry>,
+    onPlay: (HistoryEntry) -> Unit,
+    modifier: Modifier = Modifier,
+    statusOf: (HistoryEntry) -> ListStatus? = { null },
+) {
     if (entries.isEmpty()) return
-    Column(modifier.decor(DecorRegion.TONIGHT), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // BIB-01 / TRA-D-02: the row alone carries the decor (as Home's Esta noche); on the section too, a second rod or line crossed
+    // the title.
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(
             stringResource(Res.string.rd_s7_continue),
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -247,12 +268,12 @@ internal fun ContinueShelf(entries: List<HistoryEntry>, onPlay: (HistoryEntry) -
             },
         )
         LazyRow(
-            Modifier.fillMaxWidth().decor(DecorRegion.ROW),
+            Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT),
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             itemsIndexed(entries, key = { _, e -> "c-" + e.episodeId }, contentType = { _, _ -> "continue" }) { i, e ->
-                val data = e.continueCardData()
+                val data = e.continueCardData(statusOf(e))
                 TitleCard(
                     data = data,
                     onClick = { onPlay(e) },

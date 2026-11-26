@@ -121,7 +121,7 @@ internal fun HomeSection(
         val hasTrailing = onHide != null || trailing != null || onSeeAll != null
         if (hasTrailing) {
             SectionHeader(title = title, modifier = Modifier.padding(horizontal = 16.dp)) {
-                Row {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     if (onHide != null) {
                         HideRowButton(title, onHide)
                     } else {

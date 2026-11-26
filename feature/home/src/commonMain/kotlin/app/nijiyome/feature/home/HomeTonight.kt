@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -31,6 +33,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.components.LocalAppSnackbar
 import app.nijiyome.designsystem.direction.DecorRegion
+import app.nijiyome.designsystem.direction.LocalSignalColors
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.designsystem.motion.cardSway
 import app.nijiyome.feature.home.resources.Res
@@ -117,7 +121,7 @@ private fun TonightSlot(item: TonightItem, index: Int, ctx: HomeRowCtx) {
                     },
                     caption = {
                         SlotCaption(Icons.Outlined.PlayCircle, stringResource(Res.string.rd_s2_tonight_resume)) {
-                            PlayButton(resumeLabel, filled = true) { a.onResumeEntry(e) }
+                            CaptionPlay(resumeLabel) { a.onResumeEntry(e) }
                         }
                     },
                 )
@@ -159,7 +163,7 @@ private fun TonightSlot(item: TonightItem, index: Int, ctx: HomeRowCtx) {
                             index = index,
                         )
                     },
-                    caption = { SlotCaption(Icons.Outlined.NewReleases, caption) { PlayButton(playLabel, filled = false, onClick = play) } },
+                    caption = { SlotCaption(Icons.Outlined.NewReleases, caption) { CaptionPlay(playLabel, onClick = play) } },
                 )
             }
         }
@@ -180,19 +184,34 @@ private fun TonightSlot(item: TonightItem, index: Int, ctx: HomeRowCtx) {
     }
 }
 
+/**
+ * The label under a slot of Esta noche (INI-02): the whole sentence (up to three lines) and a small action at the end. The card's own
+ * play disc is the main control; this one stays as a compact icon (with its description) because not every card style draws a disc.
+ * It takes 32 dp of the row and keeps a 48 dp target that overflows around it.
+ */
 @Composable
 private fun SlotCaption(icon: ImageVector, text: String, action: @Composable () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(icon, contentDescription = null, modifier = Modifier.padding(top = 1.dp).size(16.dp), tint = MaterialTheme.colorScheme.primary)
         Text(
             text,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
+            maxLines = 3,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        action()
+        Box(Modifier.size(CAPTION_ACTION), contentAlignment = Alignment.Center) {
+            Box(Modifier.wrapContentSize(unbounded = true), contentAlignment = Alignment.Center) { action() }
+        }
+    }
+}
+
+/** The compact play of a caption: one quiet style for every slot (the card's disc carries the emphasis). */
+@Composable
+private fun CaptionPlay(description: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(Icons.Filled.PlayArrow, contentDescription = description, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -234,20 +253,24 @@ internal fun TodayAgenda(ctx: HomeRowCtx, modifier: Modifier = Modifier) {
     val today = d.today
     if (today is LoadState.Ok && today.value.isEmpty()) return
     val items = (today as? LoadState.Ok)?.value?.let { HomeLogic.agenda(it, d::isTracked) }.orEmpty()
+    // INI-06: the count goes in the header line, beside "Abrir calendario", not under the rule.
     HomeSection(
         stringResource(Res.string.rd_s2_today_title),
         modifier,
         onSeeAll = a.onOpenCalendar,
         seeAllLabel = stringResource(Res.string.rd_s2_open_calendar),
+        trailing = {
+            if (items.isNotEmpty()) {
+                Text(
+                    stringResource(Res.string.rd_s2_today_sub, items.size),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+            }
+        },
     ) {
-        if (items.isNotEmpty()) {
-            Text(
-                stringResource(Res.string.rd_s2_today_sub, items.size),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-        }
         RowBody(today, a.onRetryToday) { _ ->
             if (ctx.compact) AgendaList(items, ctx) else AgendaStrip(items, ctx)
         }
@@ -275,8 +298,12 @@ private fun agendaLines(items: List<AiringEpisode>, nowSec: Long): List<AgendaLi
 @Composable
 private fun AgendaStrip(items: List<AiringEpisode>, ctx: HomeRowCtx) {
     val lines = remember(items, ctx.nowSec) { agendaLines(items, ctx.nowSec) }
+    // INI-06: open on what airs around now (two slots before the marker), not on the first episode of the morning.
+    val start = remember(lines) { (lines.indexOfFirst { it == AgendaLine.Now }.takeIf { it >= 0 } ?: lines.size) - 2 }
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = start.coerceIn(0, (lines.size - 1).coerceAtLeast(0)))
     AiringContent {
         LazyRow(
+            state = listState,
             modifier = Modifier.fillMaxWidth().decor(DecorRegion.AIRING),
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -298,12 +325,14 @@ private fun AgendaSlot(ep: AiringEpisode, ctx: HomeRowCtx) {
     val media = ep.media
     val title = media.displayTitle(LocalTitleLanguage.current)
     val label = stringResource(Res.string.rd_s2_agenda_item, title, ep.episode)
+    // INI-06: what already aired is compact, the episode on air now is framed in the warning amber, as in the artifact.
+    val aired = state == AirState.AIRED
     Surface(
         onClick = { ctx.gate.open(media) { ctx.actions.onMediaClick(media) } },
         shape = MaterialTheme.shapes.medium,
         color = if (state == AirState.JUST_OUT) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-        border = if (state == AirState.JUST_OUT) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-        modifier = Modifier.width(AGENDA_SLOT_WIDTH).semantics { contentDescription = label },
+        border = if (state == AirState.JUST_OUT) BorderStroke(2.dp, LocalSignalColors.current.warn) else null,
+        modifier = Modifier.width(if (aired) AGENDA_SLOT_WIDTH_AIRED else AGENDA_SLOT_WIDTH).semantics { contentDescription = label },
     ) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -313,7 +342,7 @@ private fun AgendaSlot(ep: AiringEpisode, ctx: HomeRowCtx) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MediaCover(url = media.cover, modifier = Modifier.width(36.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.labelLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(title, style = MaterialTheme.typography.labelLarge, maxLines = if (aired) 1 else 2, overflow = TextOverflow.Ellipsis)
                     Text(stringResource(Res.string.rd_s2_ep_short, ep.episode), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 AgendaAction(ep, state, ctx)
@@ -425,11 +454,15 @@ internal fun NowTick(vertical: Boolean, nowSec: Long) {
 
 private val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
-internal fun formatTime(epochSec: Long): String = Instant.ofEpochSecond(epochSec).atZone(ZoneId.systemDefault()).format(TIME_FORMAT)
+/** Short local time ("19:30"), in the locale the app runs in now (Ajustes › Idioma can change it while the app is open). */
+internal fun formatTime(epochSec: Long): String =
+    Instant.ofEpochSecond(epochSec).atZone(ZoneId.systemDefault()).format(TIME_FORMAT.withLocale(java.util.Locale.getDefault()))
 
 private fun timeOf(ep: AiringEpisode): String = formatTime(ep.airingAtEpochSec)
 
 private val AGENDA_SLOT_WIDTH = 220.dp
+private val AGENDA_SLOT_WIDTH_AIRED = 176.dp
+private val CAPTION_ACTION = 32.dp
 private val NOW_TICK_HEIGHT = 84.dp
 private const val PHONE_EARLIER = 2
 private const val PHONE_MAX = 7

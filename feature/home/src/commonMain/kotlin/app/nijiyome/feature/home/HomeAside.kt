@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.MonitorHeart
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -71,20 +72,28 @@ internal fun LinkPanel(onOpenLink: () -> Unit, onOpenMonitor: () -> Unit, modifi
 
 @Composable
 private fun PanelSurface(modifier: Modifier, region: DecorRegion?, data: RegionData = RegionData(), content: @Composable () -> Unit) {
+    // INI-05: a surface clearly lighter than the page, with the region's decor inside it (on the outer modifier it drew outside the
+    // rounded surface and only its corners showed).
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = modifier.fillMaxWidth().then(if (region != null) Modifier.decor(region, data) else Modifier),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
+        Column(
+            Modifier.then(if (region != null) Modifier.decor(region, data) else Modifier).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) { content() }
     }
 }
 
 @Composable
 private fun PanelHead(title: String, status: String?, ok: Boolean) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (status != null) StatusDot(status, ok)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (status != null) StatusDot(status, ok)
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
@@ -186,10 +195,10 @@ private fun ClientPanel(st: LinkState, onOpenLink: () -> Unit, modifier: Modifie
     Surface(
         onClick = onOpenLink,
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).decor(DecorRegion.LINK, RegionData(connected = ok)),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp),
     ) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.decor(DecorRegion.LINK, RegionData(connected = ok)).padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             val signals = LocalSignalColors.current
             Box(Modifier.size(10.dp).clip(CircleShape).background(if (ok) signals.ok else Color.Transparent))
             Column(Modifier.weight(1f)) {
@@ -214,6 +223,7 @@ internal fun TransfersPanel(activity: DownloadActivity?, onOpen: () -> Unit, mod
             )
             TextButton(onClick = onOpen) { Text(stringResource(Res.string.home_see_all)) }
         }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         if (activity == null || total == 0) {
             Text(stringResource(Res.string.rd_s2_transfers_idle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {

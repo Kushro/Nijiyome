@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -338,7 +339,8 @@ private fun SyncLine(state: LibraryUiState, onSyncNow: () -> Unit) {
 @Composable
 private fun LibraryViewTabs(selected: LibraryView, favoritesAvailable: Boolean, onSelect: (LibraryView) -> Unit) {
     val views = LibraryView.entries.filter { it != LibraryView.FAVORITES || favoritesAvailable }
-    PrimaryTabRow(selectedTabIndex = views.indexOf(selected).coerceAtLeast(0)) {
+    val index = views.indexOf(selected).coerceAtLeast(0)
+    val tabs: @Composable () -> Unit = {
         views.forEach { v ->
             Tab(
                 selected = v == selected,
@@ -358,6 +360,12 @@ private fun LibraryViewTabs(selected: LibraryView, favoritesAvailable: Boolean, 
                 },
             )
         }
+    }
+    // BIB-02: wide windows get compact tabs at the start (the artifact); thirds of the whole width are the phone pattern.
+    if (isCompactWindow()) {
+        PrimaryTabRow(selectedTabIndex = index, tabs = tabs)
+    } else {
+        PrimaryScrollableTabRow(selectedTabIndex = index, edgePadding = 16.dp, tabs = tabs)
     }
 }
 

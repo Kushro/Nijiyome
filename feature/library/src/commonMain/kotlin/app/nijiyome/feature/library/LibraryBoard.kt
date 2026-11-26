@@ -71,7 +71,7 @@ internal fun LibraryBoard(
     val entries = state.visible
     val byKey = entries.associateBy { it.key }
     Column(modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (state.query.isBlank() && continueWatching.isNotEmpty()) ContinueShelf(continueWatching, actions.play, Modifier.padding(top = 8.dp))
+        if (state.query.isBlank() && continueWatching.isNotEmpty()) ContinueShelf(continueWatching, actions.play, Modifier.padding(top = 8.dp), statusOf = { state.statusOf(it) })
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ListFilterBar(state, labels, actions, showStatus = false)
             ListAccountsLine(state, actions.openAccounts)
