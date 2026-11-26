@@ -141,6 +141,8 @@ import app.nijiyome.model.AppSettings
 import app.nijiyome.model.DownloadRepository
 import app.nijiyome.model.DownloadsSummary
 import app.nijiyome.model.DownloadsTab
+import app.nijiyome.model.LinkedAccount
+import app.nijiyome.model.ListProvider
 import app.nijiyome.model.ListsRepository
 import app.nijiyome.model.Media
 import app.nijiyome.model.MediaKind
@@ -465,6 +467,11 @@ private fun AppShell(
     DisposableEffect(chrome) { onDispose { chrome.ready = false } }
 
     val activeDownloads = rememberActiveDownloads()
+    // The rail's account entry shows the linked account's picture (stored with the account: no request).
+    val accountsFlow = remember(koin) { koin.getOrNull<ListsRepository>()?.accounts ?: MutableStateFlow<List<LinkedAccount>>(emptyList()) }
+    val accounts by accountsFlow.collectAsStateWithLifecycle()
+    val accountAvatar = accounts.firstOrNull { it.provider == ListProvider.ANILIST && !it.avatar.isNullOrBlank() }?.avatar
+        ?: accounts.firstOrNull { !it.avatar.isNullOrBlank() }?.avatar
     val online = rememberIsOnline()
     val showOffline = !online && !onPlayer
 
@@ -538,6 +545,7 @@ private fun AppShell(
                             activeDownloads = activeDownloads,
                             slim = slimStyle,
                             onSelect = { backStack.navigateTop(it) },
+                            accountAvatar = accountAvatar,
                         )
                     }
                     Box(Modifier.weight(1f).fillMaxHeight()) {
