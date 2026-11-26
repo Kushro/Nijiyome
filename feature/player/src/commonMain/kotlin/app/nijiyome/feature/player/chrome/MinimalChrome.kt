@@ -105,12 +105,18 @@ internal fun BoxScope.MinimalChrome(model: PlayerChromeModel, actions: PlayerChr
                     if (!touch) FullscreenButton(model, actions)
                 }
             } else {
-                Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(10.dp), Alignment.CenterVertically) {
+                // REP-06: previous / next are icons beside play (their long labels took ~240 dp) and the volume slider is short, so the
+                // seek bar keeps most of the line as in the artifact.
+                Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(6.dp), Alignment.CenterVertically) {
+                    PrevEpisodeButton(model, actions)
                     PlayButton(model, actions, 40.dp)
+                    NextEpisodeButton(model, actions)
                     PlayerSeekBar(model, actions.onInteract, Modifier.weight(1f), thin = true)
                     PlayerTimeText(model, actions.onInteract)
-                    if (model.capabilities.volumeControls) PlayerVolumeControl(model.session, actions.onInteract, showLabel = false)
-                    MinimalActions(model, actions)
+                    if (model.capabilities.volumeControls) {
+                        PlayerVolumeControl(model.session, actions.onInteract, showLabel = false, sliderWidth = MINIMAL_VOLUME_DP.dp)
+                    }
+                    MinimalActions(model, actions, episodeSteps = false)
                     FullscreenButton(model, actions)
                 }
             }
@@ -118,9 +124,15 @@ internal fun BoxScope.MinimalChrome(model: PlayerChromeModel, actions: PlayerChr
     }
 }
 
-/** Pistas, Velocidad, Mejoras, Imagen, the framing cycle (touch), Episodios, previous / next and Más, as icon-over-label buttons. */
+/** The Mínimo pointer bar's volume slider (dp): shorter than the Cine one. */
+private const val MINIMAL_VOLUME_DP = 80
+
+/**
+ * Pistas, Velocidad, Mejoras, Imagen, the framing cycle (touch), Episodios, previous / next ([episodeSteps]; the wide pointer bar draws
+ * them as icons beside play) and Más, as icon-over-label buttons.
+ */
 @Composable
-private fun MinimalActions(model: PlayerChromeModel, actions: PlayerChromeActions) {
+private fun MinimalActions(model: PlayerChromeModel, actions: PlayerChromeActions, episodeSteps: Boolean = true) {
     val touch = model.capabilities.touchFirst
     val ps = model.ps
     val accent = MaterialTheme.colorScheme.primary
@@ -155,7 +167,7 @@ private fun MinimalActions(model: PlayerChromeModel, actions: PlayerChromeAction
     if (model.canBrowseEpisodes) {
         MinAction(Icons.Rounded.VideoLibrary, stringResource(Res.string.player_episodes), { actions.onOpenSheet(Sheet.Episodes) })
     }
-    if (model.state.hasPrevEpisode) MinAction(Icons.Rounded.SkipPrevious, stringResource(Res.string.player_prev), actions.onPrev)
-    if (model.canGoNext) MinAction(Icons.Rounded.SkipNext, stringResource(Res.string.player_next), actions.onNext)
+    if (episodeSteps && model.state.hasPrevEpisode) MinAction(Icons.Rounded.SkipPrevious, stringResource(Res.string.player_prev), actions.onPrev)
+    if (episodeSteps && model.canGoNext) MinAction(Icons.Rounded.SkipNext, stringResource(Res.string.player_next), actions.onNext)
     if (!touch) MinAction(Icons.Rounded.MoreHoriz, stringResource(Res.string.player_more), { actions.onOpenSheet(Sheet.More); actions.onInteract() })
 }
