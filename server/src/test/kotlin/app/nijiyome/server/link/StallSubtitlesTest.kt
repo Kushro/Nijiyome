@@ -136,7 +136,10 @@ class StallSubtitlesTest {
         val h = h(engine, tuning())
         val p = h.pair("Tab")
         val sid = session(h, p, 100)
-        waitUntil("the early end", 400) { status(h, p, sid)["produced"] == Json.parseToJsonElement("""{"from_secs":0.0,"to_secs":10.0}""") }
+        waitUntil("the early end", 400) {
+            engine.putResults.size >= 6 &&
+                status(h, p, sid)["produced"] == Json.parseToJsonElement("""{"from_secs":0.0,"to_secs":10.0}""")
+        }
         assertFalse("ended" in status(h, p, sid))
         assertEquals(200, get(h, p, sid, "seg_5.m4s").code)
         assertEquals(listOf(0, 5), engine.starts.toList(), "segment 5 was made again by a new run")
