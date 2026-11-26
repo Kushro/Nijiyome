@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,6 +49,7 @@ internal fun BoxScope.CinemaChrome(model: PlayerChromeModel, actions: PlayerChro
     if (model.capabilities.touchFirst) TouchCinema(model, actions, visible) else PointerCinema(model, actions, visible, inPanel)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BoxScope.PointerCinema(model: PlayerChromeModel, actions: PlayerChromeActions, visible: Boolean, inPanel: Boolean) {
     val compact = windowWidthDp() < COMPACT_WIDTH_DP
@@ -90,16 +93,35 @@ private fun BoxScope.PointerCinema(model: PlayerChromeModel, actions: PlayerChro
                 // Hito 6 (desktop): the engine's own volume (PlayerVolumeControl.kt)
                 if (model.capabilities.volumeControls) PlayerVolumeControl(model.session, actions.onInteract, showLabel = false)
                 Spacer(Modifier.weight(1f))
-                Row(Modifier.horizontalScroll(rememberScrollState()), Arrangement.spacedBy(6.dp), Alignment.CenterVertically) {
-                    TracksChip(model, actions)
-                    QualityChip(model, actions)
-                    SpeedChip(model, actions)
-                    PictureChip(model, actions)
-                    MoreChip(model, actions)
+                if (!inPanel) {
+                    Row(Modifier.horizontalScroll(rememberScrollState()), Arrangement.spacedBy(6.dp), Alignment.CenterVertically) {
+                        SheetChips(model, actions)
+                    }
+                }
+            }
+            // REP-02: beside the Panel's side panel the stage is too narrow for the transport and the chips on one line (the last chip
+            // was cut against the panel); as in the artifact, the chips take a line of their own and wrap.
+            if (inPanel) {
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    SheetChips(model, actions)
                 }
             }
         }
     }
+}
+
+/** Pistas, Calidad, Velocidad, Imagen and Más: the pointer chrome's sheet chips. */
+@Composable
+private fun SheetChips(model: PlayerChromeModel, actions: PlayerChromeActions) {
+    TracksChip(model, actions)
+    QualityChip(model, actions)
+    SpeedChip(model, actions)
+    PictureChip(model, actions)
+    MoreChip(model, actions)
 }
 
 @Composable

@@ -38,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.decor
@@ -92,6 +94,7 @@ internal fun PanelSideLayout(
     Row(Modifier.fillMaxSize()) {
         stage(Modifier.weight(1f).fillMaxHeight())
         VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        // The panel's own opaque surface first, the direction's sheet decor over it (never straight over the video stage).
         Column(
             Modifier
                 .width(420.dp)
@@ -100,7 +103,10 @@ internal fun PanelSideLayout(
                 .decor(DecorRegion.SHEET),
         ) {
             PanelTabRow(tab, onTab)
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(top = 8.dp, bottom = 40.dp)) { body(tab) }
+            // REP-02: the content sits on the panel's own surface with the artifact's 20 dp margin (`.nj-a-ppanel > .nj-a-scroll`).
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp)) {
+                body(tab)
+            }
         }
     }
 }
@@ -122,7 +128,15 @@ internal fun PanelVerticalLayout(
             StatusChips(model, actions)
         }
         PanelTabRow(tab, onTab)
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).decor(DecorRegion.SHEET).padding(bottom = 24.dp)) { body(tab) }
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .decor(DecorRegion.SHEET)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+        ) { body(tab) }
     }
 }
 
@@ -174,12 +188,24 @@ private fun PanelTabRow(tab: Sheet, onTab: (Sheet) -> Unit) {
     ) {
         PanelTabs.forEachIndexed { i, t ->
             val (icon, name) = panelTabLook(t)
-            Tab(
-                selected = i == selected,
-                onClick = { onTab(t) },
-                icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                text = { Text(stringResource(name), style = MaterialTheme.typography.labelSmall, maxLines = 1) },
-            )
+            // REP-02: Material's Tab pads its text by 16 dp a side, which left ~38 dp of a 70 dp tab and cut "Velocidad" to "Veloci"
+            // with no ellipsis. The artifact's tab (`.nj-a-ptabs .nj-tab`) is icon over label with 4 dp of side padding.
+            Tab(selected = i == selected, onClick = { onTab(t) }) {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Text(
+                        stringResource(name),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
     }
 }
