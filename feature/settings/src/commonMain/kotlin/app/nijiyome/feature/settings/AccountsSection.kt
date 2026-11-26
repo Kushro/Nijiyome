@@ -414,22 +414,22 @@ private fun ProviderCard(
                     )
                 }
                 when {
-                    account != null -> TextButton(onClick = onUnlink) { Text(stringResource(Res.string.settings_accounts_unlink)) }
+                    // AJ-04: the account's actions sit together on the header row (they were stacked, leaving a gap under the avatar).
+                    account != null -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (onSyncMode != null) {
+                            TextButton(onClick = onSyncMode) {
+                                Text(stringResource(if (firstSyncPending) Res.string.settings_accounts_choose else Res.string.settings_accounts_sync_mode))
+                            }
+                        }
+                        TextButton(onClick = onUnlink) { Text(stringResource(Res.string.settings_accounts_unlink)) }
+                    }
                     linking -> LoadingIndicator(Modifier.size(32.dp))
                     // Without a client id the button stays visible but disabled; the line above says why (account.oauth.errors).
                     else -> FilledTonalButton(onClick = onLink, enabled = configured) { Text(stringResource(Res.string.settings_accounts_link)) }
                 }
             }
-            if (account != null && (firstSyncPending || onSyncMode != null)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (firstSyncPending) Pill(stringResource(Res.string.settings_accounts_first_sync_pending), tone = PillTone.WARN)
-                    Box(Modifier.weight(1f))
-                    if (onSyncMode != null) {
-                        TextButton(onClick = onSyncMode) {
-                            Text(stringResource(if (firstSyncPending) Res.string.settings_accounts_choose else Res.string.settings_accounts_sync_mode))
-                        }
-                    }
-                }
+            if (account != null && firstSyncPending) {
+                Pill(stringResource(Res.string.settings_accounts_first_sync_pending), tone = PillTone.WARN)
             }
             if (account?.expiresAtMs != null && account.expiresAtMs!! < System.currentTimeMillis()) {
                 Pill(stringResource(Res.string.settings_accounts_expired), tone = PillTone.WARN)
