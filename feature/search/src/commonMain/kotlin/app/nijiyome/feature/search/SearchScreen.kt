@@ -92,8 +92,10 @@ fun SearchScreen(
     /** "Abrir Fuentes" when no extension has a catalogue or one fails (Route.Extensions). */
     onOpenExtensions: () -> Unit = {},
 ) {
+    val facets = structures.explore == ExploreStructure.FACETS
     LaunchedEffect(initialQuery, initialFeed, initialGenre, initialStudio) {
         viewModel.applyInitial(initialQuery, initialFeed, initialGenre, initialStudio)
+        if (facets) viewModel.openOnTrending()
     }
     // Recent searches may have been cleared from Settings › Metadatos while this screen sat in the back stack.
     LaunchedEffect(Unit) { viewModel.reloadHistory() }

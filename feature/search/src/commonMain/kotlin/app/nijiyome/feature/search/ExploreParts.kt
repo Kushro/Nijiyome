@@ -45,6 +45,7 @@ import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.HourglassTop
 import androidx.compose.material.icons.outlined.ImageSearch
+import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Person
@@ -218,14 +219,21 @@ internal fun ExploreHeader(tab: ExploreTab, onTab: (ExploreTab) -> Unit, showTab
         }
         Box(Modifier.weight(1f))
         if (!compact && exploreKeyboardHints) {
-            Text(
-                stringResource(Res.string.rd_s3_keys_hint),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
+            // EXP-03: a quiet hint (regular body text with a keyboard icon), lighter than the content.
+            Row(
+                Modifier.weight(1f, fill = false),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(Icons.Outlined.Keyboard, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                Text(
+                    stringResource(Res.string.rd_s3_keys_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         if (showTabs) {
             Segmented(
@@ -330,11 +338,14 @@ internal fun ExploreScopeSwitch(state: SearchUiState, actions: ExploreActions, c
             }
         }
     } else {
+        // EXP-02: the segments share the width of the widest one, measured by its longest word, so "Catálogo de extensión" was cut;
+        // non-breaking spaces make every label measure whole. Compact labels, as in the artifact.
         Segmented(
-            options = choices.map { SegmentedOption(it.scope, it.label, icon = it.icon) },
+            options = choices.map { SegmentedOption(it.scope, it.label.replace(' ', ' '), icon = it.icon) },
             selected = state.scope,
             onSelect = actions.onScope,
             modifier = modifier,
+            small = true,
         )
     }
 }
@@ -534,7 +545,8 @@ internal fun FeedChips(state: SearchUiState, actions: ExploreActions, modifier: 
 @Composable
 internal fun TrendWindowSwitch(state: SearchUiState, actions: ExploreActions, modifier: Modifier = Modifier) {
     Segmented(
-        options = TrendWindow.entries.map { SegmentedOption(it, stringResource(it.labelRes())) },
+        // ALT-05: whole labels ("Esta semana" was cut at its longest word), see ExploreScopeSwitch.
+        options = TrendWindow.entries.map { SegmentedOption(it, stringResource(it.labelRes()).replace(' ', ' ')) },
         selected = state.trendWindow,
         onSelect = actions.onTrendWindow,
         small = true,

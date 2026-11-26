@@ -370,6 +370,21 @@ class SearchViewModel(
         refresh()
     }
 
+    /**
+     * EXP-01: Explorar › Facetas opens on Tendencias (its time window and results grid), as in the artifact, instead of an empty page.
+     * Once per screen, and only when nothing else was asked for (a query, feed, genre, studio, filter or another scope).
+     */
+    fun openOnTrending() {
+        if (openedOnTrending) return
+        openedOnTrending = true
+        val s = _state.value
+        val untouched = s.query.isBlank() && s.feed == null && s.studio == null && s.filters == SearchFilters() &&
+            s.scope == ExploreScope.ANIME && s.results == SearchResults.Idle
+        if (untouched) selectFeed(FeedKind.TRENDING)
+    }
+
+    private var openedOnTrending = false
+
     /** Explorar: a taste or genre chip browses that genre (query, feed and studio dropped; the other filters stay). */
     fun browseGenre(genre: String) {
         _state.update {
