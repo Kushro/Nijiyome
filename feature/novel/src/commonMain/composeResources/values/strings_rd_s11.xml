@@ -63,4 +63,7 @@
     <string name="rd_s11_voice_search">Search voice</string>
     <string name="rd_s11_voice_stop_sample">Stop the sample</string>
     <string name="rd_s11_voice_title">Narrator voice</string>
+    <string name="rd_s11_chapter_unnumbered">Chapter without a number</string>
+    <string name="rd_s11_feature_page">Featured %1$d of %2$d</string>
+    <string name="rd_s11_feature_go_to">Go to featured title %1$d</string>
 </resources>

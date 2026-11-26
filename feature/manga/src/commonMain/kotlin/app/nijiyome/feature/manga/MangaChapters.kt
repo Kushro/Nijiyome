@@ -328,7 +328,14 @@ private fun ChapterRow(ch: MangaChapter, state: ChapterSectionState, vm: MangaDe
     val read = state.isRead(ch)
     val next = state.nextChapter != null && ch.number == state.nextChapter
     val selection = state.selection
-    val date = ch.releasedAtMs?.let { remember(it) { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it)) } }
+    // the last month as "hace 3 d" (the app's words, as the artifact shows), older ones as a date
+    val date = ch.releasedAtMs?.let { ms ->
+        if (System.currentTimeMillis() - ms in 0L until RECENT_CHAPTER_MS) {
+            app.nijiyome.ui.format.relativeTime(ms)
+        } else {
+            remember(ms) { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(ms)) }
+        }
+    }
     val number = ChapterText.formatNumber(ch.number)
     Row(
         Modifier
@@ -355,7 +362,10 @@ private fun ChapterRow(ch: MangaChapter, state: ChapterSectionState, vm: MangaDe
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    (number?.let { stringResource(Res.string.rd_s11_chapter_short, it) } ?: (ch.title ?: ch.id)) +
+                    // never the source's internal id ("comick:5TCHbvLy"): a chapter without number nor title says so
+                    (number?.let { stringResource(Res.string.rd_s11_chapter_short, it) }
+                        ?: ch.title?.takeIf { t -> t.isNotBlank() }
+                        ?: stringResource(Res.string.rd_s11_chapter_unnumbered)) +
                         (if (number != null) ch.title?.takeIf { t -> t.isNotBlank() }?.let { t -> " · $t" } ?: "" else ""),
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 2,
@@ -461,50 +471,53 @@ internal fun SourceSheet(
     onDismiss: () -> Unit,
 ) {
     fun nameOf(code: String) = Locale.forLanguageTag(code).getDisplayLanguage(Locale.getDefault()).replaceFirstChar(Char::uppercase).ifBlank { code }
-    AdaptiveSheet(onDismissRequest = onDismiss, modifier = Modifier.decor(DecorRegion.SHEET)) {
-        Text(stringResource(Res.string.manga_source_settings), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(Res.string.rd_s11_languages_order), style = MaterialTheme.typography.titleSmall)
-            Text(stringResource(Res.string.manga_preferred_languages_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            languages.forEachIndexed { i, code ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(nameOf(code), modifier = Modifier.weight(1f))
-                    IconButton(onClick = { onLanguages(languages.toMutableList().also { l -> l[i] = l[i - 1].also { l[i - 1] = l[i] } }) }, enabled = i > 0) {
-                        Icon(Icons.Outlined.ArrowUpward, contentDescription = stringResource(Res.string.rd_s11_language_up, nameOf(code)))
-                    }
-                    IconButton(onClick = { onLanguages(languages - code) }) {
-                        Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s11_language_remove, nameOf(code)))
+    // the sheet decor inside the sheet's surface (LEC-03)
+    AdaptiveSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().decor(DecorRegion.SHEET)) {
+            Text(stringResource(Res.string.manga_source_settings), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(Res.string.rd_s11_languages_order), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(Res.string.manga_preferred_languages_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                languages.forEachIndexed { i, code ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(nameOf(code), modifier = Modifier.weight(1f))
+                        IconButton(onClick = { onLanguages(languages.toMutableList().also { l -> l[i] = l[i - 1].also { l[i - 1] = l[i] } }) }, enabled = i > 0) {
+                            Icon(Icons.Outlined.ArrowUpward, contentDescription = stringResource(Res.string.rd_s11_language_up, nameOf(code)))
+                        }
+                        IconButton(onClick = { onLanguages(languages - code) }) {
+                            Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.rd_s11_language_remove, nameOf(code)))
+                        }
                     }
                 }
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LANGUAGE_CHOICES.filter { it !in languages }.forEach { code ->
-                    FilterChip(selected = false, onClick = { onLanguages(languages + code) }, label = { Text(nameOf(code)) }, leadingIcon = { Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp)) })
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LANGUAGE_CHOICES.filter { it !in languages }.forEach { code ->
+                        FilterChip(selected = false, onClick = { onLanguages(languages + code) }, label = { Text(nameOf(code)) }, leadingIcon = { Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp)) })
+                    }
                 }
-            }
-            Text(stringResource(Res.string.rd_s11_source_for_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
-            SourceRadio(
-                title = stringResource(Res.string.manga_source_auto),
-                detail = stringResource(Res.string.manga_source_auto_hint),
-                selected = preferredKey == null,
-                enabled = true,
-                onClick = { onPrefer(null) },
-            )
-            sources.forEach { s ->
+                Text(stringResource(Res.string.rd_s11_source_for_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
                 SourceRadio(
-                    title = s.extensionName + if (current?.key == s.key) " · " + stringResource(Res.string.rd_s11_showing) else "",
-                    detail = sourceFacts(s),
-                    selected = preferredKey == s.key,
-                    enabled = s.itemId != null,
-                    onClick = {
-                        onPrefer(s)
-                        onSelect(s)
-                    },
+                    title = stringResource(Res.string.manga_source_auto),
+                    detail = stringResource(Res.string.manga_source_auto_hint),
+                    selected = preferredKey == null,
+                    enabled = true,
+                    onClick = { onPrefer(null) },
                 )
-            }
-            TextButton(onClick = onOpenExtensions) {
-                Icon(Icons.Outlined.Extension, contentDescription = null)
-                Text(stringResource(Res.string.rd_s11_manage_extensions), modifier = Modifier.padding(start = 6.dp))
+                sources.forEach { s ->
+                    SourceRadio(
+                        title = s.extensionName + if (current?.key == s.key) " · " + stringResource(Res.string.rd_s11_showing) else "",
+                        detail = sourceFacts(s),
+                        selected = preferredKey == s.key,
+                        enabled = s.itemId != null,
+                        onClick = {
+                            onPrefer(s)
+                            onSelect(s)
+                        },
+                    )
+                }
+                TextButton(onClick = onOpenExtensions) {
+                    Icon(Icons.Outlined.Extension, contentDescription = null)
+                    Text(stringResource(Res.string.rd_s11_manage_extensions), modifier = Modifier.padding(start = 6.dp))
+                }
             }
         }
     }
@@ -526,3 +539,6 @@ private fun SourceRadio(title: String, detail: String, selected: Boolean, enable
 }
 
 internal val LANGUAGE_CHOICES = listOf("en", "es", "pt", "fr", "de", "it", "ru", "id", "vi", "th", "ja", "ko", "zh", "ar", "tr", "pl")
+
+/** Chapters released within this long show a relative time ("hace 3 d"). */
+private const val RECENT_CHAPTER_MS = 30L * 24 * 60 * 60 * 1000
