@@ -99,7 +99,7 @@
     <string name="rd_s10_mp_full">Full</string>
     <string name="rd_s10_mp_full_desc">Transitions and the direction's own motion.</string>
     <string name="rd_s10_mp_calm">Calm</string>
-    <string name="rd_s10_mp_calm_desc">Short fades only, nothing slides. Like reduce motion.</string>
+    <string name="rd_s10_mp_calm_desc">Short fades only, nothing slides or sways. Animations stay on.</string>
     <string name="rd_s10_mp_perf">Performance</string>
     <string name="rd_s10_mp_perf_desc">No large shadows or blur, one animation at a time.</string>
     <string name="rd_s10_design_perf">Performance mode</string>
@@ -321,4 +321,7 @@
     <string name="rd_s10_onb_link_body">Optional. Your PC can enhance the video for your phone and lend it its extensions.</string>
     <string name="rd_s10_link_moved">Pairing, devices, ports, cache, library folder, firewall and the extension server are on the Link screen.</string>
     <string name="rd_s10_link_open_screen">Open Nijiyome Link</string>
+    <string name="rd_s10_motion_master_hint">Off stops every animation in the app, the same as Reduce motion. Subtle keeps the older effects (carousels, page changes) to fades. How the redesign moves is the profile above.</string>
+    <string name="rd_s10_motion_off_note">Animations are off: the profile applies when you turn them back on.</string>
+    <string name="rd_s10_appearance_pages">Appearance sections</string>
 </resources>

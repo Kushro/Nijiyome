@@ -41,6 +41,7 @@ import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material.icons.outlined.ViewSidebar
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -48,15 +49,23 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.coerceAtLeast
@@ -96,6 +105,7 @@ import app.nijiyome.model.LibraryStructure
 import app.nijiyome.model.LinkStructure
 import app.nijiyome.model.LookPrefs
 import app.nijiyome.model.LookPreset
+import app.nijiyome.model.Motion
 import app.nijiyome.model.MotionMoments
 import app.nijiyome.model.MotionProfile
 import app.nijiyome.model.NavStyle
@@ -176,30 +186,104 @@ private fun ChoiceCard(label: String, desc: String?, selected: Boolean, onClick:
 
 // ---------------------------------------------------------------- page
 
-/** Apariencia: the controls scroll beside a live preview (pattern `sub`); on narrow panes the preview sits on top. */
+/**
+ * Apariencia's sub-pages (AJ-02: one page was some fourteen screens tall). Every [SettingsCatalog] id of the category belongs to
+ * one of them ([appearanceSubpageOf]); a jump to an id opens its sub-page first.
+ */
+internal enum class AppearanceSubpage { THEME, DESIGN, MOTION, NAVIGATION, SCREENS }
+
+/** The sub-page that holds the Apariencia setting [id], or null for an id of another category. */
+internal fun appearanceSubpageOf(id: String?): AppearanceSubpage? = when (id) {
+    "theme_mode", "amoled", "palette", "dynamic_color", "contrast", "language" -> AppearanceSubpage.THEME
+    "design_direction", "design_card", "design_gallery", "design_reset", "look_presets" -> AppearanceSubpage.DESIGN
+    "motion", "design_motion_profile", "design_perf_mode", "design_motion_moments" -> AppearanceSubpage.MOTION
+    "design_nav", "rail_style" -> AppearanceSubpage.NAVIGATION
+    "design_structures", "look_home", "design_home_rows", "look_details", "look_cards", "look_calendar" -> AppearanceSubpage.SCREENS
+    else -> null
+}
+
+/**
+ * Apariencia: a row of sub-pages (Tema y color, Diseño, Movimiento, Navegación, Pantallas), then the open sub-page's controls
+ * scrolling beside a live preview (pattern `sub`); on narrow panes the preview sits on top.
+ */
 @Composable
 internal fun AppearancePage(state: SettingsUiState, vm: SettingsViewModel, actions: SettingsActions, modifier: Modifier = Modifier) {
-    BoxWithConstraints(modifier.fillMaxSize()) {
-        val stacked = maxWidth < 760.dp
-        LivePreviewScaffold(
-            preview = { AppearanceLivePreview(state.settings) },
-            caption = stringResource(Res.string.rd_s10_preview_caption),
-            stacked = stacked,
-            controlsWidth = (maxWidth - 300.dp).coerceAtLeast(360.dp),
+    val pages = remember(actions.wide) { AppearanceSubpage.entries.filter { actions.wide || it != AppearanceSubpage.NAVIGATION } }
+    val jump = LocalSettingsJump.current
+    var pageName by rememberSaveable { mutableStateOf((appearanceSubpageOf(jump?.targetId) ?: AppearanceSubpage.THEME).name) }
+    val page = AppearanceSubpage.entries.firstOrNull { it.name == pageName }?.takeIf { it in pages } ?: AppearanceSubpage.THEME
+    // Search, the command palette or a deep link asked for a setting: open the sub-page that holds it, then its anchor flashes.
+    LaunchedEffect(jump?.targetId, jump?.serial) {
+        appearanceSubpageOf(jump?.targetId)?.takeIf { it in pages }?.let { pageName = it.name }
+    }
+    val pagesLabel = stringResource(Res.string.rd_s10_appearance_pages)
+    Column(modifier.fillMaxSize()) {
+        FlowRow(
+            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp).selectableGroup().semantics { contentDescription = pagesLabel },
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            AppearanceGroups(state, vm, actions)
+            pages.forEach { p ->
+                FilterChip(
+                    selected = p == page,
+                    onClick = { pageName = p.name },
+                    label = { Text(stringResource(p.titleRes()), maxLines = 1) },
+                    leadingIcon = { Icon(p.icon(), contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    modifier = Modifier.heightIn(min = 40.dp).semantics { role = Role.Tab },
+                )
+            }
+        }
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            val stacked = maxWidth < 760.dp
+            // A new sub-page starts at its top (the scaffold keeps its own scroll state).
+            key(page) {
+                LivePreviewScaffold(
+                    preview = { AppearanceLivePreview(state.settings) },
+                    caption = stringResource(Res.string.rd_s10_preview_caption),
+                    stacked = stacked,
+                    controlsWidth = (maxWidth - 300.dp).coerceAtLeast(360.dp),
+                ) {
+                    AppearanceGroups(page, state, vm, actions)
+                }
+            }
+        }
+    }
+}
+
+private fun AppearanceSubpage.titleRes(): StringResource = when (this) {
+    AppearanceSubpage.THEME -> Res.string.rd_s10_grp_theme
+    AppearanceSubpage.DESIGN -> Res.string.rd_s10_grp_design
+    AppearanceSubpage.MOTION -> Res.string.rd_s10_grp_motion
+    AppearanceSubpage.NAVIGATION -> Res.string.rd_s10_grp_navigation
+    AppearanceSubpage.SCREENS -> Res.string.rd_s10_design_structures
+}
+
+private fun AppearanceSubpage.icon(): ImageVector = when (this) {
+    AppearanceSubpage.THEME -> Icons.Outlined.Contrast
+    AppearanceSubpage.DESIGN -> Icons.Outlined.AutoAwesome
+    AppearanceSubpage.MOTION -> Icons.Outlined.Animation
+    AppearanceSubpage.NAVIGATION -> Icons.Outlined.ViewSidebar
+    AppearanceSubpage.SCREENS -> Icons.Outlined.Dashboard
+}
+
+@Composable
+private fun AppearanceGroups(page: AppearanceSubpage, state: SettingsUiState, vm: SettingsViewModel, actions: SettingsActions) {
+    when (page) {
+        AppearanceSubpage.THEME -> ThemeGroup(state, vm)
+        AppearanceSubpage.DESIGN -> DesignGroups(state, vm, actions)
+        AppearanceSubpage.MOTION -> MotionGroup(state, vm)
+        AppearanceSubpage.NAVIGATION -> NavigationGroup(state, vm)
+        AppearanceSubpage.SCREENS -> {
+            SettingsGroup(stringResource(Res.string.rd_s10_design_structures), icon = Icons.Outlined.Dashboard, hint = stringResource(Res.string.rd_s10_design_structures_hint)) {
+                SettingAnchor("design_structures") { ScreenStructureRows(state.settings.look, vm) }
+            }
         }
     }
 }
 
 @Composable
-private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, actions: SettingsActions) {
+private fun ThemeGroup(state: SettingsUiState, vm: SettingsViewModel) {
     val s = state.settings
-    val look = s.look
-    val design = look.design
-    val showUndo = rememberShowUndo()
-
-    // ---- Tema y color
     SettingsGroup(stringResource(Res.string.rd_s10_grp_theme), icon = Icons.Outlined.Contrast) {
         SettingAnchor("theme_mode") {
             SettingRow(stringResource(Res.string.settings_mode), stack = true, divider = false, inline = true) {
@@ -257,6 +341,14 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
             }
         }
     }
+}
+
+@Composable
+private fun DesignGroups(state: SettingsUiState, vm: SettingsViewModel, actions: SettingsActions) {
+    val s = state.settings
+    val look = s.look
+    val design = look.design
+    val showUndo = rememberShowUndo()
 
     // ---- Diseño
     SettingsGroup(stringResource(Res.string.rd_s10_grp_design), icon = Icons.Outlined.AutoAwesome, hint = stringResource(Res.string.rd_s10_grp_design_hint)) {
@@ -308,14 +400,20 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
             }
         }
     }
+}
+
+@Composable
+private fun MotionGroup(state: SettingsUiState, vm: SettingsViewModel) {
+    val look = state.settings.look
+    val design = look.design
 
     // ---- Movimiento
     SettingsGroup(stringResource(Res.string.rd_s10_grp_motion), icon = Icons.Outlined.Animation) {
-        SettingAnchor("motion") { MotionLookRow(look, vm::setLook) }
+        // MOV-05: the profile (how the redesign moves) first; "Animaciones" below it is the master switch (Off = Reducir movimiento).
         SettingAnchor("design_motion_profile") {
             StructureChoiceRow(
                 stringResource(Res.string.rd_s10_design_motion_profile),
-                stringResource(Res.string.rd_s10_design_motion_profile_hint),
+                stringResource(if (look.motion == Motion.OFF) Res.string.rd_s10_motion_off_note else Res.string.rd_s10_design_motion_profile_hint),
                 listOf(
                     ChoiceOption(MotionProfile.FULL, stringResource(Res.string.rd_s10_mp_full), stringResource(Res.string.rd_s10_mp_full_desc)),
                     ChoiceOption(MotionProfile.CALM, stringResource(Res.string.rd_s10_mp_calm), stringResource(Res.string.rd_s10_mp_calm_desc)),
@@ -325,6 +423,7 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
                 { p -> vm.setDesign { it.copy(motionProfile = p) } },
             )
         }
+        SettingAnchor("motion") { MotionLookRow(look, vm::setLook) }
         SettingAnchor("design_perf_mode") {
             val lowEnd = rememberLowEndDevice()
             val lowRefresh = rememberLowRefreshRate()
@@ -377,31 +476,29 @@ private fun AppearanceGroups(state: SettingsUiState, vm: SettingsViewModel, acti
             }
         }
     }
+}
 
-    // ---- Navegación (wide windows; phones keep the bottom bar)
-    if (actions.wide) {
-        SettingsGroup(stringResource(Res.string.rd_s10_grp_navigation), icon = Icons.Outlined.ViewSidebar) {
-            SettingAnchor("design_nav") {
-                StructureChoiceRow(
-                    stringResource(Res.string.rd_s10_design_nav),
-                    stringResource(Res.string.rd_s10_design_nav_hint),
-                    listOf(
-                        ChoiceOption(NavStyle.RAIL, stringResource(Res.string.rd_s10_nav_rail), stringResource(Res.string.rd_s10_nav_rail_desc)),
-                        ChoiceOption(NavStyle.MEDIUM, stringResource(Res.string.rd_s10_nav_medium), stringResource(Res.string.rd_s10_nav_medium_desc)),
-                        ChoiceOption(NavStyle.COMMAND, stringResource(Res.string.rd_s10_nav_command), stringResource(Res.string.rd_s10_nav_command_desc)),
-                    ),
-                    design.nav,
-                    { n -> vm.setDesign { it.copy(nav = n) } },
-                    divider = false,
-                )
-            }
-            SettingAnchor("rail_style") { RailStyleRow(look, vm::setLook) }
+/** Navegación (the sub-page exists on wide windows only; phones keep the bottom bar). */
+@Composable
+private fun NavigationGroup(state: SettingsUiState, vm: SettingsViewModel) {
+    val look = state.settings.look
+    val design = look.design
+    SettingsGroup(stringResource(Res.string.rd_s10_grp_navigation), icon = Icons.Outlined.ViewSidebar) {
+        SettingAnchor("design_nav") {
+            StructureChoiceRow(
+                stringResource(Res.string.rd_s10_design_nav),
+                stringResource(Res.string.rd_s10_design_nav_hint),
+                listOf(
+                    ChoiceOption(NavStyle.RAIL, stringResource(Res.string.rd_s10_nav_rail), stringResource(Res.string.rd_s10_nav_rail_desc)),
+                    ChoiceOption(NavStyle.MEDIUM, stringResource(Res.string.rd_s10_nav_medium), stringResource(Res.string.rd_s10_nav_medium_desc)),
+                    ChoiceOption(NavStyle.COMMAND, stringResource(Res.string.rd_s10_nav_command), stringResource(Res.string.rd_s10_nav_command_desc)),
+                ),
+                design.nav,
+                { n -> vm.setDesign { it.copy(nav = n) } },
+                divider = false,
+            )
         }
-    }
-
-    // ---- Pantallas: the structure of every screen, the Diseño y estilo options of that screen beside it
-    SettingsGroup(stringResource(Res.string.rd_s10_design_structures), icon = Icons.Outlined.Dashboard, hint = stringResource(Res.string.rd_s10_design_structures_hint)) {
-        SettingAnchor("design_structures") { ScreenStructureRows(look, vm) }
+        SettingAnchor("rail_style") { RailStyleRow(look, vm::setLook) }
     }
 }
 

@@ -163,7 +163,10 @@ internal fun CardLookRows(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) 
     LookSegmented(Res.string.settings_look_density, Density.entries, look.density, { it.labelRes() }) { v -> onChange { it.copy(density = v) } }
 }
 
-/** Animaciones (expressive / subtle / off; off is Reducir movimiento). */
+/**
+ * Animaciones (expressive / subtle / off): the master switch. Off is Reducir movimiento and stops everything, the Sparkles profile
+ * included; Subtle only tones down the older effects. The profile decides how the redesign moves.
+ */
 @Composable
 internal fun MotionLookRow(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs) -> Unit) {
     LookSegmented(
@@ -171,7 +174,7 @@ internal fun MotionLookRow(look: LookPrefs, onChange: ((LookPrefs) -> LookPrefs)
         Motion.entries,
         look.motion,
         { it.labelRes() },
-        hint = stringResource(Res.string.settings_look_motion_hint),
+        hint = stringResource(Res.string.rd_s10_motion_master_hint),
     ) { v -> onChange { it.copy(motion = v) } }
 }
 
