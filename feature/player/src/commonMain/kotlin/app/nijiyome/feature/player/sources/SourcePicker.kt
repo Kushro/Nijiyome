@@ -614,7 +614,7 @@ private fun FacetsResults(
     onDownload: ((RankedSource) -> Unit)?,
 ) {
     CountRow(model, active, onClear)
-    Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+    Box(Modifier.fillMaxWidth()) {
         Segmented(
             options = listOf(
                 SegmentedOption(SourceSort.RECOMMENDED, stringResource(Res.string.rd_s4_src_sort_rec)),
