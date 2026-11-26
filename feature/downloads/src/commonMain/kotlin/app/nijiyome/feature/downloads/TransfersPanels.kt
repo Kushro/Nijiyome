@@ -58,8 +58,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.direction.EmptyArt
+import app.nijiyome.designsystem.direction.EmptyKind
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.nijiyome.designsystem.components.focusOnOpen
 import app.nijiyome.designsystem.direction.LocalSignalColors
@@ -181,6 +184,7 @@ internal fun BackgroundPanel(enabled: Boolean, onChange: (Boolean) -> Unit, modi
 
 // ------------------------------------------------------------------ storage (DL-01, DL-16)
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun StoragePanel(
     usedBytes: Long?,
@@ -202,7 +206,13 @@ internal fun StoragePanel(
     ) {
         if (busy) app.nijiyome.designsystem.motion.LoadingPlaceholder(Modifier.fillMaxWidth().height(6.dp))
         verifyResult?.let { ResultLine(it) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        // TRA-01: a flow row, so "Abrir carpeta" moves under "Comprobar archivos" when the aside is narrow instead of wrapping
+        // letter by letter.
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
             ActionButton(
                 stringResource(Res.string.downloads_verify),
                 onClick = onVerify,
@@ -213,7 +223,7 @@ internal fun StoragePanel(
             if (openFolder != null && root.isNotBlank()) {
                 TextButton(onClick = { openFolder(root) }) {
                     Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(stringResource(Res.string.downloads_desktop_open_folder), Modifier.padding(start = 6.dp))
+                    Text(stringResource(Res.string.downloads_desktop_open_folder), Modifier.padding(start = 6.dp), maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -242,22 +252,21 @@ internal fun AutoDownloadPanel(
     val watchingFlow = remember(lists) { lists?.entries(ListStatus.WATCHING) ?: flowOf(emptyList()) }
     val watching by watchingFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val suggestions = watching.filter { w -> rules.none { r -> sameRef(r.ref, w.ref) } }
-    TransfersPanel(
-        stringResource(Res.string.downloads_auto_title),
-        modifier,
-        trailing = {
-            ActionButton(
-                stringResource(if (busy) Res.string.rd_s8_auto_checking else Res.string.downloads_auto_check),
-                onClick = vm::checkNow,
-                icon = Icons.Outlined.Refresh,
-                enabled = !busy,
-            )
-        },
-    ) {
+    // TRA-02: the check button sits under the explanation (beside the title it squeezed "Auto-descarga" onto two lines), and the
+    // suggestions from Watching start folded so the panels below stay in view.
+    var showAllSuggestions by remember { mutableStateOf(false) }
+    TransfersPanel(stringResource(Res.string.downloads_auto_title), modifier) {
         Text(
             stringResource(if (desktopDownloadsUi) Res.string.downloads_desktop_auto_body else Res.string.downloads_auto_body),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        ActionButton(
+            stringResource(if (busy) Res.string.rd_s8_auto_checking else Res.string.downloads_auto_check),
+            onClick = vm::checkNow,
+            icon = Icons.Outlined.Refresh,
+            emphasis = ActionEmphasis.OUTLINED,
+            enabled = !busy,
         )
         result?.let { ResultLine(it, icon = Icons.Outlined.Science) }
         rules.forEach { rule ->
@@ -283,12 +292,25 @@ internal fun AutoDownloadPanel(
         }
         if (suggestions.isNotEmpty()) {
             Text(stringResource(Res.string.downloads_auto_suggest), style = MaterialTheme.typography.labelLarge)
+            val offered = suggestions.take(MAX_SUGGESTIONS)
+            val shown = if (showAllSuggestions) offered else offered.take(FOLDED_SUGGESTIONS)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                suggestions.take(MAX_SUGGESTIONS).forEach { entry ->
+                shown.forEach { entry ->
                     FilterChip(
                         selected = false,
                         onClick = { vm.addRule(entry.ref, entry.title, entry.poster, DownloadProfile.BALANCED_1080) },
                         label = { Text(stringResource(Res.string.rd_s8_auto_add, entry.title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    )
+                }
+            }
+            if (offered.size > FOLDED_SUGGESTIONS) {
+                TextButton(onClick = { showAllSuggestions = !showAllSuggestions }) {
+                    Text(
+                        if (showAllSuggestions) {
+                            stringResource(Res.string.rd_s8_auto_fewer)
+                        } else {
+                            stringResource(Res.string.rd_s8_auto_more, offered.size - FOLDED_SUGGESTIONS)
+                        },
                     )
                 }
             }
@@ -297,6 +319,7 @@ internal fun AutoDownloadPanel(
 }
 
 private const val MAX_SUGGESTIONS = 8
+private const val FOLDED_SUGGESTIONS = 3
 
 // ------------------------------------------------------------------ local library (DL-09, DL-10, DL-11, DL-15)
 
@@ -571,11 +594,7 @@ internal fun LazyListScope.animeShelf(
 ) {
     if (groups.isEmpty() && torrents.isEmpty()) {
         item(key = "done-empty") {
-            app.nijiyome.designsystem.components.EmptyState(
-                icon = Icons.Outlined.VideoFile,
-                title = stringResource(Res.string.downloads_empty_anime),
-                message = stringResource(Res.string.downloads_empty_anime_body),
-            )
+            ShelfEmpty(stringResource(Res.string.downloads_empty_anime), stringResource(Res.string.downloads_empty_anime_body))
         }
         return
     }
@@ -632,6 +651,25 @@ internal fun LazyListScope.animeShelf(
     }
 }
 
+/** TRA-03: an empty shelf draws the direction's empty art, like the empty queue above it. */
+@Composable
+private fun ShelfEmpty(title: String, message: String) {
+    Column(
+        Modifier.fillMaxWidth().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        EmptyArt(EmptyKind.DOWNLOADS, Modifier.size(96.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        Text(
+            message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
 @Composable
 private fun EpisodeShelfRow(item: DownloadItem, onPlay: (DownloadItem) -> Unit, onRedownload: (DownloadItem) -> Unit, onDelete: (DownloadItem) -> Unit) {
     val broken = item.state == DownloadState.BROKEN
@@ -678,10 +716,9 @@ internal fun LazyListScope.chapterShelf(
 ) {
     if (list.isEmpty()) {
         item(key = "ch-empty") {
-            app.nijiyome.designsystem.components.EmptyState(
-                icon = if (novels) Icons.AutoMirrored.Outlined.MenuBook else Icons.Outlined.AutoStories,
-                title = stringResource(if (novels) Res.string.downloads_empty_novels else Res.string.downloads_empty_manga),
-                message = stringResource(Res.string.downloads_empty_chapters_body),
+            ShelfEmpty(
+                stringResource(if (novels) Res.string.downloads_empty_novels else Res.string.downloads_empty_manga),
+                stringResource(Res.string.downloads_empty_chapters_body),
             )
         }
         return
