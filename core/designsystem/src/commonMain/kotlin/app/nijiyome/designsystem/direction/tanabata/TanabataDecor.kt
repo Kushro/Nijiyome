@@ -97,10 +97,13 @@ internal object TanabataDecor : DirectionDecor {
         }
     }
 
+    /** What the row hangs from: the rod, or the skin's own hanger (branch, line, mat, rod with a paper chain). */
     @Composable
     private fun rodModifier(thickness: androidx.compose.ui.unit.Dp, tone: ThemeTone): Modifier {
         val bamboo = TanabataMaterials.bamboo(tone)
-        return Modifier.drawBehind { drawBambooRod(bamboo, top = 0f, thickness = thickness.toPx()) }
+        val thread = TanabataMaterials.thread(tone)
+        val skin = LocalTanzakuSkin.current
+        return Modifier.drawBehind { drawSkinHanger(skin, bamboo, thread, tone, thickness.toPx()) }
     }
 
     /** Section title over a bamboo rail (artifact `.nj-section-head`). */

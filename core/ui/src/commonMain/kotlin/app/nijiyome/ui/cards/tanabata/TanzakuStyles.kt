@@ -80,7 +80,7 @@ private fun wishShown(context: CardContext, show: CardShow, texts: TzTexts): Boo
 
 // ---------------------------------------------------------------- tanzaku
 
-/** Tanzaku: a tall washi strip hanging by a knotted thread; the paper is the status, ink runs down the text with progress. */
+/** Tanzaku: a tall paper strip hanging from the row; how the paper, cord and progress look is the user's skin. */
 @Composable
 internal fun StripCardBody(
     data: TitleCardData,
@@ -92,60 +92,10 @@ internal fun StripCardBody(
     onLongClick: (() -> Unit)?,
 ) {
     when (context) {
-        CardContext.COMPACT -> return TzCompactRow(data, show, onClick, onLongClick, modifier)
-        CardContext.CONTINUE -> return TzContinue(data, size, show, TzContinueVariant.PAPER, onClick, onLongClick, modifier)
-        else -> Unit
-    }
-    val interaction = remember { MutableInteractionSource() }
-    val state = rememberTzState(interaction)
-    val texts = tzTexts(data, show)
-    val hero = context == CardContext.HERO
-    val small = size == CardSize.SMALL && !hero
-    val hangs = hero || (context != CardContext.GRID && tzHangs())
-    val threadH = if (hangs) TZ_THREAD else 0.dp
-    val base = data.paper()
-    val paper = if (state.pressed) TanabataMaterials.pressed(base) else base
-    val ink = data.ink(show)
-    val wish = if (wishShown(context, show, texts) && !small) texts.wish else null
-    val pad = if (small) 5.dp else 6.dp
-    Column(
-        modifier
-            .tzSized(context, stripWidth(size))
-            .tzClickable(interaction, onClick, onLongClick)
-            .tzHeroStub(hero)
-            .then(if (hangs) Modifier.tzRestTilt(data.key).tzThread(threadH) else Modifier)
-            .padding(top = threadH),
-    ) {
-        Column(Modifier.tzFocusRing(state).tanzakuPaper(paper).tzHole()) {
-            Box(Modifier.padding(start = pad, end = pad, top = if (small) 14.dp else 16.dp)) {
-                TzPoster(data.coverUrl, tzPaperShape)
-                if (show.score && data.score != null) TzScore(data.score, Modifier.align(Alignment.BottomEnd).padding(4.dp))
-            }
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = if (small) 56.dp else 64.dp)
-                    .then(if (ink > 0f) Modifier.drawWithContent { drawInkDown(base, ink); drawContent() } else Modifier)
-                    .padding(start = pad + 3.dp, end = pad + 3.dp, top = 8.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Text(
-                    texts.title,
-                    style = if (hero) TzType.display() else TzType.title(),
-                    color = TanabataMaterials.ink,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (texts.statusLine.isNotEmpty()) {
-                    Text(texts.statusLine, style = TzType.sub(), color = TanabataMaterials.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                if (wish != null) {
-                    val big = hero || context == CardContext.WISH
-                    // Two lines: "Episodio 8 · hace 1 día" lost its unit of time at one line on a 150 dp strip.
-                    Text(wish, style = TzType.sub(if (big) 14.sp else 12.5.sp), color = TanabataMaterials.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                }
-            }
-        }
+        CardContext.COMPACT -> TzCompactRow(data, show, onClick, onLongClick, modifier)
+        CardContext.CONTINUE -> TzContinue(data, size, show, TzContinueVariant.PAPER, onClick, onLongClick, modifier)
+        // v1.3.3: the strip is drawn by the user's paper skin (TanzakuSkinned.kt); the flat v1.3.2 paper is retired.
+        else -> SkinnedStripCard(data, context, size, show, onClick, modifier, onLongClick)
     }
 }
 
