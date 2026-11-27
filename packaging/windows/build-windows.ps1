@@ -5,8 +5,11 @@
   Builds the Windows installer and the portable zip of Nijiyome from the Compose Desktop app image.
 
 .DESCRIPTION
-  1. temple-lsfg.exe (native/temple-lsfg, C++/Vulkan) with CMake, unless -NoLsfg or -Lsfg <built exe>.
-  2. The app image: Gradle :desktopApp:createReleaseDistributable (jlink runtime, jars; temple-lsfg into app\resources).
+  1. temple-lsfg.exe (native/temple-lsfg, C++/Vulkan) and nijiyome_fg_desktop.dll with CMake, unless -NoLsfg or -Lsfg <built exe>;
+     nijiyome_upscale.dll (native/upscale, ncnn + Vulkan) with build-desktop-upscale.ps1, unless -NoUpscale or
+     $env:NIJIYOME_DESKTOP_UPSCALE points at a built DLL.
+  2. The app image: Gradle :desktopApp:createReleaseDistributable (jlink runtime, jars; the natives, the upscale models and their
+     licences into app\resources).
   3. Nijiyome-v<version>-windows-x64-portable.zip: the image folder as is (data still in %APPDATA%\Nijiyome).
   4. Nijiyome-v<version>-windows-x64-setup.exe: packaging/windows.nsi over the same folder (makensis on PATH or the default
      NSIS folder).
@@ -20,6 +23,7 @@ param(
     [string] $Version,
     [string] $Lsfg,
     [switch] $NoLsfg,
+    [switch] $NoUpscale,
     [string] $Out
 )
 $ErrorActionPreference = 'Stop'
@@ -67,11 +71,19 @@ if (-not $NoLsfg -and -not $FgLib -and (Test-Path (Join-Path $repo 'native\deskt
     $FgLib = $dll.FullName
 }
 
+# --- desktop-upscale (GPU image upscaling JNI library; first build compiles ncnn and glslang) ------------------------------------
+$UpLib = $env:NIJIYOME_DESKTOP_UPSCALE
+if (-not $NoUpscale -and -not $UpLib -and (Test-Path (Join-Path $repo 'native\upscale'))) {
+    $UpLib = (& (Join-Path $PSScriptRoot 'build-desktop-upscale.ps1') | Select-Object -Last 1)
+}
+if ($NoUpscale) { $UpLib = '' }
+
 # --- app image ------------------------------------------------------------------------------------------------------------------
 Push-Location $repo
 try {
     $env:NIJIYOME_TEMPLE_LSFG = if ($Lsfg) { $Lsfg } else { '' }
     $env:NIJIYOME_DESKTOP_FRAMEGEN = if ($FgLib) { $FgLib } else { '' }
+    $env:NIJIYOME_DESKTOP_UPSCALE = if ($UpLib) { $UpLib } else { '' }
     $env:NIJIYOME_VERSION_NAME = $Version
     & .\gradlew.bat :desktopApp:createReleaseDistributable --no-daemon --console=plain
     if ($LASTEXITCODE -ne 0) { throw "gradle failed ($LASTEXITCODE)" }
@@ -81,6 +93,13 @@ try {
 $image = Join-Path $repo 'desktopApp\build\compose\binaries\main-release\app\Nijiyome'
 foreach ($f in 'Nijiyome.exe', 'runtime\bin\server\jvm.dll', 'app\resources\LICENSE') {
     if (-not (Test-Path (Join-Path $image $f))) { throw "the app image is missing $f" }
+}
+if (Test-Path (Join-Path $image 'app\resources\nijiyome_upscale.dll')) {
+    foreach ($m in 'x2.param', 'x3.param', 'x4.param', 'x4.bin') {
+        if (-not (Test-Path (Join-Path $image "app\resources\upscale-models\realesr-animevideov3-$m"))) { throw "the app image is missing the upscale model realesr-animevideov3-$m" }
+    }
+} else {
+    Write-Warning 'shipping without nijiyome_upscale.dll (GPU image upscaling unavailable)'
 }
 if (-not (Test-Path (Join-Path $image 'Nijiyome.ico'))) { Copy-Item (Join-Path $repo 'packaging\icons\nijiyome.ico') (Join-Path $image 'Nijiyome.ico') }
 

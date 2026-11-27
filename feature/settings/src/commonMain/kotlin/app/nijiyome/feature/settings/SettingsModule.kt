@@ -28,6 +28,8 @@ fun settingsModule(images: Scope.() -> ImageCache?): Module = module {
             reset = getOrNull(),
             images = images(),
             extraStorage = getOrNull(),
+            upscale = getOrNull(),
+            upscaleQueue = getOrNull(),
         )
     }
     // parity wave A (15 §3.3-3.4, worker q): Acerca de / Datos actions, first-run wizard.

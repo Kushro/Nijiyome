@@ -23,6 +23,7 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.components.InfoChip
+import app.nijiyome.upscale.UpscaleImageKind
 
 /** Episode line with thumbnail, number/title, air date, watch progress and watched mark. */
 @Composable
@@ -46,7 +47,7 @@ fun EpisodeRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.width(128.dp)) {
-            MediaCover(url = imageUrl, aspectRatio = 16f / 9f, modifier = Modifier.fillMaxWidth())
+            MediaCover(url = imageUrl, aspectRatio = 16f / 9f, modifier = Modifier.fillMaxWidth(), kind = UpscaleImageKind.EPISODE_THUMB)
             if (progress != null && !completed) {
                 LinearProgressIndicator(
                     progress = { progress.coerceIn(0f, 1f) },

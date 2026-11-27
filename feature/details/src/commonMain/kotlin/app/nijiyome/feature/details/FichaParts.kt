@@ -121,11 +121,12 @@ import app.nijiyome.ui.platform.platformPostsNotifications
 import app.nijiyome.ui.platform.rememberNotificationPermission
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.ui_back
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.ui.media.UpscalableImage
+import app.nijiyome.upscale.UpscaleImageKind
 
 // Sparkles redesign, lane S4: the pieces the three Ficha structures (Panel, Ruta, Cine) share. The structures only arrange them;
 // state, view model and actions are the same (docs/redesign/artefacto/screens-a.js `ficha`).
@@ -212,9 +213,11 @@ internal fun FichaHero(
     Box(modifier.fillMaxWidth().decor(DecorRegion.HERO, rememberHeroRegion(media, state))) {
         if (backdrop) {
             Box(Modifier.fillMaxWidth().height(bannerHeight)) {
-                AsyncImage(
-                    model = art.url,
+                UpscalableImage(
+                    url = art.url,
                     contentDescription = null,
+                    kind = UpscaleImageKind.BACKDROP,
+                    upscale = !blurred,
                     contentScale = ContentScale.Crop,
                     alignment = if (art.lowRes && media.banner != null) Alignment.BottomCenter else Alignment.Center,
                     modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest).then(blurModifier),

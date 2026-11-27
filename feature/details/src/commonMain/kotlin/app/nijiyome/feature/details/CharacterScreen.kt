@@ -61,6 +61,7 @@ import app.nijiyome.ui.state.LoadStateContent
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.upscale.UpscaleImageKind
 
 /**
  * Classic `/character/:name` page: image, name + native name, facts (age, birthday, blood type, gender, favourites), description with
@@ -125,7 +126,7 @@ private fun CharacterBody(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            MediaCover(url = character.image, modifier = Modifier.width(120.dp))
+            MediaCover(url = character.image, modifier = Modifier.width(120.dp), kind = UpscaleImageKind.AVATAR)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(character.name, style = MaterialTheme.typography.headlineSmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
                 character.nativeName?.takeIf { it != character.name }?.let {
@@ -219,7 +220,7 @@ internal fun VoiceActorRow(va: StaffRef) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MediaCover(url = va.image, modifier = Modifier.width(40.dp), shape = CircleShape, aspectRatio = 1f)
+        MediaCover(url = va.image, modifier = Modifier.width(40.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
         Column(Modifier.weight(1f)) {
             Text(va.name, style = MaterialTheme.typography.bodyLarge)
             va.language?.let {

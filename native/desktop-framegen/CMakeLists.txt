@@ -100,6 +100,7 @@ target_include_directories(nijiyome_fg_desktop PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${TEMPLE}/src"
     "${CORE_FG}"
+    "${REPO_ROOT}/native/common"
     ${JNI_INCLUDE_DIRS})
 
 target_link_libraries(nijiyome_fg_desktop PRIVATE

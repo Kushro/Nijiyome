@@ -112,6 +112,7 @@ object SettingsCatalog {
         e("player_preset", EN, sPly, Res.string.settings_preset, null, "anime4k", "fsr", "nvscaler", "shader", "upscale", "escalado", "cas"),
         e("enh_quality", EN, sPly, Res.string.settings_quality_tier, Res.string.settings_quality_tier_hint, "calidad", "quality", "deband", "bandas", "decoder", "decodificador", "hw", "sw", "suavizado", "smoothing"),
         e("player_framegen", EN, sPly, Res.string.rd_s10_set_framegen, Res.string.rd_s10_set_framegen_hint, "fps", "framegen", "lsfg", "lossless", "interpolacion", "cuadros", "frames"),
+        e("images_upscale", EN, sPly, Res.string.upscale_img_group, Res.string.upscale_img_enabled, "upscale", "escalado", "esrgan", "real-esrgan", "imagenes", "images", "poster", "miniaturas", "thumbnails", "banner", "gpu", "nitidez"),
 
         // Subtítulos y audio
         e("player_audio_sub_lang", SU, sPly, Res.string.rd_s10_set_languages, Res.string.rd_s10_set_languages_hint, "audio", "dub", "doblaje", "sub", "subtitulo", "subtitle", "idioma", "japones", "espanol"),

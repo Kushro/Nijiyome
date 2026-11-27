@@ -90,6 +90,7 @@ import app.nijiyome.ui.resources.ui_for_you_summary
 import app.nijiyome.ui.resources.ui_nav_for_you
 import app.nijiyome.ui.resources.ui_retry
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.upscale.UpscaleImageKind
 
 // android wave contract (docs/redesign/12 §3.13). Name and signature FIXED; new parameters only with defaults.
 
@@ -352,7 +353,7 @@ private fun AccountCard(overview: YouOverview, syncing: Boolean, onSyncNow: () -
 @Composable
 private fun Avatar(username: String?, url: String?) {
     if (url != null) {
-        MediaCover(url = url, modifier = Modifier.width(56.dp), shape = CircleShape, aspectRatio = 1f)
+        MediaCover(url = url, modifier = Modifier.width(56.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
         return
     }
     Box(

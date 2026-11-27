@@ -37,6 +37,8 @@ import app.nijiyome.model.torrent.TorrentRepository
 import app.nijiyome.model.torrent.TorrentStorage
 import app.nijiyome.ui.state.runCatchingApp
 import app.nijiyome.ui.state.toAppError
+import app.nijiyome.upscale.UpscaleQueue
+import app.nijiyome.upscale.UpscaleSettingsStore
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,13 +53,22 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Data & storage figures (Settings › Datos y almacenamiento): metadata cache, image disk cache ([imageBytes], Coil) and torrent storage.
- * Any of them may be unknown.
+ * Data & storage figures (Settings › Datos y almacenamiento): metadata cache, image disk cache ([imageBytes], Coil), the GPU-upscaled
+ * copies ([upscaledBytes], v1.3.3) and torrent storage. Any of them may be unknown.
  */
-data class StorageInfo(val cache: MetadataCacheStats?, val torrents: TorrentStorage?, val imageBytes: Long? = null) {
-    /** What "Limpiar caché" frees: metadata table + images on disk; null when neither is known. */
+data class StorageInfo(
+    val cache: MetadataCacheStats?,
+    val torrents: TorrentStorage?,
+    val imageBytes: Long? = null,
+    val upscaledBytes: Long? = null,
+) {
+    /** What "Limpiar caché" frees: metadata table + images on disk + upscaled images; null when none is known. */
     val clearableBytes: Long?
-        get() = if (cache == null && imageBytes == null) null else (cache?.bytes ?: 0L) + (imageBytes ?: 0L)
+        get() = if (cache == null && imageBytes == null && upscaledBytes == null) {
+            null
+        } else {
+            (cache?.bytes ?: 0L) + (imageBytes ?: 0L) + (upscaledBytes ?: 0L)
+        }
 }
 
 /**
@@ -111,6 +122,9 @@ class SettingsViewModel(
     private val images: ImageCache? = null,
     // Hito 6 (D1): folders only desktop counts in Ajustes › Datos; Android binds none.
     private val extraStorage: ExtraStorage? = null,
+    // v1.3.3 (docs/plan-upscaling.md §4.5): the upscaled image cache, measured and emptied with the others.
+    private val upscale: UpscaleSettingsStore? = null,
+    private val upscaleQueue: UpscaleQueue? = null,
 ) : ViewModel() {
 
     private val extras = MutableStateFlow(Extras())
@@ -291,8 +305,9 @@ class SettingsViewModel(
             val image = images?.let { cache -> runCatchingApp { cache.sizeBytes() } }
             val extra = extraStorage?.let { source -> runCatchingApp { source.measure() }.getOrNull() }.orEmpty()
             val failures = listOfNotNull(cache?.exceptionOrNull(), torrent?.exceptionOrNull(), image?.exceptionOrNull())
-            val loaded = StorageInfo(cache?.getOrNull(), torrent?.getOrNull(), image?.getOrNull())
-            val nothing = loaded.cache == null && loaded.torrents == null && loaded.imageBytes == null
+            val upscaled = upscaleQueue?.status?.value?.cacheBytes
+            val loaded = StorageInfo(cache?.getOrNull(), torrent?.getOrNull(), image?.getOrNull(), upscaled)
+            val nothing = loaded.cache == null && loaded.torrents == null && loaded.imageBytes == null && loaded.upscaledBytes == null
             val result: LoadState<StorageInfo> = if (failures.isNotEmpty() && nothing) {
                 LoadState.Err(failures.first().toAppError())
             } else {
@@ -330,16 +345,17 @@ class SettingsViewModel(
      * one fails; the freed bytes are measured (before - after), the first failure is reported instead.
      */
     fun clearCache() {
-        if (metadata == null && images == null) return
+        if (metadata == null && images == null && upscale == null) return
         if (extras.value.clearingCache) return
         extras.update { it.copy(clearingCache = true) }
         viewModelScope.launch {
             val before = measureClearable()
             val metaResult = metadata?.let { repo -> runCatchingApp { repo.clearCache() } }
             val imageResult = images?.let { cache -> runCatchingApp { cache.clear() } }
+            val upscaleResult = upscale?.let { store -> runCatchingApp { store.clearCache() } }
             val after = measureClearable()
             extras.update { it.copy(clearingCache = false) }
-            val failure = metaResult?.exceptionOrNull() ?: imageResult?.exceptionOrNull()
+            val failure = metaResult?.exceptionOrNull() ?: imageResult?.exceptionOrNull() ?: upscaleResult?.exceptionOrNull()
             _events.trySend(
                 if (failure != null) SettingsEvent.Failed(failure.toAppError()) else SettingsEvent.CacheCleared(freedBytes(before, after)),
             )
@@ -347,11 +363,12 @@ class SettingsViewModel(
         }
     }
 
-    /** Metadata cache + image disk cache bytes right now (an unreadable figure counts as 0). */
+    /** Metadata cache + image disk cache + upscaled cache bytes right now (an unreadable figure counts as 0). */
     private suspend fun measureClearable(): Long {
         val meta = metadata?.let { repo -> runCatchingApp { repo.cacheStats().bytes }.getOrNull() } ?: 0L
         val img = images?.let { cache -> runCatchingApp { cache.sizeBytes() }.getOrNull() } ?: 0L
-        return meta + img
+        val upscaled = upscaleQueue?.status?.value?.cacheBytes ?: 0L
+        return meta + img + upscaled
     }
 
     /** false where no [AppReset] is bound (desktop for now): "Restablecer la app" is not offered. Android always binds it. */

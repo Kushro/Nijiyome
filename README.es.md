@@ -87,6 +87,9 @@ Elige entre cinco direcciones visuales independientes — **Tanabata**, **Obi**,
   integrado de Nijiyome usando tu propio `Lossless.dll` (zero-copy OpenGL↔Vulkan en Linux, zero-copy D3D12↔Vulkan en Windows
   y respaldo automático), con multiplicador en vivo (`×2`–`×4`), modo rendimiento, anti-artefactos en cortes de escena y
   compensación automática de audio, sin necesidad de ventana externa de mpv.
+- 🖼️ **Escalado de imágenes por GPU (escritorio y Android de 64 bits).** Los pósters, banners y miniaturas de episodio se
+  escalan en segundo plano con el modelo de anime de Real-ESRGAN en la GPU (Vulkan), y la cola se pausa mientras se reproduce
+  un video. Sin una GPU con Vulkan la función se apaga; nunca usa la CPU.
 - ⚡ **Decodificación por hardware.** VAAPI en Linux (los ajustes muestran qué puede decodificar tu GPU); por software como
   respaldo.
 - 🪟 **mpv externo.** Opcional: reproduce en la ventana propia de mpv con tu configuración, `mpv-anime-build` o
@@ -168,6 +171,7 @@ instalador de Windows.
 | `contracts/` | Contratos compartidos: host de extensiones, Nijiyome Link v1 (OpenAPI), fixtures |
 | `tokens/` | Tokens de diseño: `tokens.json` → `Tokens.kt` |
 | `native/temple-lsfg/` | Helper de generación de cuadros (C++/Vulkan) para Nijiyome Link |
+| `native/upscale/` | Biblioteca de escalado de imágenes por GPU (Real-ESRGAN sobre ncnn + Vulkan, JNI) |
 | `packaging/` | Empaquetado de escritorio (AppImage, paquete de Arch, instalador y zip portable de Windows) e íconos |
 | `scripts/` | Herramientas de compilación y de la migración |
 

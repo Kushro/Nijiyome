@@ -158,10 +158,11 @@ import app.nijiyome.ui.media.alternativeTitle
 import app.nijiyome.ui.media.displayTitle
 import app.nijiyome.ui.media.progressFraction
 import app.nijiyome.ui.state.userMessage
-import coil3.compose.AsyncImage
 import java.util.Locale
 import kotlinx.coroutines.delay
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.upscale.UpscaleImageKind
+import app.nijiyome.ui.media.UpscalableImage
 
 /** Episode rows built once per data change (not in every pass of the list builder): all of them and the search matches. */
 internal data class EpisodeLists(val all: List<EpisodeItem>, val filtered: List<EpisodeItem>)
@@ -531,7 +532,7 @@ private fun FactsCards(details: MediaDetails, actions: DetailsActions) {
                 contentAlignment = Alignment.Center,
             ) {
                 trailer.thumbnail?.let {
-                    AsyncImage(model = it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    UpscalableImage(url = it, contentDescription = null, kind = UpscaleImageKind.EPISODE_THUMB, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
                 Box(
                     Modifier
@@ -666,7 +667,7 @@ private fun CharacterEdgeRow(edge: CharacterEdge, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MediaCover(url = edge.character.image, modifier = Modifier.width(48.dp), shape = CircleShape, aspectRatio = 1f)
+        MediaCover(url = edge.character.image, modifier = Modifier.width(48.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
         Column(Modifier.weight(1f)) {
             Text(edge.character.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
             edge.role?.let {
@@ -680,7 +681,7 @@ private fun CharacterEdgeRow(edge: CharacterEdge, onClick: () -> Unit) {
                     Text(languageLabel(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            MediaCover(url = va.image, modifier = Modifier.width(48.dp), shape = CircleShape, aspectRatio = 1f)
+            MediaCover(url = va.image, modifier = Modifier.width(48.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
         }
     }
 }
@@ -698,7 +699,7 @@ private fun StaffSection(staff: LoadState<List<StaffEdge>>?) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        MediaCover(url = edge.staff.image, modifier = Modifier.width(40.dp), shape = CircleShape, aspectRatio = 1f)
+                        MediaCover(url = edge.staff.image, modifier = Modifier.width(40.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
                         Text(edge.staff.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                         edge.role?.let {
                             Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)

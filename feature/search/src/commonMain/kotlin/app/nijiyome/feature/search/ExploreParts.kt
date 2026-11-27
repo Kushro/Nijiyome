@@ -146,6 +146,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.upscale.UpscaleImageKind
 
 // Sparkles Explorar (lane S3): the pieces both structures (Facetas, Lienzo) compose. They read the shared SearchUiState and call the
 // shared ExploreActions; only the arrangement changes between structures.
@@ -774,7 +775,7 @@ private fun CharacterRow(c: CharacterRef, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MediaCover(url = c.image, modifier = Modifier.width(48.dp), shape = CircleShape, aspectRatio = 1f)
+        MediaCover(url = c.image, modifier = Modifier.width(48.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
         Text(c.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }

@@ -5,6 +5,7 @@
 
 #include "common/exception.hpp"
 #include "fg_pacing.h"
+#include "gpu_pick.h"
 #include "lsfg_3_1.hpp"
 #include "lsfg_3_1p.hpp"
 #include "shader_loader.h"
@@ -223,31 +224,35 @@ ProbeResult probeDesktopGpuAndDll(const std::string& dllPath) {
     std::vector<VkPhysicalDevice> devs(count);
     if (count > 0) vkEnumeratePhysicalDevices(inst, &count, devs.data());
 
-    auto rank = [](VkPhysicalDeviceType t) {
-        switch (t) {
-            case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: return 3;
-            case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: return 2;
-            case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: return 1;
-            default: return 0;
-        }
-    };
-
-    int bestRank = 0;
-    uint64_t bestHeap = 0;
-    bool found = false;
-    bool bestStorageOk = false;
-    const bool dllHasFp16 = res.fp16;
+    // Device choice lives in native/common/gpu_pick.h (shared with native/upscale). Software-name rejection stays off
+    // here so framegen keeps exactly the devices it accepted before the extraction (CPU types were already excluded).
+    std::vector<njgpu::GpuCandidate> cands;
+    cands.reserve(devs.size());
     for (VkPhysicalDevice d : devs) {
         VkPhysicalDeviceProperties props{};
         vkGetPhysicalDeviceProperties(d, &props);
-        const int r = rank(props.deviceType);
-        if (r == 0) continue;
         VkPhysicalDeviceMemoryProperties mp{};
         vkGetPhysicalDeviceMemoryProperties(d, &mp);
         uint64_t heap = 0;
         for (uint32_t i = 0; i < mp.memoryHeapCount; ++i)
             if (mp.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) heap = std::max<uint64_t>(heap, mp.memoryHeaps[i].size);
-        if (found && (r < bestRank || (r == bestRank && heap <= bestHeap))) continue;
+        njgpu::GpuCandidate c;
+        c.vkType = static_cast<int>(props.deviceType);
+        c.vendorID = props.vendorID;
+        c.deviceID = props.deviceID;
+        c.name = props.deviceName;
+        c.deviceLocalHeapBytes = heap;
+        cands.push_back(std::move(c));
+    }
+    const njgpu::PickedGpu picked = njgpu::pickBest(cands, njgpu::PickOptions{.rejectSoftwareByName = false});
+
+    const bool found = picked.index >= 0;
+    bool bestStorageOk = false;
+    const bool dllHasFp16 = res.fp16;
+    if (found) {
+        VkPhysicalDevice d = devs[static_cast<size_t>(picked.index)];
+        VkPhysicalDeviceProperties props{};
+        vkGetPhysicalDeviceProperties(d, &props);
 
         const uint32_t usable = std::min(instVer, props.apiVersion);
         VkPhysicalDeviceVulkan12Features f12{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
@@ -269,12 +274,9 @@ ProbeResult probeDesktopGpuAndDll(const std::string& dllPath) {
 #else
         const bool zc = hasExt(exts, "VK_KHR_external_memory_fd") && hasExt(exts, "VK_KHR_external_semaphore_fd");
 #endif
-        found = true;
-        bestRank = r;
-        bestHeap = heap;
         bestStorageOk = storageOk;
         res.deviceName = props.deviceName;
-        res.deviceUuid = (static_cast<uint64_t>(props.vendorID) << 32) | props.deviceID;
+        res.deviceUuid = picked.vendorDeviceKey();
         res.fp16 = (dllPath.empty() || dllHasFp16) && (usable >= VK_API_VERSION_1_2 && f12.shaderFloat16 == VK_TRUE);
         res.zeroCopyVk = zc;
     }

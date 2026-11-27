@@ -86,6 +86,9 @@ Choose between five independent visual directions — **Tanabata**, **Obi**, **N
   your own `Lossless.dll` (zero-copy OpenGL↔Vulkan on Linux, zero-copy D3D12↔Vulkan on Windows, plus automatic fallback),
   with live multiplier (`×2`–`×4`), Performance mode, scene-cut anti-artifacts, and automatic audio-delay sync — no external
   mpv window required.
+- 🖼️ **GPU image upscaling (desktop & 64-bit Android).** Posters, banners and episode thumbnails are upscaled in the background
+  with Real-ESRGAN's anime model on the GPU (Vulkan), and the queue pauses while a video plays. Without a Vulkan GPU the
+  feature turns off; it never runs on the CPU.
 - ⚡ **Hardware decoding.** VAAPI on Linux (the settings show what your GPU can decode); software decoding as a fallback.
 - 🪟 **External mpv.** Optional: play in mpv's own window with your mpv config and `mpv-anime-build` or
   [lsfg-vk](https://github.com/PancakeTAS/lsfg-vk) on Linux.
@@ -164,6 +167,7 @@ through environment variables (`NIJIYOME_ANILIST_CLIENT_ID`, `NIJIYOME_MAL_CLIEN
 | `contracts/` | Shared contracts: extension host, Nijiyome Link v1 (OpenAPI), fixtures |
 | `tokens/` | Design tokens: `tokens.json` → `Tokens.kt` |
 | `native/temple-lsfg/` | Frame generation helper (C++/Vulkan) for Nijiyome Link |
+| `native/upscale/` | GPU image upscaling library (Real-ESRGAN on ncnn + Vulkan, JNI) |
 | `packaging/` | Desktop packaging (AppImage, Arch package, Windows installer and portable zip) and icons |
 | `scripts/` | Build and migration tools |
 

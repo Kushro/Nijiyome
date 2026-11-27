@@ -69,9 +69,24 @@ jobs:
     name: Linux AppImage
     needs: [runner, meta]
     runs-on: ${{ needs.runner.outputs.linux }}
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # native/upscale: the pinned ncnn submodule and only its glslang submodule (pybind11 is not needed).
+      - name: ncnn sources
+        run: |
+          git submodule update --init --depth 1 native/upscale/third_party/ncnn
+          git -C native/upscale/third_party/ncnn submodule update --init --depth 1 glslang
+      - name: ncnn pin
+        id: ncnn
+        run: echo "sha=$(git rev-parse HEAD:native/upscale/third_party/ncnn)" >> "$GITHUB_OUTPUT"
+      # ncnn + glslang are the slow part of the upscaler build: reuse build/desktop-upscale per OS and ncnn commit.
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: build/desktop-upscale
+          key: desktop-upscale-${{ runner.os }}-${{ steps.ncnn.outputs.sha }}-${{ hashFiles('native/upscale/CMakeLists.txt', 'native/upscale/src/**', 'native/common/**') }}
+          restore-keys: |
+            desktop-upscale-${{ runner.os }}-${{ steps.ncnn.outputs.sha }}-
       - name: System dependencies
         run: |
           sudo apt-get update
@@ -85,6 +100,8 @@ jobs:
         run: echo "NIJIYOME_TEMPLE_LSFG=$(bash packaging/linux/build-temple-lsfg.sh | tail -n1)" >> "$GITHUB_ENV"
       - name: desktop-framegen (embedded LSFG JNI)
         run: echo "NIJIYOME_DESKTOP_FRAMEGEN=$(bash packaging/linux/build-desktop-framegen.sh | tail -n1)" >> "$GITHUB_ENV"
+      - name: desktop-upscale (GPU image upscaling JNI)
+        run: echo "NIJIYOME_DESKTOP_UPSCALE=$(bash packaging/linux/build-desktop-upscale.sh | tail -n1)" >> "$GITHUB_ENV"
       - name: App image
         env:
           NIJIYOME_VERSION_NAME: ${{ needs.meta.outputs.version }}
@@ -120,18 +137,36 @@ jobs:
     name: Windows installer + portable
     needs: [runner, meta]
     runs-on: ${{ needs.runner.outputs.windows }}
-    timeout-minutes: 120
+    timeout-minutes: 150
     defaults:
       run:
         shell: pwsh
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # native/upscale: the pinned ncnn submodule and only its glslang submodule (pybind11 is not needed).
+      - name: ncnn sources
+        run: |
+          git submodule update --init --depth 1 native/upscale/third_party/ncnn
+          git -C native/upscale/third_party/ncnn submodule update --init --depth 1 glslang
+      - name: ncnn pin
+        id: ncnn
+        run: |
+          $sha = git rev-parse HEAD:native/upscale/third_party/ncnn
+          "sha=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+      # ncnn + glslang are the slow part of the upscaler build: reuse build/desktop-upscale per OS and ncnn commit.
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: build/desktop-upscale
+          key: desktop-upscale-${{ runner.os }}-${{ steps.ncnn.outputs.sha }}-${{ hashFiles('native/upscale/CMakeLists.txt', 'native/upscale/src/**', 'native/common/**') }}
+          restore-keys: |
+            desktop-upscale-${{ runner.os }}-${{ steps.ncnn.outputs.sha }}-
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@da187c8e6ffbd3802e00f2477aa5a822b25f2dda # v4.4.4
-      # cl / link on PATH for temple-lsfg (C++/Vulkan, static CRT); Ninja comes with the VS CMake tools.
+      # cl / link on PATH for temple-lsfg, desktop-framegen and desktop-upscale (C++/Vulkan, static CRT); Ninja comes with the VS
+      # CMake tools. build-windows.ps1 builds all three before the app image.
       - name: MSVC developer environment
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         with:
@@ -186,9 +221,15 @@ jobs:
     name: Android APK (release key)
     needs: [runner, meta]
     runs-on: ${{ needs.runner.outputs.linux }}
-    timeout-minutes: 75
+    # :core:upscale-native compiles ncnn + glslang once per ABI with the NDK.
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # native/upscale: the pinned ncnn submodule and only its glslang submodule (pybind11 is not needed).
+      - name: ncnn sources
+        run: |
+          git submodule update --init --depth 1 native/upscale/third_party/ncnn
+          git -C native/upscale/third_party/ncnn submodule update --init --depth 1 glslang
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin

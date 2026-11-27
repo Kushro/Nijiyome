@@ -1,6 +1,12 @@
 package app.nijiyome
 
 import android.app.Application
+import app.nijiyome.upscale.UpscaleQueue
+import app.nijiyome.upscale.UpscaleRefreshListener
+import coil3.ImageLoader
+import coil3.PlatformContext
+import coil3.SingletonImageLoader
+import org.koin.core.context.GlobalContext
 import app.nijiyome.data.AppLogStore
 import app.nijiyome.data.HistorySyncScheduler
 import app.nijiyome.data.PROP_ANILIST_CLIENT_ID
@@ -87,6 +93,8 @@ internal val nijiyomeModules: List<Module> = listOf(
     downloadsFeatureModule, mangaFeatureModule, novelFeatureModule, socialFeatureModule,
     // 0.4.0 player quality (worker B): phone frame generation (FgController, used by mpvPlayerModule's sessions)
     frameGenModule,
+    // v1.3.3: GPU image upscaling (its pause gates read frameGenModule's FgActiveFlag and mpvPlayerModule's RemoteProcessingState)
+    upscaleModule,
 )
 
 /**
@@ -94,9 +102,11 @@ internal val nijiyomeModules: List<Module> = listOf(
  * default initializer must stay enabled. parity wave A, 2026-11-09 amendment: there is no own login and no hosted backend; the only
  * injected configuration is the pair of optional OAuth client ids (BuildConfig, never from committed files).
  */
-class NijiyomeApplication : Application() {
+class NijiyomeApplication : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
+        // Before any activity starts, so the upscale queue's "app hidden" count is right from the first one.
+        AppVisibility.register(this)
         startKoin {
             androidContext(this@NijiyomeApplication)
             properties(
@@ -115,4 +125,16 @@ class NijiyomeApplication : Application() {
             platform = "android-${android.os.Build.VERSION.RELEASE}",
         )
     }
+
+    /**
+     * v1.3.3 (plan-upscaling §4.2, R3): the app's own image loader, with exactly Coil 3.6.3's defaults. `ImageLoader.Builder(context)`
+     * builds what Coil's default singleton builds: the shared default disk cache (`coil3_disk_cache` in the temporary folder, which is
+     * this app's cacheDir on Android; 2 % of the volume, 10 to 250 MB), a memory cache of Coil's default share of the app memory and
+     * the service-loaded components (the OkHttp fetcher). The only addition is the listener that tells the upscale queue when an
+     * image came from the network again.
+     */
+    override fun newImageLoader(context: PlatformContext): ImageLoader =
+        ImageLoader.Builder(context)
+            .eventListener(UpscaleRefreshListener { GlobalContext.getOrNull()?.getOrNull<UpscaleQueue>() })
+            .build()
 }

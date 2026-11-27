@@ -175,6 +175,10 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
+import app.nijiyome.ui.media.LocalUpscaleQueue
+import app.nijiyome.ui.media.LocalUpscaleSettings
+import app.nijiyome.upscale.UpscaleQueue
+import app.nijiyome.upscale.UpscaleSettingsStore
 import org.koin.compose.koinInject
 
 /**
@@ -217,6 +221,10 @@ fun NijiyomeApp(
     }
     platformEffects(settings, dark)
     val chrome = remember { ShellChrome() }
+    // GPU image upscaling (docs/plan-upscaling.md §4.2): optional; without it every image is the plain AsyncImage it always was.
+    val upscaleKoin = getKoin()
+    val upscaleQueue = remember(upscaleKoin) { runCatching { upscaleKoin.getOrNull<UpscaleQueue>() }.getOrNull() }
+    val upscaleSettings = remember(upscaleKoin) { runCatching { upscaleKoin.getOrNull<UpscaleSettingsStore>() }.getOrNull()?.settings }
 
     NijiyomeTheme(
         paletteId = settings.paletteId,
@@ -237,6 +245,8 @@ fun NijiyomeApp(
             LocalLook provides settings.look,
             LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion, lowEndDevice = rememberLowEndDevice()),
             LocalShellChrome provides chrome,
+            LocalUpscaleQueue provides upscaleQueue,
+            LocalUpscaleSettings provides upscaleSettings,
         ) {
             val shell: @Composable () -> Unit = {
                 if (!settings.onboardingDone) {

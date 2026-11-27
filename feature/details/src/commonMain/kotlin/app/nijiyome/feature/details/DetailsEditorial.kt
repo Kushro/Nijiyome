@@ -27,7 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.model.Media
 import app.nijiyome.ui.media.displayTitle
-import coil3.compose.AsyncImage
+import app.nijiyome.ui.media.UpscalableImage
+import app.nijiyome.upscale.UpscaleImageKind
 
 // Ficha "Cine editorial" (LookPrefs.pageStyle = EDITORIAL, the Cine preset): the sharp fanart bleeds to the edges under a veil that
 // ends in the page background, with a large display title and the facts line on it; no poster and no blur. The actions row and the
@@ -53,9 +54,12 @@ internal fun EditorialHeader(
     val height = minOf(EDITORIAL_HEIGHT, windowHeightDp().dp * heightFraction)
     Column(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().height(height)) {
-            AsyncImage(
-                model = backdrop.url,
+            UpscalableImage(
+                url = backdrop.url,
                 contentDescription = null,
+                kind = UpscaleImageKind.BACKDROP,
+                // a blurred (adult) backdrop is not worth a GPU job
+                upscale = !blurred,
                 contentScale = ContentScale.Crop,
                 alignment = if (backdrop.lowRes && media.banner != null) Alignment.BottomCenter else Alignment.TopCenter,
                 modifier = Modifier

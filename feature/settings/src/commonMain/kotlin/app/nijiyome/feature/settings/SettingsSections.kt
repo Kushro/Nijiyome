@@ -253,6 +253,8 @@ private fun EnhancementsCategory(state: SettingsUiState, vm: SettingsViewModel) 
     SettingsGroup(stringResource(Res.string.rd_s10_set_framegen)) {
         SettingAnchor("player_framegen") { FrameGenSettingsSlot() }
     }
+    // v1.3.3: GPU upscaling of posters, banners and thumbnails (its own file; unavailable builds say so).
+    ImageUpscaleGroup()
 }
 
 private fun presetLabelRes(id: String): StringResource = when (id) {
@@ -782,6 +784,7 @@ private fun StorageBreakdown(info: StorageInfo, extra: List<ExtraStorageItem> = 
     Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         LegendRow(cacheColor, stringResource(Res.string.settings_data_cache), info.cache?.let { formatBytes(it.bytes) })
         LegendRow(cacheColor, stringResource(Res.string.settings_data_images), info.imageBytes?.let { formatBytes(it) })
+        info.upscaledBytes?.let { LegendRow(cacheColor, stringResource(Res.string.upscale_img_data_label), formatBytes(it)) }
         LegendRow(torrentColor, stringResource(Res.string.settings_data_torrents), info.torrents?.let { formatBytes(it.usedBytes) })
         extra.forEach { item -> LegendRow(if (item.inTorrents) torrentColor else otherColor, stringResource(item.kind.labelRes()), formatBytes(item.bytes)) }
         LegendRow(freeColor, stringResource(Res.string.settings_data_free), info.torrents?.let { formatBytes(it.freeBytes) })

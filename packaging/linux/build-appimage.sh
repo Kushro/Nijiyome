@@ -7,10 +7,11 @@
 # appimagetool and the type2 runtime are downloaded once into the tools folder and checked against packaging/appimage-tools.lock.json.
 #
 # Build host: CI uses Ubuntu 24.04. Needs bash, curl, sha256sum, python3 (reads the lock), a JDK 21 for Gradle (unless --image),
-# and cmake + a C++20 compiler for temple-lsfg (unless --lsfg / --no-lsfg).
+# and cmake + a C++20 compiler for temple-lsfg (unless --lsfg / --no-lsfg) and for the GPU image upscaler (unless --upscale /
+# --no-upscale; its first build compiles ncnn and glslang and fetches the ncnn submodule when it is missing).
 #
-# Usage: build-appimage.sh [--image <app image dir>] [--lsfg <built temple-lsfg> | --no-lsfg] [--out <dir>] [--tools <dir>]
-#                          [--version <x.y.z>]
+# Usage: build-appimage.sh [--image <app image dir>] [--lsfg <built temple-lsfg> | --no-lsfg]
+#                          [--upscale <built libnijiyome_upscale.so> | --no-upscale] [--out <dir>] [--tools <dir>] [--version <x.y.z>]
 #   --image   use an image built already (…/desktopApp/build/compose/binaries/main-release/app/Nijiyome); otherwise Gradle builds it
 #   --tools   where appimagetool and the runtime are kept (default: ${XDG_CACHE_HOME:-~/.cache}/nijiyome-packaging); it must be on a
 #             disk that can run programs
@@ -23,6 +24,8 @@ id="app.nijiyome"
 image=""
 lsfg=""
 no_lsfg=0
+up_lib="${NIJIYOME_DESKTOP_UPSCALE:-}"
+no_upscale=0
 out="$repo/build/appimage"
 tools="${XDG_CACHE_HOME:-$HOME/.cache}/nijiyome-packaging"
 version=""
@@ -34,7 +37,9 @@ while [ $# -gt 0 ]; do
         --out) out="$2"; shift 2 ;;
         --tools) tools="$2"; shift 2 ;;
         --version) version="$2"; shift 2 ;;
-        -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
+        --upscale) up_lib="$2"; shift 2 ;;
+        --no-upscale) no_upscale=1; shift ;;
+        -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -56,8 +61,13 @@ if [ -z "$image" ]; then
     if [ -z "$fg_lib" ] && [ "$no_lsfg" -eq 0 ] && [ -d "$repo/native/desktop-framegen" ]; then
         fg_lib="$(bash "$here/build-desktop-framegen.sh" | tail -n1)"
     fi
-    (cd "$repo" && NIJIYOME_TEMPLE_LSFG="$lsfg" NIJIYOME_DESKTOP_FRAMEGEN="$fg_lib" NIJIYOME_VERSION_NAME="$version" \
-        bash gradlew :desktopApp:createReleaseDistributable --no-daemon --console=plain)
+    if [ "$no_upscale" -eq 1 ]; then
+        up_lib=""
+    elif [ -z "$up_lib" ] && [ -d "$repo/native/upscale" ]; then
+        up_lib="$(bash "$here/build-desktop-upscale.sh" | tail -n1)"
+    fi
+    (cd "$repo" && NIJIYOME_TEMPLE_LSFG="$lsfg" NIJIYOME_DESKTOP_FRAMEGEN="$fg_lib" NIJIYOME_DESKTOP_UPSCALE="$up_lib" \
+        NIJIYOME_VERSION_NAME="$version" bash gradlew :desktopApp:createReleaseDistributable --no-daemon --console=plain)
     image="$repo/desktopApp/build/compose/binaries/main-release/app/Nijiyome"
 fi
 [ -f "$image/bin/Nijiyome" ] || { echo "app image not found: $image" >&2; exit 1; }
@@ -96,6 +106,14 @@ ls "$appdir"/usr/lib/nijiyome/lib/app/libtorrent4j-linux-*.jar >/dev/null 2>&1 |
 ls "$appdir"/usr/lib/nijiyome/lib/app/mediamp-mpv-*linux*.jar "$appdir"/usr/lib/nijiyome/lib/app/*mpv*runtime*linux*.jar >/dev/null 2>&1 \
     || echo "note: no MediaMP Linux runtime jar matched (check lib/app)" >&2
 [ -f "$appdir/usr/lib/nijiyome/lib/app/resources/temple-lsfg" ] || echo "note: shipping without temple-lsfg (Link LSFG profiles unavailable)" >&2
+res="$appdir/usr/lib/nijiyome/lib/app/resources"
+if [ -f "$res/libnijiyome_upscale.so" ]; then
+    for m in x2.param x3.param x4.param x4.bin; do
+        [ -f "$res/upscale-models/realesr-animevideov3-$m" ] || { echo "upscale model realesr-animevideov3-$m missing" >&2; exit 1; }
+    done
+else
+    echo "note: shipping without libnijiyome_upscale.so (GPU image upscaling unavailable)" >&2
+fi
 
 # --- pack --------------------------------------------------------------------------------------------------------------------
 target="$out/Nijiyome-v$version-linux-x86_64.AppImage"

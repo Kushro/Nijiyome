@@ -76,5 +76,10 @@ include(":feature:shell")
 // 0.4.0 player quality (worker B): frame generation on the phone (LSFG, Kotlin + NDK)
 include(":core:framegen")
 
+// v1.3.3 GPU image upscaling (docs/plan-upscaling.md §4.1): queue, cache, settings and engine interface shared by Android and desktop.
+include(":core:upscale")
+// Its Android native side (libnijiyome_upscale.so through CMake, like :core:framegen) and the model assets.
+include(":core:upscale-native")
+
 // Hito 5 (W2): the desktop servers (Nijiyome Link over mTLS and the integrated extension server), JVM only, used by :desktopApp.
 include(":server")

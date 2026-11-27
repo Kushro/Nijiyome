@@ -95,6 +95,7 @@ import java.awt.GraphicsEnvironment
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.File
+import okio.Path.Companion.toOkioPath
 import java.util.Locale
 import javax.swing.JOptionPane
 import kotlin.system.exitProcess
@@ -128,9 +129,22 @@ fun main(args: Array<String>) {
     // Settings › Red: the outbound proxy and FlareSolverr apply before the first client exists (no request leaves directly first).
     NetworkFile.applyAtStart(paths.dataDir)
     // Images (Coil) through a client with the outbound proxy's HTTP credentials too (the JVM selector already gives it the proxy).
+    // v1.3.3 (plan-upscaling P5): the disk cache moves from the system temporary folder (`/tmp/coil3_disk_cache`) to the app's cache
+    // folder, so Ajustes › Datos measures it and the upscale queue reads its sources there; Coil's default sizes are kept. The event
+    // listener tells the upscale queue when an image came from the network again.
     coil3.SingletonImageLoader.setSafe { ctx ->
         coil3.ImageLoader.Builder(ctx)
             .components { add(coil3.network.okhttp.OkHttpNetworkFetcherFactory(callFactory = { okhttp3.OkHttpClient.Builder().outbound().build() })) }
+            .diskCache {
+                coil3.disk.DiskCache.Builder()
+                    .directory(File(paths.cacheDir, "coil3").toOkioPath())
+                    .build()
+            }
+            .eventListener(
+                app.nijiyome.upscale.UpscaleRefreshListener {
+                    org.koin.core.context.GlobalContext.getOrNull()?.getOrNull<app.nijiyome.upscale.UpscaleQueue>()
+                },
+            )
             .build()
     }
     startKoin {
@@ -310,6 +324,8 @@ fun main(args: Array<String>) {
             // No tray any more (turned off, or it went away) while the window is hidden: show it, or the app could not be reached.
             LaunchedEffect(trayOn) { if (!trayOn) visible = true }
             val closeWindow: () -> Unit = { if (trayOn && prefs.closeToTray) visible = false else exitApplication() }
+            // GPU image upscaling pauses while nobody can see the window (in the tray or minimised).
+            LaunchedEffect(visible, windowState.isMinimized) { DesktopWindowHidden.set(!visible || windowState.isMinimized) }
             val nativeBar = remember { system.prefs.value.nativeTitleBar }
             Window(
                 onCloseRequest = closeWindow,

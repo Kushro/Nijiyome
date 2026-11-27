@@ -74,6 +74,7 @@ import app.nijiyome.model.ListStatus
 import app.nijiyome.ui.media.MediaCover
 import coil3.compose.AsyncImage
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.upscale.UpscaleImageKind
 
 // 0.4.1 (user report 2026-11-17): "al llegar al final del video, una bonita pantalla post capítulo terminado" with the next
 // episode, watch again, the episode list and the way back to the title's page. It sits over the last frame (the engines keep it)
@@ -331,7 +332,7 @@ private fun NextUpCard(next: NextUpUi, onPlayNext: () -> Unit, onCancelCountdown
     val scheme = MaterialTheme.colorScheme
     val thumb: @Composable (Modifier) -> Unit = { m ->
         Box(m.clip(MaterialTheme.shapes.large).clickable(onClick = onPlayNext), contentAlignment = Alignment.Center) {
-            MediaCover(url = next.image, aspectRatio = 16f / 9f, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxSize())
+            MediaCover(url = next.image, aspectRatio = 16f / 9f, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxSize(), kind = UpscaleImageKind.EPISODE_THUMB)
             Box(Modifier.fillMaxSize().background(scheme.scrim.copy(alpha = 0.35f)))
             Surface(shape = CircleShape, color = scheme.surfaceContainerHighest.copy(alpha = 0.9f), contentColor = scheme.onSurface) {
                 val left = next.secondsLeft

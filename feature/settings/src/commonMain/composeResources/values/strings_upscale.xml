@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- v1.3.3 GPU image upscaling (docs/plan-upscaling.md §5): Settings › Enhancements › Images, and its line in Data. -->
+<resources>
+    <string name="upscale_img_group">Images</string>
+    <string name="upscale_img_group_hint">Sharper posters, banners and thumbnails, upscaled with Real-ESRGAN on your GPU. The original shows first and is replaced when the sharper copy is ready.</string>
+    <string name="upscale_img_unavailable">Image upscaling is not available in this build.</string>
+    <string name="upscale_img_enabled">Upscale images with the GPU</string>
+    <string name="upscale_img_enabled_hint">Only when an image is shown larger than it is. Never uses the CPU.</string>
+    <string name="upscale_img_quality">Quality</string>
+    <string name="upscale_img_quality_hint">Fast goes up to x2, Balanced up to x3 and Best up to x4. Best takes longer per image.</string>
+    <string name="upscale_img_quality_fast">Fast</string>
+    <string name="upscale_img_quality_balanced">Balanced</string>
+    <string name="upscale_img_quality_best">Best</string>
+    <string name="upscale_img_kinds">What to upscale</string>
+    <string name="upscale_img_kinds_hint">Images shown blurred, title logos and manga pages are never upscaled.</string>
+    <string name="upscale_img_kind_poster">Posters and covers</string>
+    <string name="upscale_img_kind_banner">Banners</string>
+    <string name="upscale_img_kind_backdrop">Backdrops</string>
+    <string name="upscale_img_kind_episode">Episode thumbnails</string>
+    <string name="upscale_img_kind_avatar">Characters and avatars</string>
+    <string name="upscale_img_charging">Only while charging</string>
+    <string name="upscale_img_charging_hint">Saves battery: the queue waits until the phone is plugged in.</string>
+    <string name="upscale_img_cache">Cache size</string>
+    <string name="upscale_img_cache_hint">Upscaled copies kept on disk. The oldest are removed when it is full.</string>
+    <string name="upscale_img_clear">Clear upscaled images</string>
+    <string name="upscale_img_clear_used">Clear upscaled images (%1$s)</string>
+    <string name="upscale_img_clear_confirm">Delete %1$s of upscaled images? They are upscaled again when shown.</string>
+    <string name="upscale_img_clear_confirm_unknown">Delete the upscaled images? They are upscaled again when shown.</string>
+    <string name="upscale_img_clear_action">Delete</string>
+    <string name="upscale_img_status">Status</string>
+    <string name="upscale_img_status_gpu">GPU: %1$s</string>
+    <string name="upscale_img_status_queued">%1$d queued</string>
+    <string name="upscale_img_status_running">upscaling</string>
+    <string name="upscale_img_status_idle">idle</string>
+    <string name="upscale_img_status_last">last %1$s ms per image</string>
+    <string name="upscale_img_status_paused">Paused: %1$s</string>
+    <string name="upscale_img_status_no_gpu">Not available: no Vulkan GPU was found</string>
+    <string name="upscale_img_status_off">Off</string>
+    <string name="upscale_img_pause_disabled">turned off</string>
+    <string name="upscale_img_pause_player">a video is playing</string>
+    <string name="upscale_img_pause_framegen">frame generation is on</string>
+    <string name="upscale_img_pause_link">Link is processing</string>
+    <string name="upscale_img_pause_hidden">the app is in the background</string>
+    <string name="upscale_img_pause_battery_saver">battery saver is on</string>
+    <string name="upscale_img_pause_low_battery">low battery</string>
+    <string name="upscale_img_pause_hot">the device is hot</string>
+    <string name="upscale_img_pause_not_charging">waiting for the charger</string>
+    <string name="upscale_img_pause_engine_failed">the GPU engine failed, check the logs</string>
+    <string name="upscale_img_data_label">Upscaled images</string>
+</resources>

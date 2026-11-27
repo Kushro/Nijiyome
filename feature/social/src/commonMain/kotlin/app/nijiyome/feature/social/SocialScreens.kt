@@ -107,10 +107,11 @@ import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.platform.rememberNotificationPermission
 import app.nijiyome.ui.platform.rememberOpenUrl
 import app.nijiyome.ui.state.userMessage
-import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.ui.media.UpscalableImage
+import app.nijiyome.upscale.UpscaleImageKind
 
 // Parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.7, worker t). Signatures FINAL. Every screen shows
 // "Conecta AniList" (EmptyState → [onOpenAccounts]) when there is no linked AniList account (`SOCIAL_NOT_LINKED`).
@@ -402,7 +403,7 @@ private fun ProfileHeader(user: SocialUser, followBusy: Boolean, onFollow: () ->
                     .decor(DecorRegion.HERO),
             ) {
                 if (!user.banner.isNullOrBlank()) {
-                    AsyncImage(model = user.banner, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    UpscalableImage(url = user.banner, contentDescription = null, kind = UpscaleImageKind.BANNER, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
             }
             Box(Modifier.align(Alignment.BottomStart).offset(x = 16.dp, y = 32.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface).padding(3.dp)) {

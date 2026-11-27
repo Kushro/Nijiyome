@@ -52,8 +52,9 @@ import app.nijiyome.ui.resources.*
 import app.nijiyome.ui.format.relativeTime
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.state.userMessage
-import coil3.compose.AsyncImage
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.ui.media.UpscalableImage
+import app.nijiyome.upscale.UpscaleImageKind
 
 // Parity wave B (16 §3.7, worker t): shared pieces of the social screens.
 
@@ -117,7 +118,7 @@ internal fun Avatar(url: String?, size: Dp, modifier: Modifier = Modifier, conte
         if (url.isNullOrBlank()) {
             Icon(Icons.Outlined.Person, contentDescription = contentDescription, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            AsyncImage(model = url, contentDescription = contentDescription, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            UpscalableImage(url = url, contentDescription = contentDescription, kind = UpscaleImageKind.AVATAR, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
     }
 }
