@@ -8,7 +8,7 @@
     <string name="upscale_img_enabled">Upscale images with the GPU</string>
     <string name="upscale_img_enabled_hint">Only when an image is shown larger than it is. Never uses the CPU.</string>
     <string name="upscale_img_quality">Quality</string>
-    <string name="upscale_img_quality_hint">Fast goes up to x2, Balanced up to x3 and Best up to x4. Best takes longer per image.</string>
+    <string name="upscale_img_quality_hint">Fast goes up to x2, Balanced up to x3 and Best up to x4. All three take about the same time; Best uses more cache space.</string>
     <string name="upscale_img_quality_fast">Fast</string>
     <string name="upscale_img_quality_balanced">Balanced</string>
     <string name="upscale_img_quality_best">Best</string>

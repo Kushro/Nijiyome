@@ -8,7 +8,7 @@
     <string name="upscale_img_enabled">Escalar imágenes con la GPU</string>
     <string name="upscale_img_enabled_hint">Solo cuando una imagen se muestra más grande de lo que es. Nunca usa la CPU.</string>
     <string name="upscale_img_quality">Calidad</string>
-    <string name="upscale_img_quality_hint">Rápido llega a x2, Equilibrado a x3 y Mejor a x4. Mejor tarda más por imagen.</string>
+    <string name="upscale_img_quality_hint">Rápido llega a x2, Equilibrado a x3 y Mejor a x4. Las tres tardan casi lo mismo; Mejor ocupa más espacio en la caché.</string>
     <string name="upscale_img_quality_fast">Rápido</string>
     <string name="upscale_img_quality_balanced">Equilibrado</string>
     <string name="upscale_img_quality_best">Mejor</string>
