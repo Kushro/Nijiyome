@@ -316,9 +316,13 @@ fun ApplicationScope.NijiyomeTray(
             Item(texts.quit) { stableQuit() }
         }
     }
+    // On Windows the library reads both icon paths as URIs (`file:/C:/...` or `jar:file:...!/...`): a plain `C:\...` path made
+    // `URISyntaxException` on the main thread, which killed the app at start ("Failed to launch JVM"; seen in v1.3.2 and v1.3.3).
+    // Linux takes the plain path, as before.
+    val windows = System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
     Tray(
-        iconPath = icons.first.absolutePath,
-        windowsIconPath = icons.second.absolutePath,
+        iconPath = if (windows) icons.first.toURI().toString() else icons.first.absolutePath,
+        windowsIconPath = if (windows) icons.second.toURI().toString() else icons.second.absolutePath,
         tooltip = tooltip,
         primaryAction = primaryAction,
         onMenuOpened = menuOpenedAction,
