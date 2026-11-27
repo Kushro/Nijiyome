@@ -3,6 +3,11 @@
 
 package app.nijiyome.nav
 
+import app.nijiyome.designsystem.direction.tanabata.LocalTanzakuSkin
+import app.nijiyome.designsystem.direction.tanabata.TanzakuSkin
+import app.nijiyome.designsystem.motion.LocalCardSwayOff
+import app.nijiyome.model.TanzakuSkinIds
+import app.nijiyome.model.TitleCardIds
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
@@ -244,6 +249,11 @@ fun NijiyomeApp(
             LocalTitleLanguage provides settings.titleLanguage,
             LocalLook provides settings.look,
             LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion, lowEndDevice = rememberLowEndDevice()),
+            // v1.3.3 paper skins of the tanzaku cards; Hanafuda cards lie on a mat, so they do not sway.
+            LocalTanzakuSkin provides TanzakuSkin.of(settings.look.design.tanzakuSkinId()),
+            LocalCardSwayOff provides (
+                settings.look.design.tanzakuSkinId() == TanzakuSkinIds.HANAFUDA && TitleCardIds.isTanzaku(settings.look.design.cardId())
+            ),
             LocalShellChrome provides chrome,
             LocalUpscaleQueue provides upscaleQueue,
             LocalUpscaleSettings provides upscaleSettings,

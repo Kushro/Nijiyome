@@ -86,6 +86,10 @@ copyright line of its `METADATA.pb`.
 | `rd_transit_overpass_700.ttf`, `_800`, `_900` | Overpass, 700 / 800 / 900 (Delve Withrington, Dave Bailey, Thomas Jockin) | `github.com/google/fonts` `ofl/overpass/Overpass[wght].ttf` (main) | `assets/licenses/OFL-Overpass.txt` |
 | `rd_sumi_zen_kaku_regular.ttf`, `_medium`, `_bold` | Zen Kaku Gothic New, 400 / 500 / 700 (Yoshimichi Ohira) | `github.com/google/fonts` `ofl/zenkakugothicnew/ZenKakuGothicNew-*.ttf` (main) | `assets/licenses/OFL-ZenKakuGothicNew.txt` |
 | `rd_sumi_yuji_boku.ttf` | Yuji Boku (Kinuta Font Factory) | `github.com/google/fonts` `ofl/yujiboku/YujiBoku-Regular.ttf` (main) | `assets/licenses/OFL-YujiBoku.txt` |
+| `rd_skin_klee_one_semibold.ttf` | Klee One SemiBold (Fontworks), tanzaku skins: the wish line | `github.com/google/fonts` `ofl/kleeone/KleeOne-SemiBold.ttf` (main, 2026-11-27) | `assets/licenses/OFL-KleeOne.txt` |
+| `rd_skin_shippori_mincho_bold.ttf` | Shippori Mincho Bold (FONTDASU), tanzaku skins Kozo, Hanafuda, Linterna, Plegado | `github.com/google/fonts` `ofl/shipporimincho/ShipporiMincho-Bold.ttf` (main, 2026-11-27) | `assets/licenses/OFL-ShipporiMincho.txt` |
+| `rd_skin_yusei_magic.ttf` | Yusei Magic (Tanukifont), tanzaku skins Crepé and Festival | `github.com/google/fonts` `ofl/yuseimagic/YuseiMagic-Regular.ttf` (main, 2026-11-27) | `assets/licenses/OFL-YuseiMagic.txt` |
+| `rd_skin_hanafuda_kanji.ttf` | Yuji Syuku, only the eleven kanji of the Hanafuda skin's status ribbons | `github.com/google/fonts` `ofl/yujisyuku/YujiSyuku-Regular.ttf` (main, 2026-11-27) | `assets/licenses/OFL-YujiSyuku.txt` |
 
 License texts fetched from `github.com/google/fonts` (main, 2026-11-25).
 

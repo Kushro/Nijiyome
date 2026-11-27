@@ -15,6 +15,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
@@ -43,8 +44,12 @@ private val HangOrigin = TransformOrigin(0.5f, 0f)
 /** Cards from this index on do not get the arrival push (they are off screen at first and would swing while scrolling). */
 private const val ARRIVAL_SEEDS = 6
 
+/** True where the cards do not hang (the Hanafuda skin deals them on a mat): no sway there, whatever the motion level. */
+val LocalCardSwayOff = staticCompositionLocalOf { false }
+
 @Composable
 internal fun Modifier.cardSwayMotion(seed: Int): Modifier {
+    if (LocalCardSwayOff.current) return this
     val motion = LocalMotion.current
     val variant = motion.variant(Moments.CARD_SWAY, "spring")
     return when (motion.level) {

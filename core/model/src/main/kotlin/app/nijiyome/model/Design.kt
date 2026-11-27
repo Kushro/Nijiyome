@@ -266,6 +266,9 @@ object TitleCardIds {
 
     fun isMaterial(id: String): Boolean = id == MATERIAL_CLASSIC || id == MATERIAL_DETAILED || id == MATERIAL_MINIMAL
 
+    /** The four tanzaku styles, which wear the [TanzakuSkinIds] skin. */
+    fun isTanzaku(id: String): Boolean = id == TANZAKU || id == TANZAKU_SEAL || id == TANZAKU_VERTICAL || id == TANZAKU_THREAD
+
     /** The card a direction ships with (artifact `defaultCard`). */
     fun defaultFor(direction: DesignDirection): String = when (direction) {
         DesignDirection.TANABATA -> TANZAKU
@@ -280,6 +283,31 @@ object TitleCardIds {
         CardStyle.DETAILED -> MATERIAL_DETAILED
         CardStyle.MINIMAL -> MATERIAL_MINIMAL
     }
+}
+
+/**
+ * Ids of the paper skins of the tanzaku cards (docs/redesign/pieles). v1.3.3 replaced the single flat-paper look with these; there is
+ * no "flat" id, so a store without a skin, or with an unknown one, reads as [DEFAULT].
+ */
+object TanzakuSkinIds {
+    const val KOZO = "kozo"
+    const val CREPE = "crepe"
+    const val BOKASHI = "bokashi"
+    const val PASTEL = "pastel"
+    const val CHIYOGAMI = "chiyogami"
+    const val KRAFT = "kraft"
+    const val HANAFUDA = "hanafuda"
+    const val LANTERN = "linterna"
+    const val FOLDED = "plegado"
+    const val FESTIVAL = "festival"
+
+    /** Pastel en rama: the default, and what every user who had the old flat paper gets after updating. */
+    const val DEFAULT = PASTEL
+
+    /** Picker order: calm first, then the textured papers, then the ones with a different hanger or light. */
+    val ALL: List<String> = listOf(PASTEL, KOZO, CREPE, BOKASHI, CHIYOGAMI, FOLDED, KRAFT, HANAFUDA, LANTERN, FESTIVAL)
+
+    fun valid(id: String?): String = id?.takeIf { it in ALL } ?: DEFAULT
 }
 
 /** Ids of the Home rows the user can reorder and hide (artifact Inicio). Order here = default order. */
@@ -317,7 +345,12 @@ data class DesignPrefs(
     val hangingTilt: Boolean = false,
     /** The one-time "elige tu estilo" notice after updating from a pre-Sparkles version was shown or dismissed. */
     val introSeen: Boolean = false,
+    /** A [TanzakuSkinIds] id; null (every store written before v1.3.3) = [TanzakuSkinIds.DEFAULT]. */
+    val tanzakuSkin: String? = null,
 ) {
+    /** The effective tanzaku skin id. */
+    fun tanzakuSkinId(): String = TanzakuSkinIds.valid(tanzakuSkin)
+
     /** The effective card id. */
     fun cardId(): String = card?.takeIf { it in TitleCardIds.ALL } ?: TitleCardIds.defaultFor(direction)
 

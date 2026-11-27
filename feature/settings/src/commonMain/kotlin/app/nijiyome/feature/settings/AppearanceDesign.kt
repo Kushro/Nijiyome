@@ -3,6 +3,31 @@
 
 package app.nijiyome.feature.settings
 
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import app.nijiyome.designsystem.direction.tanabata.LocalTanzakuSkin
+import app.nijiyome.designsystem.direction.tanabata.TanabataMaterials
+import app.nijiyome.designsystem.direction.tanabata.TanzakuSkin
+import app.nijiyome.designsystem.direction.tanabata.drawSkinHanger
+import app.nijiyome.model.TanzakuSkinIds
+import app.nijiyome.model.TitleCardIds
+import app.nijiyome.ui.cards.LocalCardIndex
+import app.nijiyome.feature.settings.resources.rd_s10_design_skin
+import app.nijiyome.feature.settings.resources.rd_s10_design_skin_hint
+import app.nijiyome.feature.settings.resources.rd_s10_skin_pastel
+import app.nijiyome.feature.settings.resources.rd_s10_skin_kozo
+import app.nijiyome.feature.settings.resources.rd_s10_skin_crepe
+import app.nijiyome.feature.settings.resources.rd_s10_skin_bokashi
+import app.nijiyome.feature.settings.resources.rd_s10_skin_chiyogami
+import app.nijiyome.feature.settings.resources.rd_s10_skin_plegado
+import app.nijiyome.feature.settings.resources.rd_s10_skin_kraft
+import app.nijiyome.feature.settings.resources.rd_s10_skin_hanafuda
+import app.nijiyome.feature.settings.resources.rd_s10_skin_linterna
+import app.nijiyome.feature.settings.resources.rd_s10_skin_festival
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -200,7 +225,7 @@ internal enum class AppearanceSubpage { THEME, DESIGN, MOTION, NAVIGATION, SCREE
 /** The sub-page that holds the Apariencia setting [id], or null for an id of another category. */
 internal fun appearanceSubpageOf(id: String?): AppearanceSubpage? = when (id) {
     "theme_mode", "amoled", "palette", "dynamic_color", "contrast", "language" -> AppearanceSubpage.THEME
-    "design_direction", "design_card", "design_gallery", "design_reset", "look_presets" -> AppearanceSubpage.DESIGN
+    "design_direction", "design_card", "design_skin", "design_gallery", "design_reset", "look_presets" -> AppearanceSubpage.DESIGN
     "motion", "design_motion_profile", "design_perf_mode", "design_motion_moments" -> AppearanceSubpage.MOTION
     "design_nav", "rail_style" -> AppearanceSubpage.NAVIGATION
     "design_structures", "look_home", "design_home_rows", "look_details", "look_cards", "look_calendar" -> AppearanceSubpage.SCREENS
@@ -368,6 +393,7 @@ private fun DesignGroups(state: SettingsUiState, vm: SettingsViewModel, actions:
             }
         }
         SettingAnchor("design_card") { CardStylePicker(look) { id -> vm.setDesign { it.copy(card = id) } } }
+        SettingAnchor("design_skin") { TanzakuSkinPicker(design) { id -> vm.setDesign { it.copy(tanzakuSkin = id) } } }
         SettingAnchor("design_gallery") {
             SettingRow(stringResource(Res.string.rd_s10_design_gallery), stringResource(Res.string.rd_s10_design_gallery_hint)) {
                 FilledTonalButton(onClick = actions.onOpenGallery, shape = NijiyomeControls.shape) {
@@ -831,6 +857,96 @@ private fun CardOption(label: String, styleId: String, sample: TitleCardData?, s
                 // The preview only shows the style: its own click and semantics are covered by the option.
                 Box(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
                     TitleCards.byId(styleId).Card(sample, CardContext.GRID, ModelCardSize.SMALL, CardShow(), onClick, Modifier.fillMaxWidth(), null)
+                    Box(Modifier.matchParentSize().clickable(onClick = onClick))
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                if (selected) Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- tanzaku paper skins (v1.3.3)
+
+@Composable
+private fun skinName(id: String): String = stringResource(
+    when (id) {
+        TanzakuSkinIds.KOZO -> Res.string.rd_s10_skin_kozo
+        TanzakuSkinIds.CREPE -> Res.string.rd_s10_skin_crepe
+        TanzakuSkinIds.BOKASHI -> Res.string.rd_s10_skin_bokashi
+        TanzakuSkinIds.CHIYOGAMI -> Res.string.rd_s10_skin_chiyogami
+        TanzakuSkinIds.FOLDED -> Res.string.rd_s10_skin_plegado
+        TanzakuSkinIds.KRAFT -> Res.string.rd_s10_skin_kraft
+        TanzakuSkinIds.HANAFUDA -> Res.string.rd_s10_skin_hanafuda
+        TanzakuSkinIds.LANTERN -> Res.string.rd_s10_skin_linterna
+        TanzakuSkinIds.FESTIVAL -> Res.string.rd_s10_skin_festival
+        else -> Res.string.rd_s10_skin_pastel
+    },
+)
+
+/**
+ * The ten paper skins of the tanzaku cards. Each option is its own preview: a strip of that skin hanging from that skin's hanger, so
+ * the picker shows exactly what changes and nothing else (the owner asked for previews of the element being changed).
+ */
+@Composable
+private fun TanzakuSkinPicker(design: DesignPrefs, onPick: (String) -> Unit) {
+    val samples = gallerySampleCards()
+    val current = design.tanzakuSkinId()
+    SettingRow(stringResource(Res.string.rd_s10_design_skin), stringResource(Res.string.rd_s10_design_skin_hint), stack = true) {
+        FlowRow(
+            Modifier.fillMaxWidth().selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TanzakuSkinIds.ALL.forEachIndexed { i, id ->
+                SkinOption(id, skinName(id), samples.getOrNull(i % samples.size.coerceAtLeast(1)), selected = id == current) { onPick(id) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SkinOption(id: String, label: String, sample: TitleCardData?, selected: Boolean, onClick: () -> Unit) {
+    val skin = TanzakuSkin.of(id)
+    val tone = LocalThemeTone.current
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier
+            .width(148.dp)
+            .clip(MaterialTheme.shapes.large)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .semantics { contentDescription = label },
+    ) {
+        Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (sample != null) {
+                // A miniature of one hanging strip: drawn at full size and scaled, so it is the real card, not a picture of it.
+                val bamboo = TanabataMaterials.bamboo(tone)
+                val thread = TanabataMaterials.thread(tone)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(176.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.background)
+                        .clearAndSetSemantics {},
+                    contentAlignment = Alignment.TopCenter,
+                ) {
+                    CompositionLocalProvider(LocalTanzakuSkin provides skin, LocalCardIndex provides 0) {
+                        Box(
+                            Modifier
+                                .requiredWidth(220.dp)
+                                .wrapContentHeight(Alignment.Top, unbounded = true)
+                                .graphicsLayer { scaleX = 0.6f; scaleY = 0.6f; transformOrigin = TransformOrigin(0.5f, 0f) }
+                                .drawBehind { drawSkinHanger(skin, bamboo, thread, tone, 7.dp.toPx()) },
+                            contentAlignment = Alignment.TopCenter,
+                        ) {
+                            TitleCards.byId(TitleCardIds.TANZAKU).Card(sample, CardContext.ROW, ModelCardSize.SMALL, CardShow(), onClick, Modifier, null)
+                        }
+                    }
                     Box(Modifier.matchParentSize().clickable(onClick = onClick))
                 }
             }
