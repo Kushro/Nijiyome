@@ -118,6 +118,7 @@ import org.koin.core.parameter.parametersOf
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.upscale.UpscaleImageKind
 
 /**
  * `Route.Details(MediaKind.MANGA, anilistId)` (MNG-06 to MNG-11) in the Sparkles design (artifact screen `manga`, the `ficha` view):
@@ -538,7 +539,7 @@ private fun ColumnScope.InfoPanels(
         AsideRow(stringResource(Res.string.manga_characters)) {
             items(info.characters, key = { it.character.id }) { c ->
                 Column(Modifier.width(88.dp)) {
-                    MediaCover(url = c.character.image, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large)
+                    MediaCover(url = c.character.image, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, kind = UpscaleImageKind.AVATAR)
                     Text(c.character.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, modifier = Modifier.padding(top = 4.dp))
                     c.role?.let { Text(characterRoleLabel(it), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }

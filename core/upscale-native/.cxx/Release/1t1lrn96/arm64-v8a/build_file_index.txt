@@ -1,0 +1,10 @@
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/CMakeLists.txt
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/CMakeLists.txt
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/cmake/ncnn_add_layer.cmake
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/cmake/ncnn_add_shader.cmake
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/CMakeLists.txt
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/SPIRV/CMakeLists.txt
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/glslang/CMakeLists.txt
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/glslang/OSDependent/Unix/CMakeLists.txt
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/parse_version.cmake
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/src/CMakeLists.txt

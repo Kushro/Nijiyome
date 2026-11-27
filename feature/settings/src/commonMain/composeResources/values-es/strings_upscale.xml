@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- v1.3.3 escalado de imágenes por GPU (docs/plan-upscaling.md §5): Ajustes › Mejoras › Imágenes, y su línea en Datos. -->
+<resources>
+    <string name="upscale_img_group">Imágenes</string>
+    <string name="upscale_img_group_hint">Pósters, banners y miniaturas más nítidos, escalados con Real-ESRGAN en tu GPU. Primero se ve el original y se reemplaza cuando la copia nítida está lista.</string>
+    <string name="upscale_img_unavailable">El escalado de imágenes no está disponible en esta versión.</string>
+    <string name="upscale_img_enabled">Escalar imágenes con la GPU</string>
+    <string name="upscale_img_enabled_hint">Solo cuando una imagen se muestra más grande de lo que es. Nunca usa la CPU.</string>
+    <string name="upscale_img_quality">Calidad</string>
+    <string name="upscale_img_quality_hint">Rápido llega a x2, Equilibrado a x3 y Mejor a x4. Las tres tardan casi lo mismo; Mejor ocupa más espacio en la caché.</string>
+    <string name="upscale_img_quality_fast">Rápido</string>
+    <string name="upscale_img_quality_balanced">Equilibrado</string>
+    <string name="upscale_img_quality_best">Mejor</string>
+    <string name="upscale_img_kinds">Qué escalar</string>
+    <string name="upscale_img_kinds_hint">Nunca se escalan las imágenes difuminadas, los logos de título ni las páginas de manga.</string>
+    <string name="upscale_img_kind_poster">Pósters y portadas</string>
+    <string name="upscale_img_kind_banner">Banners</string>
+    <string name="upscale_img_kind_backdrop">Fondos</string>
+    <string name="upscale_img_kind_episode">Miniaturas de episodio</string>
+    <string name="upscale_img_kind_avatar">Personajes y avatares</string>
+    <string name="upscale_img_charging">Solo mientras carga</string>
+    <string name="upscale_img_charging_hint">Ahorra batería: la cola espera a que el teléfono esté enchufado.</string>
+    <string name="upscale_img_cache">Tamaño de la caché</string>
+    <string name="upscale_img_cache_hint">Copias escaladas guardadas en disco. Cuando se llena, se borran las más viejas.</string>
+    <string name="upscale_img_clear">Borrar imágenes escaladas</string>
+    <string name="upscale_img_clear_used">Borrar imágenes escaladas (%1$s)</string>
+    <string name="upscale_img_clear_confirm">¿Borrar %1$s de imágenes escaladas? Se vuelven a escalar cuando se muestren.</string>
+    <string name="upscale_img_clear_confirm_unknown">¿Borrar las imágenes escaladas? Se vuelven a escalar cuando se muestren.</string>
+    <string name="upscale_img_clear_action">Borrar</string>
+    <string name="upscale_img_status">Estado</string>
+    <string name="upscale_img_status_gpu">GPU: %1$s</string>
+    <string name="upscale_img_status_queued">%1$d en cola</string>
+    <string name="upscale_img_status_running">escalando</string>
+    <string name="upscale_img_status_idle">en espera</string>
+    <string name="upscale_img_status_last">última: %1$s ms por imagen</string>
+    <string name="upscale_img_status_paused">En pausa: %1$s</string>
+    <string name="upscale_img_status_no_gpu">No disponible: no se encontró una GPU Vulkan</string>
+    <string name="upscale_img_status_off">Apagado</string>
+    <string name="upscale_img_pause_disabled">está apagado</string>
+    <string name="upscale_img_pause_player">se está reproduciendo un video</string>
+    <string name="upscale_img_pause_framegen">la generación de cuadros está activa</string>
+    <string name="upscale_img_pause_link">Link está procesando</string>
+    <string name="upscale_img_pause_hidden">la app está en segundo plano</string>
+    <string name="upscale_img_pause_battery_saver">el ahorro de batería está activo</string>
+    <string name="upscale_img_pause_low_battery">batería baja</string>
+    <string name="upscale_img_pause_hot">el dispositivo está caliente</string>
+    <string name="upscale_img_pause_not_charging">esperando el cargador</string>
+    <string name="upscale_img_pause_engine_failed">falló el motor de la GPU, revisa los registros</string>
+    <string name="upscale_img_data_label">Imágenes escaladas</string>
+</resources>

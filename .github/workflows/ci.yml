@@ -2,7 +2,8 @@ name: CI
 
 # Tests on every push to main and every pull request, only for the parts that changed (adapted from Tatakai Next's next-ci.yml):
 # Android (host tests + debug APK), desktop on Linux and on Windows (Gradle; jpackage does not cross-compile), the temple-lsfg
-# helper (CMake, both systems) and the design tokens / contracts (node). Releases are built by release.yml from `v*` tags.
+# helper and desktop-framegen (CMake, both systems), the GPU image upscaler (native/upscale: ncnn + Vulkan, CMake, both systems)
+# and the design tokens / contracts (node). Releases are built by release.yml from `v*` tags.
 on:
   push:
     branches: [main]
@@ -32,6 +33,7 @@ jobs:
       android: ${{ steps.filter.outputs.android }}
       desktop: ${{ steps.filter.outputs.desktop }}
       lsfg: ${{ steps.filter.outputs.lsfg }}
+      upscale: ${{ steps.filter.outputs.upscale }}
       contracts: ${{ steps.filter.outputs.contracts }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -51,8 +53,17 @@ jobs:
             server: &server
               - 'server/**'
               - 'contracts/link/**'
+            # native/upscale is also built by the APK (:core:upscale-native, NDK + CMake); native/common is included by it.
+            upscale: &upscale
+              - 'native/upscale/**'
+              - 'native/common/**'
+              - '.gitmodules'
+              - 'packaging/linux/build-desktop-upscale.sh'
+              - 'packaging/windows/build-desktop-upscale.ps1'
+              - '.github/workflows/ci.yml'
             android:
               - *gradle
+              - *upscale
               - 'app/**'
             desktop:
               - *gradle
@@ -62,6 +73,7 @@ jobs:
             lsfg:
               - 'native/temple-lsfg/**'
               - 'native/desktop-framegen/**'
+              - 'native/common/**'
               - 'core/framegen/src/main/cpp/fg/fg_pacing.*'
               - 'packaging/linux/build-temple-lsfg.sh'
               - 'packaging/linux/build-desktop-framegen.sh'
@@ -89,9 +101,15 @@ jobs:
     needs: [runner, changes]
     if: needs.changes.outputs.android == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ${{ needs.runner.outputs.linux }}
-    timeout-minutes: 75
+    # ncnn + glslang compile once per ABI (arm64-v8a, x86_64) inside :core:upscale-native.
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # :core:upscale-native builds native/upscale with the NDK: ncnn (pinned submodule) and only its glslang submodule.
+      - name: ncnn sources
+        run: |
+          git submodule update --init --depth 1 native/upscale/third_party/ncnn
+          git -C native/upscale/third_party/ncnn submodule update --init --depth 1 glslang
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
@@ -230,3 +248,63 @@ jobs:
           cmake --build $fgOut --config Release --parallel
           if ($LASTEXITCODE -ne 0) { throw "desktop-framegen cmake build failed ($LASTEXITCODE)" }
           if (-not (Get-ChildItem $fgOut -Recurse -Filter nijiyome_fg_desktop.dll)) { throw 'nijiyome_fg_desktop.dll was not built' }
+
+  # The GPU image upscaler (libnijiyome_upscale.so / nijiyome_upscale.dll). ncnn and glslang are the slow part: build/desktop-upscale
+  # is cached per OS and ncnn commit, so a change to native/upscale/src only rebuilds the library's own files.
+  desktop-upscale:
+    name: desktop-upscale (${{ matrix.os }})
+    needs: [runner, changes]
+    if: needs.changes.outputs.upscale == 'true' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, windows]
+    runs-on: ${{ matrix.os == 'linux' && needs.runner.outputs.linux || needs.runner.outputs.windows }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: ncnn sources
+        run: |
+          git submodule update --init --depth 1 native/upscale/third_party/ncnn
+          git -C native/upscale/third_party/ncnn submodule update --init --depth 1 glslang
+      - name: ncnn pin (Linux)
+        id: ncnn-linux
+        if: matrix.os == 'linux'
+        run: echo "sha=$(git rev-parse HEAD:native/upscale/third_party/ncnn)" >> "$GITHUB_OUTPUT"
+      - name: ncnn pin (Windows)
+        id: ncnn-windows
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $sha = git rev-parse HEAD:native/upscale/third_party/ncnn
+          "sha=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: build/desktop-upscale
+          key: desktop-upscale-${{ runner.os }}-${{ steps.ncnn-linux.outputs.sha }}${{ steps.ncnn-windows.outputs.sha }}-${{ hashFiles('native/upscale/CMakeLists.txt', 'native/upscale/src/**', 'native/common/**') }}
+          restore-keys: |
+            desktop-upscale-${{ runner.os }}-${{ steps.ncnn-linux.outputs.sha }}${{ steps.ncnn-windows.outputs.sha }}-
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++
+          lib=$(bash packaging/linux/build-desktop-upscale.sh | tail -n1)
+          test -f "$lib"
+          ls -la "$lib"
+      - name: MSVC developer environment
+        if: matrix.os == 'windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+      - name: Build (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $dll = ./packaging/windows/build-desktop-upscale.ps1 | Select-Object -Last 1
+          if (-not (Test-Path $dll)) { throw "nijiyome_upscale.dll was not built ($dll)" }
+          Get-Item $dll | Format-Table Name, Length

@@ -1,0 +1,4 @@
+[submodule "ncnn"]
+	path = native/upscale/third_party/ncnn
+	url = https://github.com/Tencent/ncnn.git
+	shallow = true

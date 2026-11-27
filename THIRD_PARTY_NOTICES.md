@@ -20,6 +20,7 @@ Every branch that copies a file MUST add a row here (origin repo + path, license
 | `contracts/**`, `tokens/**` (except `tokens/vendor/`) | Tatakai Next `contracts/`, `packages/tokens` (`Kushro/Tatakai-own@196bfe89`, same author) | MPL-2.0 | Relicensed by the author as AGPL-3.0-or-later in Nijiyome; identifiers renamed. `tokens/vendor/material-color-utilities` keeps Apache-2.0 (section 2) |
 | `packaging/windows.nsi`, `packaging/fetch-deps.ps1` | Miko-Kagura `packaging/` (same author) | PolyForm-Noncommercial-1.0.0 | Relicensed by the author as AGPL-3.0-or-later in Nijiyome; adapted to the Compose Desktop app image |
 | `core/novel/src/desktopMain/.../tts/kitten/KittenText.kt`, `KittenModel.kt`, `Kitten.kt` (1.1, desktop narrator) | Tatakai Next `apps/desktop-native/crates/tk-app/src/tts/{text,kitten}.rs` (same author), itself ported from the JS SDK `@biwills/kittentts` (text front end, inference inputs) and the symbol table of `KittenML/KittenTTS` | MPL-2.0 (Tatakai Next, relicensed by the author); Apache-2.0 (SDK, KittenTTS) | Ported to Kotlin; ONNX Runtime through reflection on a downloaded jar instead of the `ort` crate |
+| `native/upscale/src/upscale_engine.cpp` (tiled inference loop), `native/upscale/src/upscale_shaders.h` (pre / post-processing shaders) (v1.3.3, GPU image upscaling) | xinntao/Real-ESRGAN-ncnn-vulkan `src/realesrgan.cpp`, `src/realesrgan_preproc.comp`, `src/realesrgan_postproc.comp` (commit `37026f4`, v0.2.0), itself from nihui/realsr-ncnn-vulkan | MIT | Adapted: RGBA8 only, shaders compiled at run time, cancellation between tiles, VRAM-capped tiles, device picked by `native/common/gpu_pick.h`; licence in `native/upscale/third_party/realesrgan-ncnn-vulkan/LICENSE` and section "GPU image upscaling" below |
 
 ## 2. Libraries (resolved versions are in `gradle/libs.versions.toml`)
 
@@ -85,6 +86,10 @@ copyright line of its `METADATA.pb`.
 | `rd_transit_overpass_700.ttf`, `_800`, `_900` | Overpass, 700 / 800 / 900 (Delve Withrington, Dave Bailey, Thomas Jockin) | `github.com/google/fonts` `ofl/overpass/Overpass[wght].ttf` (main) | `assets/licenses/OFL-Overpass.txt` |
 | `rd_sumi_zen_kaku_regular.ttf`, `_medium`, `_bold` | Zen Kaku Gothic New, 400 / 500 / 700 (Yoshimichi Ohira) | `github.com/google/fonts` `ofl/zenkakugothicnew/ZenKakuGothicNew-*.ttf` (main) | `assets/licenses/OFL-ZenKakuGothicNew.txt` |
 | `rd_sumi_yuji_boku.ttf` | Yuji Boku (Kinuta Font Factory) | `github.com/google/fonts` `ofl/yujiboku/YujiBoku-Regular.ttf` (main) | `assets/licenses/OFL-YujiBoku.txt` |
+| `rd_skin_klee_one_semibold.ttf` | Klee One SemiBold (Fontworks), tanzaku skins: the wish line | `github.com/google/fonts` `ofl/kleeone/KleeOne-SemiBold.ttf` (main, 2026-11-27) | `assets/licenses/OFL-KleeOne.txt` |
+| `rd_skin_shippori_mincho_bold.ttf` | Shippori Mincho Bold (FONTDASU), tanzaku skins Kozo, Hanafuda, Linterna, Plegado | `github.com/google/fonts` `ofl/shipporimincho/ShipporiMincho-Bold.ttf` (main, 2026-11-27) | `assets/licenses/OFL-ShipporiMincho.txt` |
+| `rd_skin_yusei_magic.ttf` | Yusei Magic (Tanukifont), tanzaku skins Crepé and Festival | `github.com/google/fonts` `ofl/yuseimagic/YuseiMagic-Regular.ttf` (main, 2026-11-27) | `assets/licenses/OFL-YuseiMagic.txt` |
+| `rd_skin_hanafuda_kanji.ttf` | Yuji Syuku, only the eleven kanji of the Hanafuda skin's status ribbons | `github.com/google/fonts` `ofl/yujisyuku/YujiSyuku-Regular.ttf` (main, 2026-11-27) | `assets/licenses/OFL-YujiSyuku.txt` |
 
 License texts fetched from `github.com/google/fonts` (main, 2026-11-25).
 
@@ -245,3 +250,393 @@ independently. It is built with CMake and shipped next to the desktop executable
 ## desktop-framegen (Built-in Desktop Frame Generation, v1.3.2)
 
 Source in `native/desktop-framegen/`, built with CMake into `libnijiyome_fg_desktop.so` (Linux) / `nijiyome_fg_desktop.dll` (Windows) and shipped in desktop app resources. Links the vendored `lsfg-vk` framegen core, `volk`, `pe-parse`, and `shader_loader.cpp` from `native/temple-lsfg/`, plus `core/framegen/src/main/cpp/fg/fg_pacing.cpp`. Combined work under **GPL-3.0-only** (compatible with AGPL-3.0-or-later under GPL-3.0 section 13); its corresponding source is this repository. `Lossless.dll` is **never shipped**: the library reads SPIR-V shaders in memory from the user's own copy of Lossless Scaling.
+
+## GPU image upscaling (desktop-upscale and `:core:upscale-native`, v1.3.3)
+
+Source in `native/upscale/`, built with CMake into `libnijiyome_upscale.so` (Linux, and Android arm64-v8a / x86_64 through
+`:core:upscale-native`) and `nijiyome_upscale.dll` (Windows). It upscales posters, banners and thumbnails with Real-ESRGAN on the GPU
+(Vulkan) and never on the CPU. ncnn and glslang are linked statically. The library also includes `native/common/gpu_pick.h`
+(GPL-3.0-only, the GPU choice shared with desktop-framegen), so it is a **GPL-3.0 combined work** (compatible with AGPL-3.0-or-later
+under GPL-3.0 section 13); its corresponding source is this repository.
+
+| Component | Version | License | Where the text ships |
+|---|---|---|---|
+| [ncnn](https://github.com/Tencent/ncnn) (Tencent), git submodule `native/upscale/third_party/ncnn` | tag `20261020`, commit `7e36d25c` | BSD-3-Clause; bundled helpers under zlib / BSD-2-Clause, as listed in its `LICENSE.txt` | Below; desktop: `resources/upscale-licenses/ncnn-LICENSE.txt` |
+| [glslang](https://github.com/KhronosGroup/glslang) (Khronos; nihui's fork, ncnn's nested submodule; compiles the shaders at run time) | commit `780b6a20` | BSD-3-Clause, BSD-2-Clause, MIT, Apache-2.0; the preprocessor adds an NVIDIA licence and a Khronos MIT licence; the generated parser is GPL-3.0-or-later with the Bison exception 2.2 | Below (without the standard Apache-2.0 and GPL-3.0 texts); desktop: `resources/upscale-licenses/glslang-LICENSE.txt` (complete) |
+| [Real-ESRGAN-ncnn-vulkan](https://github.com/xinntao/Real-ESRGAN-ncnn-vulkan) (Xintao Wang; from realsr-ncnn-vulkan by nihui): code adapted in `upscale_engine.cpp` and `upscale_shaders.h` | commit `37026f4` (v0.2.0) | MIT | Below; desktop: `resources/upscale-licenses/realesrgan-ncnn-vulkan-LICENSE.txt` |
+| [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) `realesr-animevideov3` weights (Xintao Wang): `realesr-animevideov3-x{2,3,4}.param` and one `realesr-animevideov3-x4.bin` (the three upstream `.bin` files are identical) | release `v0.2.5.0` (`realesrgan-ncnn-vulkan-20220424-ubuntu.zip`), SHA-256 in `native/upscale/models/README.md` | BSD-3-Clause | Below; desktop: `resources/upscale-licenses/Real-ESRGAN-LICENSE.txt` |
+
+On Linux the packages also install these texts under `/usr/share/licenses/nijiyome/upscale/`.
+
+### ncnn `LICENSE.txt`
+
+```
+Tencent is pleased to support the open source community by making ncnn available.
+Copyright (C) 2017 Tencent.  All rights reserved.
+If you have downloaded a copy of the ncnn binary from Tencent, please note that the ncnn binary is licensed under the BSD 3-Clause License.
+If you have downloaded a copy of the ncnn source code from Tencent, please note that ncnn source code is licensed under the BSD 3-Clause License, except for the third-party components listed below which are subject to different license terms.  Your integration of ncnn into your own projects may require compliance with the BSD 3-Clause License, as well as the other licenses applicable to the third-party components included within ncnn.
+A copy of the BSD 3-Clause License is included in this file.
+
+Other dependencies and licenses:
+
+Open Source Software Licensed Under the zlib License:
+The below software in this distribution may have been modified by Tencent (“Tencent Modifications”). All Tencent Modifications are Copyright (C) 2017 Tencent.
+----------------------------------------------------------------------------------------
+1. neon_mathfun.h
+Copyright (C) 2011 Julien Pommier
+
+2. sse_mathfun.h
+Copyright (C) 2007 Julien Pommier
+
+3. avx_mathfun.h
+Copyright (C) 2012 Giovanni Garberoglio
+Interdisciplinary Laboratory for Computational Science (LISC)
+Fondazione Bruno Kessler and University of Trento
+via Sommarive, 18
+I-38123 Trento (Italy)
+
+
+Terms of the zlib License:
+---------------------------------------------------
+Copyright (c) <year> <copyright holders>
+
+This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+
+
+Open Source Software Licensed Under the BSD 2-Clause License:
+The below software in this distribution may have been modified by Tencent (“Tencent Modifications”). All Tencent Modifications are Copyright (C) 2017 Tencent.
+----------------------------------------------------------------------------------------
+1. squeezenet  1.1
+Copyright (c) 2016 Forrest N. Iandola and Matthew W. Moskewicz and Khalid Ashraf and Song Han and William J. Dally and Kurt Keutzer
+All rights reserved.
+
+2. caffe.proto  master
+All contributions by the University of California:
+Copyright (c) 2014-2017 The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014-2017, the respective contributors
+All rights reserved.
+
+
+Terms of the BSD 2-Clause License:
+--------------------------------------------------------------------
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+Open Source Software Licensed Under the BSD 3-Clause License:
+The below software in this distribution may have been modified by Tencent (“Tencent Modifications”). All Tencent Modifications are Copyright (C) 2017 Tencent.
+----------------------------------------------------------------------------------------
+1. android.toolchain.cmake  master
+Copyright (c) 2010-2011, Ethan Rublee
+Copyright (c) 2011-2014, Andrey Kamaev
+All rights reserved.
+
+
+Terms of the BSD 3-Clause License:
+--------------------------------------------------------------------
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+Neither the name of [copyright holder] nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+### glslang `LICENSE.txt` (Apache-2.0 and GPL-3.0 full texts left out)
+
+```
+Here, glslang proper means core GLSL parsing, HLSL parsing, and SPIR-V code
+generation. Glslang proper requires use of a number of licenses, one that covers
+preprocessing and others that covers non-preprocessing.
+
+Bison was removed long ago. You can build glslang from the source grammar,
+using tools of your choice, without using bison or any bison files.
+
+Other parts, outside of glslang proper, include:
+
+- gl_types.h, only needed for OpenGL-like reflection, and can be left out of
+  a parse and codegen project.  See it for its license.
+
+- update_glslang_sources.py, which is not part of the project proper and does
+  not need to be used.
+
+- Google tests and SPIR-V tools, and anything in the external subdirectory
+  are external and optional; see them for their respective licenses.
+
+--------------------------------------------------------------------------------
+
+The core of glslang-proper, minus the preprocessor is licenced as follows:
+
+--------------------------------------------------------------------------------
+3-Clause BSD License
+--------------------------------------------------------------------------------
+
+//
+// Copyright (C) 2015-2018 Google, Inc.
+// Copyright (C) <various other dates and companies>
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//
+//    Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//
+//    Redistributions in binary form must reproduce the above
+//    copyright notice, this list of conditions and the following
+//    disclaimer in the documentation and/or other materials provided
+//    with the distribution.
+//
+//    Neither the name of 3Dlabs Inc. Ltd. nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+
+
+--------------------------------------------------------------------------------
+2-Clause BSD License
+--------------------------------------------------------------------------------
+
+Copyright 2020 The Khronos Group Inc
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+--------------------------------------------------------------------------------
+The MIT License
+--------------------------------------------------------------------------------
+
+Copyright 2020 The Khronos Group Inc
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+--------------------------------------------------------------------------------
+APACHE LICENSE, VERSION 2.0
+--------------------------------------------------------------------------------
+
+[The full Apache License 2.0 text follows here in upstream LICENSE.txt.]
+
+--------------------------------------------------------------------------------
+GPL 3 with special bison exception
+--------------------------------------------------------------------------------
+
+[The full GNU GPL 3.0 text follows here in upstream LICENSE.txt.]
+
+Bison Exception
+
+As a special exception, you may create a larger work that contains part or all
+of the Bison parser skeleton and distribute that work under terms of your
+choice, so long as that work isn't itself a parser generator using the skeleton
+or a modified version thereof as a parser skeleton.  Alternatively, if you
+modify or redistribute the parser skeleton itself, you may (at your option)
+remove this special exception, which will cause the skeleton and the resulting
+Bison output files to be licensed under the GNU General Public License without
+this special exception.
+
+This special exception was added by the Free Software Foundation in version
+2.2 of Bison.
+
+--------------------------------------------------------------------------------
+================================================================================
+--------------------------------------------------------------------------------
+
+The preprocessor has the core licenses stated above, plus additional licences:
+
+/****************************************************************************\
+Copyright (c) 2002, NVIDIA Corporation.
+
+NVIDIA Corporation("NVIDIA") supplies this software to you in
+consideration of your agreement to the following terms, and your use,
+installation, modification or redistribution of this NVIDIA software
+constitutes acceptance of these terms.  If you do not agree with these
+terms, please do not use, install, modify or redistribute this NVIDIA
+software.
+
+In consideration of your agreement to abide by the following terms, and
+subject to these terms, NVIDIA grants you a personal, non-exclusive
+license, under NVIDIA's copyrights in this original NVIDIA software (the
+"NVIDIA Software"), to use, reproduce, modify and redistribute the
+NVIDIA Software, with or without modifications, in source and/or binary
+forms; provided that if you redistribute the NVIDIA Software, you must
+retain the copyright notice of NVIDIA, this notice and the following
+text and disclaimers in all such redistributions of the NVIDIA Software.
+Neither the name, trademarks, service marks nor logos of NVIDIA
+Corporation may be used to endorse or promote products derived from the
+NVIDIA Software without specific prior written permission from NVIDIA.
+Except as expressly stated in this notice, no other rights or licenses
+express or implied, are granted by NVIDIA herein, including but not
+limited to any patent rights that may be infringed by your derivative
+works or by other works in which the NVIDIA Software may be
+incorporated. No hardware is licensed hereunder.
+
+THE NVIDIA SOFTWARE IS BEING PROVIDED ON AN "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+INCLUDING WITHOUT LIMITATION, WARRANTIES OR CONDITIONS OF TITLE,
+NON-INFRINGEMENT, MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR
+ITS USE AND OPERATION EITHER ALONE OR IN COMBINATION WITH OTHER
+PRODUCTS.
+
+IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT,
+INCIDENTAL, EXEMPLARY, CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, LOST PROFITS; PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) OR ARISING IN ANY WAY
+OUT OF THE USE, REPRODUCTION, MODIFICATION AND/OR DISTRIBUTION OF THE
+NVIDIA SOFTWARE, HOWEVER CAUSED AND WHETHER UNDER THEORY OF CONTRACT,
+TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY OR OTHERWISE, EVEN IF
+NVIDIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+\****************************************************************************/
+
+/*
+** Copyright (c) 2014-2016 The Khronos Group Inc.
+**
+** Permission is hereby granted, free of charge, to any person obtaining a copy
+** of this software and/or associated documentation files (the "Materials"),
+** to deal in the Materials without restriction, including without limitation
+** the rights to use, copy, modify, merge, publish, distribute, sublicense,
+** and/or sell copies of the Materials, and to permit persons to whom the
+** Materials are furnished to do so, subject to the following conditions:
+**
+** The above copyright notice and this permission notice shall be included in
+** all copies or substantial portions of the Materials.
+**
+** MODIFICATIONS TO THIS FILE MAY MEAN IT NO LONGER ACCURATELY REFLECTS KHRONOS
+** STANDARDS. THE UNMODIFIED, NORMATIVE VERSIONS OF KHRONOS SPECIFICATIONS AND
+** HEADER INFORMATION ARE LOCATED AT https://www.khronos.org/registry/
+**
+** THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+** OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+** FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+** THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+** LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+** FROM,OUT OF OR IN CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS
+** IN THE MATERIALS.
+*/
+```
+
+### Real-ESRGAN-ncnn-vulkan `LICENSE`
+
+```
+The MIT License (MIT)
+
+Copyright (c) 2021 Xintao Wang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------
+The following is the License of realsr-ncnn-vulkan
+
+The MIT License (MIT)
+
+Copyright (c) 2019 nihui
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### Real-ESRGAN `LICENSE` (code and the `realesr-animevideov3` weights)
+
+```
+BSD 3-Clause License
+
+Copyright (c) 2021, Xintao Wang
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```

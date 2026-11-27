@@ -1,0 +1,822 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+package app.nijiyome.ui.cards.tanabata
+
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.nijiyome.designsystem.direction.LocalThemeTone
+import app.nijiyome.designsystem.direction.StatusSlot
+import app.nijiyome.designsystem.direction.ThemeTone
+import app.nijiyome.designsystem.direction.tanabata.DeckleShape
+import app.nijiyome.designsystem.direction.tanabata.LocalTanzakuSkin
+import app.nijiyome.designsystem.direction.tanabata.RuffleShape
+import app.nijiyome.designsystem.direction.tanabata.SkinEdge
+import app.nijiyome.designsystem.direction.tanabata.SkinPaint
+import app.nijiyome.designsystem.direction.tanabata.TanabataMaterials
+import app.nijiyome.designsystem.direction.tanabata.TanzakuSkin
+import app.nijiyome.designsystem.direction.tanabata.drawBambooRod
+import app.nijiyome.designsystem.direction.tanabata.drawEyelet
+import app.nijiyome.designsystem.direction.tanabata.drawHole
+import app.nijiyome.designsystem.direction.tanabata.drawSkinCord
+import app.nijiyome.designsystem.direction.tanabata.hanafudaKanjiFamily
+import app.nijiyome.designsystem.direction.tanabata.skinTexture
+import app.nijiyome.designsystem.direction.tanabata.skinTitleFamily
+import app.nijiyome.designsystem.direction.tanabata.skinWishFamily
+import app.nijiyome.designsystem.motion.LocalMotion
+import app.nijiyome.designsystem.motion.MotionLevel
+import app.nijiyome.model.CardSize
+import app.nijiyome.ui.cards.CardContext
+import app.nijiyome.ui.cards.CardShow
+import app.nijiyome.ui.cards.LocalCardIndex
+import app.nijiyome.ui.cards.TitleCardData
+import app.nijiyome.ui.media.MediaCover
+import kotlin.math.roundToInt
+
+// v1.3.3 paper skins (docs/redesign/pieles): the "tanzaku" strip in rows, wish rows, the hero and the grid, as each skin draws it.
+// The paper, cord, hanger and texture come from :core:designsystem (TanzakuSkin.kt); this file lays out the poster, the texts and the
+// details only one skin has (the crepe photo, the chiyogami label, the kraft tape and stamp, the hanafuda rim and ribbon, the andon
+// frame, the origami flap, the festival fringe). Compacta and Continuar keep the shared parts, which wear the skin's paper.
+
+/** Extra cord length of the Pastel strips by position, so a row hangs at different heights from the branch. */
+private val PASTEL_DROP = intArrayOf(10, 0, 22, 6, 30, 14)
+
+/** Kanji of the Hanafuda ribbon per status (decorative; the status is also written in the text). */
+private fun StatusSlot?.ribbonKanji(): String = when (this) {
+    StatusSlot.WATCHING -> "視聴中"
+    StatusSlot.PLANNING -> "予定"
+    StatusSlot.COMPLETED -> "完走"
+    StatusSlot.PAUSED -> "休止"
+    StatusSlot.DROPPED -> "中断"
+    StatusSlot.REWATCHING -> "再視聴"
+    null -> "予定"
+}
+
+private fun StatusSlot?.ribbonColor(): Color = when (this) {
+    StatusSlot.WATCHING, StatusSlot.COMPLETED, null -> SkinPaint.ribbonRed
+    StatusSlot.PLANNING, StatusSlot.REWATCHING -> SkinPaint.ribbonBlue
+    StatusSlot.PAUSED, StatusSlot.DROPPED -> SkinPaint.ribbonViolet
+}
+
+/** Title size of the skinned strip by card size. */
+private fun titleSize(size: CardSize, hero: Boolean): TextUnit = when {
+    hero -> 19.sp
+    size == CardSize.SMALL -> 13.sp
+    size == CardSize.MEDIUM -> 15.sp
+    size == CardSize.LARGE -> 16.5.sp
+    else -> 18.sp
+}
+
+@Composable
+internal fun SkinnedStripCard(
+    data: TitleCardData,
+    context: CardContext,
+    size: CardSize,
+    show: CardShow,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    onLongClick: (() -> Unit)?,
+) {
+    val skin = LocalTanzakuSkin.current
+    val tone = LocalThemeTone.current
+    val interaction = remember { MutableInteractionSource() }
+    val state = rememberTzState(interaction)
+    val texts = tzTexts(data, show)
+    val hero = context == CardContext.HERO
+    val small = size == CardSize.SMALL && !hero
+    val onRod = hero || (context != CardContext.GRID && tzHangs())
+    val hangs = onRod && skin.hangsByThread
+    val pinned = onRod && skin == TanzakuSkin.KRAFT
+    // Kept small: seeds and per-position tables multiply it, and a raw hash code overflows to a negative index.
+    val index = (LocalCardIndex.current.takeIf { it >= 0 } ?: (data.key.hashCode() and 0x7fffffff)) % 997
+    val cordH = when {
+        !hangs -> 0.dp
+        skin == TanzakuSkin.PASTEL -> TZ_THREAD + 8.dp + PASTEL_DROP[index % PASTEL_DROP.size].dp
+        else -> TZ_THREAD + 4.dp
+    }
+    val topGap = when {
+        hangs -> cordH
+        pinned -> 12.dp
+        context == CardContext.GRID -> 0.dp
+        else -> 6.dp
+    }
+    val status = TanabataMaterials.paper(data.listStatus, tone)
+    val pressed = state.pressed
+    val paper = when (skin) {
+        TanzakuSkin.KRAFT -> SkinPaint.kraft
+        TanzakuSkin.HANAFUDA -> SkinPaint.hanafudaStock
+        else -> SkinPaint.paper(skin, status)
+    }.let { if (pressed) TanabataMaterials.pressed(it) else it }
+    val deep = SkinPaint.deep(status)
+    val inkColor = if (skin == TanzakuSkin.KRAFT) SkinPaint.kraftInk else TanabataMaterials.ink
+    val progress = data.ink(show)
+    val wish = if ((context == CardContext.WISH || hero || (show.next && texts.wish != null)) && !small) texts.wish else null
+    val width = stripWidth(size) * skin.widthScale
+    val air = if (context == CardContext.ROW || context == CardContext.WISH) skin.air else 0.dp
+    val thread = TanabataMaterials.thread(tone)
+    val bamboo = TanabataMaterials.bamboo(tone)
+    val shape: Shape = when (skin.edge) {
+        SkinEdge.DECKLE -> remember(index) { DeckleShape(index * 31 + 7) }
+        SkinEdge.RUFFLE -> remember(index) { RuffleShape(index * 17 + 3) }
+        SkinEdge.STRAIGHT -> when (skin) {
+            TanzakuSkin.HANAFUDA -> RoundedCornerShape(width * 0.04f)
+            TanzakuSkin.BOKASHI -> RoundedCornerShape(3.dp)
+            else -> RectangleShape
+        }
+    }
+    val sized = when (context) {
+        CardContext.ROW, CardContext.WISH -> Modifier.padding(horizontal = air).width(width.dense())
+        else -> Modifier.fillMaxWidth()
+    }
+    val dealt = skin == TanzakuSkin.HANAFUDA && onRod
+    val lift by animateFloatAsState(if (dealt && (state.hovered || state.focused)) 1f else 0f, tween(260), label = "deal-lift")
+    Column(
+        modifier
+            .then(sized)
+            .tzClickable(interaction, onClick, onLongClick)
+            .then(
+                if (dealt) {
+                    Modifier.graphicsLayer {
+                        val rest = HANAFUDA_DEAL[index % HANAFUDA_DEAL.size]
+                        rotationZ = rest * (1f - lift)
+                        translationY = -10.dp.toPx() * lift
+                    }
+                } else if (hangs) {
+                    Modifier.tzRestTilt(data.key)
+                } else {
+                    Modifier
+                },
+            )
+            .drawBehind {
+                if (hero) drawBambooRod(bamboo, top = 0f, thickness = 7.dp.toPx(), start = this.size.width * 0.15f, end = this.size.width * 0.85f)
+                // The origami cord goes behind the fold.
+                if (hangs && skin == TanzakuSkin.FOLDED) drawSkinCord(skin, thread, this.size.width / 2f, 2.dp.toPx(), (cordH + 10.dp).toPx())
+            }
+            .drawWithContent {
+                drawContent()
+                val cx = this.size.width / 2f
+                if (hangs && skin != TanzakuSkin.FOLDED) {
+                    val end = when (skin) {
+                        TanzakuSkin.BOKASHI -> cordH + 14.dp
+                        TanzakuSkin.LANTERN -> cordH + 4.dp
+                        TanzakuSkin.PASTEL -> cordH + 13.dp
+                        else -> cordH + TZ_HOLE_Y + 1.dp
+                    }
+                    drawSkinCord(skin, thread, cx, 2.dp.toPx(), end.toPx())
+                }
+                if (pinned) drawClothespin(Offset(cx, topGap.toPx()))
+            }
+            .padding(top = topGap + if (dealt) 6.dp else 0.dp),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .tzFocusRing(state, corner = if (skin == TanzakuSkin.HANAFUDA) width * 0.04f else 2.dp)
+                .skinSurface(skin, paper, status, deep, shape, tone, state.hovered, data.listStatus?.ordinal ?: 6),
+        ) {
+            SkinContent(skin, data, texts, show, context, size, hero, small, width, paper, status, deep, inkColor, progress, wish)
+            SkinOverlays(skin, data, width, paper, status, deep, tone, show)
+        }
+        if (skin == TanzakuSkin.FESTIVAL) FestivalFringe(status, deep, width, index)
+        if (skin == TanzakuSkin.CHIYOGAMI) Tassel(deep)
+    }
+}
+
+/** Resting angles of dealt Hanafuda cards by position. */
+private val HANAFUDA_DEAL = floatArrayOf(-3f, 2f, -1.5f, 3.2f, -2.4f, 1.6f)
+
+// ---------------------------------------------------------------- surface
+
+@Composable
+private fun Modifier.skinSurface(
+    skin: TanzakuSkin,
+    paper: Color,
+    status: Color,
+    deep: Color,
+    shape: Shape,
+    tone: ThemeTone,
+    hovered: Boolean,
+    pattern: Int,
+): Modifier {
+    val perf = LocalMotion.current.level == MotionLevel.PERF
+    val shadowColor = TanabataMaterials.paperShadow(tone)
+    val lifted = when {
+        perf -> this.border(1.dp, TanabataMaterials.ink.copy(alpha = 0.25f), shape)
+        skin == TanzakuSkin.LANTERN && tone != ThemeTone.LIGHT -> {
+            val glow = status.copy(alpha = 0.75f)
+            this.shadow(22.dp, shape, clip = false, ambientColor = glow, spotColor = glow)
+        }
+        else -> this.shadow(if (hovered) 10.dp else 7.dp, shape, clip = false, ambientColor = shadowColor, spotColor = shadowColor)
+    }
+    val foil by animateFloatAsState(if (hovered && skin == TanzakuSkin.FESTIVAL) 1f else 0f, tween(1100), label = "foil")
+    val rimmed = if (skin == TanzakuSkin.HANAFUDA) {
+        // The thick card: its dark edge shows under the rim.
+        lifted.drawBehind {
+            drawRoundRect(SkinPaint.hanafudaEdge, Offset(0f, 2.5.dp.toPx()), size, CornerRadius(size.width * 0.04f))
+        }
+    } else {
+        lifted
+    }
+    return rimmed
+        .clip(shape)
+        .drawBehind {
+            when (skin) {
+                TanzakuSkin.BOKASHI -> drawRect(
+                    Brush.radialGradient(
+                        0f to SkinPaint.light(status, 0.7f),
+                        0.58f to paper,
+                        1f to lerp(deep, paper, 0.38f),
+                        center = Offset(size.width / 2f, size.height * 0.42f),
+                        radius = size.height * 0.62f,
+                    ),
+                )
+                TanzakuSkin.LANTERN -> drawRect(
+                    Brush.radialGradient(
+                        0f to SkinPaint.light(status, 0.75f),
+                        0.55f to lerp(paper, Color(0xFFFFF6D8), 0.2f),
+                        1f to lerp(paper, deep, 0.15f),
+                        center = Offset(size.width / 2f, size.height * 0.38f),
+                        radius = size.height * 0.6f,
+                    ),
+                )
+                TanzakuSkin.FESTIVAL -> {
+                    val shift = size.width * 0.9f * foil
+                    drawRect(
+                        Brush.linearGradient(
+                            0f to deep,
+                            0.22f to status,
+                            0.34f to SkinPaint.light(status, 0.65f),
+                            0.46f to status,
+                            0.62f to lerp(deep, status, 0.35f),
+                            0.8f to status,
+                            0.92f to SkinPaint.light(status, 0.6f),
+                            start = Offset(-shift, -shift),
+                            end = Offset(size.width * 1.6f - shift, size.height - shift),
+                        ),
+                    )
+                }
+                TanzakuSkin.CHIYOGAMI -> {
+                    drawRect(lerp(status, Color(0xFFFFF6E6), 0.45f))
+                    drawChiyogami(lerp(status, deep, 0.35f), pattern)
+                }
+                else -> drawRect(paper)
+            }
+        }
+        .skinTexture(skin, paper, inverted = skin == TanzakuSkin.LANTERN)
+        .drawBehind {
+            if (skin == TanzakuSkin.FOLDED) drawCreases()
+            if (skin == TanzakuSkin.HANAFUDA) {
+                val rim = size.width * 0.035f
+                drawRoundRect(SkinPaint.hanafudaRim, cornerRadius = CornerRadius(size.width * 0.04f), style = Stroke(rim * 2f))
+            }
+        }
+        .drawWithContent {
+            drawContent()
+            if (skin == TanzakuSkin.BOKASHI) {
+                val inset = 6.dp.toPx()
+                drawRoundRect(
+                    deep.copy(alpha = 0.7f),
+                    Offset(inset, inset),
+                    Size(size.width - 2 * inset, size.height - 2 * inset),
+                    CornerRadius(2.dp.toPx()),
+                    style = Stroke(1.5.dp.toPx()),
+                )
+            }
+            if (skin == TanzakuSkin.LANTERN) {
+                val bar = 7.dp.toPx()
+                drawRect(SkinPaint.wood, Offset.Zero, Size(size.width, bar))
+                drawRect(SkinPaint.wood, Offset(0f, size.height - bar), Size(size.width, bar))
+            }
+        }
+}
+
+/** Two folds across an origami strip: a lit crest and its shadow, under the text. */
+private fun DrawScope.drawCreases() {
+    for (at in floatArrayOf(0.5f, 0.75f)) {
+        val y = size.height * at
+        drawRect(Color.White.copy(alpha = 0.32f), Offset(0f, y - 1.dp.toPx()), Size(size.width, 1.dp.toPx()))
+        drawRect(Color.Black.copy(alpha = 0.1f), Offset(0f, y), Size(size.width, 1.5.dp.toPx()))
+    }
+}
+
+/**
+ * The chiyogami prints, one per status (by its ordinal), so color is not the only cue: arrow feathers (yagasuri), interlocking circles (shippō), scales (uroko), checks (ichimatsu), dots (mame
+ * shibori) and standing waves (tatewaku); kinari papers get small dots.
+ */
+private fun DrawScope.drawChiyogami(ink: Color, pattern: Int) {
+    val u = 1.dp.toPx()
+    when (pattern) {
+        0 -> tiles(20f * u, 24f * u) { x, y ->
+            val w = 10f * u
+            val path = Path().apply {
+                moveTo(x, y); lineTo(x + w, y + 6f * u); lineTo(x + w, y + 18f * u); lineTo(x, y + 12f * u); close()
+                moveTo(x + w, y + 6f * u); lineTo(x + 2 * w, y); lineTo(x + 2 * w, y + 12f * u); lineTo(x + w, y + 18f * u); close()
+            }
+            drawPath(path, ink)
+        }
+        1 -> tiles(28f * u, 28f * u) { x, y ->
+            val r = 14f * u
+            val st = Stroke(2.2f * u)
+            drawCircle(ink, r, Offset(x, y), style = st)
+            drawCircle(ink, r, Offset(x + 14f * u, y + 14f * u), style = st)
+        }
+        2 -> tiles(22f * u, 20f * u) { x, y ->
+            drawPath(Path().apply { moveTo(x, y + 20f * u); lineTo(x + 11f * u, y); lineTo(x + 22f * u, y + 20f * u); close() }, ink)
+        }
+        3 -> tiles(24f * u, 24f * u) { x, y ->
+            drawRect(ink, Offset(x, y), Size(12f * u, 12f * u))
+            drawRect(ink, Offset(x + 12f * u, y + 12f * u), Size(12f * u, 12f * u))
+        }
+        5 -> tiles(20f * u, 40f * u) { x, y ->
+            val st = Stroke(2.4f * u)
+            for (dx in floatArrayOf(5f, 15f)) {
+                drawPath(
+                    Path().apply { moveTo(x + dx * u, y); cubicTo(x + (dx + 10f) * u, y + 10f * u, x + (dx + 10f) * u, y + 30f * u, x + dx * u, y + 40f * u) },
+                    ink,
+                    style = st,
+                )
+            }
+        }
+        else -> tiles(18f * u, 18f * u) { x, y ->
+            drawCircle(ink, 2.6f * u, Offset(x + 4.5f * u, y + 4.5f * u))
+            drawCircle(ink, 2.6f * u, Offset(x + 13.5f * u, y + 13.5f * u))
+        }
+    }
+}
+
+private inline fun DrawScope.tiles(w: Float, h: Float, cell: (Float, Float) -> Unit) {
+    var y = -h
+    while (y < size.height + h) {
+        var x = -w
+        while (x < size.width + w) {
+            cell(x, y)
+            x += w
+        }
+        y += h
+    }
+}
+
+// ---------------------------------------------------------------- content
+
+@Composable
+private fun SkinContent(
+    skin: TanzakuSkin,
+    data: TitleCardData,
+    texts: TzTexts,
+    show: CardShow,
+    context: CardContext,
+    size: CardSize,
+    hero: Boolean,
+    small: Boolean,
+    width: Dp,
+    paper: Color,
+    status: Color,
+    deep: Color,
+    ink: Color,
+    progress: Float,
+    wish: String?,
+) {
+    val side = width * when (skin) {
+        TanzakuSkin.PASTEL, TanzakuSkin.BOKASHI -> 0.11f
+        TanzakuSkin.HANAFUDA -> 0.035f
+        else -> 0.08f
+    }
+    val top = when (skin) {
+        TanzakuSkin.PASTEL -> 30.dp
+        TanzakuSkin.BOKASHI -> 44.dp
+        TanzakuSkin.FOLDED -> width * 0.3f
+        TanzakuSkin.LANTERN -> 7.dp + width * 0.09f
+        TanzakuSkin.KRAFT -> 20.dp
+        TanzakuSkin.HANAFUDA -> width * 0.035f
+        TanzakuSkin.CHIYOGAMI -> 24.dp
+        else -> 24.dp
+    }
+    val bottom = when (skin) {
+        TanzakuSkin.KOZO -> width * 0.13f
+        TanzakuSkin.CREPE -> width * 0.15f
+        TanzakuSkin.LANTERN -> 7.dp + width * 0.1f
+        TanzakuSkin.HANAFUDA -> width * 0.035f
+        else -> width * 0.1f
+    }
+    val centered = skin == TanzakuSkin.BOKASHI
+    val texture: @Composable ColumnScope.() -> Unit = {
+        SkinTexts(skin, data, texts, show, size, hero, small, ink, progress, wish, centered)
+    }
+    Column(
+        Modifier.fillMaxWidth().padding(start = side, end = side, top = top, bottom = bottom),
+        horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(if (skin == TanzakuSkin.PASTEL) 14.dp else 11.dp),
+    ) {
+        when (skin) {
+            TanzakuSkin.CHIYOGAMI -> Column(
+                Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RectangleShape)
+                    .background(SkinPaint.label)
+                    .padding(width * 0.05f),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                Poster(skin, data, show, width, status, deep)
+                texture()
+            }
+            TanzakuSkin.HANAFUDA -> {
+                Poster(skin, data, show, width, status, deep)
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = width * 0.03f, vertical = width * 0.04f),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                ) { texture() }
+            }
+            else -> {
+                Poster(skin, data, show, width, status, deep)
+                texture()
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.SkinTexts(
+    skin: TanzakuSkin,
+    data: TitleCardData,
+    texts: TzTexts,
+    show: CardShow,
+    size: CardSize,
+    hero: Boolean,
+    small: Boolean,
+    ink: Color,
+    progress: Float,
+    wish: String?,
+    centered: Boolean,
+) {
+    val family = skinTitleFamily(skin)
+    val tSize = titleSize(size, hero)
+    val base = TzType.title(tSize)
+    val titleStyle = when {
+        skin == TanzakuSkin.BOKASHI && family != null ->
+            base.copy(fontFamily = family, fontWeight = FontWeight.Normal, letterSpacing = (-0.6).sp, lineHeight = tSize * 1.22f)
+        skin == TanzakuSkin.CREPE || skin == TanzakuSkin.FESTIVAL ->
+            base.copy(fontFamily = family, fontWeight = FontWeight.Normal, fontSize = tSize * 1.08f, lineHeight = tSize * 1.25f)
+        family != null -> base.copy(fontFamily = family, fontWeight = FontWeight.Bold, lineHeight = tSize * 1.25f)
+        skin == TanzakuSkin.PASTEL -> base.copy(fontWeight = FontWeight.Medium, lineHeight = tSize * 1.3f)
+        else -> base.copy(fontWeight = FontWeight.Bold)
+    }
+    val align = if (centered) TextAlign.Center else TextAlign.Start
+    Text(texts.title, style = titleStyle, color = ink, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = align)
+    val dots = show.progress && skin.usesDots() && data.episodesTotal != null && data.episodesTotal in 2..60
+    if (show.progress && !dots && progress > 0f && skin != TanzakuSkin.KRAFT) InkStroke(progress, ink, if (centered) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+    if (texts.statusLine.isNotEmpty()) {
+        Text(
+            texts.statusLine,
+            style = TzType.sub(if (small) 12.sp else 12.5.sp, FontWeight.SemiBold),
+            color = if (skin == TanzakuSkin.PASTEL) lerp(ink, Color.Transparent, 0.12f) else ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = align,
+        )
+    }
+    if (wish != null) {
+        val wishStyle = TextStyle(fontFamily = skinWishFamily(), fontWeight = FontWeight.SemiBold, fontSize = if (hero) 15.sp else 13.5.sp, lineHeight = if (hero) 20.sp else 18.sp)
+        Text(wish, style = wishStyle, color = ink, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = align)
+    }
+    if (dots) EpisodeDots(data.episodesSeen ?: 0, data.episodesTotal ?: 0, ink, fichas = skin == TanzakuSkin.HANAFUDA)
+}
+
+private fun TanzakuSkin.usesDots(): Boolean =
+    this == TanzakuSkin.CREPE || this == TanzakuSkin.PASTEL || this == TanzakuSkin.FOLDED || this == TanzakuSkin.FESTIVAL ||
+        this == TanzakuSkin.CHIYOGAMI || this == TanzakuSkin.HANAFUDA
+
+/** Progress as a tapered stroke of ink (a brush line, not a bar). */
+@Composable
+private fun InkStroke(progress: Float, ink: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier.fillMaxWidth(progress.coerceIn(0.08f, 1f)).height(4.dp).clearAndSetSemantics { }) {
+        drawRoundRect(
+            Brush.horizontalGradient(0f to Color.Transparent, 0.1f to ink.copy(alpha = 0.62f), 0.78f to ink.copy(alpha = 0.62f), 1f to Color.Transparent),
+            cornerRadius = CornerRadius(size.height),
+        )
+    }
+}
+
+/** One dot per episode (up to 24; longer series are scaled), seen ones filled. Hanafuda draws them as red playing chips. */
+@Composable
+private fun EpisodeDots(seen: Int, total: Int, ink: Color, fichas: Boolean) {
+    val n = total.coerceAtMost(24)
+    val on = ((seen.toFloat() / total) * n).roundToInt().coerceIn(0, n)
+    Row(Modifier.padding(top = 2.dp).clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        repeat(n) { i ->
+            Canvas(Modifier.size(if (fichas) 7.dp else 6.dp)) {
+                val r = size.minDimension / 2f
+                when {
+                    fichas && i < on -> drawCircle(Color(0xFFC8321F), r)
+                    fichas -> {
+                        drawCircle(Color(0xFFD9CFBA), r)
+                        drawCircle(SkinPaint.hanafudaRim, r - 0.5.dp.toPx(), style = Stroke(1.dp.toPx()))
+                    }
+                    i < on -> drawCircle(ink.copy(alpha = 0.85f), r)
+                    else -> drawCircle(ink.copy(alpha = 0.5f), r - 0.65.dp.toPx(), style = Stroke(1.3.dp.toPx()))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Poster(skin: TanzakuSkin, data: TitleCardData, show: CardShow, width: Dp, status: Color, deep: Color) {
+    val score: @Composable BoxScope.() -> Unit = {
+        if (show.score && data.score != null) TzScore(data.score, Modifier.align(Alignment.BottomEnd).padding(4.dp))
+    }
+    when (skin) {
+        TanzakuSkin.CREPE -> Box(
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer { rotationZ = -1.6f }
+                .shadow(3.dp, RectangleShape)
+                .background(Color(0xFFFBF8F2))
+                .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 15.dp),
+        ) {
+            TzPoster(data.coverUrl, RectangleShape)
+            score()
+        }
+        TanzakuSkin.BOKASHI -> Box(
+            Modifier
+                .fillMaxWidth()
+                .border(1.5.dp, lerp(deep, TanabataMaterials.ink, 0.3f), RoundedCornerShape(4.dp))
+                .padding(1.5.dp)
+                .border(2.dp, SkinPaint.light(status, 0.7f), RoundedCornerShape(3.dp))
+                .padding(2.dp),
+        ) {
+            TzPoster(data.coverUrl, RoundedCornerShape(2.dp))
+            score()
+        }
+        TanzakuSkin.HANAFUDA -> Box(Modifier.fillMaxWidth().clip(RectangleShape)) {
+            MediaCover(url = data.coverUrl, modifier = Modifier.fillMaxWidth(), contentDescription = null, shape = RectangleShape, aspectRatio = 3f / 4f)
+            // The print's screen: a fine dot pattern over the flat inks.
+            Canvas(Modifier.matchParentSize()) {
+                val step = 3.dp.toPx()
+                val dot = Color.Black.copy(alpha = 0.1f)
+                var y = step / 2f
+                while (y < size.height) {
+                    var x = step / 2f
+                    while (x < size.width) {
+                        drawCircle(dot, 0.55.dp.toPx(), Offset(x, y))
+                        x += step
+                    }
+                    y += step
+                }
+            }
+            HanafudaRibbon(data.listStatus, width, Modifier.align(Alignment.CenterStart))
+            score()
+            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp).background(SkinPaint.hanafudaRim))
+        }
+        TanzakuSkin.LANTERN -> Box(Modifier.fillMaxWidth().graphicsLayer { alpha = 0.92f }) {
+            TzPoster(data.coverUrl, RectangleShape)
+            score()
+        }
+        TanzakuSkin.FESTIVAL -> Box(Modifier.fillMaxWidth().border(3.dp, SkinPaint.light(status, 0.7f)).padding(3.dp)) {
+            TzPoster(data.coverUrl, RectangleShape)
+            score()
+        }
+        TanzakuSkin.PASTEL -> Box(Modifier.fillMaxWidth()) {
+            TzPoster(data.coverUrl, RoundedCornerShape(2.dp))
+            score()
+        }
+        else -> Box(Modifier.fillMaxWidth()) {
+            TzPoster(data.coverUrl, tzPaperShape)
+            score()
+        }
+    }
+}
+
+/** The tanzaku of a hanafuda card: a ribbon across the print with its word in brush kanji (decorative). */
+@Composable
+private fun HanafudaRibbon(status: StatusSlot?, width: Dp, modifier: Modifier) {
+    val family = hanafudaKanjiFamily()
+    Box(
+        modifier
+            .padding(start = width * 0.09f, top = width * 0.2f)
+            .graphicsLayer { rotationZ = 16f; transformOrigin = TransformOrigin(0.5f, 0.5f) }
+            .width(width * 0.2f)
+            .height(width * 0.72f)
+            .shadow(3.dp, RectangleShape)
+            .background(status.ribbonColor())
+            .clearAndSetSemantics { },
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Column(Modifier.padding(top = width * 0.06f), horizontalAlignment = Alignment.CenterHorizontally) {
+            status.ribbonKanji().forEach { ch ->
+                Text(ch.toString(), style = TextStyle(fontFamily = family, fontSize = (width.value * 0.085f).sp, lineHeight = (width.value * 0.1f).sp), color = Color(0xFFFFF6E6))
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- overlays
+
+@Composable
+private fun BoxScope.SkinOverlays(
+    skin: TanzakuSkin,
+    data: TitleCardData,
+    width: Dp,
+    paper: Color,
+    status: Color,
+    deep: Color,
+    tone: ThemeTone,
+    show: CardShow,
+) {
+    val ground = MaterialTheme.colorScheme.background
+    when (skin) {
+        TanzakuSkin.PASTEL -> Canvas(Modifier.matchParentSize()) { drawEyelet(Offset(size.width / 2f, 13.dp.toPx()), ground) }
+        TanzakuSkin.KOZO, TanzakuSkin.CREPE, TanzakuSkin.CHIYOGAMI, TanzakuSkin.FESTIVAL ->
+            Canvas(Modifier.matchParentSize()) { drawHole(Offset(size.width / 2f, TZ_HOLE_Y.toPx()), ground) }
+        TanzakuSkin.BOKASHI -> Mon(data.listStatus, deep, status, Modifier.align(Alignment.TopCenter).padding(top = 12.dp))
+        TanzakuSkin.FOLDED -> Canvas(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(width * 0.36f)) {
+            val w = size.width
+            val h = size.height
+            val flap = Path().apply { moveTo(0f, 0f); lineTo(w, 0f); lineTo(w, h * 0.62f); lineTo(w / 2f, h); lineTo(0f, h * 0.62f); close() }
+            val shadow = Path().apply { moveTo(0f, 0f); lineTo(w, 0f); lineTo(w, h * 0.62f + 3.dp.toPx()); lineTo(w / 2f, h + 3.dp.toPx()); lineTo(0f, h * 0.62f + 3.dp.toPx()); close() }
+            drawPath(shadow, Color.Black.copy(alpha = 0.22f))
+            drawPath(flap, Brush.verticalGradient(listOf(Color(0xFFFBF6EA), Color(0xFFEFE5D1))))
+            drawLine(Color.Black.copy(alpha = 0.08f), Offset(w / 2f, 0f), Offset(w / 2f, h), strokeWidth = 1.dp.toPx())
+        }
+        TanzakuSkin.KRAFT -> {
+            // Washi tape in the status color holding the poster, and the stamp with the status and the episodes.
+            Box(
+                Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = -(width * 0.02f), y = width * 0.12f)
+                    .rotate(-24f)
+                    .width(width * 0.42f)
+                    .height(width * 0.1f)
+                    .background(status.copy(alpha = 0.8f)),
+            )
+            Hanko(data, deep, width, Modifier.align(Alignment.TopEnd).padding(top = width * 1.12f, end = width * 0.06f))
+        }
+        else -> Unit
+    }
+}
+
+/** The mon of a Bokashi strip: a dark disc with the status icon. */
+@Composable
+private fun Mon(status: StatusSlot?, deep: Color, paper: Color, modifier: Modifier) {
+    val fill = lerp(deep, TanabataMaterials.ink, 0.45f)
+    val stroke = lerp(paper, Color.White, 0.6f)
+    Canvas(modifier.size(26.dp).clearAndSetSemantics { }) {
+        drawCircle(fill)
+        val u = size.width / 24f
+        val st = Stroke(2.2f * u, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+        val p = Path()
+        when (status) {
+            StatusSlot.WATCHING, null -> { p.moveTo(9f * u, 7f * u); p.lineTo(9f * u, 17f * u); p.lineTo(17f * u, 12f * u); p.close() }
+            StatusSlot.PLANNING -> { p.moveTo(8f * u, 6f * u); p.lineTo(16f * u, 6f * u); p.lineTo(16f * u, 18f * u); p.lineTo(12f * u, 15f * u); p.lineTo(8f * u, 18f * u); p.close() }
+            StatusSlot.COMPLETED -> { p.moveTo(7f * u, 12.5f * u); p.lineTo(10.5f * u, 16f * u); p.lineTo(17f * u, 8.5f * u) }
+            StatusSlot.PAUSED -> { p.moveTo(10f * u, 7f * u); p.lineTo(10f * u, 17f * u); p.moveTo(14f * u, 7f * u); p.lineTo(14f * u, 17f * u) }
+            StatusSlot.DROPPED -> { p.moveTo(8f * u, 8f * u); p.lineTo(16f * u, 16f * u); p.moveTo(16f * u, 8f * u); p.lineTo(8f * u, 16f * u) }
+            StatusSlot.REWATCHING -> { p.moveTo(7f * u, 12f * u); p.cubicTo(7f * u, 6f * u, 16f * u, 5f * u, 17f * u, 11f * u); p.moveTo(17f * u, 12f * u); p.cubicTo(17f * u, 18f * u, 8f * u, 19f * u, 7f * u, 13f * u) }
+        }
+        drawPath(p, stroke, style = st)
+    }
+}
+
+/** The kraft stamp: status and episodes, opaque so it reads over the poster's corner. */
+@Composable
+private fun Hanko(data: TitleCardData, deep: Color, width: Dp, modifier: Modifier) {
+    val name = data.listStatusLabel ?: return
+    val eps = if (data.episodesTotal != null && data.episodesTotal > 1) "${data.episodesSeen ?: 0}/${data.episodesTotal}" else null
+    Box(
+        modifier
+            .rotate(-12f)
+            .size(width * 0.36f)
+            .shadow(1.dp, CircleShape)
+            .background(Color(0xFFD9B88D), CircleShape)
+            .border(2.5.dp, deep, CircleShape)
+            .clearAndSetSemantics { },
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                name.substringBefore(' ').uppercase(),
+                style = TzType.sub(9.sp, FontWeight.ExtraBold).copy(letterSpacing = 0.4.sp),
+                color = deep,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+            )
+            if (eps != null) Text(eps, style = TzType.sub(12.sp, FontWeight.ExtraBold), color = deep, maxLines = 1)
+        }
+    }
+}
+
+/** A wooden clothespin over the line and the card's top edge (Kraft). */
+private fun DrawScope.drawClothespin(at: Offset) {
+    val u = 1.dp.toPx()
+    val w = 14f * u
+    val h = 38f * u
+    val left = at.x - w / 2f
+    val top = at.y - 18f * u
+    drawRoundRect(Color.Black.copy(alpha = 0.25f), Offset(left + 1f * u, top + 2f * u), Size(w, h), CornerRadius(3f * u))
+    drawRoundRect(
+        Brush.horizontalGradient(listOf(Color(0xFFA9794B), Color(0xFFD9B183), Color(0xFFB88553)), startX = left, endX = left + w),
+        Offset(left, top),
+        Size(w, h),
+        CornerRadius(3f * u),
+    )
+    drawRoundRect(Color(0xFF8A8F98), Offset(left + 2f * u, top + 13f * u), Size(w - 4f * u, 4f * u), CornerRadius(2f * u))
+}
+
+/** The fukinagashi fringe under a Festival strip: strips that sway on their own under the full motion level. */
+@Composable
+private fun FestivalFringe(status: Color, deep: Color, width: Dp, index: Int) {
+    val full = LocalMotion.current.level == MotionLevel.FULL
+    val lengths = floatArrayOf(0.46f, 0.36f, 0.52f, 0.4f, 0.3f, 0.48f, 0.38f, 0.55f, 0.34f, 0.44f, 0.5f, 0.37f, 0.42f)
+    val swing = if (full) {
+        val t = rememberInfiniteTransition(label = "fringe")
+        t.animateFloat(-1f, 1f, infiniteRepeatable(tween(1700), RepeatMode.Reverse), label = "fringe-swing").value
+    } else {
+        0f
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = width * 0.06f).clearAndSetSemantics { },
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        repeat(13) { k ->
+            val len = width * lengths[(k + index * 3) % lengths.size]
+            val phase = if ((k + index) % 2 == 0) swing else -swing
+            Box(
+                Modifier
+                    .graphicsLayer { transformOrigin = TransformOrigin(0.5f, 0f); rotationZ = phase * (3f + (k % 3)) }
+                    .width(width * 0.022f)
+                    .height(len)
+                    .background(Brush.verticalGradient(listOf(status, deep))),
+            )
+        }
+    }
+}
+
+/** The tassel under a Chiyogami strip: a gold ring and the deep-dyed threads. */
+@Composable
+private fun ColumnScope.Tassel(deep: Color) {
+    Canvas(Modifier.align(Alignment.CenterHorizontally).width(14.dp).height(48.dp).clearAndSetSemantics { }) {
+        val w = size.width
+        val h = size.height
+        drawRect(Color(0xFFE9C45A), Offset(w * 0.25f, 0f), Size(w * 0.5f, 6.dp.toPx()))
+        val strands = Path().apply { moveTo(w * 0.3f, 6.dp.toPx()); lineTo(w * 0.7f, 6.dp.toPx()); lineTo(w, h); lineTo(0f, h); close() }
+        drawPath(strands, deep)
+        var x = 1.5.dp.toPx()
+        while (x < w) {
+            drawLine(lerp(deep, Color.White, 0.4f), Offset(w / 2f + (x - w / 2f) * 0.4f, 6.dp.toPx()), Offset(x, h), strokeWidth = 0.8.dp.toPx())
+            x += 3.dp.toPx()
+        }
+    }
+}

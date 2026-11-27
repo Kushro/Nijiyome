@@ -73,6 +73,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.upscale.UpscaleImageKind
 
 /**
  * Parity wave A (docs/redesign/15-parity-wave-a-contract-android.md §3.3). Owner: worker q.
@@ -394,7 +395,7 @@ private fun ProviderCard(
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (account?.avatar != null) {
-                    MediaCover(url = account.avatar, modifier = Modifier.width(40.dp), shape = CircleShape, aspectRatio = 1f)
+                    MediaCover(url = account.avatar, modifier = Modifier.width(40.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
                 } else {
                     Box(
                         Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),

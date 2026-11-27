@@ -275,9 +275,12 @@ fun Modifier.tanzakuPaper(
         else -> this.shadow(6.dp, shape, clip = false, ambientColor = shadowColor, spotColor = shadowColor)
     }
     val edged = if (tone == ThemeTone.LIGHT && !perf) lifted.border(1.dp, TanabataMaterials.ink.copy(alpha = 0.10f), shape) else lifted
+    // v1.3.3: the paper wears the user's skin texture (the flat washi grain of v1.3.2 is gone). [fibreTile] scales the tile on small
+    // papers (the strip of "tanzaku sello").
+    val skin = LocalTanzakuSkin.current
     return edged
         .clip(shape)
         .background(paper)
         .then(if (ink > 0f) Modifier.drawBehind { drawInkDown(paper, ink) } else Modifier)
-        .washi(TanabataMaterials.fibre(paper), alpha = TanabataMaterials.FIBRE_ALPHA, tile = fibreTile)
+        .skinTexture(skin, paper, calmFrom = 0.5f, strength = skin.textureStrength * if (fibreTile < 160.dp) 0.7f else 1f)
 }

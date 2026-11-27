@@ -79,6 +79,7 @@ import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.ui_retry
 import app.nijiyome.ui.resources.list_queued_offline
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.upscale.UpscaleImageKind
 
 /** The list's write outcomes on the app snackbar ("Se sincronizará", "No se pudo guardar"). */
 @Composable
@@ -344,7 +345,7 @@ internal fun FavoritesPane(screen: LibraryActions, modifier: Modifier = Modifier
                                 items(state.favoriteCharacters, key = { "ch-" + it.id }) { c ->
                                     Column(Modifier.width(88.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                         Box {
-                                            MediaCover(url = c.image, modifier = Modifier.width(72.dp), shape = CircleShape, aspectRatio = 1f)
+                                            MediaCover(url = c.image, modifier = Modifier.width(72.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
                                             val removeLabel = stringResource(Res.string.library_favorites_remove_named, c.name)
                                             IconButton(
                                                 onClick = {

@@ -76,10 +76,11 @@ import app.nijiyome.ui.media.displayTitle
 import app.nijiyome.ui.patterns.isCompactWindow
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.ui_back
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.ui.media.UpscalableImage
+import app.nijiyome.upscale.UpscaleImageKind
 
 // Sparkles redesign, lane S4: the Ficha in the three structures of the artifact (screens-a.js `ficha`), chosen once here from
 // Ajustes › Apariencia (`structures.details`). Panel = header, tabs and a side column (Continuar, sources, Enviar); Ruta = the episodes
@@ -313,9 +314,11 @@ private fun CinemaBackdrop(media: Media, state: DetailsUiState, horizontal: Bool
     val bg = MaterialTheme.colorScheme.background
     val art = headerBackdrop(media, state.artwork)
     Box(modifier.decor(DecorRegion.HERO, rememberHeroRegion(media, state)).cardToDetailsTarget(media.toCardData().key)) {
-        AsyncImage(
-            model = art.url,
+        UpscalableImage(
+            url = art.url,
             contentDescription = null,
+            kind = UpscaleImageKind.BACKDROP,
+            upscale = !state.coverBlurred,
             contentScale = ContentScale.Crop,
             modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 .then(if (state.coverBlurred) Modifier.blur(24.dp) else Modifier),

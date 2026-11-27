@@ -1,0 +1,396 @@
+{
+	"inputs" : 
+	[
+		{
+			"path" : "CMakeLists.txt"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/3.22.1-g37088a8/CMakeSystem.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/android.toolchain.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/android-legacy.toolchain.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/abis.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/platforms.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInitialize.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Initialize.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/hooks/pre/Android-Initialize.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/3.22.1-g37088a8/CMakeCCompiler.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/3.22.1-g37088a8/CMakeCXXCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeGenericSystem.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeInitializeConfigs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/hooks/pre/Android.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Linux.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/UnixPaths.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-C.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-C.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/hooks/pre/Android-Clang.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/flags.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"path" : "third_party/ncnn/CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckCXXCompilerFlag.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckCXXSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Internal/CheckSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Internal/CheckCompilerFlag.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Internal/CheckSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake"
+		},
+		{
+			"path" : "third_party/ncnn/glslang/CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/GNUInstallDirs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePackageConfigHelpers.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/WriteBasicConfigVersionFile.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDependentOption.cmake"
+		},
+		{
+			"path" : "third_party/ncnn/glslang/parse_version.cmake"
+		},
+		{
+			"path" : "third_party/ncnn/glslang/CHANGES.md"
+		},
+		{
+			"path" : "third_party/ncnn/glslang/build_info.h.tmpl"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/ncnn/glslang/glslang-config.cmake.in"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/BasicConfigVersion-SameMajorVersion.cmake.in"
+		},
+		{
+			"path" : "third_party/ncnn/glslang/SPIRV/CMakeLists.txt"
+		},
+		{
+			"path" : "third_party/ncnn/glslang/glslang/CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindThreads.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckLibraryExists.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckIncludeFile.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckCSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Internal/CheckSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"path" : "third_party/ncnn/glslang/glslang/OSDependent/Unix/CMakeLists.txt"
+		},
+		{
+			"path" : "third_party/ncnn/src/CMakeLists.txt"
+		},
+		{
+			"path" : "third_party/ncnn/src/platform.h.in"
+		},
+		{
+			"path" : "third_party/ncnn/cmake/ncnn_add_shader.cmake"
+		},
+		{
+			"path" : "third_party/ncnn/cmake/ncnn_add_layer.cmake"
+		},
+		{
+			"path" : "third_party/ncnn/src/layer_declaration.h.in"
+		},
+		{
+			"path" : "third_party/ncnn/src/layer_registry.h.in"
+		},
+		{
+			"path" : "third_party/ncnn/src/layer_type_enum.h.in"
+		},
+		{
+			"path" : "third_party/ncnn/src/layer_shader_registry.h.in"
+		},
+		{
+			"path" : "third_party/ncnn/src/layer_shader_spv_data.h.in"
+		},
+		{
+			"path" : "third_party/ncnn/src/layer_shader_type_enum.h.in"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/GenerateExportHeader.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckCCompilerFlag.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckCSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/Internal/CheckCompilerFlag.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckCXXCompilerFlag.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/exportheader.cmake.in"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindThreads.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckLibraryExists.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckIncludeFile.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckCSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageMessage.cmake"
+		}
+	],
+	"kind" : "cmakeFiles",
+	"paths" : 
+	{
+		"build" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64",
+		"source" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale"
+	},
+	"version" : 
+	{
+		"major" : 1,
+		"minor" : 0
+	}
+}

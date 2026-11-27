@@ -150,9 +150,34 @@ val stageAppResources = tasks.register<Copy>("stageAppResources") {
             rootProject.file("build/desktop-framegen/Release/$fgLibName"),
         ).firstOrNull { it.isFile }?.absolutePath.orEmpty()
     }
+    // GPU image upscaling (native/upscale, docs/plan-upscaling.md): packaging/linux/build-desktop-upscale.sh or
+    // packaging/windows/build-desktop-upscale.ps1. With the library come the Real-ESRGAN models (one .bin: the x2/x3/x4 weights are
+    // byte-identical and the engine falls back to the x4 file) and the licence texts of what the library links.
+    val upLibName = if (windows) "nijiyome_upscale.dll" else "libnijiyome_upscale.so"
+    val upLib = cfg("NIJIYOME_DESKTOP_UPSCALE").ifEmpty {
+        listOf(
+            rootProject.file("build/desktop-upscale/$upLibName"),
+            rootProject.file("build/desktop-upscale/Release/$upLibName"),
+        ).firstOrNull { it.isFile }?.absolutePath.orEmpty()
+    }
     into(appResources.map { it.dir(if (windows) "windows-x64" else "linux-x64") })
     if (lsfg.isNotEmpty()) from(lsfg) { rename { if (windows) "temple-lsfg.exe" else "temple-lsfg" } }
     if (fgLib.isNotEmpty()) from(fgLib) { rename { fgLibName } }
+    if (upLib.isNotEmpty()) {
+        val upscale = rootProject.file("native/upscale")
+        from(upLib) { rename { upLibName } }
+        from(upscale.resolve("models")) {
+            include("realesr-animevideov3-x2.param", "realesr-animevideov3-x3.param", "realesr-animevideov3-x4.param")
+            include("realesr-animevideov3-x4.bin")
+            into("upscale-models")
+        }
+        mapOf(
+            upscale.resolve("models/LICENSE-Real-ESRGAN.txt") to "Real-ESRGAN-LICENSE.txt",
+            upscale.resolve("third_party/realesrgan-ncnn-vulkan/LICENSE") to "realesrgan-ncnn-vulkan-LICENSE.txt",
+            upscale.resolve("third_party/ncnn/LICENSE.txt") to "ncnn-LICENSE.txt",
+            upscale.resolve("third_party/ncnn/glslang/LICENSE.txt") to "glslang-LICENSE.txt",
+        ).forEach { (src, target) -> if (src.isFile) from(src) { rename { target }; into("upscale-licenses") } }
+    }
     // The notices of what the app ships, readable from Settings › Acerca de › Licencias and next to the binaries.
     from(rootProject.file("LICENSE"))
     from(rootProject.file("THIRD_PARTY_NOTICES.md"))

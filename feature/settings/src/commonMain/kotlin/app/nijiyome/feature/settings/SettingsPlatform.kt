@@ -140,6 +140,12 @@ internal expect val resetNeedsTypedWord: Boolean
 internal expect val metadataCacheClearOffered: Boolean
 
 /**
+ * v1.3.3 (docs/plan-upscaling.md §5): Ajustes › Mejoras › Imágenes runs on a phone: it offers "Solo mientras carga" and its cache
+ * defaults to 128 MB (desktop: 256 MB).
+ */
+internal expect val upscaleOnPhone: Boolean
+
+/**
  * Hito 6 (D1): the snackbar text after [rememberOpenAuthUrl] answered false. Android: "no browser" (its only reason). Desktop: also
  * "the loopback port is taken".
  */

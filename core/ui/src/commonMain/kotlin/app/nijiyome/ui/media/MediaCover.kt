@@ -27,12 +27,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.motion.cardToDetailsSource
 import app.nijiyome.ui.cards.LocalCardSourceKey
-import coil3.compose.AsyncImage
+import app.nijiyome.upscale.UpscaleImageKind
 
 /** Poster ratio 13:18 (from Tatami's MediaCover). */
 const val COVER_ASPECT_RATIO = 13f / 18f
 
-/** Poster image with a neutral placeholder when [url] is null or fails to load. */
+/**
+ * Poster image with a neutral placeholder when [url] is null or fails to load. [kind] tells the GPU upscaler what the image is
+ * (a 16:9 episode still, a round avatar); it changes nothing on screen.
+ */
 @Composable
 fun MediaCover(
     url: String?,
@@ -40,6 +43,7 @@ fun MediaCover(
     contentDescription: String? = null,
     shape: Shape = MaterialTheme.shapes.medium,
     aspectRatio: Float = COVER_ASPECT_RATIO,
+    kind: UpscaleImageKind = UpscaleImageKind.POSTER,
 ) {
     val sample = SampleCover.parse(url)
     // Inside a TitleCard the cover is the card's poster: the source of the card-to-Details transition.
@@ -55,9 +59,10 @@ fun MediaCover(
         when {
             sample != null -> SampleCoverArt(sample)
             url.isNullOrBlank() -> Icon(Icons.Outlined.Movie, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            else -> AsyncImage(
-                model = url,
+            else -> UpscalableImage(
+                url = url,
                 contentDescription = contentDescription,
+                kind = kind,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )

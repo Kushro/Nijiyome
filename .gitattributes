@@ -11,3 +11,6 @@ core/designsystem/src/androidMain/assets/licenses/OFL-SpaceGrotesk.txt -text
 core/framegen/src/main/cpp/third_party/lsfg-vk/CMakeLists.txt -text
 core/framegen/src/main/cpp/third_party/pe-parse/** -text
 core/framegen/src/main/cpp/third_party/volk/** -text
+
+# Model weights and their .param graphs, kept byte for byte (their SHA-256 are recorded in native/upscale/models/README.md).
+native/upscale/models/realesr-* -text

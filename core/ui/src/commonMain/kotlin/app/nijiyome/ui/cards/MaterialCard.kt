@@ -44,6 +44,7 @@ import app.nijiyome.ui.look.pressScale
 import app.nijiyome.ui.media.MaterialPosterCard
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.dotColor
+import app.nijiyome.upscale.UpscaleImageKind
 
 // Sparkles redesign. Owner: integrator. The reference implementation of TitleCardStyle: the three previous card styles of
 // Diseño y estilo (classic, detailed, poster only). ROW, GRID and WISH keep the poster card unchanged; the contexts where a
@@ -199,7 +200,13 @@ private fun MaterialBanner(data: TitleCardData, show: CardShow, onClick: () -> U
     val shape = MaterialTheme.shapes.large
     val sub = (if (show.next) data.nextLabel else null) ?: data.subtitle
     Box(modifier.materialCardClick(onClick, onLongClick, shape), contentAlignment = Alignment.BottomStart) {
-        MediaCover(data.bannerUrl ?: data.coverUrl, Modifier.fillMaxWidth(), shape = shape, aspectRatio = 16f / 9f)
+        MediaCover(
+            data.bannerUrl ?: data.coverUrl,
+            Modifier.fillMaxWidth(),
+            shape = shape,
+            aspectRatio = 16f / 9f,
+            kind = if (data.bannerUrl != null) UpscaleImageKind.BANNER else UpscaleImageKind.POSTER,
+        )
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.4f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.78f))))
         Row(
             Modifier.fillMaxWidth().padding(16.dp),

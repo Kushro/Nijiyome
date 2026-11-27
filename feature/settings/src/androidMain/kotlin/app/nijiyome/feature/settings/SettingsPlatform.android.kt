@@ -328,6 +328,8 @@ internal actual val resetNeedsTypedWord: Boolean = false
 /** Hito 6 (D1): Android's metadata cache row shows only the size, as before. */
 internal actual val metadataCacheClearOffered: Boolean = false
 
+internal actual val upscaleOnPhone: Boolean = true
+
 /** Hito 6 (D1): the text Android always showed when no browser could open the sign-in. */
 @Composable
 internal actual fun rememberAuthOpenFailureText(): suspend () -> String =

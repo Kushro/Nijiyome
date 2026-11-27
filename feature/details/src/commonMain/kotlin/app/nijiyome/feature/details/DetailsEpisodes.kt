@@ -52,6 +52,8 @@ import coil3.compose.AsyncImage
 import java.util.Locale
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
+import app.nijiyome.ui.media.UpscalableImage
+import app.nijiyome.upscale.UpscaleImageKind
 
 // 2026-11 UI refresh: shared pieces of the Details › Episodios rows (desktop episodes.rs): the rating label, the meta line and the
 // thumbnail. Without a thumbnail the series art shows dimmed with the number, never an empty box.
@@ -80,7 +82,7 @@ internal fun EpisodeThumb(episode: Episode, fallbackArt: String?, modifier: Modi
     Box(modifier.aspectRatio(16f / 9f).clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainerHighest)) {
         val image = episode.image?.takeIf { it.isNotBlank() }
         if (image != null) {
-            AsyncImage(model = image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            UpscalableImage(url = image, contentDescription = null, kind = UpscaleImageKind.EPISODE_THUMB, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         } else {
             if (!fallbackArt.isNullOrBlank()) {
                 AsyncImage(

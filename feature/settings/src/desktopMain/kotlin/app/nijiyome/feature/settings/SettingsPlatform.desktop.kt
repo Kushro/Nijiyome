@@ -232,6 +232,8 @@ internal actual val resetNeedsTypedWord: Boolean = true
 /** Tatakai Next's metadata cache row: size, "Vaciar" and the TTL. */
 internal actual val metadataCacheClearOffered: Boolean = true
 
+internal actual val upscaleOnPhone: Boolean = false
+
 /** Why the loopback login could not open: the port is taken (another app holds it) or no browser answered. */
 @Composable
 internal actual fun rememberAuthOpenFailureText(): suspend () -> String {

@@ -99,6 +99,8 @@ import org.koin.compose.getKoin
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.ui.media.UpscalableImage
+import app.nijiyome.upscale.UpscaleImageKind
 
 // 2026-11 UI refresh: Home "Destacado" (desktop HomeLayout::Spotlight, Hayase-like). A full-width pager of the trending titles drawn
 // under the status bar: banner, fact chips (episodes, format, status, season, score), title, genres, synopsis, Continue / Watch,
@@ -268,9 +270,10 @@ private fun SpotlightPage(
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest).clickable(onClickLabel = title, onClick = onOpen)) {
         // 0.3.2: the fanart fills the slot; a low-res banner / cover is cropped into a shorter band (bottom-anchored for the banner,
         // whose subject usually sits low) under a stronger scrim instead of being stretched to the full hero height.
-        AsyncImage(
-            model = art.backdrop,
+        UpscalableImage(
+            url = art.backdrop,
             contentDescription = null,
+            kind = if (art.fromBanner) UpscaleImageKind.BANNER else UpscaleImageKind.BACKDROP,
             contentScale = ContentScale.Crop,
             alignment = when {
                 !art.lowRes -> Alignment.TopCenter

@@ -72,7 +72,10 @@ class DesktopMpvPlayerSession internal constructor(
             scope = scope,
             readAudioDelay = { engine.getProperty("audio-delay")?.toDoubleOrNull() },
             writeAudioDelay = { secs -> engine.setProperty("audio-delay", String.format(java.util.Locale.ROOT, "%.3f", secs)) },
-            onActiveChanged = { active -> setFrameGenActive(active) },
+            onActiveChanged = { active ->
+                setFrameGenActive(active)
+                app.nijiyome.player.mpv.framegen.DesktopFrameGenActive.set(this, active)
+            },
         )
     }
     private val _state = MutableStateFlow(PlaybackState(isBuffering = false, fullAss = true))
@@ -414,6 +417,7 @@ class DesktopMpvPlayerSession internal constructor(
         if (loaded) listener.onProgress(currentPositionMs(), _state.value.durationMs, true)
         released = true
         frameGen?.release()
+        app.nijiyome.player.mpv.framegen.DesktopFrameGenActive.set(this, false)
         ticker.stop()
         monitorJob?.cancel()
         remoteProcessingJob?.cancel()

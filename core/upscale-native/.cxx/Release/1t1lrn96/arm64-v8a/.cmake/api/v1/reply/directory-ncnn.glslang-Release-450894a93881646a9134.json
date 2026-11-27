@@ -1,0 +1,88 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"third_party/ncnn/glslang/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 420,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 426,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/glslang",
+			"exportName" : "glslang-targets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "SPIRV::@2f46f53af8822572bcb1",
+					"index" : 3
+				},
+				{
+					"id" : "OSDependent::@d2ae1901045c2048cf23",
+					"index" : 2
+				},
+				{
+					"id" : "glslang::@2aa08aa9697e599c9138",
+					"index" : 4
+				},
+				{
+					"id" : "MachineIndependent::@2aa08aa9697e599c9138",
+					"index" : 1
+				},
+				{
+					"id" : "GenericCodeGen::@2aa08aa9697e599c9138",
+					"index" : 0
+				},
+				{
+					"id" : "glslang-default-resource-limits::@2aa08aa9697e599c9138",
+					"index" : 5
+				}
+			],
+			"paths" : 
+			[
+				"ncnn/glslang/CMakeFiles/Export/lib/cmake/glslang/glslang-targets.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/glslang",
+			"paths" : 
+			[
+				"/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/arm64-v8a/ncnn/glslang/glslang-config.cmake",
+				"/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/arm64-v8a/ncnn/glslang/glslang-config-version.cmake"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "ncnn/glslang",
+		"source" : "third_party/ncnn/glslang"
+	}
+}

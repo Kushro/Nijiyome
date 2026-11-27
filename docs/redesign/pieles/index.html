@@ -1,0 +1,817 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pieles tanzaku</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Shippori+Mincho:wght@500;700&family=Yuji+Syuku&family=Yusei+Magic&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* Layout: a night page of full-width "stages" (one per skin) where tanzaku hang from bamboo, each followed by its spec sheet;
+   then a working mock of Settings > Appearance to compare four contextual-preview behaviours. */
+:root {
+  --bg: #0f1026; --panel: #17183a; --panel-2: #1f2049; --line: #2e2f5e; --text: #ece8f6; --muted: #aaa6c8;
+  --lantern: #ffb54d; --on-lantern: #1d1208;
+  --ui: "Zen Kaku Gothic New", "Noto Sans JP", system-ui, sans-serif;
+  --brush: "Yuji Syuku", "Shippori Mincho", serif;
+  --hand: "Klee One", "Zen Kaku Gothic New", cursive;
+  --mincho: "Shippori Mincho", "Noto Serif JP", serif;
+  --marker: "Yusei Magic", "Zen Maru Gothic", cursive;
+  --maru: "Zen Maru Gothic", "Zen Kaku Gothic New", sans-serif;
+  --ink: #14102a;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) { --bg: #ece8f2; --panel: #f8f6fb; --panel-2: #e3deec; --line: #cbc5da; --text: #1a1838; --muted: #555078; --lantern: #9a5200; --on-lantern: #fff7ec; color-scheme: light; }
+}
+:root[data-theme="light"] { --bg: #ece8f2; --panel: #f8f6fb; --panel-2: #e3deec; --line: #cbc5da; --text: #1a1838; --muted: #555078; --lantern: #9a5200; --on-lantern: #fff7ec; color-scheme: light; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--text); font: 15px/1.55 var(--ui); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 120px; }
+::selection { background: var(--lantern); color: var(--on-lantern); }
+a { color: inherit; text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--lantern); outline-offset: 3px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+html { scrollbar-color: var(--line) var(--bg); }
+
+.wrap { max-width: 1320px; margin-inline: auto; }
+.intro { padding-block: 40px 20px; display: grid; gap: 14px; }
+.intro h1 { font: 400 clamp(40px, 6vw, 72px)/1 var(--brush); letter-spacing: -0.01em; }
+.intro p { max-width: 68ch; color: var(--muted); font-size: 16px; }
+.intro p b { color: var(--text); font-weight: 500; }
+
+/* ---------- toolbar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40; background: color-mix(in oklab, var(--bg) 92%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: 10px max(16px, env(safe-area-inset-left, 0px)); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 50; background: var(--bg); }
+.bar-in { max-width: 1320px; margin-inline: auto; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.ctl { display: flex; align-items: center; gap: 8px; }
+.ctl > span { font-size: 12.5px; color: var(--muted); letter-spacing: .04em; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--panel); }
+.seg button { font: 500 13px/1 var(--ui); color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 7px 12px; cursor: pointer; }
+.seg button:hover { color: var(--text); }
+.seg button[aria-pressed="true"] { background: var(--lantern); color: var(--on-lantern); }
+.jump { display: flex; flex-wrap: wrap; gap: 6px; padding-block: 6px 18px; }
+.jump a { font-size: 13px; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--muted); }
+.jump a:hover { color: var(--text); border-color: var(--lantern); }
+.jump a.is-picked { color: var(--text); border-color: var(--lantern); background: color-mix(in oklab, var(--lantern) 14%, transparent); }
+
+/* ---------- skin sections */
+.skin { padding-block: 34px 10px; display: grid; gap: 16px; scroll-margin-top: 70px; }
+.skin-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+.skin-head h2 { font: 700 28px/1.1 var(--ui); letter-spacing: -0.02em; }
+.skin-head h2 small { font: 400 15px var(--ui); color: var(--muted); margin-left: 10px; letter-spacing: 0; }
+.pick { display: inline-flex; align-items: center; gap: 9px; font: 500 14px var(--ui); border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 999px; padding: 9px 16px 9px 12px; cursor: pointer; }
+.pick svg { width: 18px; height: 18px; }
+.pick .box { stroke: var(--muted); }
+.pick .tick { opacity: 0; stroke: var(--on-lantern); }
+.pick[aria-pressed="true"] { background: var(--lantern); color: var(--on-lantern); border-color: var(--lantern); }
+.pick[aria-pressed="true"] .box { stroke: var(--on-lantern); fill: none; }
+.pick[aria-pressed="true"] .tick { opacity: 1; }
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px 28px; }
+.spec div { display: grid; gap: 2px; min-width: 0; }
+.spec dt { font-size: 12px; color: var(--muted); letter-spacing: .05em; }
+.spec dd { margin: 0; font-size: 14px; }
+.lede { max-width: 72ch; font-size: 15.5px; }
+.lede em { font-style: normal; color: var(--lantern); }
+
+/* ---------- stage (the ground the cards hang over) */
+.stage { --ground: #14152f; --thread: #d8ccb2; --shadow: rgb(2 3 14 / .7); --b-hi: #9fc27f; --b-body: #5f8a4c; --b-lo: #34512b;
+  position: relative; border-radius: 18px; background: var(--ground); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; border: 1px solid var(--line); scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--thread) 40%, transparent) transparent; }
+body[data-ground="claro"] .stage { --ground: #e6e1ee; --thread: #8f8068; --shadow: rgb(30 34 80 / .32); --b-hi: #a9cb88; --b-body: #6c9455; --b-lo: #3f6233; }
+body[data-ground="oled"] .stage { --ground: #000; --thread: #cfc3a8; --shadow: rgb(0 0 0 / .9); }
+.stage-in { position: relative; width: max-content; min-width: 100%; padding: 0 0 46px; }
+.rod { position: relative; height: 13px; margin: 26px 0 0; border-radius: 7px;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(var(--node, 230px) - 4px), var(--b-lo) calc(var(--node, 230px) - 4px) var(--node, 230px)), linear-gradient(var(--b-hi), var(--b-body) 45%, var(--b-lo)); box-shadow: 0 5px 9px var(--shadow); z-index: 8; }
+.row { display: flex; align-items: flex-start; gap: var(--gap); padding-inline: var(--gap); position: relative; }
+.stage-note { position: absolute; right: 16px; bottom: 12px; font-size: 12px; color: color-mix(in oklab, var(--thread) 85%, transparent); letter-spacing: .03em; }
+
+/* sizes */
+body { --w: 200px; --tex: .85; }
+body[data-size="m"] { --w: 176px; }
+body[data-size="l"] { --w: 210px; }
+body[data-size="xl"] { --w: 250px; }
+body[data-tex="suave"] { --tex: .5; }
+body[data-tex="marcada"] { --tex: 1.2; }
+.stage { --gap: calc(var(--w) * .3); }
+
+/* ---------- the hanging */
+.hang { --amp: 1.1; position: relative; flex: none; width: var(--w); padding-top: var(--len, 30px); transform-origin: 50% 0; rotate: var(--rest, 0deg); filter: drop-shadow(0 8px 10px var(--shadow)); cursor: pointer; outline: none; }
+.hang::before { content: ""; position: absolute; left: calc(50% - var(--tw, 2px) / 2); top: -2px; width: var(--tw, 2px); height: calc(var(--len, 30px) + 13px); background: var(--cord, var(--thread)); z-index: 6; border-radius: 2px; }
+.hang::after { content: ""; position: absolute; left: calc(50% - 4px); top: calc(var(--len, 30px) + 8px); width: 8px; height: 6px; border-radius: 50%; background: var(--knot, var(--thread)); z-index: 7; }
+.hang:focus-visible .tz { outline: 2px solid var(--lantern); outline-offset: 5px; }
+body[data-motion="on"] .hang { animation: sway calc(3.4s + var(--i) * .41s) ease-in-out calc(var(--i) * -.9s) infinite alternate; }
+body[data-motion="on"] .hang:hover { --amp: 3.2; }
+@keyframes sway { from { rotate: calc(var(--rest, 0deg) - var(--amp) * 1deg); } to { rotate: calc(var(--rest, 0deg) + var(--amp) * 1deg); } }
+
+.tz { --tb: .6; position: relative; isolation: isolate; color: var(--ink); background: var(--paper); border-radius: 2px; display: grid; align-content: start; }
+.tz::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: var(--tex-url, none) 0 0 / var(--tex-size, 256px); mix-blend-mode: overlay; opacity: calc(var(--tb) * var(--tex)); border-radius: inherit; -webkit-mask: linear-gradient(180deg, #000 0 var(--calm-at, 56%), rgb(0 0 0 / var(--calm, .35)) calc(var(--calm-at, 56%) + 9%)); mask: linear-gradient(180deg, #000 0 var(--calm-at, 56%), rgb(0 0 0 / var(--calm, .35)) calc(var(--calm-at, 56%) + 9%)); }
+.tz-hole { position: absolute; top: 9px; left: calc(50% - 4px); width: 8px; height: 8px; border-radius: 50%; background: var(--ground); box-shadow: inset 0 1.5px 1.5px rgb(0 0 0 / .5); z-index: 6; }
+.tz-poster { position: relative; z-index: 6; overflow: hidden; aspect-ratio: 2 / 3; }
+.tz-poster::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--tex-url, none) 0 0 / var(--tex-size, 256px); mix-blend-mode: overlay; opacity: calc(var(--ptb, 0) * var(--tex)); }
+.tz-poster img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tz-body { position: relative; z-index: 2; display: grid; gap: 4px; }
+.tz-title { font: 700 calc(var(--w) * .088)/1.18 var(--maru); letter-spacing: -0.005em; overflow-wrap: anywhere; }
+.tz-status { font: 600 max(12px, calc(var(--w) * .062))/1.3 var(--ui); font-variant-numeric: tabular-nums; }
+.tz-wish { font: 600 max(13px, calc(var(--w) * .074))/1.3 var(--hand); }
+.tz-ticks { display: flex; flex-wrap: wrap; gap: 3px; padding-top: 4px; }
+.tz-ticks i { width: calc(var(--w) * .035); height: calc(var(--w) * .035); border-radius: 50%; border: 1.3px solid currentColor; opacity: .55; }
+.tz-ticks i.on { background: currentColor; opacity: .85; }
+.tz-brush { height: max(3px, calc(var(--w) * .022)); width: calc(var(--p) * 100%); min-width: 10px; background: linear-gradient(90deg, transparent, var(--ink) 10%, var(--ink) 78%, transparent); opacity: .62; border-radius: 999px; margin-block: 1px 2px; }
+
+/* ---------- 0 · hoy (v1.3.2) */
+.tz--hoy { --tex-url: url(tex/kozo.webp); --tb: .18; padding: 22px 7px 9px; gap: 8px; }
+.hang--hoy { width: calc(var(--w) * .78); }
+.tz--hoy .tz-title { font-size: calc(var(--w) * .074); }
+.tz--hoy .tz-status, .tz--hoy .tz-wish { font: 500 calc(var(--w) * .058)/1.3 var(--ui); }
+.tz--hoy .tz-inked { position: absolute; inset: auto 0 0; height: calc(var(--p) * 42%); background: color-mix(in oklab, var(--paper), var(--ink) 16%); z-index: 1; }
+
+/* ---------- 1 · kozo */
+.hang--kozo { --tw: 3px; --cord: repeating-linear-gradient(160deg, #efe7d3 0 3px, #b7a988 3px 5px); --knot: #d9cdb0; }
+.tz--kozo { --ptb: .14; --tex-url: url(tex/kozo.webp); --tex-size: 300px; --tb: .7; background: color-mix(in oklab, var(--paper) 60%, #efe6d2); padding: 24px calc(var(--w) * .08) calc(var(--w) * .16); gap: 12px; border-radius: 0; }
+.tz--kozo .tz-poster { box-shadow: 0 0 0 1px rgb(20 16 42 / .08); }
+.tz--kozo .tz-poster img { mix-blend-mode: multiply; filter: saturate(.85) contrast(1.04); }
+.tz--kozo .tz-title { font: 700 calc(var(--w) * .096)/1.2 var(--mincho); }
+
+
+/* ---------- 2 · crepé */
+.hang--crepe { --tw: 3px; --cord: repeating-linear-gradient(140deg, #d8323a 0 3px, #f7f1ea 3px 6px); --knot: #d8323a; }
+.tz--crepe { --tex-url: url(tex/crepe.webp); --tex-size: 220px; --tb: .85; --calm: .3; background: color-mix(in oklab, var(--paper) 88%, #fff); padding: 26px calc(var(--w) * .085) calc(var(--w) * .2); gap: 12px; border-radius: 0; }
+.tz--crepe .tz-poster { padding: 5px 5px 16px; background: #fbf8f2; rotate: -1.6deg; box-shadow: 0 3px 6px rgb(20 16 42 / .3); aspect-ratio: auto; }
+.tz--crepe .tz-poster img { aspect-ratio: 2 / 3; height: auto; }
+.tz--crepe .tz-title { font: 400 calc(var(--w) * .1)/1.15 var(--marker); }
+
+/* ---------- 3 · bokashi */
+.hang--bokashi { --tw: 2px; --cord: #f8f3ea; --knot: transparent; }
+.tz--bokashi { --tex-url: url(tex/kozo.webp); --tb: .5; background: radial-gradient(120% 70% at 50% 42%, color-mix(in oklab, var(--paper) 30%, #fffaf0) 0%, var(--paper) 58%, color-mix(in oklab, var(--deep) 62%, var(--paper)) 100%); padding: 46px calc(var(--w) * .12) calc(var(--w) * .16); gap: 12px; border-radius: 3px; }
+.tz--bokashi::before { content: ""; position: absolute; inset: 6px; border: 1.5px solid color-mix(in oklab, var(--deep) 70%, transparent); border-radius: 2px; z-index: 3; pointer-events: none; }
+.tz--bokashi .tz-hole { display: none; }
+.tz-mon { position: absolute; z-index: 4; top: 12px; left: calc(50% - 13px); width: 26px; height: 26px; border-radius: 50%; background: color-mix(in oklab, var(--deep) 55%, var(--ink)); display: grid; place-items: center; }
+.tz-mon svg { width: 14px; height: 14px; fill: none; stroke: color-mix(in oklab, var(--paper) 40%, #fff); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.tz--bokashi .tz-poster { border-radius: 3px; box-shadow: 0 0 0 2px color-mix(in oklab, var(--paper) 30%, #fff), 0 0 0 3.5px color-mix(in oklab, var(--deep) 70%, var(--ink)); }
+.tz--bokashi .tz-title { font: 400 calc(var(--w) * .104)/1.2 var(--brush); letter-spacing: -0.045em; word-spacing: -0.08em; text-align: center; text-wrap: balance; }
+.tz--bokashi .tz-status, .tz--bokashi .tz-wish { text-align: center; }
+.tz--bokashi .tz-brush { justify-self: center; }
+.tz-tip { position: absolute; z-index: 4; left: calc(50% - var(--w) * .075); bottom: calc(var(--w) * .12); width: calc(var(--w) * .15); height: calc(var(--w) * .18); opacity: .82; background: color-mix(in oklab, var(--deep) 60%, var(--ink)); clip-path: polygon(50% 0, 100% 22%, 100% 100%, 50% 78%, 0 100%, 0 22%); }
+.tz-bow { position: absolute; z-index: 9; top: -9px; left: calc(50% - 16px); width: 32px; height: 20px; }
+.tz-bow path { fill: none; stroke: #f8f3ea; stroke-width: 2; stroke-linecap: round; }
+
+/* ---------- 4 · pastel en rama */
+.hang--pastel { --tw: 1.2px; --cord: color-mix(in oklab, var(--thread) 80%, #c9b48a); --knot: transparent; }
+.tz--pastel { --tex-url: url(tex/verjurado.webp); --tex-size: 200px; --tb: .55; background: color-mix(in oklab, var(--paper) 38%, #fbf6ea); padding: 34px calc(var(--w) * .12) calc(var(--w) * .16); gap: 14px; border-radius: 1px; }
+.tz--pastel .tz-hole { top: 12px; width: 11px; height: 11px; left: calc(50% - 5.5px); box-shadow: 0 0 0 2.5px #c8bfae, 0 0 0 3.5px #8e8573, inset 0 1.5px 1.5px rgb(0 0 0 / .5); }
+.hang--pastel::after { display: none; }
+.hang--pastel::before { height: calc(var(--len) + 17px); }
+.tz--pastel .tz-poster { border-radius: 2px; }
+.tz--pastel .tz-poster img { filter: saturate(.8) brightness(1.03); }
+.tz--pastel .tz-title { font: 500 calc(var(--w) * .086)/1.25 var(--maru); }
+.tz--pastel .tz-status { color: color-mix(in oklab, var(--ink) 85%, var(--paper)); }
+.tz--pastel .tz-ticks i { opacity: .35; } .tz--pastel .tz-ticks i.on { opacity: .6; }
+
+/* ---------- 5 · chiyogami */
+.hang--chiyogami { --tw: 3px; --cord: #e9c45a; --knot: #e9c45a; }
+.tz--chiyogami { --tex-url: url(tex/kozo.webp); --tb: .4; background: var(--pattern) 0 0 / var(--pat-size, 26px) var(--paper); padding: 26px calc(var(--w) * .07) calc(var(--w) * .1); border-radius: 2px; }
+.tz-label { position: relative; z-index: 2; background: #f4ecda; padding: calc(var(--w) * .05) calc(var(--w) * .05) calc(var(--w) * .07); display: grid; gap: 10px; box-shadow: 0 1px 3px rgb(20 16 42 / .35); }
+.tz--chiyogami .tz-title { font: 700 calc(var(--w) * .088)/1.2 var(--maru); }
+.tz-fusa { position: absolute; left: calc(50% - 7px); bottom: calc(var(--w) * -.32); width: 14px; height: calc(var(--w) * .34); z-index: -1; background: repeating-linear-gradient(90deg, var(--deep) 0 1.5px, color-mix(in oklab, var(--deep) 60%, #fff) 1.5px 3px); clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%); }
+.tz-fusa::before { content: ""; position: absolute; inset: 0 0 auto; height: 6px; background: #e9c45a; }
+
+/* ---------- 6 · kraft y pinzas */
+.hang--kraft::before, .hang--kraft::after { display: none; }
+.tz--kraft { --ptb: .1; --tex-url: url(tex/kraft.webp); --tex-size: 320px; --tb: .38; --ink: #2a1c12; background: #c9a274; padding: 20px calc(var(--w) * .09) calc(var(--w) * .12); gap: 12px; border-radius: 1px; }
+.tz--kraft .tz-hole { display: none; }
+.tz--kraft .tz-title { font: 700 calc(var(--w) * .088)/1.2 var(--maru); }
+.tz--kraft .tz-wish { color: #3a2a1c; }
+.tz-pin { position: absolute; z-index: 9; top: calc(var(--len) - 16px); left: calc(50% - 8px); width: 16px; height: 40px; border-radius: 3px; background: linear-gradient(90deg, #a9794b, #d9b183 40%, #b88553); box-shadow: 0 2px 3px rgb(0 0 0 / .35); }
+.tz-pin::after { content: ""; position: absolute; left: 2px; right: 2px; top: 13px; height: 4px; border-radius: 2px; background: #8a8f98; }
+.tz-tape { position: absolute; z-index: 7; top: calc(var(--w) * .1); left: calc(var(--w) * -.02); width: calc(var(--w) * .42); height: calc(var(--w) * .1); background: color-mix(in oklab, var(--paper) 78%, transparent); rotate: -24deg; clip-path: polygon(3% 0, 97% 0, 100% 20%, 97% 45%, 100% 70%, 97% 100%, 3% 100%, 0 80%, 3% 55%, 0 30%); }
+.tz-hanko { position: absolute; z-index: 7; right: calc(var(--w) * .06); top: calc(var(--w) * 1.08); width: calc(var(--w) * .34); aspect-ratio: 1; border-radius: 50%; border: 2.5px solid var(--deep); color: var(--deep); display: grid; place-content: center; text-align: center; rotate: -12deg; font: 700 max(9px, calc(var(--w) * .048))/1.1 var(--ui); letter-spacing: .04em; text-transform: uppercase; background: #d9b88d; box-shadow: 0 1px 2px rgb(0 0 0 / .25); }
+.tz-hanko b { font: 700 calc(var(--w) * .07)/1 var(--ui); letter-spacing: 0; }
+
+/* ---------- 7 · hanafuda */
+.hang--hanafuda { --rim: #8e3626; padding-top: 0; }
+.hang--hanafuda::before, .hang--hanafuda::after { display: none; }
+.tz--hanafuda { --calm: 1; --tex-url: url(tex/algodon.webp); --tex-size: 180px; --tb: .9; background: #f3ecda; border: calc(var(--w) * .035) solid var(--rim); border-radius: calc(var(--w) * .04); box-shadow: 0 0 0 1px #5b1f15, 0 2px 0 1px #5b1f15, 0 3px 0 1px #3d140d; overflow: hidden; }
+.tz--hanafuda .tz-hole { display: none; }
+.tz--hanafuda .tz-poster { aspect-ratio: 3 / 4; }
+.tz--hanafuda .tz-poster img { filter: contrast(1.18) saturate(1.35); }
+.tz--hanafuda .tz-poster::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgb(20 10 5 / .16) 0 .6px, transparent 1px) 0 0 / 3px 3px; mix-blend-mode: multiply; opacity: 1; }
+.tz-tan { position: absolute; z-index: 3; left: 10%; top: 34%; width: 22%; height: 58%; background: var(--ribbon); rotate: 16deg; display: grid; justify-items: center; padding-top: 10%; box-shadow: 0 2px 4px rgb(0 0 0 / .35); }
+.tz-tan span { writing-mode: vertical-rl; font: 400 calc(var(--w) * .085)/1 var(--brush); color: #fff6e6; text-shadow: 0 0 1px rgb(0 0 0 / .4); letter-spacing: .08em; }
+.tz--hanafuda .tz-body { padding: calc(var(--w) * .05) calc(var(--w) * .06) calc(var(--w) * .07); border-top: 2px solid var(--rim); gap: 5px; }
+.tz--hanafuda .tz-title { font: 700 calc(var(--w) * .084)/1.18 var(--mincho); }
+.tz-dots { display: flex; gap: 4px; }
+.tz-dots i { width: calc(var(--w) * .045); height: calc(var(--w) * .045); border-radius: 50%; background: #d9cfba; box-shadow: inset 0 0 0 1px #8e3626; }
+.tz-dots i.on { background: #c8321f; box-shadow: none; }
+.stage--tapete .row { padding-top: 34px; }
+.stage--tapete .stage-in::before { content: ""; position: absolute; inset: 18px 14px 24px; border-radius: 22px; background: color-mix(in oklab, var(--ground) 82%, #6b1f2a); box-shadow: inset 0 2px 14px rgb(0 0 0 / .35); }
+body[data-motion="on"] .hang--hanafuda { animation: none; transition: translate .35s cubic-bezier(.2, .8, .2, 1), rotate .35s cubic-bezier(.2, .8, .2, 1); }
+.hang--hanafuda:hover, .hang--hanafuda:focus-visible { translate: 0 -10px; rotate: 0deg; }
+
+/* ---------- 8 · linterna (andon) */
+.hang--linterna { --tw: 2px; --cord: #2c1f16; --knot: #2c1f16; filter: drop-shadow(0 0 calc(var(--w) * .16) color-mix(in oklab, var(--paper) 55%, transparent)); }
+body[data-ground="claro"] .hang--linterna { filter: drop-shadow(0 8px 10px var(--shadow)); }
+.tz--linterna { --ptb: .25; --tex-url: url(tex/kozo.webp); --tb: .85; background: radial-gradient(90% 55% at 50% 38%, color-mix(in oklab, var(--paper) 25%, #fffbe9) 0%, color-mix(in oklab, var(--paper) 80%, #fff6d8) 55%, color-mix(in oklab, var(--paper) 85%, var(--deep)) 100%); padding: calc(var(--w) * .1 + 8px) calc(var(--w) * .09) calc(var(--w) * .14); gap: 12px; border-radius: 0; border-block: 7px solid #2c1f16; }
+.tz--linterna::after { filter: invert(1); mix-blend-mode: soft-light; }
+.tz--linterna .tz-hole { display: none; }
+.tz--linterna .tz-poster img { mix-blend-mode: multiply; opacity: .92; filter: saturate(1.1); }
+.tz--linterna .tz-title { font: 700 calc(var(--w) * .092)/1.2 var(--mincho); }
+body[data-motion="on"] .tz--linterna { animation: flicker 4.2s ease-in-out calc(var(--i) * -1.3s) infinite; }
+@keyframes flicker { 0%, 100% { filter: brightness(1); } 47% { filter: brightness(1.04); } 52% { filter: brightness(.97); } }
+
+/* ---------- 9 · plegado (origami) */
+.hang--plegado { --tw: 2px; }
+.hang--plegado::before { z-index: 0; height: calc(var(--len) + 6px); }
+.hang--plegado::after { display: none; }
+.tz--plegado { --ptb: .12; --tex-url: url(tex/algodon.webp); --tex-size: 200px; --tb: .5; background: var(--paper); padding: calc(var(--w) * .3) calc(var(--w) * .09) calc(var(--w) * .14); gap: 12px; border-radius: 0; z-index: 1; }
+.tz--plegado .tz-hole { display: none; }
+.tz-flap { position: absolute; z-index: 7; inset: 0 0 auto; height: calc(var(--w) * .36); background: linear-gradient(180deg, #fbf6ea, #efe5d1); clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); filter: drop-shadow(0 3px 2px rgb(0 0 0 / .3)); }
+.tz-flap::after { content: ""; position: absolute; inset: 0; background: url(tex/algodon.webp) 0 0 / 200px, linear-gradient(90deg, transparent 49.6%, rgb(0 0 0 / .1) 50%, transparent 50.4%); mix-blend-mode: multiply; opacity: .1; }
+.tz--plegado::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, transparent 49.4%, rgb(255 255 255 / .35) 49.7%, rgb(0 0 0 / .12) 50.3%, transparent 52%), linear-gradient(180deg, transparent 0 74%, rgb(0 0 0 / .05) 74.4%, rgb(255 255 255 / .28) 75%, transparent 77%), linear-gradient(100deg, rgb(255 255 255 / .1), transparent 40%, rgb(0 0 0 / .06)); }
+.tz--plegado .tz-title { font: 700 calc(var(--w) * .09)/1.2 var(--mincho); }
+
+/* ---------- 10 · festival (foil + fringe) */
+.hang--festival { --tw: 3px; --cord: repeating-linear-gradient(150deg, #e9c45a 0 3px, #a8771e 3px 5px); --knot: #e9c45a; }
+.tz--festival { --tb: 0; background: linear-gradient(115deg, var(--deep) 0%, var(--paper) 22%, color-mix(in oklab, var(--paper) 35%, #fff) 34%, var(--paper) 46%, var(--deep) 62%, var(--paper) 80%, color-mix(in oklab, var(--paper) 40%, #fff) 92%) 0 0 / 260% 260%; padding: 26px calc(var(--w) * .08) calc(var(--w) * .1); gap: 12px; border-radius: 1px; transition: background-position 1.2s cubic-bezier(.2, .8, .2, 1); }
+.hang--festival:hover .tz--festival { background-position: 90% 90%; }
+.tz--festival .tz-poster { box-shadow: 0 0 0 3px color-mix(in oklab, var(--paper) 30%, #fff); }
+.tz--festival .tz-title { font: 400 calc(var(--w) * .1)/1.15 var(--marker); }
+.tz-fringe { position: absolute; z-index: -1; top: 100%; left: 6%; right: 6%; display: flex; justify-content: space-between; }
+.tz-fringe i { width: calc(var(--w) * .022); opacity: .92; height: calc(var(--w) * var(--fl, .4)); background: linear-gradient(180deg, var(--paper), var(--deep)); transform-origin: 50% 0; border-radius: 0 0 1px 1px; }
+body[data-motion="on"] .tz-fringe i { animation: fringe calc(1.6s + var(--k) * .13s) ease-in-out calc(var(--k) * -.31s) infinite alternate; }
+@keyframes fringe { from { rotate: -5deg; } to { rotate: 5deg; } }
+.chain { position: absolute; z-index: 9; top: 30px; left: 0; display: flex; padding-left: 10px; pointer-events: none; }
+.chain i { width: 26px; height: 15px; border: 3.5px solid var(--c); border-radius: 50%; margin-left: -7px; }
+.chain i:nth-child(even) { width: 8px; margin-inline: -1px -4px; }
+
+/* ---------- branch (pastel) and clothesline (kraft) */
+.stage svg.deco { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 8; overflow: visible; }
+
+/* ---------- performance mode */
+body[data-perf="on"] .tz::after, body[data-perf="on"] .tz-poster::after { display: none; }
+body[data-perf="on"] .hang { filter: none !important; animation: none !important; }
+body[data-perf="on"] .tz { animation: none !important; }
+body[data-perf="on"] .tz-fringe i { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .hang, .tz, .tz-fringe i { animation: none !important; } }
+
+/* ---------- contextual preview mock */
+.pv { padding-block: 56px 10px; display: grid; gap: 18px; scroll-margin-top: 70px; }
+.pv h2 { font: 700 30px/1.1 var(--ui); letter-spacing: -0.02em; }
+.pv > p { max-width: 72ch; color: var(--muted); }
+.pv-alts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 10px; }
+.pv-alt { text-align: left; display: grid; gap: 4px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
+.pv-alt b { font-size: 15.5px; }
+.pv-alt span { font-size: 13px; color: var(--muted); }
+.pv-alt[aria-pressed="true"] { border-color: var(--lantern); box-shadow: inset 0 0 0 1px var(--lantern); }
+.pv-alt .chk { justify-self: start; font-size: 12px; color: var(--on-lantern); background: var(--lantern); border-radius: 999px; padding: 1px 8px; }
+.pv-alt .chk[hidden] { display: none; }
+
+.mock { border: 1px solid var(--line); border-radius: 18px; background: var(--panel); overflow: hidden; }
+.mock-top { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--line); font-weight: 700; }
+.mock-top span { font-weight: 400; color: var(--muted); font-size: 13px; }
+.mock-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 430px); }
+.mock[data-alt="b"] .mock-body, .mock[data-alt="c"] .mock-body { grid-template-columns: minmax(0, 1fr); }
+.mock[data-alt="d"] .mock-body { grid-template-columns: minmax(0, 1fr) minmax(0, 430px); }
+.rows { display: grid; padding: 6px 0; min-width: 0; }
+.srow { display: grid; gap: 10px; padding: 14px 18px; border-bottom: 1px solid color-mix(in oklab, var(--line) 60%, transparent); transition: background .2s; }
+.srow:last-child { border-bottom: 0; }
+.srow.is-active { background: color-mix(in oklab, var(--lantern) 7%, transparent); }
+.srow-h { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.srow-h b { font-weight: 500; }
+.srow-h span { font-size: 12.5px; color: var(--muted); }
+.opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.opt { font: 500 13px/1 var(--ui); color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; display: grid; gap: 6px; justify-items: center; }
+.opt:hover { border-color: color-mix(in oklab, var(--lantern) 60%, var(--line)); }
+.opt[aria-pressed="true"] { border-color: var(--lantern); background: color-mix(in oklab, var(--lantern) 16%, var(--panel-2)); }
+.opt .mini { width: 168px; height: 104px; border-radius: 7px; overflow: hidden; position: relative; pointer-events: none; }
+.opt .mini > .pvr { position: absolute; top: 0; left: 0; width: 400px; height: 248px; scale: .42; transform-origin: 0 0; }
+.inline-pv { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2, .8, .2, 1); }
+.inline-pv > div { overflow: hidden; min-height: 0; }
+.srow.is-open .inline-pv { grid-template-rows: 1fr; }
+.inline-pv .pvr { margin-top: 4px; height: 210px; border-radius: 12px; }
+
+.stagebox { border-left: 1px solid var(--line); padding: 16px; display: grid; align-content: start; gap: 10px; position: sticky; top: 70px; align-self: start; min-width: 0; }
+.stagebox h3 { font: 500 13px var(--ui); color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.stagebox h3 b { color: var(--text); font-weight: 700; }
+.stagebox .pvr { height: 260px; border-radius: 12px; }
+.stagebox .note { font-size: 13px; color: var(--muted); }
+.stagebox.is-dim .pvr { opacity: .45; filter: saturate(.6); }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.split figure { margin: 0; display: grid; gap: 6px; min-width: 0; }
+.split figcaption { font-size: 12.5px; color: var(--muted); }
+.split .pvr { height: 200px; }
+.split .pvr > * { scale: .78; transform-origin: 50% 40%; }
+.flash { animation: flash .9s ease-out; }
+@keyframes flash { from { box-shadow: 0 0 0 3px var(--lantern); } to { box-shadow: 0 0 0 3px transparent; } }
+
+/* preview renderings (always a ground of their own) */
+.pvr { --ground: #14152f; --thread: #d8ccb2; --shadow: rgb(2 3 14 / .7); --b-hi: #9fc27f; --b-body: #5f8a4c; --b-lo: #34512b; --t: #ece8f6; --t2: #aaa6c8; --card: #22234c;
+  position: relative; background: var(--ground); color: var(--t); overflow: hidden; display: grid; place-items: center; transition: background .3s, color .3s; }
+.pvr[data-g="claro"] { --ground: #e6e1ee; --thread: #8f8068; --shadow: rgb(30 34 80 / .3); --b-hi: #a9cb88; --b-body: #6c9455; --b-lo: #3f6233; --t: #1a1838; --t2: #555078; --card: #f8f6fb; }
+.pvr[data-g="oled"] { --ground: #000; --card: #121226; }
+.pvr .row { --gap: 18px; padding: 0; }
+.pvr .rod { margin: 0; position: absolute; left: 6%; right: 6%; top: 20px; }
+.pvr .mini-row { position: relative; width: 100%; height: 100%; display: grid; place-items: start center; padding-top: 18px; }
+.app { width: 92%; height: 86%; display: grid; grid-template-columns: 48px 1fr; border-radius: 10px; overflow: hidden; background: color-mix(in oklab, var(--ground) 92%, var(--t)); box-shadow: 0 6px 18px var(--shadow); }
+.app.is-bar { grid-template-columns: 1fr; grid-template-rows: 1fr 34px; }
+.app-nav { background: color-mix(in oklab, var(--ground) 80%, var(--t)); display: grid; align-content: start; gap: 10px; padding: 12px 0; justify-items: center; }
+.app.is-bar .app-nav { grid-row: 2; display: flex; justify-content: space-around; align-items: center; padding: 0 12px; }
+.app-nav i { width: 18px; height: 18px; border-radius: 6px; background: color-mix(in oklab, var(--t) 30%, transparent); }
+.app-nav i:first-child { background: var(--lantern); }
+.app-main { padding: 12px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.app-main .greet { font: 400 18px/1 var(--brush); }
+.app-line { height: 8px; border-radius: 4px; background: color-mix(in oklab, var(--t) 22%, transparent); }
+.app-cards { display: flex; gap: 8px; }
+.app-cards span { width: 40px; height: 74px; border-radius: 2px; background: var(--c); }
+.cmd { position: absolute; top: 18%; left: 50%; translate: -50% 0; width: 62%; background: var(--card); border: 1px solid color-mix(in oklab, var(--t) 20%, transparent); border-radius: 10px; padding: 10px; display: grid; gap: 6px; box-shadow: 0 10px 30px var(--shadow); }
+.cmd b { font-size: 12px; color: var(--t2); font-weight: 500; }
+.hl { outline: 2px solid var(--lantern); outline-offset: 3px; border-radius: 6px; }
+.pv-say { font-size: 12.5px; color: var(--t2); position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; }
+.replay { position: absolute; top: 10px; right: 10px; font: 500 12px var(--ui); background: var(--card); color: var(--t); border: 1px solid color-mix(in oklab, var(--t) 20%, transparent); border-radius: 999px; padding: 5px 10px; cursor: pointer; }
+.fitbox { position: relative; width: 92%; height: 82%; border: 1.5px dashed color-mix(in oklab, var(--t) 35%, transparent); border-radius: 8px; overflow: hidden; }
+.fitbox .row { position: absolute; top: 14px; left: 10px; gap: 10px; }
+
+/* ---------- picks tray */
+.tray { position: fixed; z-index: 45; left: 50%; translate: -50% 0; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: min(calc(100% - 32px), 880px); background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 34px rgb(0 0 0 / .35); padding: 10px 12px 10px 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.tray p { flex: 1 1 300px; font-size: 13.5px; min-width: 0; }
+.tray p b { font-weight: 700; }
+.tray p span { color: var(--muted); }
+.tray button { font: 700 13.5px var(--ui); background: var(--lantern); color: var(--on-lantern); border: 0; border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+.tray button:disabled { opacity: .45; cursor: default; }
+.tray textarea { position: absolute; left: -9999px; }
+
+.foot { padding-block: 48px 0; color: var(--muted); font-size: 13.5px; max-width: 72ch; display: grid; gap: 8px; }
+
+@media (max-width: 700px) {
+  .bar-in { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .ctl { flex: none; }
+  .tray { padding: 8px 8px 8px 14px; gap: 8px; }
+  .tray p { flex-basis: 0; flex-grow: 1; font-size: 12.5px; line-height: 1.35; }
+  .tray .long { display: none; }
+  .tray button { padding: 8px 12px; font-size: 12.5px; }
+}
+@media (max-width: 820px) {
+  .mock-body, .mock[data-alt="d"] .mock-body { grid-template-columns: minmax(0, 1fr); }
+  .stagebox { position: static; border-left: 0; border-top: 1px solid var(--line); order: -1; }
+  .mock[data-alt="a"] .stagebox { position: sticky; top: 64px; z-index: 3; background: var(--panel); }
+  .mock[data-alt="a"] .stagebox .pvr { height: 180px; }
+  .opt .mini { width: 132px; height: 82px; }
+  .opt .mini > .pvr { scale: .33; }
+}
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>Pieles tanzaku</h1>
+    <p>Diez maneras de hacer que la tarjeta se sienta <b>papel de verdad</b>: con textura, más grande, con aire entre una tira y otra. Cada una cambia el papel, el borde, el cordel, cómo va pegado el póster y cómo se lee el progreso. La idea es que sean <b>pieles que la persona elige</b> en Apariencia, así que puedes quedarte con varias. Marca las que te gusten y, al final, elige también cómo debería funcionar la vista previa de Ajustes.</p>
+    <p>Las texturas son mapas de sombra en gris generados por <code>docs/redesign/herramientas/papeles.py</code>: se tiñen con el color de cada estado, así que una sola imagen sirve para las seis tiras y para los tres temas. En la app irían como un <code>ImageShader</code> en mosaico, igual que el washi actual pero a una intensidad que se vea.</p>
+  </header>
+</div>
+
+<div class="bar" role="toolbar" aria-label="Cómo ver las pieles">
+  <div class="bar-in">
+    <div class="ctl"><span>Fondo</span><div class="seg" data-set="ground"><button data-v="claro">Claro</button><button data-v="oscuro">Oscuro</button><button data-v="oled">OLED</button></div></div>
+    <div class="ctl"><span>Tamaño</span><div class="seg" data-set="size"><button data-v="m">Mediana</button><button data-v="l">Grande</button><button data-v="xl">Enorme</button></div></div>
+    <div class="ctl"><span>Textura</span><div class="seg" data-set="tex"><button data-v="suave">Suave</button><button data-v="media">Media</button><button data-v="marcada">Marcada</button></div></div>
+    <div class="ctl"><span>Balanceo</span><div class="seg" data-set="motion"><button data-v="on">Sí</button><button data-v="off">No</button></div></div>
+    <div class="ctl"><span>Modo rendimiento</span><div class="seg" data-set="perf"><button data-v="off">No</button><button data-v="on">Sí</button></div></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <nav class="jump" id="jump" aria-label="Ir a una piel"></nav>
+  <main id="skins"></main>
+
+  <section class="pv" id="vista-previa">
+    <h2>La vista previa que sigue a lo que cambias</h2>
+    <p>Hoy Apariencia muestra siempre la misma miniatura de Inicio, aunque estés cambiando el balanceo, la navegación o el idioma de los títulos. Estas cuatro alternativas hacen que la vista previa muestre <b>el elemento que estás tocando</b>. Elige una arriba y prueba la maqueta: pasa el cursor o el foco por las filas y las opciones, y haz clic para aplicar.</p>
+    <div class="pv-alts" id="pvAlts"></div>
+    <div class="mock" id="mock" data-alt="a">
+      <div class="mock-top">Ajustes › Apariencia <span id="mockHint"></span></div>
+      <div class="mock-body"><div class="rows" id="rows"></div><aside class="stagebox" id="stagebox" aria-live="polite"></aside></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Pósters reales de tu biblioteca (las mismas capturas del artefacto anterior). Las pieles se pueden mezclar con cualquier dirección, como hoy las cuatro tanzaku; en cuadrícula se acuestan y pierden el cordel, igual que ahora.</p>
+    <p>Referencias que usaste: la rama con tiras pastel, el papel crepé, el póster del festival de Niseko, las tiras reales con degradado y las cartas de hanafuda.es.</p>
+  </footer>
+</div>
+
+<div class="tray" role="region" aria-label="Tu elección">
+  <p id="trayText"></p>
+  <button type="button" id="copyBtn">Copiar elección</button>
+  <textarea id="copyArea" aria-hidden="true" tabindex="-1"></textarea>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem('pieles:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem('pieles:' + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  // Paper colours of the six list statuses (TanabataMaterials, dark tone) and a deeper dye for edges, ribbons and stamps.
+  var ST = {
+    watching:   { name: 'Viendo', paper: '#F48A70', deep: '#B83C24', kanji: '視聴中', ribbon: '#C8321F', icon: 'M8 5v14l11-7z' },
+    planning:   { name: 'Planeado', paper: '#9DB9F7', deep: '#3A5CC0', kanji: '予定', ribbon: '#2E5BB8', icon: 'M7 4h10v16l-5-4-5 4z' },
+    completed:  { name: 'Completado', paper: '#7ACD97', deep: '#2E8650', kanji: '完走', ribbon: '#C8321F', icon: 'M5 12.5l4.5 4.5L19 7.5' },
+    paused:     { name: 'Pausado', paper: '#F3D36A', deep: '#AE8210', kanji: '休止', ribbon: '#6B3FA0', icon: 'M9 5v14M15 5v14' },
+    dropped:    { name: 'Abandonado', paper: '#C6B2F4', deep: '#6A4BBE', kanji: '中断', ribbon: '#6B3FA0', icon: 'M6 6l12 12M18 6L6 18' },
+    rewatching: { name: 'Volviendo a ver', paper: '#F4A8C5', deep: '#BF4F7C', kanji: '再視聴', ribbon: '#2E5BB8', icon: 'M4 12a8 8 0 1 0 3-6.2M4 4v5h5' }
+  };
+  var TITLES = [
+    { t: 'Ao no Hako 2', en: 'Blue Box 2', jp: 'アオのハコ 2', img: 'ao-no-hako-2', st: 'watching', seen: 8, eps: 13, wish: 'Ep 9 · en 5 h' },
+    { t: 'Mahoyo', en: 'Witch on the Holy Night', jp: '魔法使いの夜', img: 'mahoutsukai-no-yoru', st: 'planning', seen: 0, eps: 1, wish: '2 h 1 min · cuando quieras' },
+    { t: 'Revo Barai', en: 'Revo Barai', jp: 'レボ払い', img: 'revo-barai', st: 'completed', seen: 12, eps: 12, wish: 'La terminaste el 12 nov' },
+    { t: 'Shinja Zero', en: 'Zero Believers Goddess', jp: '信者ゼロ', img: 'shinja-zero', st: 'paused', seen: 4, eps: 12, wish: 'Sigue en el Ep 5' },
+    { t: 'Choujun! Senpai', en: 'Choujun! Senpai', jp: '超純！先輩', img: 'choujun-senpai', st: 'dropped', seen: 2, eps: 12, wish: 'La dejaste en el Ep 2' },
+    { t: 'Koori no Jouheki', en: 'The Ice Wall', jp: '氷の城壁', img: 'koori-no-jouheki', st: 'rewatching', seen: 3, eps: 12, wish: 'Ep 4 · otra vez' }
+  ];
+  var LENS = [26, 48, 34, 58, 30, 44];
+  var PATTERNS = {
+    watching: function (a, b) { return svgUrl(20, 24, '<rect width="20" height="24" fill="' + a + '"/><path d="M0 0l10 6v12L0 12zM10 6l10-6v12l-10 6z" fill="' + b + '"/><path d="M0 12l10 6v6H0zM10 18l10-6v12H10z" fill="' + a + '"/>'); },
+    planning: function (a, b) { return svgUrl(28, 28, '<rect width="28" height="28" fill="' + a + '"/><g fill="none" stroke="' + b + '" stroke-width="2.2"><circle cx="0" cy="0" r="14"/><circle cx="28" cy="0" r="14"/><circle cx="0" cy="28" r="14"/><circle cx="28" cy="28" r="14"/><circle cx="14" cy="14" r="14"/></g>'); },
+    completed: function (a, b) { return svgUrl(22, 20, '<rect width="22" height="20" fill="' + a + '"/><path d="M0 20L11 0l11 20z" fill="' + b + '"/>'); },
+    paused: function (a, b) { return svgUrl(24, 24, '<rect width="24" height="24" fill="' + a + '"/><path d="M0 0h12v12H0zM12 12h12v12H12z" fill="' + b + '"/>'); },
+    dropped: function (a, b) { return svgUrl(18, 18, '<rect width="18" height="18" fill="' + a + '"/><circle cx="4.5" cy="4.5" r="2.6" fill="' + b + '"/><circle cx="13.5" cy="13.5" r="2.6" fill="' + b + '"/>'); },
+    rewatching: function (a, b) { return svgUrl(20, 40, '<rect width="20" height="40" fill="' + a + '"/><path d="M5 0C15 10 15 30 5 40M15 0C25 10 25 30 15 40M-5 0C5 10 5 30-5 40" fill="none" stroke="' + b + '" stroke-width="2.4"/>'); }
+  };
+  function mix(a, b, t) { var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16), o = '#'; [16, 8, 0].forEach(function (sh) { var c = Math.round(((pa >> sh) & 255) * (1 - t) + ((pb >> sh) & 255) * t); o += (c < 16 ? '0' : '') + c.toString(16); }); return o; }
+  function svgUrl(w, h, inner) { return "url('data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' + inner + '</svg>') + "')"; }
+
+  // ----- the skins
+  var SKINS = [
+    { id: 'hoy', name: 'La de hoy', jp: 'v1.3.2', rod: 'bambu', ref: 'Referencia, para comparar',
+      lede: 'La piel actual, tal cual: tira lisa de 150 px, color plano del estado, grano de washi casi invisible y la tinta que baja con el progreso. Es la que queremos superar.',
+      spec: [['Papel', 'Color plano, grano washi al 3 %'], ['Borde', 'Recto, esquinas de 2 px'], ['Cordel', 'Hilo de 2 px con nudo'], ['Progreso', 'La parte de abajo se entinta']] },
+    { id: 'kozo', name: 'Kozo', jp: '楮紙', rod: 'bambu', tex: 'kozo', ref: 'Washi de fibra larga',
+      lede: 'Washi artesanal: <em>fibras largas que se ven</em>, color teñido apagado y el <em>borde inferior rasgado a mano</em>. El póster va impreso en el papel (se multiplica con él), así que las fibras le pasan por encima. Cordel de papel retorcido (koyori). El progreso es una pincelada de sumi bajo el título.',
+      spec: [['Papel', 'Kozo teñido, fibras al 95 %'], ['Borde', 'Barba de papel (deckle) en los cuatro lados, más fuerte abajo'], ['Cordel', 'Koyori crema y beige'], ['Póster', 'Impreso: se mezcla con la fibra'], ['Progreso', 'Pincelada de tinta'], ['Rendimiento', 'Una textura en mosaico y un recorte por tarjeta']] },
+    { id: 'crepe', name: 'Crepé', jp: 'ちりめん紙', rod: 'bambu', tex: 'crepe', ref: 'Tu foto del papel crepé',
+      lede: 'Papel crepé de festival: <em>arrugas verticales</em> con relieve de luz y sombra, color saturado y el <em>borde de abajo ondulado</em> como cuando se estira el crepé. El póster va pegado como una foto con marco blanco, un poco torcido. Cordel rojo y blanco. El progreso son puntos por episodio.',
+      spec: [['Papel', 'Crepé con relieve, la textura más fuerte'], ['Borde', 'Ondulado abajo y apenas en los lados'], ['Cordel', 'Rojo y blanco, retorcido'], ['Póster', 'Foto pegada con marco blanco'], ['Progreso', 'Un punto por episodio'], ['Letra', 'Yusei Magic, de marcador']] },
+    { id: 'bokashi', name: 'Bokashi', jp: 'ぼかし', rod: 'bambu', tex: 'kozo', ref: 'Tus fotos de tiras reales',
+      lede: 'Como las tiras de tu foto: <em>teñidas en degradado</em>, claras al centro y profundas en el borde, con un filete interior oscuro. Arriba un <em>mon</em> con el ícono del estado. Atadas a la caña con un <em>moño de hilo blanco</em>. Título a pincel.',
+      spec: [['Papel', 'Degradado radial del color del estado'], ['Borde', 'Filete interior de 1,5 px'], ['Cordel', 'Hilo blanco con moño en la caña'], ['Estado', 'Mon con ícono arriba'], ['Progreso', 'Pincelada centrada'], ['Letra', 'Yuji Syuku, a pincel']] },
+    { id: 'pastel', name: 'Pastel en rama', jp: '笹飾り', rod: 'rama', tex: 'verjurado', ref: 'Tu imagen de la rama con tiras',
+      lede: 'La más calma: cartulina <em>pastel verjurada</em> con ojal metálico, colgando de una <em>rama con hojas</em> a alturas distintas, con mucho aire alrededor. El estado se lee en el tono, sin gritar. Ideal para el tema claro.',
+      spec: [['Papel', 'Verjurado mate, color al 38 %'], ['Borde', 'Recto, limpio'], ['Cordel', 'Hilo fino de largo variable'], ['Detalle', 'Ojal con aro de metal'], ['Ramas', 'La fila cuelga de una rama con hojas en vez de la caña'], ['Progreso', 'Puntos por episodio, tenues']] },
+    { id: 'chiyogami', name: 'Chiyogami', jp: '千代紙', rod: 'bambu', tex: 'kozo', ref: 'El póster del festival',
+      lede: 'Papel estampado tradicional: <em>cada estado tiene su patrón</em> (flechas yagasuri, círculos shippō, escamas, damero, lunares, olas verticales) y el título va en una <em>etiqueta de papel crudo</em> pegada encima. Abajo cuelga una borla. Se distingue el estado aunque no veas bien el color.',
+      spec: [['Papel', 'Patrón por estado (seis patrones)'], ['Etiqueta', 'Papel crudo con el póster y el texto'], ['Cordel', 'Dorado'], ['Detalle', 'Borla con anillo dorado'], ['Accesibilidad', 'El estado se lee por patrón, no solo por color']] },
+    { id: 'kraft', name: 'Kraft y pinzas', jp: 'クラフト', rod: 'cordel', tex: 'kraft', ref: 'Papel reciclado',
+      lede: 'Todas las tarjetas son <em>kraft reciclado</em> colgadas de un <em>cordel con pinzas de madera</em>. El estado deja de ser el color del papel: es una <em>cinta washi</em> del color del estado sobre el póster y un <em>sello hanko</em> con el estado y los episodios. Cálido y de libreta.',
+      spec: [['Papel', 'Kraft con fibras y motas'], ['Colgado', 'Cordel combado con pinzas'], ['Estado', 'Cinta washi + sello circular'], ['Progreso', 'Episodios dentro del sello'], ['Letra', 'Deseo en tinta gris de lápiz']] },
+    { id: 'hanafuda', name: 'Hanafuda', jp: '花札', rod: 'tapete', tex: 'algodon', ref: 'hanafuda.es',
+      lede: 'Cartas de hanafuda <em>repartidas sobre un tapete</em>: cartulina gruesa de algodón, <em>borde ladrillo que envuelve</em> el frente y canto visible. El póster va <em>impreso en tintas planas</em> (contraste alto y trama). El estado es el <em>tanzaku de la carta</em>: la cinta roja, azul o violeta cruzada con su palabra a pincel. Los puntos son episodios, como las fichas del juego. No cuelgan: al pasar el cursor se levantan.',
+      spec: [['Papel', 'Cartulina de algodón con relieve'], ['Borde', 'Ribete ladrillo, esquinas redondeadas, canto de 3 px'], ['Estado', 'Cinta tanzaku cruzada (roja, azul, violeta)'], ['Póster', 'Tintas planas y trama'], ['Progreso', 'Fichas por episodio'], ['Movimiento', 'Se levanta en vez de balancearse']] },
+    { id: 'linterna', name: 'Linterna', jp: '行灯', rod: 'bambu', tex: 'kozo', ref: 'Para el modo oscuro y OLED',
+      lede: 'Papel fino <em>iluminado desde atrás</em>, como un andon: brilla del color del estado, las <em>fibras se ven en sombra</em> y el póster se ve como una transparencia. Marco de madera arriba y abajo. Respira apenas. Es la que mejor aprovecha OLED; en claro se apaga a propósito.',
+      spec: [['Papel', 'Translúcido, luz desde el centro'], ['Borde', 'Listones de madera arriba y abajo'], ['Cordel', 'Hilo oscuro'], ['Brillo', 'Halo del color del estado'], ['Movimiento', 'Parpadeo leve de vela'], ['Rendimiento', 'El halo se apaga en modo rendimiento']] },
+    { id: 'plegado', name: 'Plegado', jp: '折り紙', rod: 'bambu', tex: 'algodon', ref: 'Origami',
+      lede: 'La tira está <em>doblada sobre el cordel</em>: la solapa de arriba es el revés del papel, más claro, y tapa el hilo. Dos <em>pliegues marcados</em> cruzan la tarjeta con luz y sombra. Sin agujero. Muy limpia y muy papel.',
+      spec: [['Papel', 'Cartulina de algodón'], ['Colgado', 'Solapa en punta doblada sobre el hilo'], ['Pliegues', 'Dos marcas horizontales'], ['Progreso', 'Puntos por episodio'], ['Letra', 'Shippori Mincho']] },
+    { id: 'festival', name: 'Festival', jp: '吹き流し', rod: 'cadena', ref: 'El póster del festival (borla y cadena)',
+      lede: 'La más fiestera: papel <em>metalizado de origami</em> que cambia de brillo al pasar el cursor, un <em>flequillo de tiras</em> abajo que se mueve por su cuenta (fukinagashi) y una <em>cadena de papel</em> colgando de la caña. Cordel dorado.',
+      spec: [['Papel', 'Origami metalizado, el brillo se desplaza'], ['Borde', 'Flequillo de tiras abajo'], ['Cordel', 'Dorado retorcido'], ['Caña', 'Con cadena de papel de colores'], ['Movimiento', 'Cada tira del flequillo se mueve sola'], ['Rendimiento', 'Sin textura de imagen; el flequillo se queda quieto']] }
+  ];
+
+  // ----- edges
+  function deckle(seed, bottomAmp) {
+    var r = rng(seed), pts = [], i, n = 14;
+    for (i = 0; i <= n; i++) pts.push([i / n * 100, r() * .6]);
+    for (i = 1; i <= n * 2; i++) pts.push([100 - r() * 1.6, i / (n * 2) * 100]);
+    for (i = n; i >= 0; i--) pts.push([i / n * 100, 100 - r() * bottomAmp]);
+    for (i = n * 2 - 1; i >= 1; i--) pts.push([r() * 1.6, i / (n * 2) * 100]);
+    return 'clip-path:polygon(' + pts.map(function (p) { return p[0].toFixed(1) + '% ' + p[1].toFixed(2) + '%'; }).join(',') + ')';
+  }
+  function ruffle(seed) {
+    var r = rng(seed), pts = [[0, 0], [100, 0]], i, n = 30;
+    for (i = 1; i <= 10; i++) pts.push([100 - (Math.sin(i * 1.3) * .6 + .6), i * 9]);
+    for (i = n; i >= 0; i--) pts.push([i / n * 100, 98.6 - Math.abs(Math.sin(i / n * Math.PI * 9)) * 1.6 + r() * .3]);
+    for (i = 10; i >= 1; i--) pts.push([Math.sin(i * 1.7) * .6 + .6, i * 9]);
+    return 'clip-path:polygon(' + pts.map(function (p) { return p[0].toFixed(1) + '% ' + p[1].toFixed(2) + '%'; }).join(',') + ')';
+  }
+
+  function ticks(t, cls) {
+    if (t.eps < 2) return '';
+    var n = Math.min(t.eps, 24), on = Math.round(t.seen / t.eps * n), s = '';
+    for (var k = 0; k < n; k++) s += '<i class="' + (k < on ? 'on' : '') + '"></i>';
+    return '<span class="' + (cls || 'tz-ticks') + '" aria-hidden="true">' + s + '</span>';
+  }
+  function statusLine(t) {
+    var s = ST[t.st];
+    if (t.eps === 1) return s.name + ' · Película';
+    return s.name + ' · ' + t.seen + ' de ' + t.eps;
+  }
+
+  function card(skin, t, i, o) {
+    o = o || {};
+    var s = ST[t.st], p = t.eps ? t.seen / t.eps : 0;
+    var title = o.title || t.t;
+    var len = o.len != null ? o.len : LENS[i % LENS.length];
+    var style = '--i:' + i + ';--len:' + len + 'px;--paper:' + s.paper + ';--deep:' + s.deep + ';--p:' + p.toFixed(3) + ';--rest:' + ([-1.2, 1, -.6, 1.4, -1, .7][i % 6]) + 'deg';
+    var tzStyle = '';
+    var posterImg = '<div class="tz-poster"><img src="img/p-' + t.img + '.webp" alt="" loading="lazy" decoding="async"></div>';
+    var body = '<div class="tz-body"><h4 class="tz-title">' + esc(title) + '</h4>';
+    var after = '', before = '', inside = '<span class="tz-hole" aria-hidden="true"></span>';
+    switch (skin) {
+      case 'hoy':
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p></div>';
+        inside += '<span class="tz-inked" aria-hidden="true"></span>';
+        break;
+      case 'kozo': tzStyle = deckle(i * 31 + 7, 3.2);
+        body += (p > 0 ? '<span class="tz-brush" aria-hidden="true"></span>' : '') + '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p></div>'; break;
+      case 'crepe': tzStyle = ruffle(i * 17 + 3);
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p>' + ticks(t) + '</div>'; break;
+      case 'bokashi':
+        inside += '<span class="tz-mon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="' + s.icon + '"/></svg></span>';
+        after = '<svg class="tz-bow" viewBox="0 0 32 20" aria-hidden="true"><path d="M16 9C11 2 3 2 4 8s8 3 12 1zM16 9c5-7 13-7 12-1s-8 3-12 1zM15 10l-5 9M17 10l5 9"/></svg>';
+        body += (p > 0 ? '<span class="tz-brush" aria-hidden="true"></span>' : '') + '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p></div>'; break;
+      case 'pastel':
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p>' + ticks(t) + '</div>'; break;
+      case 'chiyogami':
+        tzStyle = '--pattern:' + PATTERNS[t.st](mix(s.paper, '#fff6e6', .45), mix(s.paper, s.deep, .35)) + ';';
+        posterImg = '<div class="tz-label">' + posterImg;
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p></div></div>';
+        inside += '<span class="tz-fusa" aria-hidden="true"></span>'; break;
+      case 'kraft':
+        after = '<span class="tz-pin" aria-hidden="true"></span>';
+        inside += '<span class="tz-tape" aria-hidden="true"></span><span class="tz-hanko" aria-hidden="true">' + esc(s.name.split(' ')[0]) + (t.eps > 1 ? '<b>' + t.seen + '/' + t.eps + '</b>' : '') + '</span>';
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p></div>'; break;
+      case 'hanafuda':
+        style += ';--ribbon:' + s.ribbon + ';--rest:' + ([-3, 2, -1.5, 3.2, -2.4, 1.6][i % 6]) + 'deg;margin-top:' + ([6, 0, 10, 2, 8, 0][i % 6]) + 'px';
+        posterImg = '<div class="tz-poster"><img src="img/p-' + t.img + '.webp" alt="" loading="lazy" decoding="async"><span class="tz-tan" aria-hidden="true"><span>' + s.kanji + '</span></span></div>';
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p>' + ticks(t, 'tz-dots') + '</div>'; break;
+      case 'linterna':
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p></div>'; break;
+      case 'plegado':
+        inside += '<span class="tz-flap" aria-hidden="true"></span>';
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p>' + ticks(t) + '</div>'; break;
+      case 'festival':
+        var fr = '', fl = [.46, .36, .52, .4, .3, .48, .38, .55, .34, .44, .5, .37, .42]; for (var k = 0; k < 13; k++) fr += '<i style="--k:' + k + ';--fl:' + fl[(k + i * 3) % fl.length] + '"></i>';
+        inside += '<span class="tz-fringe" aria-hidden="true">' + fr + '</span>';
+        body += '<p class="tz-status">' + esc(statusLine(t)) + '</p><p class="tz-wish">' + esc(t.wish) + '</p></div>'; break;
+    }
+    var label = title + '. ' + statusLine(t) + '. ' + t.wish;
+    return '<div class="hang hang--' + skin + '" tabindex="0" role="button" aria-label="' + esc(label) + '" style="' + style + '">' + before +
+      '<article class="tz tz--' + skin + '" style="' + tzStyle + '">' + inside + posterImg + body + '</article>' + after + '</div>';
+  }
+
+  function stageHTML(sk, titles, opts) {
+    opts = opts || {};
+    var cards = titles.map(function (t, i) {
+      var o = {};
+      if (sk.rod === 'cordel') o.len = 10 + Math.round(26 * Math.sin((i + .5) / titles.length * Math.PI));
+      if (sk.rod === 'rama') o.len = [64, 38, 96, 52, 120, 70][i % 6];
+      if (sk.rod === 'tapete') o.len = 0;
+      return card(sk.id, t, i, o);
+    }).join('');
+    var top = '';
+    if (sk.rod === 'bambu' || sk.rod === 'cadena') top = '<div class="rod" aria-hidden="true"></div>';
+    if (sk.rod === 'cadena') {
+      var cols = ['#e5484d', '#f5c542', '#4c9ee8', '#5cc98a', '#c084fc', '#f28c38'], ch = '';
+      for (var k = 0; k < 240; k++) ch += '<i style="--c:' + cols[k % cols.length] + '"></i>';
+      top += '<div class="chain" aria-hidden="true">' + ch + '</div>';
+    }
+    var pad = '';
+    return '<div class="stage stage--' + sk.rod + '" data-rod="' + sk.rod + '"><div class="stage-in">' + top + '<div class="row" style="' + pad + '">' + cards + '</div>' +
+      (sk.id === 'linterna' ? '<span class="stage-note">Brilla en Oscuro y OLED</span>' : '') + '</div></div>';
+  }
+
+  // Branch and clothesline are drawn after layout, from the real card positions.
+  function decorate(stage) {
+    var rod = stage.dataset.rod;
+    if (rod !== 'rama' && rod !== 'cordel') return;
+    var inner = stage.querySelector('.stage-in'), row = stage.querySelector('.row');
+    var old = inner.querySelector('svg.deco'); if (old) old.remove();
+    var W = inner.scrollWidth, hangs = row.querySelectorAll('.hang');
+    var ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'deco'); svg.setAttribute('width', W); svg.setAttribute('height', 180); svg.setAttribute('aria-hidden', 'true');
+    var cs = getComputedStyle(stage);
+    var xs = Array.prototype.map.call(hangs, function (h) { return row.offsetLeft + h.offsetLeft + h.offsetWidth / 2; });
+    var rowTop = row.offsetTop;
+    if (rod === 'cordel') {
+      var y0 = 22, sag = 52, yAt = function (x) { var u = x / W; return y0 + 4 * u * (1 - u) * sag; };
+      svg.innerHTML = '<path d="M0 ' + y0 + ' Q ' + (W / 2) + ' ' + (y0 + 2 * sag) + ' ' + W + ' ' + y0 + '" fill="none" stroke="' + cs.getPropertyValue('--thread').trim() + '" stroke-width="2.5" stroke-linecap="round"/>';
+      Array.prototype.forEach.call(hangs, function (h, i) { h.style.setProperty('--len', '10px'); h.style.marginTop = Math.round(yAt(xs[i]) - rowTop - 6) + 'px'; });
+    } else {
+      var f = function (x) { return 40 + 16 * Math.sin(x / 230) + 7 * Math.sin(x / 83 + 1); };
+      var d = 'M-10 ' + f(0).toFixed(1); for (var x = 20; x <= W + 20; x += 20) d += ' L' + x + ' ' + f(x).toFixed(1);
+      var leaves = '', r = rng(91);
+      for (var k = 0; k < W / 30; k++) {
+        var lx = k * 30 + r() * 20, ly = f(lx), a = (k % 2 ? 1 : -1) * (30 + r() * 40) + 90, sc = .7 + r() * .6;
+        leaves += '<path transform="translate(' + lx.toFixed(1) + ' ' + ly.toFixed(1) + ') rotate(' + a.toFixed(1) + ') scale(' + sc.toFixed(2) + ')" d="M0 0C10-7 38-7 58 0C38 7 10 7 0 0Z" fill="' + (k % 3 ? '#7fa565' : '#94b97a') + '"/>';
+      }
+      svg.innerHTML = '<path d="' + d + '" fill="none" stroke="#7a9a5e" stroke-width="5" stroke-linecap="round"/>' + leaves;
+      Array.prototype.forEach.call(hangs, function (h, i) { h.style.marginTop = Math.round(f(xs[i]) - rowTop) + 'px'; });
+    }
+    inner.insertBefore(svg, inner.firstChild);
+  }
+
+  // ----- render skins
+  var picks = store.get('picks', []);
+  var skinsEl = document.getElementById('skins'), jump = document.getElementById('jump');
+  skinsEl.innerHTML = SKINS.map(function (sk) {
+    var spec = sk.spec.map(function (p) { return '<div><dt>' + esc(p[0]) + '</dt><dd>' + esc(p[1]) + '</dd></div>'; }).join('');
+    var pick = sk.id === 'hoy' ? '' : '<button type="button" class="pick" data-pick="' + sk.id + '" aria-pressed="' + (picks.indexOf(sk.id) >= 0) + '"><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="box" x="2" y="2" width="16" height="16" rx="4" fill="none" stroke-width="1.6"/><path class="tick" d="M5.5 10.5l3 3 6-7" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>La quiero</button>';
+    return '<section class="skin" id="piel-' + sk.id + '" aria-labelledby="h-' + sk.id + '"><div class="skin-head"><h2 id="h-' + sk.id + '">' + esc(sk.name) + '<small>' + esc(sk.jp) + ' · ' + esc(sk.ref) + '</small></h2>' + pick + '</div>' +
+      stageHTML(sk, TITLES) + '<p class="lede">' + sk.lede + '</p><dl class="spec">' + spec + '</dl></section>';
+  }).join('');
+  function renderJump() {
+    jump.innerHTML = SKINS.map(function (sk) { return '<a href="#piel-' + sk.id + '" class="' + (picks.indexOf(sk.id) >= 0 ? 'is-picked' : '') + '">' + esc(sk.name) + '</a>'; }).join('') + '<a href="#vista-previa">Vista previa de Ajustes</a>';
+  }
+  renderJump();
+  var decorAll = function () { document.querySelectorAll('.stage').forEach(decorate); };
+
+  // ----- toolbar
+  var prefs = { ground: store.get('ground', 'oscuro'), size: store.get('size', 'l'), tex: store.get('tex', 'media'), motion: store.get('motion', 'on'), perf: store.get('perf', 'off') };
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches && store.get('motion', null) == null) prefs.motion = 'off';
+  function applyPrefs() {
+    Object.keys(prefs).forEach(function (k) { document.body.dataset[k] = prefs[k]; });
+    document.querySelectorAll('.seg[data-set]').forEach(function (seg) {
+      seg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === prefs[seg.dataset.set])); });
+    });
+    requestAnimationFrame(decorAll);
+  }
+  document.querySelectorAll('.seg[data-set]').forEach(function (seg) {
+    seg.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; prefs[seg.dataset.set] = b.dataset.v; store.set(seg.dataset.set, b.dataset.v); applyPrefs(); });
+  });
+  applyPrefs();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(decorAll);
+  window.addEventListener('load', decorAll);
+  var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(decorAll, 150); });
+
+  skinsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pick]'); if (!b) return;
+    var id = b.dataset.pick, at = picks.indexOf(id);
+    if (at >= 0) picks.splice(at, 1); else picks.push(id);
+    b.setAttribute('aria-pressed', String(at < 0)); store.set('picks', picks); renderJump(); renderTray();
+  });
+
+  // ----- contextual preview mock
+  var ALTS = [
+    { id: 'a', name: 'Escenario que sigue', desc: 'La vista previa de la derecha cambia a lo que estás tocando: la fila con el foco o el cursor, y la opción sobre la que pasas antes de hacer clic. Los ajustes sin efecto visible no la cambian.', touch: 'En el teléfono va arriba, fija, y cambia al tocar una fila.' },
+    { id: 'b', name: 'En la misma fila', desc: 'No hay panel aparte. La fila que estás editando se despliega y muestra su vista previa justo debajo; las filas sin efecto visible no se despliegan.', touch: 'Igual en el teléfono: toca la fila y se abre.' },
+    { id: 'c', name: 'Las opciones son la vista previa', desc: 'Cada opción es una miniatura de cómo queda: los temas son pantallas, los tamaños son tarjetas a escala, el balanceo se mueve. No hay vista previa separada.', touch: 'Funciona igual con el dedo; las miniaturas se hacen más chicas.' },
+    { id: 'd', name: 'Antes y después', desc: 'El panel solo aparece cuando pasas por una opción distinta de la actual y muestra las dos lado a lado: cómo está y cómo quedaría.', touch: 'En el teléfono se ve manteniendo apretada una opción.' }
+  ];
+  var ROWS = [
+    { k: 'tema', name: 'Tema', opts: [['claro', 'Claro'], ['oscuro', 'Oscuro'], ['oled', 'OLED']], vis: 'pantalla' },
+    { k: 'piel', name: 'Piel de las tarjetas tanzaku', opts: [['hoy', 'La de hoy'], ['kozo', 'Kozo'], ['crepe', 'Crepé'], ['hanafuda', 'Hanafuda'], ['kraft', 'Kraft']], vis: 'piel' },
+    { k: 'tam', name: 'Tamaño de tarjeta', opts: [['s', 'Chica'], ['m', 'Mediana'], ['l', 'Grande'], ['xl', 'Enorme']], vis: 'tam' },
+    { k: 'bal', name: 'Balanceo de las tarjetas', opts: [['0', 'Quietas'], ['1', 'Suave'], ['3', 'Vivo']], vis: 'bal' },
+    { k: 'nav', name: 'Navegación', opts: [['riel', 'Riel lateral'], ['barra', 'Barra inferior'], ['cmd', 'Paleta de comandos']], vis: 'nav' },
+    { k: 'sal', name: 'Saludo en Inicio', opts: [['si', 'Mostrar'], ['no', 'Ocultar']], vis: 'sal' },
+    { k: 'tit', name: 'Idioma de los títulos', opts: [['romaji', 'Romaji'], ['en', 'Inglés'], ['jp', 'Nativo']], vis: 'tit' },
+    { k: 'bak', name: 'Copia de seguridad automática', opts: [['off', 'Apagada'], ['dia', 'Diaria'], ['sem', 'Semanal']], vis: null, why: 'No cambia nada en pantalla' }
+  ];
+  var val = { tema: 'oscuro', piel: 'kozo', tam: 'm', bal: '1', nav: 'riel', sal: 'si', tit: 'romaji', bak: 'dia' };
+  var SIZEW = { s: 78, m: 96, l: 116, xl: 140 };
+  var alt = store.get('alt', null), active = 'piel', hover = null, lastVisual = 'piel';
+
+  function render(k, v, mini) {
+    var g = k === 'tema' ? v : val.tema;
+    var t0 = TITLES[0], html = '', w = 96;
+    switch (k) {
+      case 'tema':
+        html = '<div class="app"><div class="app-nav"><i></i><i></i><i></i><i></i></div><div class="app-main"><div class="greet">Buenas noches</div><div class="app-cards">' +
+          TITLES.slice(0, 4).map(function (t) { return '<span style="--c:' + ST[t.st].paper + '"></span>'; }).join('') + '</div><div class="app-line" style="width:70%"></div><div class="app-line" style="width:45%"></div></div></div>';
+        break;
+      case 'piel':
+        html = '<div class="mini-row" style="--w:92px"><div class="rod" style="top:14px"></div><div class="row" style="padding-top:10px">' + [0, 3, 5].map(function (n, i) { return card(v, TITLES[n], i, { len: [18, 30, 22][i] }); }).join('') + '</div></div>';
+        break;
+      case 'tam':
+        w = SIZEW[v];
+        var fit = Math.max(1, Math.floor((360 - 20) / (w + 10)));
+        html = '<div class="fitbox" style="--w:' + w + 'px"><div class="row">' + TITLES.concat(TITLES).slice(0, fit + 1).map(function (t, i) { return card(val.piel, t, i, { len: 0 }); }).join('') + '</div></div><span class="pv-say">Caben ' + fit + ' por fila en esta ventana</span>';
+        break;
+      case 'bal':
+        html = '<div class="mini-row" style="--w:104px"><div class="rod" style="top:14px"></div><div class="row" style="padding-top:10px"><div class="pv-swing" style="--a:' + v + '">' + card(val.piel, t0, 0, { len: 26 }) + '</div></div></div>' + (mini ? '' : '<button type="button" class="replay" data-replay>Repetir</button>');
+        break;
+      case 'nav':
+        html = '<div class="app' + (v === 'barra' ? ' is-bar' : '') + '">' + (v === 'cmd' ? '' : '<div class="app-nav hl"><i></i><i></i><i></i><i></i></div>') + '<div class="app-main"><div class="app-cards">' +
+          TITLES.slice(0, 4).map(function (t) { return '<span style="--c:' + ST[t.st].paper + '"></span>'; }).join('') + '</div><div class="app-line" style="width:70%"></div><div class="app-line" style="width:50%"></div></div></div>' +
+          (v === 'cmd' ? '<div class="cmd hl"><b>Ir a… (Ctrl+K)</b><div class="app-line" style="width:80%"></div><div class="app-line" style="width:60%"></div></div>' : '');
+        break;
+      case 'sal':
+        html = '<div class="app"><div class="app-nav"><i></i><i></i><i></i></div><div class="app-main">' + (v === 'si' ? '<div class="greet hl">Buenas noches</div>' : '<div class="app-line hl" style="width:30%;height:4px;opacity:.5"></div>') + '<div class="app-cards">' +
+          TITLES.slice(0, 4).map(function (t) { return '<span style="--c:' + ST[t.st].paper + '"></span>'; }).join('') + '</div><div class="app-line" style="width:60%"></div></div></div>';
+        break;
+      case 'tit':
+        var name = v === 'en' ? t0.en : v === 'jp' ? t0.jp : t0.t;
+        html = '<div class="mini-row" style="--w:110px"><div class="rod" style="top:14px"></div><div class="row" style="padding-top:10px">' + card(val.piel, t0, 0, { len: 22, title: name }) + '</div></div>';
+        break;
+    }
+    return '<div class="pvr" data-g="' + g + '">' + html + '</div>';
+  }
+  var rowsEl = document.getElementById('rows'), stagebox = document.getElementById('stagebox'), mock = document.getElementById('mock');
+  function rowByK(k) { return ROWS.filter(function (r) { return r.k === k; })[0]; }
+  function optLabel(k, v) { var r = rowByK(k); return r.opts.filter(function (o) { return o[0] === v; })[0][1]; }
+
+  function renderRows() {
+    rowsEl.innerHTML = ROWS.map(function (r) {
+      var opts = r.opts.map(function (o) {
+        var mini = alt === 'c' && r.vis ? '<span class="mini">' + render(r.k, o[0], true) + '</span>' : '';
+        return '<button type="button" class="opt" data-k="' + r.k + '" data-v="' + o[0] + '" aria-pressed="' + (val[r.k] === o[0]) + '">' + mini + esc(o[1]) + '</button>';
+      }).join('');
+      var inline = alt === 'b' && r.vis ? '<div class="inline-pv"><div>' + render(r.k, val[r.k]) + '</div></div>' : '';
+      return '<div class="srow' + (r.k === active ? ' is-active' : '') + (alt === 'b' && r.k === active && r.vis ? ' is-open' : '') + '" data-row="' + r.k + '"><div class="srow-h"><b>' + esc(r.name) + '</b>' + (r.why ? '<span>' + esc(r.why) + '</span>' : '') + '</div><div class="opts" role="group" aria-label="' + esc(r.name) + '">' + opts + '</div>' + inline + '</div>';
+    }).join('');
+    swingAll();
+  }
+  function renderStage() {
+    var A = alt || 'a';
+    if (A === 'b' || A === 'c') { stagebox.hidden = true; return; }
+    stagebox.hidden = false;
+    var r = rowByK(active);
+    if (A === 'a') {
+      var k = r.vis ? active : lastVisual, v = (hover && hover.k === k) ? hover.v : val[k];
+      var rk = rowByK(k);
+      stagebox.className = 'stagebox' + (r.vis ? '' : ' is-dim');
+      stagebox.innerHTML = '<h3><span>Vista previa · <b>' + esc(rk.name) + '</b></span><span>' + esc(optLabel(k, v)) + (hover && hover.k === k && hover.v !== val[k] ? ' (sin aplicar)' : '') + '</span></h3>' + render(k, v) +
+        (r.vis ? '' : '<p class="note">«' + esc(r.name) + '» no cambia nada en pantalla, así que la vista previa se queda en lo último que tocaste.</p>');
+    } else {
+      if (!hover || hover.v === val[hover.k] || !rowByK(hover.k).vis) {
+        stagebox.className = 'stagebox';
+        stagebox.innerHTML = '<h3><span>Antes y después</span></h3><p class="note">Pasa el cursor o el foco por una opción distinta de la actual para compararla con la que tienes.' + (hover && !rowByK(hover.k).vis ? ' «' + esc(rowByK(hover.k).name) + '» no tiene nada que comparar.' : '') + '</p>';
+      } else {
+        stagebox.className = 'stagebox';
+        stagebox.innerHTML = '<h3><span><b>' + esc(rowByK(hover.k).name) + '</b></span></h3><div class="split"><figure>' + render(hover.k, val[hover.k]) + '<figcaption>Ahora: ' + esc(optLabel(hover.k, val[hover.k])) + '</figcaption></figure><figure>' + render(hover.k, hover.v) + '<figcaption>Con «' + esc(optLabel(hover.k, hover.v)) + '»</figcaption></figure></div>';
+      }
+    }
+    swingAll();
+  }
+  // Swing amplitude preview: animate with the Web Animations API so each "Repetir" restarts it.
+  function swingAll() {
+    document.querySelectorAll('.pv-swing').forEach(function (el) {
+      var a = +el.style.getPropertyValue('--a'), h = el.querySelector('.hang');
+      if (!h) return; h.style.animation = 'none';
+      if (!a || document.body.dataset.perf === 'on' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+      h.animate([{ rotate: '0deg' }, { rotate: (a * 2.2) + 'deg' }, { rotate: (-a * 1.6) + 'deg' }, { rotate: (a * .9) + 'deg' }, { rotate: (-a * .4) + 'deg' }, { rotate: '0deg' }], { duration: 2200 + a * 300, easing: 'ease-out' });
+    });
+  }
+  function renderAlts() {
+    document.getElementById('pvAlts').innerHTML = ALTS.map(function (a) {
+      return '<button type="button" class="pv-alt" data-alt="' + a.id + '" aria-pressed="' + (alt === a.id) + '"><b>' + esc(a.name) + '</b><span>' + esc(a.desc) + '</span><span>' + esc(a.touch) + '</span><span class="chk"' + (alt === a.id ? '' : ' hidden') + '>Elegida</span></button>';
+    }).join('');
+    mock.dataset.alt = alt || 'a';
+    document.getElementById('mockHint').textContent = 'Comportamiento: ' + ALTS.filter(function (a) { return a.id === (alt || 'a'); })[0].name;
+  }
+  function setActive(k) { if (active === k) return; active = k; if (rowByK(k).vis) lastVisual = k; rowsEl.querySelectorAll('.srow').forEach(function (r) { r.classList.toggle('is-active', r.dataset.row === k); r.classList.toggle('is-open', (alt || 'a') === 'b' && r.dataset.row === k && !!rowByK(k).vis); }); renderStage(); }
+  function rerenderInline(k) { var r = rowsEl.querySelector('[data-row="' + k + '"] .inline-pv > div'); if (r) { r.innerHTML = render(k, val[k]); swingAll(); } }
+
+  document.getElementById('pvAlts').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-alt]'); if (!b) return; alt = b.dataset.alt; hover = null; store.set('alt', alt); renderAlts(); renderRows(); renderStage(); renderTray();
+  });
+  rowsEl.addEventListener('pointerover', function (e) {
+    var row = e.target.closest('.srow'); if (row && (alt || 'a') !== 'b') setActive(row.dataset.row);
+    var o = e.target.closest('.opt'); var nh = o ? { k: o.dataset.k, v: o.dataset.v } : null;
+    if (JSON.stringify(nh) !== JSON.stringify(hover)) { hover = nh; if ((alt || 'a') === 'a' || alt === 'd') renderStage(); }
+  });
+  rowsEl.addEventListener('pointerleave', function () { hover = null; if ((alt || 'a') === 'a' || alt === 'd') renderStage(); });
+  rowsEl.addEventListener('focusin', function (e) {
+    var row = e.target.closest('.srow'); if (row) setActive(row.dataset.row);
+    var o = e.target.closest('.opt'); hover = o ? { k: o.dataset.k, v: o.dataset.v } : null; renderStage();
+  });
+  rowsEl.addEventListener('click', function (e) {
+    var o = e.target.closest('.opt'); if (!o) return;
+    var k = o.dataset.k; val[k] = o.dataset.v;
+    o.parentNode.querySelectorAll('.opt').forEach(function (b) { b.setAttribute('aria-pressed', String(b === o)); });
+    setActive(k);
+    if ((alt || 'a') === 'b') rerenderInline(k);
+    if (alt === 'c' && (k === 'tema' || k === 'piel')) renderRows();
+    renderStage();
+    var target = (alt || 'a') === 'b' ? rowsEl.querySelector('[data-row="' + k + '"] .pvr') : stagebox.querySelector('.pvr');
+    if (target) { target.classList.remove('flash'); void target.offsetWidth; target.classList.add('flash'); }
+  });
+  mock.addEventListener('click', function (e) { if (e.target.closest('[data-replay]')) swingAll(); });
+  renderAlts(); renderRows(); renderStage();
+
+  // ----- tray
+  var trayText = document.getElementById('trayText'), copyBtn = document.getElementById('copyBtn'), area = document.getElementById('copyArea');
+  function summary() {
+    var names = SKINS.filter(function (s) { return picks.indexOf(s.id) >= 0; }).map(function (s) { return s.name; });
+    var a = alt ? ALTS.filter(function (x) { return x.id === alt; })[0].name : null;
+    return { names: names, alt: a };
+  }
+  function renderTray() {
+    var s = summary();
+    trayText.innerHTML = s.names.length || s.alt
+      ? '<b>Pieles:</b> ' + (s.names.length ? esc(s.names.join(', ')) : '<span>ninguna todavía</span>') + ' · <b>Vista previa:</b> ' + (s.alt ? esc(s.alt) : '<span>sin elegir</span>')
+      : '<span>Marca «La quiero» en las pieles que te gusten<span class="long"> y elige una vista previa. Después copia tu elección y pégala en el chat</span>.</span>';
+    copyBtn.disabled = !(s.names.length || s.alt);
+  }
+  copyBtn.addEventListener('click', function () {
+    var s = summary(), txt = 'Pieles tanzaku elegidas: ' + (s.names.join(', ') || 'ninguna') + '. Vista previa de Ajustes: ' + (s.alt || 'sin elegir') + '.';
+    var done = function () { copyBtn.textContent = 'Copiado'; setTimeout(function () { copyBtn.textContent = 'Copiar elección'; }, 1600); };
+    var fallback = function () { area.value = txt; area.select(); try { document.execCommand('copy'); done(); } catch (e) { copyBtn.textContent = 'Selecciona y copia'; } };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fallback); else fallback();
+  });
+  renderTray();
+})();
+</script>

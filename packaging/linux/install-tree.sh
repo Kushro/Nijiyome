@@ -5,10 +5,12 @@
 #   <prefix>/lib/nijiyome/bin/Nijiyome                     the jpackage launcher
 #   <prefix>/lib/nijiyome/lib/app/*.jar                    the app (libmpv / MediaMP and libtorrent4j natives inside their jars)
 #   <prefix>/lib/nijiyome/lib/app/resources/temple-lsfg    Link's LSFG helper (when the image was built with NIJIYOME_TEMPLE_LSFG)
+#   <prefix>/lib/nijiyome/lib/app/resources/libnijiyome_upscale.so, upscale-models/, upscale-licenses/
+#                                                          GPU image upscaling (when built with NIJIYOME_DESKTOP_UPSCALE)
 #   <prefix>/lib/nijiyome/lib/runtime/                     the jlink runtime (lib/libjsig.so included: signal chaining)
 #   <prefix>/bin/nijiyome -> ../lib/nijiyome/bin/Nijiyome
 #   <prefix>/share/{applications,metainfo,icons/hicolor}   desktop entry (nijiyome:, magnet:, .torrent), AppStream, icons
-#   <prefix>/share/licenses/nijiyome/                      AGPL text, third-party notices, temple-lsfg licences
+#   <prefix>/share/licenses/nijiyome/                      AGPL text, third-party notices, temple-lsfg and upscale licences
 #
 # Usage: install-tree.sh --image <app image dir (…/app/Nijiyome)> --root <staging root> [--prefix /usr]
 set -euo pipefail
@@ -69,5 +71,10 @@ if [ -f "$lib/lib/app/resources/temple-lsfg" ]; then
     install -m0644 "$tl/third_party/volk/LICENSE.md" "$lic/temple-lsfg/volk-LICENSE.md"
     install -m0644 "$tl/third_party/pe-parse/LICENSE" "$lic/temple-lsfg/pe-parse-LICENSE"
     install -m0644 "$tl/third_party/vulkan-headers/LICENSE-Apache-2.0.txt" "$lic/temple-lsfg/vulkan-headers-LICENSE-Apache-2.0.txt"
+fi
+if [ -d "$lib/lib/app/resources/upscale-licenses" ]; then
+    # ncnn, glslang, Real-ESRGAN (code and weights) and realesrgan-ncnn-vulkan, staged by desktopApp's stageAppResources.
+    install -d "$lic/upscale"
+    install -m0644 "$lib/lib/app/resources/upscale-licenses/"* "$lic/upscale/"
 fi
 echo "Installed Nijiyome into $root (prefix $prefix)"

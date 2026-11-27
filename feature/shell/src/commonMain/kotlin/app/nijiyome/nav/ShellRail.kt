@@ -108,6 +108,7 @@ import app.nijiyome.ui.resources.ui_nav_calendar
 import app.nijiyome.ui.resources.ui_nav_for_you
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.upscale.UpscaleImageKind
 
 /**
  * The Sparkles rail (`.nj-rail`): the primary group at the top, the utilities pushed to the foot with the account entry under them.
@@ -199,7 +200,7 @@ private fun RailItem(
             ) {
                 val tint = if (selected) scheme.onPrimaryContainer else scheme.onSurfaceVariant
                 if (!avatar.isNullOrBlank()) {
-                    MediaCover(url = avatar, modifier = Modifier.size(30.dp), shape = CircleShape, aspectRatio = 1f)
+                    MediaCover(url = avatar, modifier = Modifier.size(30.dp), shape = CircleShape, aspectRatio = 1f, kind = UpscaleImageKind.AVATAR)
                 } else if (badge > 0) {
                     BadgedBox(badge = { Badge { Text(if (badge > 99) "99+" else badge.toString()) } }) {
                         Icon(route.icon(selected), contentDescription = null, tint = tint)

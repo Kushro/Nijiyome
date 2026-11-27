@@ -101,6 +101,11 @@ dependencies {
     implementation(projects.core.playerMpv)
     // 0.4.0 player quality (worker B): phone frame generation (frameGenModule)
     implementation(projects.core.framegen)
+    // v1.3.3 GPU image upscaling (docs/plan-upscaling.md): libnijiyome_upscale.so, its models and the Android engine (upscaleModule);
+    // Coil for the app's own ImageLoader factory (NijiyomeApplication), which carries the upscale refresh listener.
+    implementation(projects.core.upscaleNative)
+    implementation(libs.coil.compose)
+    implementation(libs.media3.common) // upscale pause gate reads ActivePlayback.player (a media3 Player)
     implementation(projects.feature.torrents)
     implementation(projects.feature.you)
     // integrated extension server client (docs/redesign/13 §3.10)

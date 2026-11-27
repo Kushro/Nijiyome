@@ -63,6 +63,8 @@ import app.nijiyome.designsystem.direction.LocalDirection
 import app.nijiyome.designsystem.direction.LocalThemeTone
 import app.nijiyome.designsystem.direction.StatusSlot
 import app.nijiyome.designsystem.direction.tanabata.TanabataDirection
+import app.nijiyome.designsystem.direction.tanabata.LocalTanzakuSkin
+import app.nijiyome.designsystem.direction.tanabata.SkinPaint
 import app.nijiyome.designsystem.direction.tanabata.TanabataMaterials
 import app.nijiyome.designsystem.direction.tanabata.drawHole
 import app.nijiyome.designsystem.direction.tanabata.drawInkDown
@@ -181,9 +183,9 @@ internal fun TitleCardData.ink(show: CardShow): Float {
     return (progress ?: series ?: 0f).coerceIn(0f, 1f)
 }
 
-/** The paper of this title's list status (kinari without one). */
+/** The paper of this title's list status (kinari without one), as the user's skin dyes it. */
 @Composable
-internal fun TitleCardData.paper(): Color = TanabataMaterials.paper(listStatus, LocalThemeTone.current)
+internal fun TitleCardData.paper(): Color = SkinPaint.paper(LocalTanzakuSkin.current, TanabataMaterials.paper(listStatus, LocalThemeTone.current))
 
 /** Interaction state of a card, read once at its root. */
 @Immutable

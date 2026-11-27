@@ -95,6 +95,8 @@ fun desktopModules(paths: AppPaths, folders: UserFolders = UserFolders.resolve(p
         paths.dataDir,
         lsfgDll = { koin -> koin.getOrNull<DesktopPlayerPrefsStore>()?.prefs?.value?.lsfgDll },
     ) { linkAnime4kShaders(File(paths.cacheDir, "link-anime4k")) },
+    // GPU image upscaling (docs/plan-upscaling.md): the queue the image composables talk to and its settings (Ajustes › Mejoras).
+    desktopUpscaleModule(dataDir = paths.dataDir, cacheDir = paths.cacheDir),
     // The screens. Each one hides what depends on a service that is not registered above; a destination that cannot open
     // without one is not offered by the shell (RouteAvailability).
     homeModule,

@@ -81,6 +81,7 @@ object SettingsCatalog {
         // Apariencia: design
         e("design_direction", A, sApp, Res.string.rd_s10_design_direction, Res.string.rd_s10_design_direction_hint, "direccion", "direction", "diseno", "design", "tanabata", "obi", "transito", "transit", "sumi", "canon", "estilo"),
         e("design_card", A, sApp, Res.string.rd_s10_design_card, Res.string.rd_s10_design_card_hint, "tarjeta", "card", "poster", "tanzaku", "hanko", "material"),
+        e("design_skin", A, sApp, Res.string.rd_s10_design_skin, Res.string.rd_s10_design_skin_hint, "piel", "skin", "papel", "paper", "tanzaku", "textura", "texture", "washi", "crepé", "crepe", "kraft", "hanafuda", "linterna", "lantern", "origami"),
         e("design_gallery", A, sApp, Res.string.rd_s10_design_gallery, Res.string.rd_s10_design_gallery_hint, "galeria", "gallery", "muestras", "preview"),
         e("design_reset", A, sApp, Res.string.rd_s10_design_reset, Res.string.rd_s10_design_reset_hint, "restablecer", "reset", "diseno", "design"),
         e("look_presets", A, sApp, Res.string.settings_look_title, Res.string.settings_look_hint, "preset", "diseno", "cine", "editorial", "denso", "calmo"),
@@ -112,6 +113,7 @@ object SettingsCatalog {
         e("player_preset", EN, sPly, Res.string.settings_preset, null, "anime4k", "fsr", "nvscaler", "shader", "upscale", "escalado", "cas"),
         e("enh_quality", EN, sPly, Res.string.settings_quality_tier, Res.string.settings_quality_tier_hint, "calidad", "quality", "deband", "bandas", "decoder", "decodificador", "hw", "sw", "suavizado", "smoothing"),
         e("player_framegen", EN, sPly, Res.string.rd_s10_set_framegen, Res.string.rd_s10_set_framegen_hint, "fps", "framegen", "lsfg", "lossless", "interpolacion", "cuadros", "frames"),
+        e("images_upscale", EN, sPly, Res.string.upscale_img_group, Res.string.upscale_img_enabled, "upscale", "escalado", "esrgan", "real-esrgan", "imagenes", "images", "poster", "miniaturas", "thumbnails", "banner", "gpu", "nitidez"),
 
         // Subtítulos y audio
         e("player_audio_sub_lang", SU, sPly, Res.string.rd_s10_set_languages, Res.string.rd_s10_set_languages_hint, "audio", "dub", "doblaje", "sub", "subtitulo", "subtitle", "idioma", "japones", "espanol"),

@@ -14,6 +14,8 @@ kotlin {
         commonMain.dependencies {
             api(projects.core.designsystem)
             api(projects.core.model)
+            // GPU image upscaling (docs/plan-upscaling.md §4.2): UpscalableImage and its locals; api because callers pass UpscaleImageKind.
+            api(projects.core.upscale)
             implementation(libs.coil.compose)
             implementation(libs.cmp.material3.adaptive)
             implementation(libs.cmp.material3.adaptive.layout)
