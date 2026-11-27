@@ -36,7 +36,7 @@ class DesktopSettingsPlatformTest {
     fun theRepositoryNoticesAreWhatGetsBundled() {
         val root = generateSequence(File("").absoluteFile) { it.parentFile }.first { File(it, "THIRD_PARTY_NOTICES.md").isFile }
         val fonts = File(root, "core/designsystem/src/androidMain/assets/licenses").listFiles().orEmpty().filter { it.name.startsWith("OFL-") }
-        assertEquals(11, fonts.size, "the OFL texts the build packages")
+        assertEquals(14, fonts.size, "the OFL texts the build packages") // v1.3.3: + Klee One, Shippori Mincho, Yusei Magic (tanzaku skins)
         val read = { path: String ->
             val name = path.removePrefix("licenses/")
             when (name) {

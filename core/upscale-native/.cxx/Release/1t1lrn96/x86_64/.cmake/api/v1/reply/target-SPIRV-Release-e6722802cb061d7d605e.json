@@ -1,0 +1,228 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "ncnn/glslang/SPIRV/libSPIRV.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"install",
+			"add_compile_options",
+			"add_compile_definitions",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"third_party/ncnn/glslang/SPIRV/CMakeLists.txt",
+			"third_party/ncnn/glslang/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 76,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 105,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 166,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 169,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 172,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 327,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 130,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 141,
+				"parent" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 83,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -O3 -DNDEBUG  -fPIC"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wall"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wuninitialized"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wunused"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wunused-local-typedefs"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wno-implicit-fallthrough"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wunused-parameter"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wunused-value"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wunused-variable"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-fno-rtti"
+				},
+				{
+					"backtrace" : 6,
+					"fragment" : "-fno-exceptions"
+				},
+				{
+					"fragment" : "-std=c++14"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 7,
+					"define" : "ENABLE_OPT=0"
+				},
+				{
+					"backtrace" : 8,
+					"define" : "ENABLE_SPIRV"
+				},
+				{
+					"backtrace" : 9,
+					"define" : "GLSLANG_OSINCLUDE_UNIX"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 10,
+					"path" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/SPIRV/.."
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "14"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			],
+			"sysroot" : 
+			{
+				"path" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+			}
+		}
+	],
+	"folder" : 
+	{
+		"name" : "glslang"
+	},
+	"id" : "SPIRV::@2f46f53af8822572bcb1",
+	"install" : 
+	{
+		"destinations" : 
+		[
+			{
+				"backtrace" : 2,
+				"path" : "lib"
+			}
+		],
+		"prefix" : 
+		{
+			"path" : "/usr/local"
+		}
+	},
+	"name" : "SPIRV",
+	"nameOnDisk" : "libSPIRV.a",
+	"paths" : 
+	{
+		"build" : "ncnn/glslang/SPIRV",
+		"source" : "third_party/ncnn/glslang/SPIRV"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "third_party/ncnn/glslang/glslang/stub.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

@@ -1,0 +1,4039 @@
+{
+	"entries" : 
+	[
+		{
+			"name" : "ALLOW_EXTERNAL_GTEST",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Allows to build against installed googletest. This is unsupported if the commit isn't the one in known_good.json"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ALLOW_EXTERNAL_SPIRV_TOOLS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Allows to build against installed SPIRV-Tools-opt. This is unsupported if the commit isn't the one in known_good.json"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ANDROID_ABI",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "arm64-v8a"
+		},
+		{
+			"name" : "ANDROID_NDK",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358"
+		},
+		{
+			"name" : "ANDROID_PLATFORM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "android-26"
+		},
+		{
+			"name" : "ANDROID_STL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "c++_static"
+		},
+		{
+			"name" : "BUILD_EXTERNAL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Build external dependencies in /External"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BUILD_WERROR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enable warnings as errors (default is OFF)"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "CMAKE_ADDR2LINE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-addr2line"
+		},
+		{
+			"name" : "CMAKE_ANDROID_ARCH_ABI",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "arm64-v8a"
+		},
+		{
+			"name" : "CMAKE_ANDROID_NDK",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358"
+		},
+		{
+			"name" : "CMAKE_AR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Archiver"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+		},
+		{
+			"name" : "CMAKE_ASM_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_ASM_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during debug builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_ASM_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during release builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_BUILD_TYPE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel ..."
+				}
+			],
+			"type" : "STRING",
+			"value" : "Release"
+		},
+		{
+			"name" : "CMAKE_CACHEFILE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "This is the directory where this CMakeCache.txt was created"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/arm64-v8a"
+		},
+		{
+			"name" : "CMAKE_CACHE_MAJOR_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Major version of cmake used to create the current loaded cache"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "3"
+		},
+		{
+			"name" : "CMAKE_CACHE_MINOR_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Minor version of cmake used to create the current loaded cache"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "22"
+		},
+		{
+			"name" : "CMAKE_CACHE_PATCH_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Patch version of cmake used to create the current loaded cache"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "CMAKE_COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to CMake executable."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/cmake"
+		},
+		{
+			"name" : "CMAKE_CPACK_COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to cpack program executable."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/cpack"
+		},
+		{
+			"name" : "CMAKE_CTEST_COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to ctest program executable."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ctest"
+		},
+		{
+			"name" : "CMAKE_CXX_COMPILER_AR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "LLVM archiver"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+		},
+		{
+			"name" : "CMAKE_CXX_COMPILER_RANLIB",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Generate index for LLVM archive"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib"
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during debug builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the CXX compiler during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-Os -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during release builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the CXX compiler during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-O2 -g -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_CXX_STANDARD_LIBRARIES",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Libraries linked by default with all C++ applications."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-latomic -lm"
+		},
+		{
+			"name" : "CMAKE_C_COMPILER_AR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "LLVM archiver"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+		},
+		{
+			"name" : "CMAKE_C_COMPILER_RANLIB",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Generate index for LLVM archive"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib"
+		},
+		{
+			"name" : "CMAKE_C_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_C_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during debug builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_C_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the C compiler during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-Os -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_C_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the compiler during release builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_C_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the C compiler during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-O2 -g -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_C_STANDARD_LIBRARIES",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Libraries linked by default with all C applications."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-latomic -lm"
+		},
+		{
+			"name" : "CMAKE_DLLTOOL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-dlltool"
+		},
+		{
+			"name" : "CMAKE_EXECUTABLE_FORMAT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Executable file format"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "ELF"
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXPORT_COMPILE_COMMANDS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "ON"
+		},
+		{
+			"name" : "CMAKE_EXTRA_GENERATOR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of external makefile project generator."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_GENERATOR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of generator."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "Ninja"
+		},
+		{
+			"name" : "CMAKE_GENERATOR_INSTANCE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Generator instance identifier."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_GENERATOR_PLATFORM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of generator platform."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_GENERATOR_TOOLSET",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of generator toolset."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_HAVE_LIBC_PTHREAD",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test CMAKE_HAVE_LIBC_PTHREAD"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_HAVE_PTHREAD_H",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Have include pthread.h"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "CMAKE_HOME_DIRECTORY",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Source directory with the top level CMakeLists.txt file for this project"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale"
+		},
+		{
+			"name" : "CMAKE_INSTALL_BINDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "User executables (bin)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "bin"
+		},
+		{
+			"name" : "CMAKE_INSTALL_DATADIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Read-only architecture-independent data (DATAROOTDIR)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_DATAROOTDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Read-only architecture-independent data root (share)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "share"
+		},
+		{
+			"name" : "CMAKE_INSTALL_DOCDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Documentation root (DATAROOTDIR/doc/PROJECT_NAME)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_INCLUDEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "C header files (include)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "include"
+		},
+		{
+			"name" : "CMAKE_INSTALL_INFODIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Info documentation (DATAROOTDIR/info)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_LIBDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Object code libraries (lib)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "lib"
+		},
+		{
+			"name" : "CMAKE_INSTALL_LIBEXECDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Program executables (libexec)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "libexec"
+		},
+		{
+			"name" : "CMAKE_INSTALL_LOCALEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Locale-dependent data (DATAROOTDIR/locale)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_LOCALSTATEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Modifiable single-machine data (var)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "var"
+		},
+		{
+			"name" : "CMAKE_INSTALL_MANDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Man documentation (DATAROOTDIR/man)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_OLDINCLUDEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "C header files for non-gcc (/usr/include)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "/usr/include"
+		},
+		{
+			"name" : "CMAKE_INSTALL_PREFIX",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Install path prefix, prepended onto install directories."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/usr/local"
+		},
+		{
+			"name" : "CMAKE_INSTALL_RUNSTATEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Run-time variable data (LOCALSTATEDIR/run)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_SBINDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "System admin executables (sbin)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "sbin"
+		},
+		{
+			"name" : "CMAKE_INSTALL_SHAREDSTATEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Modifiable architecture-independent data (com)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "com"
+		},
+		{
+			"name" : "CMAKE_INSTALL_SO_NO_EXE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Install .so files without execute permission."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "0"
+		},
+		{
+			"name" : "CMAKE_INSTALL_SYSCONFDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Read-only single-machine data (etc)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "etc"
+		},
+		{
+			"name" : "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/build/intermediates/cxx/Release/1t1lrn96/obj/arm64-v8a"
+		},
+		{
+			"name" : "CMAKE_LINKER",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld"
+		},
+		{
+			"name" : "CMAKE_MAKE_PROGRAM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja"
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_NM",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm"
+		},
+		{
+			"name" : "CMAKE_NUMBER_OF_MAKEFILES",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "number of local generators"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "7"
+		},
+		{
+			"name" : "CMAKE_OBJCOPY",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-objcopy"
+		},
+		{
+			"name" : "CMAKE_OBJDUMP",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-objdump"
+		},
+		{
+			"name" : "CMAKE_PLATFORM_INFO_INITIALIZED",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Platform information initialized"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "CMAKE_PROJECT_DESCRIPTION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_PROJECT_HOMEPAGE_URL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_PROJECT_NAME",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "nijiyome_upscale"
+		},
+		{
+			"name" : "CMAKE_RANLIB",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Ranlib"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib"
+		},
+		{
+			"name" : "CMAKE_READELF",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+		},
+		{
+			"name" : "CMAKE_ROOT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to CMake installation."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22"
+		},
+		{
+			"name" : "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/build/intermediates/cxx/Release/1t1lrn96/obj/arm64-v8a"
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of dll's."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SKIP_INSTALL_RPATH",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "If set, runtime paths are not added when installing shared libraries, but are added when building."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "NO"
+		},
+		{
+			"name" : "CMAKE_SKIP_RPATH",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "If set, runtime paths are not added when using shared libraries."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "NO"
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STRIP",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Strip"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+		},
+		{
+			"name" : "CMAKE_SYSTEM_NAME",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "Android"
+		},
+		{
+			"name" : "CMAKE_SYSTEM_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "26"
+		},
+		{
+			"name" : "CMAKE_TOOLCHAIN_FILE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a file."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/home/octavio/Android/Sdk/ndk/28.2.13676358/build/cmake/android.toolchain.cmake"
+		},
+		{
+			"name" : "CMAKE_UNAME",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "uname command"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/usr/bin/uname"
+		},
+		{
+			"name" : "CMAKE_VERBOSE_MAKEFILE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "If this value is on, makefiles will be generated without the .SILENT directive, and all commands will be echoed to the console during the make.  This is useful for debugging only. With Visual Studio IDE projects all commands are done without /nologo."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "FALSE"
+		},
+		{
+			"name" : "COMPILER_HAS_DEPRECATED",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Compiler support for a deprecated attribute"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "COMPILER_HAS_DEPRECATED_ATTR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test COMPILER_HAS_DEPRECATED_ATTR"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "COMPILER_HAS_HIDDEN_INLINE_VISIBILITY",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test COMPILER_HAS_HIDDEN_INLINE_VISIBILITY"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "COMPILER_HAS_HIDDEN_VISIBILITY",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test COMPILER_HAS_HIDDEN_VISIBILITY"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "ENABLE_EXCEPTIONS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enables Exceptions"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ENABLE_GLSLANG_BINARIES",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Builds glslang"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ENABLE_GLSLANG_JS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "If using Emscripten, build glslang.js. Otherwise, builds a sample executable for binary-size testing."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ENABLE_HLSL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enables HLSL input support"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ENABLE_OPT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enables spirv-opt capability if present"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ENABLE_PCH",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enables Precompiled header"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ENABLE_RTTI",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enables RTTI"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ENABLE_SPIRV",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enables SPIRV output support"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "ENABLE_SPVREMAPPER",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Threads",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Details about finding Threads"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "[TRUE][v()]"
+		},
+		{
+			"name" : "GLSLANG_ENABLE_INSTALL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enable glslang installation"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "GLSLANG_TESTS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enable glslang testing"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "LIBRARY_OUTPUT_PATH_ROOT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "root for library output, set this to change where android libs are compiled to"
+				}
+			],
+			"type" : "PATH",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/arm64-v8a"
+		},
+		{
+			"name" : "NCNN_ARM82",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.2 fp16"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM82DOT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.2 dotprod"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM82FP16FML",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.2 fp16fml"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM84BF16",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.4 bf16"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM84I8MM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.4 i8mm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM86SVE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.6 sve"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM86SVE2",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.6 sve2"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM86SVEBF16",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.6 sve bf16"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM86SVEF32MM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.6 sve f32mm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ARM86SVEI8MM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with armv8.6 sve i8mm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ASAN",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build for address sanitizer"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_BATCH",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "batch inference support"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_BENCHMARK",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "print benchmark information for every layer"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_BF16",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "bf16 inference"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_BUILD_BENCHMARK",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build benchmark"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_BUILD_EXAMPLES",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build examples"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_BUILD_TESTS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build tests"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_BUILD_TOOLS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build tools"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_CMAKE_VERBOSE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "print verbose cmake messages"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM82_DOTPROD",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM82_DOTPROD"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM82_FP16",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM82_FP16"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM82_FP16FML",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM82_FP16FML"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM84_BF16",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM84_BF16"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM84_I8MM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM84_I8MM"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM86_SVE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM86_SVE"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM86_SVE2",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM86_SVE2"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM86_SVEBF16",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM86_SVEBF16"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM86_SVEF32MM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM86_SVEF32MM"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM86_SVEI8MM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM86_SVEI8MM"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_ARM_VFPV4",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_ARM_VFPV4"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COMPILER_SUPPORT_GNU_INLINE_ASM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test NCNN_COMPILER_SUPPORT_GNU_INLINE_ASM"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "NCNN_COVERAGE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build for coverage"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_C_API",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with C api"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_DISABLE_EXCEPTION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "disable exception"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_DISABLE_PIC",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "disable position-independent code"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_DISABLE_RTTI",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "disable rtti"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_ENABLE_LTO",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "enable link-time optimization"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_FORCE_INLINE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "force inline some function"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_GNU_INLINE_ASM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize platform with gnu style inline assembly"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_INSTALL_SDK",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "install ncnn library and headers"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_INT8",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "int8 inference"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_OPENMP",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "openmp support"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_PIXEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "convert and resize from/to image pixel"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_PIXEL_AFFINE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "warp affine image pixel"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_PIXEL_DRAWING",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "draw basic figure and text"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_PIXEL_ROTATE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "rotate image pixel orientation"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_PLATFORM_API",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with platform api candy"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_PYTHON",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build python api"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_RUNTIME_CPU",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "runtime dispatch cpu routines"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_SHARED_LIB",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "shared library support"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_SIMPLEMATH",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "minimal cmath"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_SIMPLEOCV",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "minimal opencv structure emulation"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_SIMPLEOMP",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "minimal openmp runtime emulation"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_SIMPLESTL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "minimal cpp stl structure emulation"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_SIMPLEVK",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "minimal in-house vulkan loader"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_STDIO",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "load model from external file"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_STRING",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "plain and verbose string"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_SYSTEM_GLSLANG",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "use system glslang library"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "NCNN_THREADS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with threads"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_VALIDATION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "validate model and layer parameters"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_VFPV4",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "optimize aarch64 platform with vfpv4"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_VULKAN",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "vulkan compute support"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_WEIGHT_QUANT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "weight quantized inference"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "NCNN_WINXP",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with windows xp compatibility"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "THREADS_HAVE_PTHREAD_ARG",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Result of TRY_COMPILE"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "TRUE"
+		},
+		{
+			"name" : "WITH_LAYER_absval",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer absval"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_argmax",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer argmax"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_batchnorm",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer batchnorm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_bias",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer bias"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_binaryop",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer binaryop"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_bnll",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer bnll"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_cast",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer cast"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_celu",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer celu"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_clip",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer clip"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_concat",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer concat"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_convolution",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer convolution"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_convolution1d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer convolution1d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_convolution3d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer convolution3d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_convolutiondepthwise",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer convolutiondepthwise"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_convolutiondepthwise1d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer convolutiondepthwise1d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_convolutiondepthwise3d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer convolutiondepthwise3d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_copyto",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer copyto"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_crop",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer crop"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_cumulativesum",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer cumulativesum"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_deconvolution",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer deconvolution"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_deconvolution1d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer deconvolution1d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_deconvolution3d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer deconvolution3d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_deconvolutiondepthwise",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer deconvolutiondepthwise"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_deconvolutiondepthwise1d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer deconvolutiondepthwise1d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_deconvolutiondepthwise3d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer deconvolutiondepthwise3d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_deepcopy",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer deepcopy"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_deformableconv2d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer deformableconv2d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_dequantize",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer dequantize"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_detectionoutput",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer detectionoutput"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_diag",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer diag"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_dropout",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer dropout"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_einsum",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer einsum"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_eltwise",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer eltwise"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_elu",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer elu"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_embed",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer embed"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_erf",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer erf"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_exp",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer exp"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_expanddims",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer expanddims"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_flatten",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer flatten"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_flip",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer flip"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_fold",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer fold"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_gelu",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer gelu"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_gemm",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer gemm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_glu",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer glu"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_gridsample",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer gridsample"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_groupnorm",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer groupnorm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_gru",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer gru"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_hardsigmoid",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer hardsigmoid"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_hardswish",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer hardswish"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_innerproduct",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer innerproduct"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_input",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer input"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_instancenorm",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer instancenorm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_interp",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer interp"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_inversespectrogram",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer inversespectrogram"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_layernorm",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer layernorm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_log",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer log"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_lrn",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer lrn"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_lstm",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer lstm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_matmul",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer matmul"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_memorydata",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer memorydata"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_mish",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer mish"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_multiheadattention",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer multiheadattention"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_mvn",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer mvn"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_noop",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer noop"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_normalize",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer normalize"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_packing",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer packing"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_padding",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer padding"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_permute",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer permute"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_pixelshuffle",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer pixelshuffle"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_pooling",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer pooling"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_pooling1d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer pooling1d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_pooling3d",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer pooling3d"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_power",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer power"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_prelu",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer prelu"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_priorbox",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer priorbox"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_proposal",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer proposal"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_psroipooling",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer psroipooling"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_quantize",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer quantize"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_reduction",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer reduction"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_relu",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer relu"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_reorg",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer reorg"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_requantize",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer requantize"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_reshape",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer reshape"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_rmsnorm",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer rmsnorm"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_rnn",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer rnn"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_roialign",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer roialign"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_roipooling",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer roipooling"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_rotaryembed",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer rotaryembed"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_scale",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer scale"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_sdpa",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer sdpa"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_selu",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer selu"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_shrink",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer shrink"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_shufflechannel",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer shufflechannel"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_sigmoid",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer sigmoid"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_slice",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer slice"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_softmax",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer softmax"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_softplus",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer softplus"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_spectrogram",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer spectrogram"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_split",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer split"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "WITH_LAYER_spp",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer spp"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_squeeze",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer squeeze"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_statisticspooling",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer statisticspooling"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_swish",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer swish"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_tanh",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer tanh"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_threshold",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer threshold"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_tile",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer tile"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_unaryop",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer unaryop"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_unfold",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer unfold"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_yolodetectionoutput",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer yolodetectionoutput"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "WITH_LAYER_yolov3detectionoutput",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "build with layer yolov3detectionoutput"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "CMAKE_INSTALL_PREFIX during last run"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/usr/local"
+		},
+		{
+			"name" : "glslang_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/arm64-v8a/ncnn/glslang"
+		},
+		{
+			"name" : "glslang_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "glslang_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang"
+		},
+		{
+			"name" : "ncnn_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/arm64-v8a/ncnn"
+		},
+		{
+			"name" : "ncnn_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "ncnn_LIB_DEPENDS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Dependencies for the target"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "general;dl;general;glslang;general;SPIRV;"
+		},
+		{
+			"name" : "ncnn_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn"
+		},
+		{
+			"name" : "nijiyome_upscale_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/arm64-v8a"
+		},
+		{
+			"name" : "nijiyome_upscale_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "ON"
+		},
+		{
+			"name" : "nijiyome_upscale_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale"
+		}
+	],
+	"kind" : "cache",
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}

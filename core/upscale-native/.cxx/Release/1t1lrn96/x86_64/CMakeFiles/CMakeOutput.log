@@ -1,0 +1,464 @@
+The target system is: Android - 1 - x86_64
+The host system is: Linux - 7.3.6-2-cachyos - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang 
+Build flags: -g;-DANDROID;-fdata-sections;-ffunction-sections;-funwind-tables;-fstack-protector-strong;-no-canonical-prefixes;-D_FORTIFY_SOURCE=2;-Wformat;-Werror=format-security;
+Id flags: -c;--target=x86_64-none-linux-android26 
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.o"
+
+The C compiler identification is Clang, found in "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/3.22.1-g37088a8/CompilerIdC/CMakeCCompilerId.o"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ 
+Build flags: -g;-DANDROID;-fdata-sections;-ffunction-sections;-funwind-tables;-fstack-protector-strong;-no-canonical-prefixes;-D_FORTIFY_SOURCE=2;-Wformat;-Werror=format-security;;
+Id flags: -c;--target=x86_64-none-linux-android26 
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.o"
+
+The CXX compiler identification is Clang, found in "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/3.22.1-g37088a8/CompilerIdCXX/CMakeCXXCompilerId.o"
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_8897b && [1/2] Building C object CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o
+Android (13624864, +pgo, +bolt, +lto, +mlgo, based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)
+Target: x86_64-none-linux-android26
+Thread model: posix
+InstalledDir: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin
+ (in-process)
+ "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang" -cc1 -triple x86_64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -target-feature +sse4.2 -target-feature +popcnt -target-feature +cx16 -tune-cpu generic -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp -resource-dir /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19 -dependency-file CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -ferror-limit 19 -femulated-tls -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o -x c /media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCCompilerABI.c
+clang -cc1 version 19.0.1 based upon LLVM 19.0.1 default target x86_64-unknown-linux-gnu
+ignoring nonexistent directory "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include"
+ignoring nonexistent directory "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include
+ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android
+ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
+End of search list.
+[2/2] Linking C executable cmTC_8897b
+Android (13624864, +pgo, +bolt, +lto, +mlgo, based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)
+Target: x86_64-none-linux-android26
+Thread model: posix
+InstalledDir: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin
+ "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -z now -z relro -z max-page-size=16384 --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /system/bin/linker64 -o cmTC_8897b /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64 -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26 -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a -l:libunwind.a -ldl -lc /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a -l:libunwind.a -ldl /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o
+
+
+
+Parsed C implicit include dir info from above output: rv=done
+  found start of include info
+  found start of implicit include info
+    add: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include]
+    add: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android]
+    add: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
+  end of search list found
+  collapse include dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include]
+  collapse include dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android]
+  collapse include dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
+  implicit include dirs: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld\.lld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_8897b && [1/2] Building C object CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o]
+  ignore line: [Android (13624864  +pgo  +bolt  +lto  +mlgo  based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)]
+  ignore line: [Target: x86_64-none-linux-android26]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin]
+  ignore line: [ (in-process)]
+  ignore line: [ "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang" -cc1 -triple x86_64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -target-feature +sse4.2 -target-feature +popcnt -target-feature +cx16 -tune-cpu generic -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp -resource-dir /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19 -dependency-file CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -ferror-limit 19 -femulated-tls -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o -x c /media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCCompilerABI.c]
+  ignore line: [clang -cc1 version 19.0.1 based upon LLVM 19.0.1 default target x86_64-unknown-linux-gnu]
+  ignore line: [ignoring nonexistent directory "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include"]
+  ignore line: [ignoring nonexistent directory "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include"]
+  ignore line: [#include "..." search starts here:]
+  ignore line: [#include <...> search starts here:]
+  ignore line: [ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include]
+  ignore line: [ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android]
+  ignore line: [ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
+  ignore line: [End of search list.]
+  ignore line: [[2/2] Linking C executable cmTC_8897b]
+  ignore line: [Android (13624864  +pgo  +bolt  +lto  +mlgo  based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)]
+  ignore line: [Target: x86_64-none-linux-android26]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin]
+  link line: [ "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -z now -z relro -z max-page-size=16384 --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /system/bin/linker64 -o cmTC_8897b /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64 -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26 -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a -l:libunwind.a -ldl -lc /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a -l:libunwind.a -ldl /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o]
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld] ==> ignore
+    arg [--sysroot=/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot] ==> ignore
+    arg [-znow] ==> ignore
+    arg [-zrelro] ==> ignore
+    arg [-zmax-page-size=16384] ==> ignore
+    arg [--hash-style=gnu] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-m] ==> ignore
+    arg [elf_x86_64] ==> ignore
+    arg [-pie] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/system/bin/linker64] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_8897b] ==> ignore
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o] ==> obj [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o]
+    arg [-L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64] ==> dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64]
+    arg [-L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26] ==> dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26]
+    arg [-L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android] ==> dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android]
+    arg [-L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib] ==> dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib]
+    arg [--build-id=sha1] ==> ignore
+    arg [--no-rosegment] ==> ignore
+    arg [--no-undefined-version] ==> ignore
+    arg [--fatal-warnings] ==> ignore
+    arg [--no-undefined] ==> ignore
+    arg [CMakeFiles/cmTC_8897b.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a] ==> lib [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a]
+    arg [-l:libunwind.a] ==> lib [-l:libunwind.a]
+    arg [-ldl] ==> lib [dl]
+    arg [-lc] ==> lib [c]
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a] ==> lib [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a]
+    arg [-l:libunwind.a] ==> lib [-l:libunwind.a]
+    arg [-ldl] ==> lib [dl]
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o] ==> obj [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o]
+  remove lib [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a]
+  remove lib [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a]
+  collapse library dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64]
+  collapse library dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26]
+  collapse library dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android]
+  collapse library dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib]
+  implicit libs: [-l:libunwind.a;dl;c;-l:libunwind.a;dl]
+  implicit objs: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o]
+  implicit dirs: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib]
+  implicit fwks: []
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_4a7c5 && [1/2] Building CXX object CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o
+Android (13624864, +pgo, +bolt, +lto, +mlgo, based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)
+Target: x86_64-none-linux-android26
+Thread model: posix
+InstalledDir: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin
+ (in-process)
+ "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" -cc1 -triple x86_64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -target-feature +sse4.2 -target-feature +popcnt -target-feature +cx16 -tune-cpu generic -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp -resource-dir /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19 -dependency-file CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1 -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -fdeprecated-macro -ferror-limit 19 -femulated-tls -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o -x c++ /media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXCompilerABI.cpp
+clang -cc1 version 19.0.1 based upon LLVM 19.0.1 default target x86_64-unknown-linux-gnu
+ignoring nonexistent directory "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include"
+ignoring nonexistent directory "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1
+ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include
+ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android
+ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
+End of search list.
+[2/2] Linking CXX executable cmTC_4a7c5
+Android (13624864, +pgo, +bolt, +lto, +mlgo, based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)
+Target: x86_64-none-linux-android26
+Thread model: posix
+InstalledDir: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin
+ "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -z now -z relro -z max-page-size=16384 --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /system/bin/linker64 -o cmTC_4a7c5 /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64 -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26 -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o -Bstatic -lc++ -Bdynamic -lm /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a -l:libunwind.a -ldl -lc /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a -l:libunwind.a -ldl /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o
+
+
+
+Parsed CXX implicit include dir info from above output: rv=done
+  found start of include info
+  found start of implicit include info
+    add: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1]
+    add: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include]
+    add: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android]
+    add: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
+  end of search list found
+  collapse include dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1]
+  collapse include dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include]
+  collapse include dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android]
+  collapse include dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
+  implicit include dirs: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
+
+
+Parsed CXX implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld\.lld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_4a7c5 && [1/2] Building CXX object CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [Android (13624864  +pgo  +bolt  +lto  +mlgo  based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)]
+  ignore line: [Target: x86_64-none-linux-android26]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin]
+  ignore line: [ (in-process)]
+  ignore line: [ "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" -cc1 -triple x86_64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -target-feature +sse4.2 -target-feature +popcnt -target-feature +cx16 -tune-cpu generic -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp -resource-dir /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19 -dependency-file CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1 -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include -internal-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -fdeprecated-macro -ferror-limit 19 -femulated-tls -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o -x c++ /media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [clang -cc1 version 19.0.1 based upon LLVM 19.0.1 default target x86_64-unknown-linux-gnu]
+  ignore line: [ignoring nonexistent directory "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include"]
+  ignore line: [ignoring nonexistent directory "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include"]
+  ignore line: [#include "..." search starts here:]
+  ignore line: [#include <...> search starts here:]
+  ignore line: [ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1]
+  ignore line: [ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/include]
+  ignore line: [ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android]
+  ignore line: [ /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
+  ignore line: [End of search list.]
+  ignore line: [[2/2] Linking CXX executable cmTC_4a7c5]
+  ignore line: [Android (13624864  +pgo  +bolt  +lto  +mlgo  based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)]
+  ignore line: [Target: x86_64-none-linux-android26]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin]
+  link line: [ "/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -z now -z relro -z max-page-size=16384 --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /system/bin/linker64 -o cmTC_4a7c5 /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64 -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26 -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android -L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o -Bstatic -lc++ -Bdynamic -lm /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a -l:libunwind.a -ldl -lc /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a -l:libunwind.a -ldl /home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o]
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld] ==> ignore
+    arg [--sysroot=/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot] ==> ignore
+    arg [-znow] ==> ignore
+    arg [-zrelro] ==> ignore
+    arg [-zmax-page-size=16384] ==> ignore
+    arg [--hash-style=gnu] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-m] ==> ignore
+    arg [elf_x86_64] ==> ignore
+    arg [-pie] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/system/bin/linker64] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_4a7c5] ==> ignore
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o] ==> obj [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o]
+    arg [-L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64] ==> dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64]
+    arg [-L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26] ==> dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26]
+    arg [-L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android] ==> dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android]
+    arg [-L/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib] ==> dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib]
+    arg [--build-id=sha1] ==> ignore
+    arg [--no-rosegment] ==> ignore
+    arg [--no-undefined-version] ==> ignore
+    arg [--fatal-warnings] ==> ignore
+    arg [--no-undefined] ==> ignore
+    arg [CMakeFiles/cmTC_4a7c5.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [-Bstatic] ==> search static
+    arg [-lc++] ==> lib [c++]
+    arg [-Bdynamic] ==> search dynamic
+    arg [-lm] ==> lib [m]
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a] ==> lib [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a]
+    arg [-l:libunwind.a] ==> lib [-l:libunwind.a]
+    arg [-ldl] ==> lib [dl]
+    arg [-lc] ==> lib [c]
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a] ==> lib [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a]
+    arg [-l:libunwind.a] ==> lib [-l:libunwind.a]
+    arg [-ldl] ==> lib [dl]
+    arg [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o] ==> obj [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o]
+  remove lib [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a]
+  remove lib [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-x86_64-android.a]
+  collapse library dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64]
+  collapse library dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26]
+  collapse library dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android]
+  collapse library dir [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib] ==> [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib]
+  implicit libs: [c++;m;-l:libunwind.a;dl;c;-l:libunwind.a;dl]
+  implicit objs: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtbegin_dynamic.o;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26/crtend_android.o]
+  implicit dirs: [/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/x86_64;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/26;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android;/home/octavio/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib]
+  implicit fwks: []
+
+
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_GNU_INLINE_ASM succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_b15c0 && [1/2] Building CXX object CMakeFiles/cmTC_b15c0.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_b15c0.a
+
+
+Source file was:
+int test(int a) { asm volatile("" : "=r"(a) : "0"(a) : "memory"); return a; }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_RECIP_NONE succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_14ec5 && [1/2] Building CXX object CMakeFiles/cmTC_14ec5.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_14ec5.a
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_ae016 && [1/2] Building CXX object CMakeFiles/cmTC_ae016.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_ae016.a
+
+
+Source file was:
+#include <immintrin.h>
+__m256 test(__m256 a, __m256 b) { return _mm256_mul_ps(a, b); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_FMA succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_8e14b && [1/2] Building CXX object CMakeFiles/cmTC_8e14b.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_8e14b.a
+
+
+Source file was:
+#include <immintrin.h>
+__m256 test(__m256 s, __m256 a, __m256 b) { return _mm256_fmadd_ps(a, b, s); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_FMA4 succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_77fa9 && [1/2] Building CXX object CMakeFiles/cmTC_77fa9.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_77fa9.a
+
+
+Source file was:
+#include <x86intrin.h>
+__m256 test(__m256 s, __m256 a, __m256 b) { return _mm256_macc_ps(a, b, s); }
+__m128i test2(__m128i s, __m128i a, __m128i b) { return _mm_maddd_epi16(a, b, s); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_XOP succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_86258 && [1/2] Building CXX object CMakeFiles/cmTC_86258.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_86258.a
+
+
+Source file was:
+#include <x86intrin.h>
+__m128i test(__m128i s, __m128i a, __m128i b) { return _mm_maddd_epi16(a, b, s); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_F16C succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_1d7f0 && [1/2] Building CXX object CMakeFiles/cmTC_1d7f0.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_1d7f0.a
+
+
+Source file was:
+#include <immintrin.h>
+__m256 test(__m128i a) { return _mm256_cvtph_ps(a); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX2 succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_576f8 && [1/2] Building CXX object CMakeFiles/cmTC_576f8.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_576f8.a
+
+
+Source file was:
+#include <immintrin.h>
+__m256i test(__m256i a, __m256i b) { return _mm256_madd_epi16(a, b); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX512 succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_27487 && [1/2] Building CXX object CMakeFiles/cmTC_27487.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_27487.a
+
+
+Source file was:
+#include <immintrin.h>
+__m512i test(__m512i a, __m512i b) { return _mm512_madd_epi16(a, b); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_c96ce && [1/2] Building CXX object CMakeFiles/cmTC_c96ce.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_c96ce.a
+
+
+Source file was:
+#include <immintrin.h>
+__m256i test(__m256i s, __m256i a, __m256i b) { return _mm256_dpwssd_avx_epi32(s, a, b); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT8 succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_bc726 && [1/2] Building CXX object CMakeFiles/cmTC_bc726.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_bc726.a
+
+
+Source file was:
+#include <immintrin.h>
+__m256i test(__m256i s, __m256i a, __m256i b) { return _mm256_dpbssd_epi32(s, a, b); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX_VNNI_INT16 succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_db77d && [1/2] Building CXX object CMakeFiles/cmTC_db77d.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_db77d.a
+
+
+Source file was:
+#include <immintrin.h>
+__m256i test(__m256i s, __m256i a, __m256i b) { return _mm256_dpwsud_epi32(s, a, b); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX_NE_CONVERT succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_a738a && [1/2] Building CXX object CMakeFiles/cmTC_a738a.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_a738a.a
+
+
+Source file was:
+#include <immintrin.h>
+__m128bh test(__m256 a) { return _mm256_cvtneps_avx_pbh(a); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_ace4e && [1/2] Building CXX object CMakeFiles/cmTC_ace4e.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_ace4e.a
+
+
+Source file was:
+#include <immintrin.h>
+__m512i test(__m512i s, __m512i a, __m512i b) { return _mm512_dpwssd_epi32(s, a, b); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX512_BF16 succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_5f5ef && [1/2] Building CXX object CMakeFiles/cmTC_5f5ef.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_5f5ef.a
+
+
+Source file was:
+#include <immintrin.h>
+__m256bh test(__m256bh s, __m512bh a, __m512bh b) { return _mm512_cvtneps_pbh(_mm512_dpbf16_ps(_mm512_cvtpbh_ps(s), a, b)); }
+__m512i test2(__m512 a) { __m256i _a = (__m256i)_mm512_cvtneps_pbh(a); return _mm512_inserti32x8(_mm512_castsi256_si512(_a), _a, 1); }
+Performing C++ SOURCE FILE Test NCNN_COMPILER_SUPPORT_X86_AVX512_FP16 succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_d16f1 && [1/2] Building CXX object CMakeFiles/cmTC_d16f1.dir/src.cxx.o
+[2/2] Linking CXX static library libcmTC_d16f1.a
+
+
+Source file was:
+#include <immintrin.h>
+__m512h test(__m512h s, __m512h a, __m512h b) { return _mm512_fmadd_ph(s, a, b); }
+__m512 test2(__m512 a) { return _mm512_cvtxph_ps(_mm512_cvtxps_ph(a)); }
+Determining if the include file pthread.h exists passed with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_9cdc4 && [1/2] Building C object CMakeFiles/cmTC_9cdc4.dir/CheckIncludeFile.c.o
+[2/2] Linking C executable cmTC_9cdc4
+
+
+
+Performing C++ SOURCE FILE Test COMPILER_HAS_HIDDEN_VISIBILITY succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_df323 && [1/2] Building CXX object CMakeFiles/cmTC_df323.dir/src.cxx.o
+[2/2] Linking CXX executable cmTC_df323
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_HAS_HIDDEN_INLINE_VISIBILITY succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_22d90 && [1/2] Building CXX object CMakeFiles/cmTC_22d90.dir/src.cxx.o
+[2/2] Linking CXX executable cmTC_22d90
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_HAS_DEPRECATED_ATTR succeeded with the following output:
+Change Dir: /home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja cmTC_9ca2c && [1/2] Building CXX object CMakeFiles/cmTC_9ca2c.dir/src.cxx.o
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp/src.cxx:2:25: warning: 'somefunc' is deprecated [-Wdeprecated-declarations]
+    2 |     int main() { return somefunc();}
+      |                         ^
+/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/CMakeFiles/CMakeTmp/src.cxx:1:16: note: 'somefunc' has been explicitly marked deprecated here
+    1 | __attribute__((__deprecated__)) int somefunc() { return 0; }
+      |                ^
+1 warning generated.
+[2/2] Linking CXX executable cmTC_9ca2c
+
+
+Source file was:
+__attribute__((__deprecated__)) int somefunc() { return 0; }
+    int main() { return somefunc();}

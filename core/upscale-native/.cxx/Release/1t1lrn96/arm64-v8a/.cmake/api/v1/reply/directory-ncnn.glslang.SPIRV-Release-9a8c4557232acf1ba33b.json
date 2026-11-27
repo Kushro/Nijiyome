@@ -1,0 +1,65 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"third_party/ncnn/glslang/SPIRV/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 105,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 107,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"ncnn/glslang/SPIRV/libSPIRV.a"
+			],
+			"targetId" : "SPIRV::@2f46f53af8822572bcb1",
+			"targetIndex" : 3,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "include/glslang/SPIRV",
+			"paths" : 
+			[
+				"third_party/ncnn/glslang/SPIRV/GlslangToSpv.h",
+				"third_party/ncnn/glslang/SPIRV/disassemble.h",
+				"third_party/ncnn/glslang/SPIRV/Logger.h",
+				"third_party/ncnn/glslang/SPIRV/spirv.hpp11",
+				"third_party/ncnn/glslang/SPIRV/SpvTools.h"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "ncnn/glslang/SPIRV",
+		"source" : "third_party/ncnn/glslang/SPIRV"
+	}
+}

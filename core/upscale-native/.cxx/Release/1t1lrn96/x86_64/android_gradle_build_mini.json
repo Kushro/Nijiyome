@@ -1,0 +1,83 @@
+{
+  "buildFiles": [
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/CMakeLists.txt",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/CMakeLists.txt",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/cmake/ncnn_add_layer.cmake",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/cmake/ncnn_add_shader.cmake",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/CMakeLists.txt",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/SPIRV/CMakeLists.txt",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/glslang/CMakeLists.txt",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/glslang/OSDependent/Unix/CMakeLists.txt",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/glslang/parse_version.cmake",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/native/upscale/third_party/ncnn/src/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/media/octavio/Warehouse/Linux-SDKs/android-sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "MachineIndependent::@2aa08aa9697e599c9138": {
+      "artifactName": "MachineIndependent",
+      "abi": "x86_64",
+      "output": "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/ncnn/glslang/glslang/libMachineIndependent.a",
+      "runtimeFiles": []
+    },
+    "OSDependent::@d2ae1901045c2048cf23": {
+      "artifactName": "OSDependent",
+      "abi": "x86_64",
+      "output": "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/ncnn/glslang/glslang/OSDependent/Unix/libOSDependent.a",
+      "runtimeFiles": []
+    },
+    "SPIRV::@2f46f53af8822572bcb1": {
+      "artifactName": "SPIRV",
+      "abi": "x86_64",
+      "output": "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/ncnn/glslang/SPIRV/libSPIRV.a",
+      "runtimeFiles": []
+    },
+    "glslang-default-resource-limits::@2aa08aa9697e599c9138": {
+      "artifactName": "glslang-default-resource-limits",
+      "abi": "x86_64",
+      "output": "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/ncnn/glslang/glslang/libglslang-default-resource-limits.a",
+      "runtimeFiles": []
+    },
+    "ncnn-generate-spirv::@156d1a2703f133959025": {
+      "artifactName": "ncnn-generate-spirv",
+      "abi": "x86_64",
+      "runtimeFiles": []
+    },
+    "nijiyome_upscale::@6890427a1f51a3e7e1df": {
+      "artifactName": "nijiyome_upscale",
+      "abi": "x86_64",
+      "output": "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/build/intermediates/cxx/Release/1t1lrn96/obj/x86_64/libnijiyome_upscale.so",
+      "runtimeFiles": []
+    },
+    "glslang::@2aa08aa9697e599c9138": {
+      "artifactName": "glslang",
+      "abi": "x86_64",
+      "output": "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/ncnn/glslang/glslang/libglslang.a",
+      "runtimeFiles": []
+    },
+    "GenericCodeGen::@2aa08aa9697e599c9138": {
+      "artifactName": "GenericCodeGen",
+      "abi": "x86_64",
+      "output": "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/ncnn/glslang/glslang/libGenericCodeGen.a",
+      "runtimeFiles": []
+    },
+    "ncnn::@156d1a2703f133959025": {
+      "artifactName": "ncnn",
+      "abi": "x86_64",
+      "output": "/home/octavio/orca/workspaces/Nijiyome/v1.3.3-upscaling/core/upscale-native/.cxx/Release/1t1lrn96/x86_64/ncnn/src/libncnn.a",
+      "runtimeFiles": []
+    }
+  }
+}

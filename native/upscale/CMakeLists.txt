@@ -80,7 +80,9 @@ endif()
 # itself so a submodule bump cannot silently turn new layers on.
 set(NJUP_NCNN_LAYERS_ON
     input split convolution prelu interp binaryop pixelshuffle
-    packing padding cast crop flatten reshape quantize dequantize requantize bias scale innerproduct)
+    packing padding cast crop flatten reshape quantize dequantize requantize bias scale innerproduct
+    # The x86 int8 convolution and inner product call Gemm's tile helpers: without it Android x86_64 fails to link.
+    gemm)
 file(STRINGS "${NCNN_DIR}/src/CMakeLists.txt" _njup_layer_lines REGEX "^ncnn_add_layer\\(")
 foreach(_line IN LISTS _njup_layer_lines)
     string(REGEX REPLACE "^ncnn_add_layer\\(([A-Za-z0-9_]+).*$" "\\1" _layer "${_line}")
