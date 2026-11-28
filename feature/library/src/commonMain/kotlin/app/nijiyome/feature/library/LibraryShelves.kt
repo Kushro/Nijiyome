@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -38,10 +36,14 @@ import app.nijiyome.feature.library.resources.Res
 import app.nijiyome.feature.library.resources.*
 import app.nijiyome.model.HistoryEntry
 import app.nijiyome.model.ListStatus
+import app.nijiyome.ui.look.motionExpand
+import app.nijiyome.ui.look.motionListPlacement
 import app.nijiyome.ui.cards.CardContext
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.look.slot
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.NjLazyRow
 
 /**
  * Structure "Estantes" (`LibraryStructure.SHELVES`): Continuar on top, the filter bar, then one collapsible shelf per status, each a
@@ -58,7 +60,7 @@ internal fun LibraryShelves(
     var collapsed by rememberSaveable { mutableStateOf(listOf(ListStatus.COMPLETED.id, ListStatus.DROPPED.id)) }
     val all = state.visible
     val groups = LibraryStatusOrder.map { s -> s to all.filter { it.status == s } }.filter { it.second.isNotEmpty() }
-    LazyColumn(
+    NjLazyColumn(
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -80,7 +82,8 @@ internal fun LibraryShelves(
         groups.forEach { (status, entries) ->
             item(key = "shelf-" + status.id, contentType = "shelf") {
                 val folded = status.id in collapsed
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // v1.3.5 expand: folding a shelf animates its height (the shelves under it follow).
+                Column(Modifier.motionExpand(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ShelfHead(
                         status = status,
                         label = labels.of(status),
@@ -89,10 +92,11 @@ internal fun LibraryShelves(
                         onToggle = { collapsed = if (folded) collapsed - status.id else collapsed + status.id },
                     )
                     if (!folded) {
-                        LazyRow(
+                        NjLazyRow(
                             Modifier.fillMaxWidth().decor(DecorRegion.ROW),
                             contentPadding = PaddingValues(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            pagingArrows = true,
                         ) {
                             itemsIndexed(entries, key = { _, e -> e.key }, contentType = { _, _ -> "entry" }) { i, e ->
                                 EntryCard(
@@ -100,6 +104,7 @@ internal fun LibraryShelves(
                                     labels = labels,
                                     actions = actions,
                                     context = CardContext.ROW,
+                                    modifier = motionListPlacement(),
                                     show = CardShow(progress = true, status = false, next = status == ListStatus.WATCHING, score = true),
                                     index = i,
                                 )

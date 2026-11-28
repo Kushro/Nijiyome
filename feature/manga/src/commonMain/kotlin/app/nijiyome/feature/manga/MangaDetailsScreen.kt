@@ -25,13 +25,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
@@ -119,6 +116,9 @@ import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.designsystem.theme.NijiyomeControls
 import app.nijiyome.upscale.UpscaleImageKind
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.NjLazyRow
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 /**
  * `Route.Details(MediaKind.MANGA, anilistId)` (MNG-06 to MNG-11) in the Sparkles design (artifact screen `manga`, the `ficha` view):
@@ -295,7 +295,7 @@ private fun MangaFicha(
         val sideBySide = !compact && maxWidth >= SIDE_BY_SIDE_MIN
         if (!sideBySide) {
             var tab by rememberSaveable { mutableIntStateOf(0) }
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
+            NjLazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
                 if (compact && chapters.selection.active) {
                     item(key = "selbar") { ChapterSelectionTopBar(chapters) }
                 }
@@ -314,12 +314,12 @@ private fun MangaFicha(
             }
         } else {
             Row(Modifier.fillMaxSize()) {
-                LazyColumn(Modifier.weight(1f).fillMaxHeight(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                NjLazyColumn(Modifier.weight(1f).fillMaxHeight(), contentPadding = PaddingValues(bottom = 120.dp)) {
                     item(key = "header") { header() }
                     chaptersSection(chapters, vm, onOpenReader, onOpenExtensions, onOpenSourceSheet)
                 }
                 Column(
-                    Modifier.width(380.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, end = 16.dp, bottom = 32.dp),
+                    Modifier.width(380.dp).fillMaxHeight().njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false).padding(top = 16.dp, end = 16.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     content = aside,
                 )
@@ -570,7 +570,7 @@ private fun Panel(title: String, content: @Composable ColumnScope.() -> Unit) {
 private fun AsideRow(title: String, content: LazyListScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(title)
-        LazyRow(Modifier.fillMaxWidth().decor(DecorRegion.ROW), horizontalArrangement = Arrangement.spacedBy(12.dp), content = content)
+        NjLazyRow(Modifier.fillMaxWidth().decor(DecorRegion.ROW), horizontalArrangement = Arrangement.spacedBy(12.dp), content = content, pagingArrows = true)
     }
 }
 

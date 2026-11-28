@@ -40,7 +40,10 @@ import app.nijiyome.model.TitleCardIds
 import app.nijiyome.ui.look.CardSizing
 import app.nijiyome.ui.look.LocalLook
 import app.nijiyome.ui.look.cardWidth
+import app.nijiyome.ui.look.hoverRise
+import app.nijiyome.ui.look.hoverShadow
 import app.nijiyome.ui.look.pressScale
+import app.nijiyome.ui.look.rememberHoverLift
 import app.nijiyome.ui.media.MaterialPosterCard
 import app.nijiyome.ui.media.MediaCover
 import app.nijiyome.ui.media.dotColor
@@ -115,9 +118,18 @@ private fun continueCardWidth(size: CardSize): Dp {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Modifier.materialCardClick(onClick: () -> Unit, onLongClick: (() -> Unit)?, shape: androidx.compose.ui.graphics.Shape): Modifier {
+private fun Modifier.materialCardClick(
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
+    shape: androidx.compose.ui.graphics.Shape,
+    /** The card is opaque under [shape] (filled or covered by its image): the hover lift may cast a shadow there. */
+    opaque: Boolean = true,
+): Modifier {
     val interaction = remember { MutableInteractionSource() }
+    val lift = rememberHoverLift(interaction)
     return this
+        .hoverRise(lift)
+        .then(if (opaque) Modifier.hoverShadow(lift, shape) else Modifier)
         .pressScale(interaction)
         .clip(shape)
         .combinedClickable(
@@ -178,7 +190,7 @@ private fun MaterialCompactRow(data: TitleCardData, show: CardShow, onClick: () 
     val sub = (if (show.next) data.nextLabel else null) ?: data.subtitle
     Row(
         modifier
-            .materialCardClick(onClick, onLongClick, MaterialTheme.shapes.small)
+            .materialCardClick(onClick, onLongClick, MaterialTheme.shapes.small, opaque = false)
             .heightIn(min = 56.dp)
             .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

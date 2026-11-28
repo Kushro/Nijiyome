@@ -22,13 +22,11 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.VideoLibrary
@@ -81,6 +79,8 @@ import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
 import app.nijiyome.ui.media.UpscalableImage
 import app.nijiyome.upscale.UpscaleImageKind
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 // Sparkles redesign, lane S4: the Ficha in the three structures of the artifact (screens-a.js `ficha`), chosen once here from
 // Ajustes › Apariencia (`structures.details`). Panel = header, tabs and a side column (Continuar, sources, Enviar); Ruta = the episodes
@@ -195,7 +195,7 @@ private fun FichaPanel(media: Media, state: DetailsUiState, actions: DetailsActi
     Box(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = bottomInset(nav)) {
+                NjLazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = bottomInset(nav)) {
                     item(key = "header", contentType = "header") {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             FichaHero(media, state, actions, compact = !wide)
@@ -219,7 +219,7 @@ private fun FichaPanel(media: Media, state: DetailsUiState, actions: DetailsActi
                     Modifier
                         .width(SIDE_COLUMN)
                         .fillMaxHeight()
-                        .verticalScroll(rememberScrollState())
+                        .njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false)
                         .statusBarsPadding()
                         .padding(16.dp)
                         .padding(bottom = nav),
@@ -241,7 +241,7 @@ private fun FichaRoute(media: Media, state: DetailsUiState, actions: DetailsActi
     val chrome = rememberListChrome(listState)
     val nav = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = bottomInset(nav)) {
+        NjLazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = bottomInset(nav)) {
             item(key = "header", contentType = "header") {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     if (wide) {
@@ -370,7 +370,7 @@ private fun CinemaWide(media: Media, state: DetailsUiState, actions: DetailsActi
                 Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .verticalScroll(rememberScrollState())
+                    .njVerticalScroll(rememberScrollState())
                     .statusBarsPadding()
                     .padding(horizontal = 32.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -399,7 +399,7 @@ private fun CinemaWide(media: Media, state: DetailsUiState, actions: DetailsActi
                     Column(Modifier.statusBarsPadding()) {
                         DetailsTabs(ui.tab, onTab = { ui.tab = it }, modifier = Modifier, containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                         Box(Modifier.weight(1f)) {
-                            LazyColumn(Modifier.fillMaxSize(), state = drawerState, contentPadding = PaddingValues(bottom = 112.dp)) {
+                            NjLazyColumn(Modifier.fillMaxSize(), state = drawerState, contentPadding = PaddingValues(bottom = 112.dp), scrollToTopOnReselect = false) {
                                 fichaTabItems(media, state, actions, ui, lists, cardColumns = 1, route = false)
                             }
                             FichaSelectionBar(state, actions, ui, aired, Modifier.align(Alignment.BottomCenter).navigationBarsPadding(), compact = true)
@@ -418,7 +418,7 @@ private fun CinemaPhone(media: Media, state: DetailsUiState, actions: DetailsAct
     val nav = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val sheetColor = MaterialTheme.colorScheme.surfaceContainerLow
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = bottomInset(nav)) {
+        NjLazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = bottomInset(nav)) {
             item(key = "header", contentType = "header") {
                 Box(Modifier.fillMaxWidth()) {
                     CinemaBackdrop(media, state, horizontal = false, modifier = Modifier.matchParentSize())

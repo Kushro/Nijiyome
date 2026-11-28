@@ -5,6 +5,7 @@ package app.nijiyome.feature.details
 
 import app.nijiyome.feature.details.resources.Res
 import app.nijiyome.feature.details.resources.*
+import app.nijiyome.ui.look.motionExpand
 import app.nijiyome.ui.state.userMessageText
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.background
@@ -23,7 +24,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -62,6 +62,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import app.nijiyome.designsystem.theme.NijiyomeControls
 import app.nijiyome.upscale.UpscaleImageKind
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 /**
  * Classic `/character/:name` page: image, name + native name, facts (age, birthday, blood type, gender, favourites), description with
@@ -115,7 +116,7 @@ private fun CharacterBody(
     Column(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .njVerticalScroll(rememberScrollState())
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(top = 48.dp, bottom = 24.dp),
@@ -166,7 +167,8 @@ private fun CharacterBody(
             ) { facts.forEach { InfoChip(it) } }
         }
         character.description?.takeIf { it.isNotBlank() }?.let { description ->
-            Column(Modifier.padding(horizontal = 16.dp)) {
+            // v1.3.5 expand: "Más" / "Menos" grows and shrinks the description instead of jumping.
+            Column(Modifier.padding(horizontal = 16.dp).motionExpand()) {
                 Text(
                     description,
                     style = MaterialTheme.typography.bodyMedium,

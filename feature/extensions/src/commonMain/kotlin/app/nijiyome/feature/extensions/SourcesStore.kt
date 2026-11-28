@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -88,6 +87,8 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyVerticalGrid
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 // Sparkles S9, structure STORE ("tienda"): the extensions of the user's repositories as a store grid with search, filters, install and
 // update (with a confirmation that says what is installed and from where). The installed list and the other sections of Fuentes are one
@@ -136,7 +137,7 @@ internal fun SourcesStore(ctx: SourcesContext) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 900.dp
         Row(Modifier.fillMaxSize()) {
-            LazyVerticalGrid(
+            NjLazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 260.dp),
                 modifier = Modifier.weight(1f).fillMaxHeight().decor(DecorRegion.GRID),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
@@ -209,7 +210,7 @@ internal fun SourcesStore(ctx: SourcesContext) {
             }
             if (wide) {
                 Column(
-                    Modifier.width(360.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
+                    Modifier.width(360.dp).fillMaxHeight().njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false).padding(start = 4.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     StoreSide(ctx, onOpenSheet = { sheet = it }, onOpenExtension = openInstalled)

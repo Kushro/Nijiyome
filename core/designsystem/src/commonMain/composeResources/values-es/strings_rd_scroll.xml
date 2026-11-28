@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- v1.3.5 extras de movimiento: flechas de las filas de tarjetas (rd_scroll_*). -->
+    <string name="rd_scroll_back">Desplazar a la izquierda</string>
+    <string name="rd_scroll_forward">Desplazar a la derecha</string>
+</resources>

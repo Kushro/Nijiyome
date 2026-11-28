@@ -198,6 +198,31 @@ data class ScreenStructures(
     val manga: MangaStructure = MangaStructure.CATALOG,
 )
 
+/**
+ * Layouts of the "Esta noche" row (v1.3.5, docs/redesign/movimiento: the owner wanted all five as a setting, D by default).
+ */
+object TonightLayoutIds {
+    /** A · the big skinned card of Novedades on one branch, arrows on hover. */
+    const val WIDE = "novedades"
+
+    /** B · medium skinned cards on up to two branches; the last one becomes "+N, ver todo". */
+    const val GRID = "grilla"
+
+    /** C · one short branch per kind: Para seguir, Salió hoy, Más tarde. */
+    const val BRANCHES = "ramas"
+
+    /** D · the one to watch now as a big card, the rest on a hanging agenda sheet beside it. */
+    const val FEATURED = "destacado"
+
+    /** E · the branch is the night: aired to the left by hour, a lantern at "now", later ones to the right; a pile to resume. */
+    const val NIGHT = "noche"
+
+    const val DEFAULT = FEATURED
+    val ALL: List<String> = listOf(WIDE, GRID, BRANCHES, FEATURED, NIGHT)
+
+    fun valid(id: String?): String = id?.takeIf { it in ALL } ?: DEFAULT
+}
+
 /** Ids of the eight motion moments (artifact `lab.js`). The chosen variant of each lives in [DesignPrefs.motionVariants]. */
 object MotionMoments {
     /** Card to details: `ct` (container transform), `axis` (shared axis), `paper` (paper unfold). */
@@ -347,7 +372,19 @@ data class DesignPrefs(
     val introSeen: Boolean = false,
     /** A [TanzakuSkinIds] id; null (every store written before v1.3.3) = [TanzakuSkinIds.DEFAULT]. */
     val tanzakuSkin: String? = null,
+    /**
+     * Pastel en rama hangs its cards from cords of different lengths, like papers on a real branch (v1.3.3). Off = every card hangs at
+     * the same height (v1.3.5, asked for when the ragged tops read as a bug).
+     */
+    val tanzakuStagger: Boolean = true,
+    /** How Inicio lays out "Esta noche" (v1.3.5); a [TonightLayoutIds] id, null = [TonightLayoutIds.DEFAULT]. */
+    val tonightLayout: String? = null,
+    /** The extra animations the user turned off (ids of the design system's MotionExtra; v1.3.5, all on by default). */
+    val motionExtrasOff: Set<String> = emptySet(),
 ) {
+    /** The effective "Esta noche" layout id. */
+    fun tonightLayoutId(): String = TonightLayoutIds.valid(tonightLayout)
+
     /** The effective tanzaku skin id. */
     fun tanzakuSkinId(): String = TanzakuSkinIds.valid(tanzakuSkin)
 

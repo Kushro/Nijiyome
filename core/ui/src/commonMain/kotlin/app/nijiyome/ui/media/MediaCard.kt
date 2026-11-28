@@ -22,7 +22,10 @@ import app.nijiyome.ui.cards.TitleCards
 import app.nijiyome.ui.look.effectiveCardId
 import app.nijiyome.model.Density
 import app.nijiyome.ui.look.LocalLook
+import app.nijiyome.ui.look.hoverRise
+import app.nijiyome.ui.look.hoverShadow
 import app.nijiyome.ui.look.pressScale
+import app.nijiyome.ui.look.rememberHoverLift
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,8 +90,11 @@ internal fun MaterialPosterCard(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val compact = LocalLook.current.density == Density.COMPACT
+    // v1.3.5 hover lift: the whole card rises, the shadow sits under the poster only (the title area is transparent).
+    val lift = rememberHoverLift(interaction)
     Column(
         modifier
+            .hoverRise(lift)
             .pressScale(interaction)
             .clip(MaterialTheme.shapes.medium)
             .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
@@ -96,7 +102,7 @@ internal fun MaterialPosterCard(
             .padding(bottom = if (style == CardStyle.MINIMAL) 0.dp else 4.dp),
     ) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
-            MediaCover(url = coverUrl, modifier = Modifier.fillMaxWidth())
+            MediaCover(url = coverUrl, modifier = Modifier.fillMaxWidth().hoverShadow(lift, MaterialTheme.shapes.medium))
             if (style == CardStyle.MINIMAL) {
                 // 0.3.2: "Solo póster" always shows the title over a bottom gradient (no long press / hover needed). TalkBack reads
                 // the card's description once, not this text again.

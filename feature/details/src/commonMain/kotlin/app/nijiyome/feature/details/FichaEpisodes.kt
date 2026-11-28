@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -101,6 +100,7 @@ import app.nijiyome.ui.resources.ui_retry
 import app.nijiyome.ui.state.userMessage
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyRow
 
 // Sparkles redesign, lane S4: Ficha › Episodios in its three views (Lista, Tarjetas, Rejilla = Diseño y estilo › Episodios), the same
 // multi-selection and actions in all of them (artifact patterns `eps` and `ctx`), and the Ruta stations. Click plays; Ctrl / Shift +
@@ -624,11 +624,12 @@ private fun RouteStations(stations: List<EpisodeItem>, state: DetailsUiState, ac
     val focus = ui.focusEpisode ?: state.continueEpisode
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = stations.indexOfFirst { it.episode.number == focus }.coerceAtLeast(0))
     val line = scheme.outline
-    LazyRow(
+    NjLazyRow(
         state = listState,
         modifier = Modifier.fillMaxWidth().decor(DecorRegion.EPISODES).selectionKeys(ui.selection) { aired },
         horizontalArrangement = Arrangement.spacedBy(0.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+        pagingArrows = true,
     ) {
         items(stations, key = { "st-${it.episode.number}" }) { item ->
             val n = item.episode.number

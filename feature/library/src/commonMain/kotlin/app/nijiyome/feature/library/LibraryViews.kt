@@ -13,11 +13,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -61,6 +58,7 @@ import app.nijiyome.model.HistoryEntry
 import app.nijiyome.model.ListEntry
 import app.nijiyome.model.LoadState
 import app.nijiyome.model.LibraryStructure
+import app.nijiyome.ui.look.motionListPlacement
 import app.nijiyome.ui.cards.CardContext
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCard
@@ -80,6 +78,9 @@ import app.nijiyome.ui.resources.ui_retry
 import app.nijiyome.ui.resources.list_queued_offline
 import app.nijiyome.designsystem.theme.NijiyomeControls
 import app.nijiyome.upscale.UpscaleImageKind
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.NjLazyRow
+import app.nijiyome.designsystem.scroll.NjLazyVerticalGrid
 
 /** The list's write outcomes on the app snackbar ("Se sincronizará", "No se pudo guardar"). */
 @Composable
@@ -212,7 +213,7 @@ internal fun ContinueOnlyPane(continueWatching: LoadState<List<HistoryEntry>>, s
                 modifier = modifier,
             ) { Button(onClick = screen.onExplore, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.library_explore)) } }
         } else {
-            LazyVerticalGrid(
+            NjLazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 128.dp),
                 modifier = modifier.fillMaxSize().decor(DecorRegion.GRID),
                 contentPadding = PaddingValues(16.dp),
@@ -227,7 +228,7 @@ internal fun ContinueOnlyPane(continueWatching: LoadState<List<HistoryEntry>>, s
                         data = e.continueCardData(),
                         onClick = { screen.onPlay(e.toResumeArgs()) },
                         context = CardContext.GRID,
-                        modifier = Modifier.cardSway(i),
+                        modifier = motionListPlacement().cardSway(i),
                         index = i,
                     )
                 }
@@ -247,7 +248,7 @@ internal fun HistoryPane(history: LoadState<List<HistoryEntry>>, screen: Library
                 modifier = modifier,
             ) { Button(onClick = screen.onExplore, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.library_explore)) } }
         } else {
-            LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
+            NjLazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
                 item(key = "head", contentType = "head") {
                     Text(
                         pluralStringResource(Res.plurals.rd_s7_episodes, entries.size, entries.size),
@@ -257,7 +258,11 @@ internal fun HistoryPane(history: LoadState<List<HistoryEntry>>, screen: Library
                     )
                 }
                 items(entries, key = { "h-" + it.episodeId + "-" + it.watchedAt.toEpochMilli() }, contentType = { "entry" }) { entry ->
-                    HistoryRow(entry, onClick = { entry.anilistId?.let(screen.onOpenDetails) ?: screen.onPlay(entry.toResumeArgs()) })
+                    HistoryRow(
+                        entry,
+                        onClick = { entry.anilistId?.let(screen.onOpenDetails) ?: screen.onPlay(entry.toResumeArgs()) },
+                        modifier = motionListPlacement(),
+                    )
                 }
             }
         }
@@ -266,9 +271,9 @@ internal fun HistoryPane(history: LoadState<List<HistoryEntry>>, screen: Library
 
 /** Poster, title and Visto, "Episodio N · visto hace 2 h", chevron. */
 @Composable
-private fun HistoryRow(entry: HistoryEntry, onClick: () -> Unit) {
+private fun HistoryRow(entry: HistoryEntry, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .heightIn(min = 72.dp)
             .clickable(onClick = onClick)
@@ -324,7 +329,7 @@ internal fun FavoritesPane(screen: LibraryActions, modifier: Modifier = Modifier
                 }
             }
         } else {
-            LazyVerticalGrid(
+            NjLazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 128.dp),
                 modifier = modifier.fillMaxSize().decor(DecorRegion.GRID),
                 contentPadding = PaddingValues(16.dp),
@@ -341,7 +346,7 @@ internal fun FavoritesPane(screen: LibraryActions, modifier: Modifier = Modifier
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
-                            LazyRow(Modifier.decor(DecorRegion.ROW), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            NjLazyRow(Modifier.decor(DecorRegion.ROW), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 items(state.favoriteCharacters, key = { "ch-" + it.id }) { c ->
                                     Column(Modifier.width(88.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                         Box {
@@ -377,6 +382,7 @@ internal fun FavoritesPane(screen: LibraryActions, modifier: Modifier = Modifier
                         labels = labels,
                         actions = actions,
                         context = CardContext.GRID,
+                        modifier = motionListPlacement(),
                         show = CardShow(progress = true, status = true, next = false, score = true),
                         index = i,
                     )

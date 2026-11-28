@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
@@ -82,6 +81,7 @@ import app.nijiyome.ui.patterns.label
 import org.jetbrains.compose.resources.stringResource
 import java.util.Locale
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyRow
 
 // Sparkles redesign, lane S7: pieces shared by the three structures of Library › Mi lista and by Favoritos.
 
@@ -268,10 +268,11 @@ internal fun ContinueShelf(
                 )
             },
         )
-        LazyRow(
+        NjLazyRow(
             Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT),
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
+            pagingArrows = true,
         ) {
             itemsIndexed(entries, key = { _, e -> "c-" + e.episodeId }, contentType = { _, _ -> "continue" }) { i, e ->
                 val data = e.continueCardData(statusOf(e))

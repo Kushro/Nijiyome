@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.designsystem.motion
 
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
@@ -13,8 +14,13 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 
 // Shared motion specs of the Sparkles artifact (lab.js "Presupuestos", core.css --nj-ease / --nj-dur-*). Any lane may use them;
 // docs/redesign/carriles/movimiento-api.md lists every value.
@@ -109,6 +115,42 @@ fun motionFadeIn(durationMs: Int = MotionDurations.STATE): EnterTransition {
 fun motionFadeOut(enterMs: Int = MotionDurations.STATE): ExitTransition {
     val level = LocalMotion.current.level
     return if (level == MotionLevel.OFF) ExitTransition.None else fadeOut(level.tweenFor(MotionDurations.exitOf(enterMs)))
+}
+
+/**
+ * v1.3.5 [MotionExtra.TAB_SLIDE]: the transform of tab content, an `AnimatedContent` keyed by the tab. FULL: shared axis X, the new
+ * tab slides 28 dp in from the side it lies on while the old one fades out (out 90 ms, in 250 ms, emphasized); CALM and PERF: a
+ * 150 ms fade; OFF or the extra switched off: an instant swap. Read it in composition, then pick the direction in the spec:
+ *
+ * ```kotlin
+ * val axis = motionSharedAxis()
+ * AnimatedContent(tab, transitionSpec = { axis(targetState.ordinal > initialState.ordinal) }) { t -> TabBody(t) }
+ * ```
+ *
+ * No size animation: tab bodies fill their pane, and a growing container would relayout the screen on every frame.
+ */
+@Composable
+fun motionSharedAxis(): (forward: Boolean) -> ContentTransform {
+    val level = if (motionExtraOn(MotionExtra.TAB_SLIDE)) LocalMotion.current.level else MotionLevel.OFF
+    val slidePx = with(LocalDensity.current) { 28.dp.roundToPx() }
+    return remember(level, slidePx) { { forward -> sharedAxisTransform(level, forward, slidePx) } }
+}
+
+private fun sharedAxisTransform(level: MotionLevel, forward: Boolean, slidePx: Int): ContentTransform {
+    val dir = if (forward) 1 else -1
+    return when (level) {
+        MotionLevel.FULL -> {
+            // the old tab is gone (90 ms) before the new one is mostly in, so the two never read as one blurred page
+            val enter = fadeIn(tween(160, 90, MotionEasing.ExitExponential)) +
+                slideInHorizontally(tween(250, 0, MotionEasing.Emphasized)) { dir * slidePx }
+            val exit = fadeOut(tween(90, 0, MotionEasing.ExitExponential)) +
+                slideOutHorizontally(tween(250, 0, MotionEasing.Emphasized)) { -dir * slidePx }
+            ContentTransform(enter, exit, sizeTransform = null)
+        }
+        MotionLevel.CALM, MotionLevel.PERF ->
+            ContentTransform(fadeIn(tween(MotionDurations.CALM_FADE)), fadeOut(tween(90)), sizeTransform = null)
+        MotionLevel.OFF -> ContentTransform(EnterTransition.None, ExitTransition.None, sizeTransform = null)
+    }
 }
 
 /** Moment and variant ids, mirrored from `MotionMoments` in `:core:model` (this module cannot see the model). */

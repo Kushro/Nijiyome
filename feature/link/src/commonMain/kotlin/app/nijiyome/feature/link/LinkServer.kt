@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -120,6 +119,7 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 // Sparkles S9: Nijiyome Link on the desktop, the PC side. Everything comes from LinkServerController (registered on desktop only): what
 // this PC serves, the paired phones and tablets, the active sessions with their RAM cache (the monitor, LNK-18), the profile offer, the
@@ -171,7 +171,7 @@ internal fun LinkServerScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(
-                Modifier.widthIn(max = 1280.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+                Modifier.widthIn(max = 1280.dp).fillMaxWidth().njVerticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 ServerErrorBanner(s)
@@ -902,7 +902,7 @@ private fun ExtServerPanel(s: ServerCtx) {
             }
             AnimatedVisibility(logs, enter = motionFadeIn(), exit = motionFadeOut()) {
                 Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = MaterialTheme.shapes.medium) {
-                    Column(Modifier.fillMaxWidth().heightIn(max = 260.dp).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Column(Modifier.fillMaxWidth().heightIn(max = 260.dp).njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false).padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         if (state.extLogs.isEmpty()) Hint(stringResource(Res.string.rd_s9_srv_ext_logs_empty))
                         state.extLogs.forEach { e ->
                             Text(

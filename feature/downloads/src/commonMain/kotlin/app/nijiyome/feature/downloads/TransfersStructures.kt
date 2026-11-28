@@ -24,11 +24,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Sort
@@ -99,6 +97,8 @@ import org.jetbrains.compose.resources.stringResource
 import java.text.DateFormat
 import java.util.Date
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 // Sparkles redesign, lane S8 (Transferencias): the two structures. Both read the same state and call the same actions ([TransfersEnv]);
 // only the composition changes.
@@ -121,7 +121,7 @@ internal fun TransfersQueue(state: DownloadsUiState, env: TransfersEnv, modifier
 private fun QueueWide(state: DownloadsUiState, env: TransfersEnv, modifier: Modifier) {
     val keys = state.queue.map { it.key }
     Row(modifier.fillMaxSize()) {
-        LazyColumn(
+        NjLazyColumn(
             Modifier.weight(1f).fillMaxHeight().selectionKeys(env.selection) { keys },
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 112.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -139,7 +139,7 @@ private fun QueueWide(state: DownloadsUiState, env: TransfersEnv, modifier: Modi
             doneItems(state, env)
         }
         Column(
-            Modifier.width(360.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp),
+            Modifier.width(360.dp).fillMaxHeight().njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // TRA-02: the artifact's order, the switches first (background), then storage, then the longer panels.
@@ -173,7 +173,7 @@ private fun QueuePhone(state: DownloadsUiState, env: TransfersEnv, modifier: Mod
                 }
             }
             val keys = state.queue.map { it.key }
-            LazyColumn(
+            NjLazyColumn(
                 Modifier.fillMaxSize().selectionKeys(env.selection) { keys },
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 112.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -401,7 +401,7 @@ internal fun TransfersMasterDetail(state: DownloadsUiState, env: TransfersEnv, m
         }
         when (host.section) {
             TransfersSection.QUEUE -> ClientPane(state, env, compact)
-            TransfersSection.DONE -> LazyColumn(
+            TransfersSection.DONE -> NjLazyColumn(
                 Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -413,7 +413,7 @@ internal fun TransfersMasterDetail(state: DownloadsUiState, env: TransfersEnv, m
                 doneItems(state, env)
                 item(key = "storage") { StoragePanel(state.usedBytes, state.busy, host.verifyResult, env.vm::verify, env.onOpenSettings, Modifier.padding(top = 16.dp)) }
             }
-            TransfersSection.LOCAL -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) { localItems(state, env) }
+            TransfersSection.LOCAL -> NjLazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) { localItems(state, env) }
         }
     }
 }
@@ -496,7 +496,7 @@ private fun MasterList(state: DownloadsUiState, all: List<TransferItem>, shown: 
             }
             return@Column
         }
-        LazyColumn(
+        NjLazyColumn(
             Modifier.fillMaxSize().selectionKeys(env.selection) { keys },
             contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 112.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -666,7 +666,7 @@ internal fun DetailPane(key: String, all: List<TransferItem>, env: TransfersEnv,
 @Composable
 internal fun TransferInfoPane(item: TransferItem, env: TransfersEnv, showBack: Boolean, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val title = item.displayTitle()
-    Column(modifier.verticalScroll(rememberScrollState())) {
+    Column(modifier.njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false)) {
         if (showBack) {
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(UiR.string.ui_back)) }

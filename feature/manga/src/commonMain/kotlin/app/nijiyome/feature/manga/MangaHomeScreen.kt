@@ -21,11 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -108,6 +105,9 @@ import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import kotlinx.coroutines.delay
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.NjLazyRow
+import app.nijiyome.designsystem.scroll.NjLazyVerticalGrid
 
 /**
  * `Route.Manga(query)` (MNG-01 to MNG-04): the manga home in the Sparkles design (artifact screen `manga`, structure `catalogo`):
@@ -352,7 +352,7 @@ private fun MangaResults(state: MangaHomeState, actions: MangaHomeActions, modif
                     snapshotFlow { grid.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }.collect { last -> if (last >= st.value.size - 6) actions.onLoadMore() }
                 }
                 val sortText = sortLabel(if (state.filters.query.isNotBlank() && state.filters.sort == MediaSort.POPULARITY) MediaSort.RELEVANCE else state.filters.sort)
-                LazyVerticalGrid(
+                NjLazyVerticalGrid(
                     columns = GridCells.Adaptive(cardWidth()),
                     state = grid,
                     contentPadding = PaddingValues(16.dp),
@@ -390,7 +390,7 @@ private fun MangaResults(state: MangaHomeState, actions: MangaHomeActions, modif
 @Composable
 internal fun ResultsPlaceholder() {
     val w = cardWidth()
-    LazyVerticalGrid(
+    NjLazyVerticalGrid(
         columns = GridCells.Adaptive(w),
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -418,7 +418,7 @@ private fun MangaFeed(
     // News dismissed in this visit: hidden at once, committed (dismissUpdate) when the undo expires.
     var hiddenNews by remember { mutableStateOf(emptySet<String>()) }
     val dismissedText = stringResource(Res.string.rd_s11_news_dismissed)
-    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    NjLazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         var section = 0
         item(key = "hero") {
             FeatureSection(home.hero, state, actions, compact, Modifier.homeEntrance(0))
@@ -435,10 +435,11 @@ private fun MangaFeed(
                         Modifier.padding(horizontal = 16.dp),
                         trailing = actions.onOpenLibrary?.let { open -> { TextButton(onClick = open, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_library)) } } },
                     )
-                    LazyRow(
+                    NjLazyRow(
                         Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT),
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        pagingArrows = true,
                     ) {
                         itemsIndexed(state.continueReading, key = { _, c -> c.mediaId }) { i, c ->
                             val p = home.lastRead.firstOrNull { it.mediaId == c.mediaId }?.takeIf { c.resume }

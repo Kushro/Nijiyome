@@ -7,11 +7,12 @@
     <string name="rd_s2_tonight_sub">%1$s · %2$d para ver</string>
     <string name="rd_s2_shelves_sub">Tus filas, en el orden que elegiste</string>
     <string name="rd_s2_tonight_all">Ver todo lo que estás viendo</string>
-    <string name="rd_s2_tonight_resume">Sigue donde quedaste</string>
-    <string name="rd_s2_tonight_out_at">Ep. %1$d salió a las %2$s</string>
-    <string name="rd_s2_tonight_out">Ep. %1$d ya salió</string>
-    <string name="rd_s2_tonight_behind">%1$s · te faltan %2$d</string>
-    <string name="rd_s2_tonight_airs_at">Ep. %1$d sale a las %2$s</string>
+    <string name="rd_s2_tonight_resume">Continuar</string>
+    <string name="rd_s2_tonight_resume_detail">Donde lo dejaste</string>
+    <string name="rd_s2_tonight_out_at">Salió a las %1$s</string>
+    <string name="rd_s2_tonight_out">Ya salió</string>
+    <string name="rd_s2_tonight_behind">Te faltan %1$d</string>
+    <string name="rd_s2_tonight_airs_at">Sale a las %1$s</string>
     <string name="rd_s2_tonight_empty">Nada nuevo para esta noche. Sigue series en el calendario y sus episodios aparecen aquí.</string>
     <string name="rd_s2_ep_short">Ep. %1$d</string>
     <string name="rd_s2_ep_left">Ep. %1$d · quedan %2$d min</string>
@@ -123,4 +124,26 @@
     <string name="rd_s2_cal_followed_no_notify">Este equipo no puede mostrar avisos; seguir una serie igual la resalta aquí.</string>
     <string name="rd_s2_cal_followed_empty">Todavía no sigues nada. Toca la campana de cualquier episodio para seguir la serie.</string>
     <string name="rd_s2_cal_no_date">Sin fecha esta semana</string>
+    <!-- v1.3.5: the five layouts of Esta noche -->
+    <string name="rd_s2_tonight_out_short">Salió %1$s</string>
+    <string name="rd_s2_tonight_airs_short">Sale %1$s</string>
+    <string name="rd_s2_tonight_ep_behind">Ep. %1$d · te faltan %2$d</string>
+    <string name="rd_s2_tonight_ep_reminded">Ep. %1$d · con aviso</string>
+    <string name="rd_s2_tonight_tag_new">Nuevo</string>
+    <string name="rd_s2_tonight_for_now">Para ahora</string>
+    <string name="rd_s2_tonight_cta_watch">Ver Ep. %1$d</string>
+    <string name="rd_s2_tonight_cta_resume">Seguir Ep. %1$d</string>
+    <string name="rd_s2_tonight_group_resume">Para seguir</string>
+    <string name="rd_s2_tonight_group_out">Salió hoy</string>
+    <string name="rd_s2_tonight_group_later">Más tarde</string>
+    <string name="rd_s2_tonight_group_also_out">También salió hoy</string>
+    <string name="rd_s2_tonight_group_also_out_any">También salió</string>
+    <string name="rd_s2_tonight_more_count">%1$d más esta noche</string>
+    <string name="rd_s2_tonight_more_tonight">más esta noche</string>
+    <string name="rd_s2_tonight_open_list">Abre la lista</string>
+    <string name="rd_s2_tonight_total">%1$d en total</string>
+    <string name="rd_s2_tonight_pile_tag">Para seguir · %1$d</string>
+    <string name="rd_s2_tonight_pile_open">Abrir la pila: %1$d para seguir</string>
+    <string name="rd_s2_tonight_pile_hint">Toca para abrir</string>
+    <string name="rd_s2_tonight_pile_gather">Juntar</string>
 </resources>

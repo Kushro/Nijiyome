@@ -19,6 +19,11 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import app.nijiyome.designsystem.motion.LocalMotion
+import app.nijiyome.designsystem.motion.MotionDurations
+import app.nijiyome.designsystem.motion.MotionExtra
+import app.nijiyome.designsystem.motion.MotionLevel
+import app.nijiyome.designsystem.motion.motionExtraOn
 import app.nijiyome.upscale.ImageUpscaleSettings
 import app.nijiyome.upscale.UpscaleImageKind
 import app.nijiyome.upscale.UpscaleQueue
@@ -28,6 +33,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.compose.LocalPlatformContext
 import coil3.memory.MemoryCache
 import coil3.request.ImageRequest
+import coil3.request.crossfade
 import kotlinx.coroutines.flow.StateFlow
 import okio.Path.Companion.toPath
 
@@ -42,6 +48,29 @@ val LocalUpscaleSettings: ProvidableCompositionLocal<StateFlow<ImageUpscaleSetti
 
 /** Results are looked up per 64 px of on-screen size, the rounding of the cache key (plan §4.5): resizing does not re-request per pixel. */
 private const val TARGET_BUCKET_PX = 64
+
+/**
+ * v1.3.5 [MotionExtra.IMAGE_FADE]: how long a freshly loaded image fades in (FULL 200 ms, CALM 150 ms, PERF / OFF / switched off 0).
+ * Per request because the app's ImageLoader is built once, outside composition, and cannot see the level. Coil skips the fade on
+ * memory-cache hits, so scrolling back over loaded posters never blinks.
+ */
+@Composable
+private fun imageFadeMs(): Int {
+    if (!motionExtraOn(MotionExtra.IMAGE_FADE)) return 0
+    return when (LocalMotion.current.level) {
+        MotionLevel.FULL -> MotionDurations.STATE
+        MotionLevel.CALM -> MotionDurations.CALM_FADE
+        MotionLevel.PERF, MotionLevel.OFF -> 0
+    }
+}
+
+/** [url] as a request that fades in over [fadeMs] (the plain url when 0, exactly what the image loaded before). */
+@Composable
+private fun fadingModel(url: String?, fadeMs: Int): Any? {
+    if (url.isNullOrBlank() || fadeMs <= 0) return url
+    val context = LocalPlatformContext.current
+    return remember(context, url, fadeMs) { ImageRequest.Builder(context).data(url).crossfade(fadeMs).build() }
+}
 
 /** Avatars smaller than this are never worth a GPU job (plan §4.3). */
 private val AVATAR_MIN = 64.dp
@@ -68,9 +97,10 @@ fun UpscalableImage(
     val queue = LocalUpscaleQueue.current
     val prefs = LocalUpscaleSettings.current?.collectAsState()?.value
     val wanted = queue != null && upscale && !url.isNullOrBlank() && (prefs == null || (prefs.enabled && kind in prefs.kinds))
+    val fadeMs = imageFadeMs()
     if (!wanted) {
         AsyncImage(
-            model = url,
+            model = fadingModel(url, fadeMs),
             contentDescription = contentDescription,
             modifier = modifier,
             onSuccess = onSuccess,
@@ -81,7 +111,7 @@ fun UpscalableImage(
         )
         return
     }
-    UpscalingImage(queue!!, url!!, contentDescription, kind, modifier, alignment, contentScale, alpha, onSuccess, onError)
+    UpscalingImage(queue!!, url!!, contentDescription, kind, modifier, alignment, contentScale, alpha, onSuccess, onError, fadeMs)
 }
 
 @Composable
@@ -96,6 +126,7 @@ private fun UpscalingImage(
     alpha: Float,
     onSuccess: ((AsyncImagePainter.State.Success) -> Unit)?,
     onError: ((AsyncImagePainter.State.Error) -> Unit)?,
+    fadeMs: Int,
 ) {
     var target by remember(url) { mutableStateOf(IntSize.Zero) }
     var source by remember(url) { mutableStateOf(IntSize.Zero) }
@@ -132,13 +163,16 @@ private fun UpscalingImage(
     val path = (cached ?: done)?.takeIf { it != broken }
     val context = LocalPlatformContext.current
     val model: Any = if (path == null) {
-        url
+        fadingModel(url, fadeMs) ?: url
     } else {
-        remember(context, path, originalKey) {
+        remember(context, path, originalKey, fadeMs) {
             ImageRequest.Builder(context)
                 .data(path.toPath())
                 // the original stays on screen while the upscaled file decodes
                 .placeholderMemoryCacheKey(originalKey)
+                // The swap original -> upscaled is a refinement, not a load: no fade, the sharper copy simply replaces it. Only an
+                // upscaled file shown first (no original on screen yet) fades in like any image.
+                .crossfade(if (originalKey == null) fadeMs else 0)
                 .build()
         }
     }

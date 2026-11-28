@@ -6,13 +6,18 @@ package app.nijiyome.nav
 import app.nijiyome.designsystem.direction.tanabata.LocalTanzakuSkin
 import app.nijiyome.designsystem.direction.tanabata.TanzakuSkin
 import app.nijiyome.designsystem.motion.LocalCardSwayOff
+import app.nijiyome.designsystem.motion.LocalMotionExtrasOff
 import app.nijiyome.model.TanzakuSkinIds
 import app.nijiyome.model.TitleCardIds
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -90,10 +95,15 @@ import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.designsystem.motion.CardToDetailsEntry
 import app.nijiyome.designsystem.motion.CardToDetailsHost
 import app.nijiyome.designsystem.motion.LocalMotion
+import app.nijiyome.designsystem.motion.LocalScrollToTopRequests
 import app.nijiyome.designsystem.motion.MotionDurations
+import app.nijiyome.designsystem.motion.MotionEasing
+import app.nijiyome.designsystem.motion.MotionExtra
+import app.nijiyome.designsystem.motion.MotionLevel
 import app.nijiyome.designsystem.motion.cardToDetailsEnterTransform
 import app.nijiyome.designsystem.motion.cardToDetailsPopTransform
 import app.nijiyome.designsystem.motion.motionFadeIn
+import app.nijiyome.designsystem.motion.motionExtraOn
 import app.nijiyome.designsystem.motion.motionFadeOut
 import app.nijiyome.designsystem.motion.rememberLowEndDevice
 import app.nijiyome.designsystem.theme.LocalReduceMotion
@@ -175,7 +185,10 @@ import app.nijiyome.ui.resources.ui_offline_banner
 import app.nijiyome.ui.state.LocalScreenInsets
 import app.nijiyome.ui.state.contrastLevel
 import app.nijiyome.ui.state.rememberIsOnline
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -251,6 +264,8 @@ fun NijiyomeApp(
             LocalMotion provides rememberMotionChoices(settings.look.design, reduce = reduceMotion, lowEndDevice = rememberLowEndDevice()),
             // v1.3.3 paper skins of the tanzaku cards; Hanafuda cards lie on a mat, so they do not sway.
             LocalTanzakuSkin provides TanzakuSkin.of(settings.look.design.tanzakuSkinId()),
+            // v1.3.5: the extra animations the user turned off (all on by default).
+            LocalMotionExtrasOff provides settings.look.design.motionExtrasOff,
             LocalCardSwayOff provides (
                 settings.look.design.tanzakuSkinId() == TanzakuSkinIds.HANAFUDA && TitleCardIds.isTanzaku(settings.look.design.cardId())
             ),
@@ -422,6 +437,14 @@ private fun AppShell(
 
     val notAvailable = stringResource(Res.string.shell_not_available)
 
+    // v1.3.5 tap to top: tapping the rail / bar destination whose root is already on screen asks that screen to scroll to its top
+    // (the request carries the entry's content key; each entry only hears its own). Elsewhere the tap opens the destination as before.
+    val tapToTop = motionExtraOn(MotionExtra.TAP_TO_TOP)
+    val scrollToTop = remember { MutableSharedFlow<Any>(extraBufferCapacity = 1) }
+    fun selectTop(route: Route) {
+        if (tapToTop && backStack.isAtTop(route)) scrollToTop.tryEmit(routeContentKey(route)) else backStack.navigateTop(route)
+    }
+
     /** Opens [route] from the shell (palette, drop layer): a rail / bar destination resets the stack, anything else stacks. */
     fun openRoute(route: Route) {
         when {
@@ -536,7 +559,7 @@ private fun AppShell(
                         val badged = activeDownloads > 0 && route == Route.You
                         NavigationSuiteItem(
                             selected = selected,
-                            onClick = { backStack.navigateTop(route) },
+                            onClick = { selectTop(route) },
                             icon = { Icon(route.icon(selected), contentDescription = null) },
                             label = { Text(route.label(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             navigationSuiteType = suiteType,
@@ -565,7 +588,7 @@ private fun AppShell(
                             selected = selectedTop,
                             activeDownloads = activeDownloads,
                             slim = slimStyle,
-                            onSelect = { backStack.navigateTop(it) },
+                            onSelect = { selectTop(it) },
                             accountAvatar = accountAvatar,
                         )
                     }
@@ -593,6 +616,8 @@ private fun AppShell(
                                         settingsPageSection = settingsPageSection,
                                         settingsPageItemId = settingsPageItemId,
                                         settingsPageJumpTick = settingsPageJumpTick,
+                                        roots = destinations,
+                                        scrollToTop = scrollToTop,
                                     )
                                 }
                             }
@@ -719,6 +744,10 @@ private fun AppNavDisplay(
     settingsPageSection: SettingsSection? = null,
     settingsPageItemId: String? = null,
     settingsPageJumpTick: Int = 0,
+    /** The rail / bar destinations: switching between their roots is a fade-through. */
+    roots: List<Route> = emptyList(),
+    /** Tap-to-top requests from the shell, as the content key of the entry they are for. */
+    scrollToTop: kotlinx.coroutines.flow.Flow<Any> = kotlinx.coroutines.flow.emptyFlow(),
 ) {
     // List-detail on expanded windows: Character / ProviderItem / ActivityThread open beside their list;
     // Details (anime, manga, novel) always opens full width (MAN-04 / NOV-01 / EXP-05).
@@ -843,9 +872,34 @@ private fun AppNavDisplay(
     val screenFade = motionFadeIn(MotionDurations.STATE) togetherWith motionFadeOut(MotionDurations.STATE)
     fun ContentTransform.orScreenFade(): ContentTransform =
         if (targetContentEnter == EnterTransition.None && initialContentExit == ExitTransition.None) screenFade else this
+    // v1.3.5 fade-through between top-level destinations (rail / bar roots): the old screen fades out in 90 ms, the new one fades in
+    // over 210 ms growing from 0.98. Calm and performance keep the plain screen fade; off is instant. Pushes keep their transition.
+    val fadeThroughOn = motionExtraOn(MotionExtra.FADE_THROUGH)
+    val rootKeys = remember(roots) { roots.mapTo(HashSet()) { routeContentKey(it) } }
+    val fadeThrough = when (motion.level) {
+        MotionLevel.FULL ->
+            (fadeIn(tween(210, 90, MotionEasing.Emphasized)) + scaleIn(tween(210, 90, MotionEasing.Emphasized), initialScale = 0.98f)) togetherWith
+                fadeOut(tween(90, 0, MotionEasing.ExitExponential))
+        MotionLevel.CALM, MotionLevel.PERF -> screenFade
+        MotionLevel.OFF -> instant
+    }
+    fun rootSwitch(from: NavEntry<*>?, to: NavEntry<*>?): Boolean {
+        val a = from?.contentKey ?: return false
+        val b = to?.contentKey ?: return false
+        return fadeThroughOn && a != b && a in rootKeys && b in rootKeys
+    }
     // Gives each entry its AnimatedVisibilityScope so the poster and the Details header share bounds.
     val cardToDetailsDecorator = remember {
         NavEntryDecorator<NavKey>({ _ -> }) { entry -> CardToDetailsEntry(LocalNavAnimatedContentScope.current) { entry.Content() } }
+    }
+
+    // MotionExtra.TAP_TO_TOP: each entry gets only the requests for its own content key (the screen's scroll wrapper collects them).
+    val scrollToTopDecorator = remember(scrollToTop) {
+        NavEntryDecorator<NavKey>({ _ -> }) { entry ->
+            val key = entry.contentKey
+            val requests = remember(key) { scrollToTop.filter { it == key }.map { } }
+            CompositionLocalProvider(LocalScrollToTopRequests provides requests) { entry.Content() }
+        }
     }
 
     NavDisplay(
@@ -856,6 +910,7 @@ private fun AppNavDisplay(
             when {
                 reduceMotion -> instant
                 targetState.entries.lastOrNull().isCardToDetailsTarget() -> motion.cardToDetailsEnterTransform(density)
+                rootSwitch(initialState.entries.lastOrNull(), targetState.entries.lastOrNull()) -> fadeThrough
                 else -> baseEnter().orScreenFade()
             }
         },
@@ -863,6 +918,7 @@ private fun AppNavDisplay(
             when {
                 reduceMotion -> instant
                 initialState.entries.lastOrNull().isCardToDetailsTarget() -> motion.cardToDetailsPopTransform(density)
+                rootSwitch(initialState.entries.lastOrNull(), targetState.entries.lastOrNull()) -> fadeThrough
                 else -> basePop().orScreenFade()
             }
         },
@@ -871,6 +927,7 @@ private fun AppNavDisplay(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
             cardToDetailsDecorator,
+            scrollToTopDecorator,
         ),
         modifier = Modifier.fillMaxSize(),
         entryProvider = entryProvider {
@@ -1313,9 +1370,15 @@ private val CardToDetailsMetadata: Map<String, Any> = mapOf(CARD_TO_DETAILS_KEY 
 
 private fun NavEntry<*>?.isCardToDetailsTarget(): Boolean = this?.metadata?.containsKey(CARD_TO_DETAILS_KEY) == true
 
-/** Switching tabs resets the stack to `[Home]` or `[Home, tab]` so Back from a tab returns to Home. */
+/** The stack of a top-level destination: `[Home]` or `[Home, tab]`, so Back from a tab returns to Home. */
+private fun topStack(route: Route): List<NavKey> = if (route == Route.Home) listOf(Route.Home) else listOf(Route.Home, route)
+
+/** The destination's root is what is on screen (nothing stacked over it): a tap on it again is a tap-to-top. */
+private fun NavBackStack<NavKey>.isAtTop(route: Route): Boolean = toList() == topStack(route)
+
+/** Switching tabs resets the stack to [topStack]. */
 private fun NavBackStack<NavKey>.navigateTop(route: Route) {
-    val target = if (route == Route.Home) listOf<NavKey>(Route.Home) else listOf(Route.Home, route)
+    val target = topStack(route)
     if (toList() == target) return
     clear()
     addAll(target)
@@ -1329,3 +1392,10 @@ private const val RAIL_MIN_HEIGHT_DP = 480
 /** BUG-045: list + detail side by side from the expanded width class. */
 private const val TWO_PANE_MIN_WIDTH_DP = 840
 private val OFFLINE_BANNER_HEIGHT = 40.dp
+
+/**
+ * The content key navigation3 gives an entry made by `entryProvider { entry<T> { } }` (its default `clazzContentKey`). Its own
+ * `defaultContentKey` is internal, so this mirrors it (navigation3 1.2.2: "key:class"). Used to match a rail
+ * root to its entry for tap-to-top and the fade-through.
+ */
+internal fun routeContentKey(route: Any): Any = "$route:${route::class}"

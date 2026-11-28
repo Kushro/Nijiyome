@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Add
@@ -114,6 +113,7 @@ import app.nijiyome.ui.state.userMessage
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 /**
  * Fuentes (Sparkles S9; artifact `screens-c.js` screen `fuentes`). The long Extensions column with five concepts becomes one screen in
@@ -840,7 +840,7 @@ internal fun ExtensionDetailBody(ctx: SourcesContext, ext: InstalledExtension, s
 @Composable
 internal fun ExtensionDetailPane(ctx: SourcesContext, ext: InstalledExtension, modifier: Modifier = Modifier) {
     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = modifier) {
-        ExtensionDetailBody(ctx, ext, modifier = Modifier.verticalScroll(rememberScrollState()).padding(20.dp))
+        ExtensionDetailBody(ctx, ext, modifier = Modifier.njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false).padding(20.dp))
     }
 }
 
@@ -943,7 +943,7 @@ private fun LogPanel(extensionId: String, viewModel: ExtensionsViewModel) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
-            Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState()).padding(12.dp),
+            Modifier.heightIn(max = 260.dp).njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             if (lines.isEmpty()) {

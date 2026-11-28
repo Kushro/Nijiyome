@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.Close
@@ -62,6 +61,7 @@ import app.nijiyome.ui.resources.rd_i1_fac_show
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 // Sparkles redesign, lane I1. Pattern `fac` of docs/redesign/artefacto/lab.js: every chip says its current value, opens a popover (a
 // sheet on phones) with a search box and multi-selection, and clears with ×. Each option shows how many titles would remain and the
@@ -270,7 +270,7 @@ fun FacetPanel(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).focusOnOpen(),
             )
         }
-        Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+        Column(Modifier.heightIn(max = 360.dp).njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false)) {
             if (facet.single) {
                 FacetOptionRow(stringResource(Res.string.rd_i1_fac_any), null, picked.isEmpty(), single = true) { onPickedChange(emptySet()) }
             }

@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.components.ErrorState
 import app.nijiyome.designsystem.theme.LocalReduceMotion
@@ -99,8 +100,9 @@ fun MetadataFallbackBanner(
         }
 
         val reduceMotion = LocalReduceMotion.current
+        // The turn stays a State read in the icon's layer: reading it here recomposed the whole banner every frame.
         val rotation = if (reduceMotion) {
-            0f
+            null
         } else {
             val inf = rememberInfiniteTransition(label = "metadata-fallback-spin")
             inf.animateFloat(
@@ -108,7 +110,7 @@ fun MetadataFallbackBanner(
                 targetValue = 360f,
                 animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Restart),
                 label = "spin",
-            ).value
+            )
         }
 
         Surface(
@@ -127,7 +129,7 @@ fun MetadataFallbackBanner(
                         imageVector = Icons.Outlined.Sync,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp).rotate(rotation),
+                        modifier = Modifier.size(18.dp).spin(rotation),
                     )
                     Text(
                         text = message,
@@ -204,8 +206,9 @@ fun AppErrorState(
     }
 
     val reduceMotion = LocalReduceMotion.current
+    // Read in the icon's layer only (see MetadataFallbackBanner).
     val rotation = if (reduceMotion) {
-        0f
+        null
     } else {
         val inf = rememberInfiniteTransition(label = "rate-limit-inline-spin")
         inf.animateFloat(
@@ -213,7 +216,7 @@ fun AppErrorState(
             targetValue = 360f,
             animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Restart),
             label = "spin",
-        ).value
+        )
     }
     val progress = (remainingSec.toFloat() / totalSec.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
 
@@ -232,7 +235,7 @@ fun AppErrorState(
                     imageVector = Icons.Outlined.Sync,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp).rotate(rotation),
+                    modifier = Modifier.size(18.dp).spin(rotation),
                 )
                 Text(
                     text = message,
@@ -254,3 +257,7 @@ fun AppErrorState(
         }
     }
 }
+
+/** Turns the sync icon by [turn] (degrees) at draw time; null keeps it still (reduced motion). */
+private fun Modifier.spin(turn: State<Float>?): Modifier =
+    if (turn == null) this else this.graphicsLayer { rotationZ = turn.value }
