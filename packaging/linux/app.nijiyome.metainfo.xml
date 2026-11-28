@@ -51,6 +51,12 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.3.5" date="2026-11-28">
+      <description>
+        <p>Tonight on Home in five layouts to choose from in Settings: Featured and list (the new default), Like New episodes, Grid, Three branches and The night on a branch, with the episode details written inside the paper card. Cards in a row now share one height, Pastel on a branch can hang every card at the same height, and the hero buttons no longer sit on the carousel bar.</p>
+        <p>Thirteen new animations, each with its own switch: smooth mouse-wheel scrolling, thin scrollbars, arrows on card rows, images and loaded content that fade in, lists that rearrange, sliding tabs, section changes, expand and collapse, a sliding rail indicator, hover lift, hiding headers and tap again to go to the top. All follow the motion profile. Faster drawing of cards, Home and loading placeholders.</p>
+      </description>
+    </release>
     <release version="1.3.4" date="2026-11-27">
       <description>
         <p>Windows fix: the app no longer closes at start with "Failed to launch JVM". The tray icon paths are now passed the way the tray library reads them on Windows.</p>

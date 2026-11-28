@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -67,7 +68,6 @@ import app.nijiyome.designsystem.direction.tanabata.LocalTanzakuSkin
 import app.nijiyome.designsystem.direction.tanabata.SkinPaint
 import app.nijiyome.designsystem.direction.tanabata.TanabataMaterials
 import app.nijiyome.designsystem.direction.tanabata.drawHole
-import app.nijiyome.designsystem.direction.tanabata.drawInkDown
 import app.nijiyome.designsystem.direction.tanabata.drawThread
 import app.nijiyome.designsystem.direction.tanabata.tanzakuPaper
 import app.nijiyome.designsystem.motion.LocalMotion
@@ -395,7 +395,7 @@ internal fun TzTag(label: String, status: StatusSlot?, modifier: Modifier = Modi
     val paper = TanabataMaterials.paper(status, LocalThemeTone.current)
     Box(
         modifier
-            .tanzakuPaper(paper, RoundedCornerShape(3.dp), elevated = false, fibreTile = 120.dp)
+            .tanzakuPaper(paper, RoundedCornerShape(3.dp), elevated = false, fibreTile = 120.dp, textured = false)
             .tzHole(top = 0.dp, x = 7.dp)
             .padding(start = 15.dp, end = 9.dp, top = 3.dp, bottom = 3.dp),
     ) {
@@ -539,19 +539,25 @@ private fun TzContinueTall(
                     TzPlayDisc(TanabataMaterials.ink, base, lifted = true)
                 }
             }
+            // v1.3.5: progress is the skins' ink stroke under the title. The ink running down the text drew its soft edge as a grey bar
+            // through whichever line it stopped at. Every line is reserved (title 2, episode 1, status 1) so the strips of a row match.
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 54.dp)
-                    .then(if (ink > 0f) Modifier.drawWithContent { drawInkDown(base, ink); drawContent() } else Modifier)
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Text(texts.title, style = TzType.title(), color = TanabataMaterials.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                if (sub.isNotEmpty()) Text(sub, style = TzType.sub(), color = TanabataMaterials.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                texts.statusName?.let {
-                    Text(it, style = TzType.sub(weight = FontWeight.Bold), color = TanabataMaterials.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                Text(texts.title, style = TzType.title(), color = TanabataMaterials.ink, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Box(Modifier.fillMaxWidth().height(4.dp)) { if (ink > 0f) InkStroke(ink, TanabataMaterials.ink) }
+                Text(sub, style = TzType.sub(), color = TanabataMaterials.ink, minLines = 1, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    texts.statusName.orEmpty(),
+                    style = TzType.sub(weight = FontWeight.Bold),
+                    color = TanabataMaterials.ink,
+                    minLines = 1,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }

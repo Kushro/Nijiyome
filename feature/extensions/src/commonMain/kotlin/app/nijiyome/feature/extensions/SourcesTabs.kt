@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -43,6 +42,7 @@ import app.nijiyome.model.LoadState
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
 
 // Sparkles S9, structure TABS ("pestanas"): the five concepts of the old Extensions column and Debrid, each on its own tab with its
 // count. Every tab is a LazyColumn of the same sections the store structure opens in sheets.
@@ -105,7 +105,7 @@ private fun tabCount(ctx: SourcesContext, tab: SourcesTab): Int? = when (tab) {
 
 @Composable
 private fun TabList(content: LazyListScope.() -> Unit) {
-    LazyColumn(
+    NjLazyColumn(
         modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -127,7 +127,7 @@ private fun InstalledTab(ctx: SourcesContext, onBrowse: () -> Unit) {
         if (twoPane) {
             val current = items.firstOrNull { it.id == selected } ?: items.first()
             Row(Modifier.fillMaxSize().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                LazyColumn(
+                NjLazyColumn(
                     modifier = Modifier.width(420.dp).fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(bottom = 24.dp),
@@ -142,7 +142,7 @@ private fun InstalledTab(ctx: SourcesContext, onBrowse: () -> Unit) {
                 ExtensionDetailPane(ctx, current, Modifier.weight(1f).fillMaxHeight())
             }
         } else {
-            LazyColumn(
+            NjLazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),

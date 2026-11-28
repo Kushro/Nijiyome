@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
@@ -53,6 +52,7 @@ import app.nijiyome.feature.library.resources.Res
 import app.nijiyome.feature.library.resources.*
 import app.nijiyome.model.HistoryEntry
 import app.nijiyome.model.ListEntry
+import app.nijiyome.ui.look.motionListPlacement
 import app.nijiyome.ui.cards.CardContext
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCard
@@ -72,6 +72,7 @@ import app.nijiyome.ui.patterns.toListStatus
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
 
 /**
  * Structure "Lista" (`LibraryStructure.LIST`): a dense list sorted by its column heads, with multi-selection (Ctrl / Shift click,
@@ -96,7 +97,7 @@ internal fun LibraryList(
     var statusSheet by remember { mutableStateOf(false) }
 
     Box(modifier.fillMaxSize()) {
-        LazyColumn(
+        NjLazyColumn(
             Modifier.fillMaxSize().selectionKeys(sel) { keys },
             contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp),
         ) {
@@ -120,8 +121,11 @@ internal fun LibraryList(
                     }
                 }
                 items(rows, key = { it.key }, contentType = { "row" }) { e ->
-                    if (compact) PhoneRow(e, sel, keys, labels, actions) else TableRow(e, sel, keys, labels, actions)
-                    HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                    // one node for the row and its divider, so list placement moves them together
+                    Column(motionListPlacement()) {
+                        if (compact) PhoneRow(e, sel, keys, labels, actions) else TableRow(e, sel, keys, labels, actions)
+                        HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                    }
                 }
             }
         }

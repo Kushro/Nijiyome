@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -76,6 +75,7 @@ import coil3.compose.AsyncImage
 import kotlin.math.roundToInt
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
 
 /**
  * Classic `/image-search` (trace.moe): pick an image (`rememberContentPicker("image/ *")`, or [imageUri] when the screen was opened by
@@ -255,7 +255,7 @@ private fun MatchList(
     onPick: () -> Unit,
 ) {
     val shown = state.shown
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+    NjLazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item(key = "preview") { PickedPreview(state.imageUri) }
         item(key = "threshold") {
             Column(Modifier.padding(horizontal = 16.dp)) {

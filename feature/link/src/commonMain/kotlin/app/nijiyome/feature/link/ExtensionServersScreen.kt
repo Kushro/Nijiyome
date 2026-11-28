@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.CloudOff
@@ -88,6 +87,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 /**
  * "PC extension server" (docs/redesign/13 §3.10, D8): connect this phone to the extension server of Nijiyome on a Windows / Linux PC
@@ -130,7 +130,7 @@ fun ExtensionServersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 Modifier
                     .widthIn(max = 840.dp)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .njVerticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {

@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -86,6 +84,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.NjLazyRow
 
 // Parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.4, worker t). Signatures FINAL.
 
@@ -134,7 +134,7 @@ fun ProviderScreen(
         }
         LaunchedEffect(nearEnd, state.results) { if (nearEnd && state.results is LoadState.Ok) viewModel.loadMore() }
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
-            LazyColumn(
+            NjLazyColumn(
                 state = listState,
                 modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
@@ -191,7 +191,7 @@ fun ProviderScreen(
                             items(home.value, key = { "row:${it.title}" }, contentType = { "row" }) { row ->
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(row.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    NjLazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), pagingArrows = true) {
                                         items(row.items, key = { it.id }) { item -> PosterCard(item, onClick = { onOpenItem(item.id) }) }
                                     }
                                 }
@@ -302,7 +302,7 @@ fun ProviderItemScreen(
                 is LoadState.Ok -> {
                     val item = s.value
                     val entries = state.visibleEntries
-                    LazyColumn(
+                    NjLazyColumn(
                         modifier = Modifier.fillMaxSize().widthIn(max = 960.dp),
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),

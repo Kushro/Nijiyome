@@ -347,7 +347,7 @@ fun DrawScope.drawSkinHanger(skin: TanzakuSkin, bamboo: Bamboo, thread: Color, t
             drawBambooRod(bamboo, top = 0f, thickness = thickness)
             drawPaperChain(top = thickness * 0.5f)
         }
-        SkinHanger.BRANCH -> drawBranch(tone)
+        SkinHanger.BRANCH -> drawBranch(branch(size.width), tone)
         SkinHanger.LINE -> {
             val y = 6.dp.toPx()
             drawLine(thread, Offset(0f, y), Offset(size.width, y), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
@@ -356,17 +356,38 @@ fun DrawScope.drawSkinHanger(skin: TanzakuSkin, bamboo: Bamboo, thread: Color, t
     }
 }
 
-/** A bamboo branch along the top: a wandering stem with leaves hanging from it (Pastel en rama). */
-private fun DrawScope.drawBranch(tone: ThemeTone) {
+/**
+ * [drawSkinHanger] behind this node, with the branch's stem and leaf placements built once per size: the row hanger redraws on
+ * every scroll frame of its row, and the branch was rebuilt (paths and all) on each of them.
+ */
+fun Modifier.skinHanger(skin: TanzakuSkin, bamboo: Bamboo, thread: Color, tone: ThemeTone, thickness: Dp): Modifier =
+    this.drawWithCache {
+        val px = thickness.toPx()
+        val branch = if (skin.hanger == SkinHanger.BRANCH) branch(size.width) else null
+        onDrawBehind {
+            if (branch != null) drawBranch(branch, tone) else drawSkinHanger(skin, bamboo, thread, tone, px)
+        }
+    }
+
+/** Where the branch runs and where its leaves hang, for one width: the stem path and per leaf (x, y, angle, scale). */
+private class Branch(val stem: Path, val leaves: FloatArray)
+
+/** One leaf in its own units (scaled per leaf); never mutated, so every branch shares it. */
+private val BRANCH_LEAF: Path = Path().apply {
+    moveTo(0f, 0f)
+    cubicTo(10f, -7f, 38f, -7f, 58f, 0f)
+    cubicTo(38f, 7f, 10f, 7f, 0f, 0f)
+    close()
+}
+
+/** The wandering stem and the leaf placements of a branch [width] wide (seeded, so it is the same branch every time). */
+private fun Density.branch(width: Float): Branch {
     val u = 1.dp.toPx()
-    val stem = if (tone == ThemeTone.LIGHT) Color(0xFF6E8F52) else Color(0xFF7A9A5E)
-    val leafA = if (tone == ThemeTone.LIGHT) Color(0xFF79A05E) else Color(0xFF7FA565)
-    val leafB = if (tone == ThemeTone.LIGHT) Color(0xFF8DB372) else Color(0xFF94B97A)
     fun y(x: Float): Float = 6f * u + 3.5f * u * sin(x / (230f * u)) + 1.5f * u * sin(x / (83f * u) + 1f)
-    val path = Path().apply {
+    val stem = Path().apply {
         moveTo(-10f * u, y(-10f * u))
         var x = 0f
-        while (x <= size.width + 20f * u) {
+        while (x <= width + 20f * u) {
             lineTo(x, y(x))
             x += 16f * u
         }
@@ -374,26 +395,38 @@ private fun DrawScope.drawBranch(tone: ThemeTone) {
     val r = Random(91)
     var k = 0
     var lx = r.nextFloat() * 20f * u
-    val leaf = Path().apply {
-        moveTo(0f, 0f)
-        cubicTo(10f, -7f, 38f, -7f, 58f, 0f)
-        cubicTo(38f, 7f, 10f, 7f, 0f, 0f)
-        close()
-    }
-    while (lx < size.width + 30f * u) {
+    val leaves = ArrayList<Float>()
+    while (lx < width + 30f * u) {
         val angle = (if (k % 2 == 0) -1f else 1f) * (30f + r.nextFloat() * 40f) + 90f
         val scale = (0.42f + r.nextFloat() * 0.34f) * u
-        withTransform({
-            translate(lx, y(lx))
-            rotate(angle, pivot = Offset.Zero)
-            scale(scale, scale, pivot = Offset.Zero)
-        }) {
-            drawPath(leaf, if (k % 3 == 0) leafB else leafA)
-        }
+        leaves += lx
+        leaves += y(lx)
+        leaves += angle
+        leaves += scale
         lx += 30f * u + r.nextFloat() * 14f * u
         k++
     }
-    drawPath(path, stem, style = Stroke(4f * u, cap = StrokeCap.Round))
+    return Branch(stem, leaves.toFloatArray())
+}
+
+/** A bamboo branch along the top: a wandering stem with leaves hanging from it (Pastel en rama). */
+private fun DrawScope.drawBranch(branch: Branch, tone: ThemeTone) {
+    val u = 1.dp.toPx()
+    val stem = if (tone == ThemeTone.LIGHT) Color(0xFF6E8F52) else Color(0xFF7A9A5E)
+    val leafA = if (tone == ThemeTone.LIGHT) Color(0xFF79A05E) else Color(0xFF7FA565)
+    val leafB = if (tone == ThemeTone.LIGHT) Color(0xFF8DB372) else Color(0xFF94B97A)
+    val leaves = branch.leaves
+    for (k in 0 until leaves.size / 4) {
+        val i = k * 4
+        withTransform({
+            translate(leaves[i], leaves[i + 1])
+            rotate(leaves[i + 2], pivot = Offset.Zero)
+            scale(leaves[i + 3], leaves[i + 3], pivot = Offset.Zero)
+        }) {
+            drawPath(BRANCH_LEAF, if (k % 3 == 0) leafB else leafA)
+        }
+    }
+    drawPath(branch.stem, stem, style = Stroke(4f * u, cap = StrokeCap.Round))
 }
 
 /** A loop chain of colored paper rings hanging along the rod (Festival). */
@@ -465,23 +498,27 @@ private fun DrawScope.twisted(a: Color, b: Color, x: Float, top: Float, bottom: 
     }
 }
 
+/** The two loops of the Bokashi bow around its knot at (0, 0), in dp; drawn scaled by the density, so no path per draw. */
+private val BOW_LOOPS: Path = Path().apply {
+    moveTo(0f, 0f)
+    cubicTo(-5f, -7f, -13f, -6f, -12f, 0f)
+    cubicTo(-11f, 4f, -4f, 2f, 0f, 0f)
+    moveTo(0f, 0f)
+    cubicTo(5f, -7f, 13f, -6f, 12f, 0f)
+    cubicTo(11f, 4f, 4f, 2f, 0f, 0f)
+}
+
 /** A thread bow tied on the rod (Bokashi). */
 private fun DrawScope.drawBow(at: Offset) {
     val u = 1.dp.toPx()
     val c = Color(0xFFF8F3EA)
-    val s = Stroke(1.8f * u, cap = StrokeCap.Round)
-    val left = Path().apply {
-        moveTo(at.x, at.y)
-        cubicTo(at.x - 5f * u, at.y - 7f * u, at.x - 13f * u, at.y - 6f * u, at.x - 12f * u, at.y)
-        cubicTo(at.x - 11f * u, at.y + 4f * u, at.x - 4f * u, at.y + 2f * u, at.x, at.y)
+    withTransform({
+        translate(at.x, at.y)
+        scale(u, u, pivot = Offset.Zero)
+    }) {
+        // In dp units here: the stroke is 1.8 dp once scaled.
+        drawPath(BOW_LOOPS, c, style = Stroke(1.8f, cap = StrokeCap.Round))
     }
-    val right = Path().apply {
-        moveTo(at.x, at.y)
-        cubicTo(at.x + 5f * u, at.y - 7f * u, at.x + 13f * u, at.y - 6f * u, at.x + 12f * u, at.y)
-        cubicTo(at.x + 11f * u, at.y + 4f * u, at.x + 4f * u, at.y + 2f * u, at.x, at.y)
-    }
-    drawPath(left, c, style = s)
-    drawPath(right, c, style = s)
     drawLine(c, at, Offset(at.x - 5f * u, at.y + 9f * u), strokeWidth = 1.6f * u, cap = StrokeCap.Round)
     drawCircle(c, 2f * u, at)
 }

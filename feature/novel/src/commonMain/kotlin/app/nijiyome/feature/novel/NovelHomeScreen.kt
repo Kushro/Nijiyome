@@ -21,11 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -104,6 +101,9 @@ import app.nijiyome.ui.patterns.rememberUndoController
 import app.nijiyome.ui.state.screenInsets
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.NjLazyRow
+import app.nijiyome.designsystem.scroll.NjLazyVerticalGrid
 
 /**
  * `Route.Novels(query)` (NOV-01 / NOV-02): the novel home, which follows the manga home of the Sparkles design (artifact screen
@@ -247,7 +247,7 @@ private fun NovelResults(
         when (val st = results.state) {
             null, LoadState.Loading -> {
                 val w = cardWidth()
-                LazyVerticalGrid(GridCells.Adaptive(w), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp), userScrollEnabled = false, modifier = Modifier.fillMaxSize().decor(DecorRegion.GRID)) {
+                NjLazyVerticalGrid(GridCells.Adaptive(w), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp), userScrollEnabled = false, modifier = Modifier.fillMaxSize().decor(DecorRegion.GRID)) {
                     items(12) { LoadingPlaceholder(Modifier.fillMaxWidth().height(w / COVER_ASPECT_RATIO)) }
                 }
             }
@@ -267,7 +267,7 @@ private fun NovelResults(
                     snapshotFlow { grid.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }.collect { if (it >= st.value.size - 6) onLoadMore() }
                 }
                 val sortText = novelSortLabel(if (filters.query.isNotBlank() && filters.sort == MediaSort.POPULARITY) MediaSort.RELEVANCE else filters.sort)
-                LazyVerticalGrid(
+                NjLazyVerticalGrid(
                     columns = GridCells.Adaptive(cardWidth()),
                     state = grid,
                     contentPadding = PaddingValues(16.dp),
@@ -311,7 +311,7 @@ private fun NovelFeed(
 ) {
     var hiddenNews by remember { mutableStateOf(emptySet<String>()) }
     val dismissedText = stringResource(Res.string.rd_s11_news_dismissed)
-    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    NjLazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         var section = 0
         item(key = "hero") { NovelFeature(home.hero, home, continueReading, lang, compact, onOpen, onOpenReader, onRefresh, Modifier.homeEntrance(0)) }
         section++
@@ -324,7 +324,7 @@ private fun NovelFeed(
                         Modifier.padding(horizontal = 16.dp),
                         trailing = onOpenLibrary?.let { open -> { TextButton(onClick = open, shape = NijiyomeControls.shape) { Text(stringResource(Res.string.rd_s11_library)) } } },
                     )
-                    LazyRow(Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NjLazyRow(Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), pagingArrows = true) {
                         itemsIndexed(continueReading, key = { _, c -> c.mediaId }) { i, c ->
                             val p = home.lastRead.firstOrNull { it.mediaId == c.mediaId }?.takeIf { c.resume }
                             val data = novelContinueCard(c, p)
@@ -521,12 +521,12 @@ fun NovelLibraryTab(onOpenDetails: (anilistId: Int) -> Unit, onOpenAccounts: () 
             return@Column
         }
         val shown = if (filter == null) list else list.filter { it.status == filter }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+        NjLazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
             if (continueReading.isNotEmpty()) {
                 item(key = "continue") {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         SectionHeader(stringResource(Res.string.novel_continue_reading), Modifier.padding(horizontal = 16.dp))
-                        LazyRow(Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        NjLazyRow(Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), pagingArrows = true) {
                             itemsIndexed(continueReading, key = { _, c -> c.mediaId }) { i, c ->
                                 val p = lastRead.firstOrNull { it.mediaId == c.mediaId }?.takeIf { c.resume }
                                 val data = novelContinueCard(c, p)

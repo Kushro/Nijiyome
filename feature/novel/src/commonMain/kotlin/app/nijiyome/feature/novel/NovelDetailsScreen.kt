@@ -34,12 +34,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
@@ -145,6 +143,8 @@ import java.util.Locale
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 /**
  * `Route.NovelDetails(anilistId)` (NOV-04 to NOV-08), following the manga details page of the Sparkles design: header with cover,
@@ -224,7 +224,7 @@ fun NovelDetailsScreen(
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     if (compact || maxWidth < SIDE_BY_SIDE_MIN) {
                         var tab by rememberSaveable { mutableIntStateOf(0) }
-                        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                        NjLazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
                             if (compact && selection.active) item(key = "selbar") { NovelSelectionTopBar(state) }
                             item(key = "header") { header() }
                             item(key = "tabs") {
@@ -237,12 +237,12 @@ fun NovelDetailsScreen(
                         }
                     } else {
                         Row(Modifier.fillMaxSize()) {
-                            LazyColumn(Modifier.weight(1f).fillMaxHeight(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                            NjLazyColumn(Modifier.weight(1f).fillMaxHeight(), contentPadding = PaddingValues(bottom = 120.dp)) {
                                 item(key = "header") { header() }
                                 novelChapters(state, vm, onOpenReader, onOpenExtensions)
                             }
                             Column(
-                                Modifier.width(380.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, end = 16.dp, bottom = 32.dp),
+                                Modifier.width(380.dp).fillMaxHeight().njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false).padding(top = 16.dp, end = 16.dp, bottom = 32.dp),
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 content = aside,
                             )

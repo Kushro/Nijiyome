@@ -61,10 +61,9 @@ internal object TanabataDecor : DirectionDecor {
         val tone = LocalThemeTone.current
         val rail = cs.outlineVariant
         return when (region) {
-            // By day the floor is tinted washi with soft fibres (on the floor color painted here); by night it stays plain indigo.
-            DecorRegion.APP_BACKGROUND -> Modifier
-                .background(cs.background)
-                .then(if (tone == ThemeTone.LIGHT) Modifier.washi(Color.White, alpha = 0.3f, tile = 240.dp) else Modifier)
+            // By day the floor is tinted washi with soft fibres; by night it stays plain indigo. The floor color itself is not painted
+            // here: the shell's window Box (its only user) paints the same opaque colorScheme.background right under this region.
+            DecorRegion.APP_BACKGROUND -> if (tone == ThemeTone.LIGHT) Modifier.washi(Color.White, alpha = 0.3f, tile = 240.dp) else Modifier
 
             DecorRegion.RAIL -> Modifier.drawWithContent {
                 drawContent()
@@ -103,7 +102,7 @@ internal object TanabataDecor : DirectionDecor {
         val bamboo = TanabataMaterials.bamboo(tone)
         val thread = TanabataMaterials.thread(tone)
         val skin = LocalTanzakuSkin.current
-        return Modifier.drawBehind { drawSkinHanger(skin, bamboo, thread, tone, thickness.toPx()) }
+        return Modifier.skinHanger(skin, bamboo, thread, tone, thickness)
     }
 
     /** Section title over a bamboo rail (artifact `.nj-section-head`). */
@@ -165,7 +164,7 @@ internal object TanabataDecor : DirectionDecor {
                 } else {
                     sized
                 }
-                ringed.tanzakuPaper(paper, shape, ink = if (state == EpisodeMarkState.IN_PROGRESS) 0.5f else 0f, elevated = false, fibreTile = 96.dp)
+                ringed.tanzakuPaper(paper, shape, ink = if (state == EpisodeMarkState.IN_PROGRESS) 0.5f else 0f, elevated = false, fibreTile = 96.dp, textured = false)
             }
         }
         Box(
@@ -198,7 +197,7 @@ internal object TanabataDecor : DirectionDecor {
         val shape = RoundedCornerShape(3.dp)
         val ground = MaterialTheme.colorScheme.background
         val surface = if (selected) {
-            modifier.tanzakuPaper(paper, shape, elevated = true, fibreTile = 120.dp)
+            modifier.tanzakuPaper(paper, shape, elevated = true, fibreTile = 120.dp, textured = false)
         } else {
             modifier
                 .border(1.dp, paper.copy(alpha = 0.55f), shape)

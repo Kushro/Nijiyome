@@ -3,6 +3,7 @@
 
 package app.nijiyome.feature.library
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +52,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.nijiyome.designsystem.motion.motionSharedAxis
 import app.nijiyome.designsystem.components.LocalAppSnackbar
 import app.nijiyome.designsystem.components.Pill
 import app.nijiyome.designsystem.components.PillTone
@@ -200,36 +202,49 @@ internal fun LibraryContent(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             val content = Modifier.fillMaxSize()
-            when {
-                torrents -> TorrentsLibraryTab(
-                    onOpenTorrent = actions.onOpenTorrent,
-                    onPlay = actions.onPlay,
-                    modifier = content,
-                    onOpenDebrid = actions.onOpenDebrid,
-                )
-                LibraryMedium.entries[medium] == LibraryMedium.MANGA -> MangaLibraryTab(
-                    onOpenDetails = actions.onOpenMangaDetails,
-                    onOpenAccounts = actions.onOpenAccounts,
-                    modifier = content,
-                )
-                LibraryMedium.entries[medium] == LibraryMedium.NOVEL -> NovelLibraryTab(
-                    onOpenDetails = actions.onOpenNovelDetails,
-                    onOpenAccounts = actions.onOpenAccounts,
-                    modifier = content,
-                )
-                else -> when (LibraryView.entries[view]) {
-                    LibraryView.MY_LIST -> if (listsAvailable) {
-                        MyListPane(state.continueWatching, actions, content)
-                    } else {
-                        ContinueOnlyPane(state.continueWatching, actions, content)
+            // v1.3.5 tab slide: the medium and view switches change the page on the shared axis. The page index orders them left
+            // to right (medium, then view; the torrents page last), and the body reads the page it is drawing, not the live state,
+            // so the outgoing page keeps its own content while it leaves.
+            val axis = motionSharedAxis()
+            val page = if (torrents) TORRENTS_PAGE else medium * PAGES_PER_MEDIUM + view
+            AnimatedContent(page, content, transitionSpec = { axis(targetState > initialState) }, label = "libraryPage") { p ->
+                val pageMedium = LibraryMedium.entries[(p / PAGES_PER_MEDIUM).coerceIn(0, LibraryMedium.entries.lastIndex)]
+                val pageView = LibraryView.entries[(p % PAGES_PER_MEDIUM).coerceIn(0, LibraryView.entries.lastIndex)]
+                when {
+                    p == TORRENTS_PAGE -> TorrentsLibraryTab(
+                        onOpenTorrent = actions.onOpenTorrent,
+                        onPlay = actions.onPlay,
+                        modifier = content,
+                        onOpenDebrid = actions.onOpenDebrid,
+                    )
+                    pageMedium == LibraryMedium.MANGA -> MangaLibraryTab(
+                        onOpenDetails = actions.onOpenMangaDetails,
+                        onOpenAccounts = actions.onOpenAccounts,
+                        modifier = content,
+                    )
+                    pageMedium == LibraryMedium.NOVEL -> NovelLibraryTab(
+                        onOpenDetails = actions.onOpenNovelDetails,
+                        onOpenAccounts = actions.onOpenAccounts,
+                        modifier = content,
+                    )
+                    else -> when (pageView) {
+                        LibraryView.MY_LIST -> if (listsAvailable) {
+                            MyListPane(state.continueWatching, actions, content)
+                        } else {
+                            ContinueOnlyPane(state.continueWatching, actions, content)
+                        }
+                        LibraryView.HISTORY -> HistoryPane(state.history, actions, content)
+                        LibraryView.FAVORITES -> FavoritesPane(actions, content)
                     }
-                    LibraryView.HISTORY -> HistoryPane(state.history, actions, content)
-                    LibraryView.FAVORITES -> FavoritesPane(actions, content)
                 }
             }
         }
     }
 }
+
+/** Page index stride per medium ([LibraryView] has fewer entries) and the torrents page, after every medium. */
+private const val PAGES_PER_MEDIUM = 10
+private const val TORRENTS_PAGE = 1000
 
 /**
  * Title, the medium switch, the accounts menu (Sincronizar ahora, Listas y cuentas, Torrents descargados) and the sync line

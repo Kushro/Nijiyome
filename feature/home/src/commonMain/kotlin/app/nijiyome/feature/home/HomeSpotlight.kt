@@ -5,8 +5,6 @@ import app.nijiyome.feature.home.resources.Res
 import app.nijiyome.feature.home.resources.*
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -52,8 +50,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
@@ -93,6 +93,7 @@ import app.nijiyome.ui.media.mediaFormatLabel
 import app.nijiyome.ui.media.mediaKey
 import app.nijiyome.ui.media.mediaStatusKind
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
@@ -107,6 +108,9 @@ import app.nijiyome.upscale.UpscaleImageKind
 // list button and details; a segmented progress bar that fills over the autoplay period and pauses while a finger is on the hero.
 // Perf (moto g51): one image per page sized to the slot by Coil, the neighbour pre-composed (beyondViewportPageCount = 1) so its banner
 // is already decoded, progress drawn by a single Animatable read in the draw phase; no blur.
+
+/** How often the autoplay bar steps forward (10 Hz: smooth enough for a 3 dp bar, and the window stays idle in between). */
+private const val PROGRESS_STEP_MS = 100L
 
 /** Spotlight order: titles with a banner first (their order kept), the ones with only a poster at the end of the rotation. */
 internal fun spotlightOrder(items: List<Media>): List<Media> = items.sortedBy { it.banner.isNullOrBlank() }
@@ -171,8 +175,23 @@ internal fun Spotlight(
             progress.snapTo(0f)
         }
         if (period == null || touching) return@LaunchedEffect
-        val left = ((1f - progress.value) * period).toInt().coerceAtLeast(1)
-        progress.animateTo(1f, tween(left, easing = LinearEasing))
+        // Stepped about ten times a second instead of animated: a running animation kept the window drawing every frame for as
+        // long as the hero was on screen, and a 3 dp bar reads the same in steps. Still linear over what is left, still scaled by
+        // the system animation speed like the tween was (0 = straight to the end).
+        val from = progress.value
+        val scale = coroutineContext[MotionDurationScale]?.scaleFactor ?: 1f
+        val left = ((1f - from) * period).toInt().coerceAtLeast(1) * scale
+        if (left <= 0f) {
+            progress.snapTo(1f)
+        } else {
+            // Frame time, as the animation used: no frames in the background, so the bar waits there as it did.
+            val start = withFrameMillis { it }
+            while (progress.value < 1f) {
+                delay(PROGRESS_STEP_MS)
+                val done = ((withFrameMillis { it } - start) / left).coerceAtMost(1f)
+                progress.snapTo(if (done >= 1f) 1f else from + (1f - from) * done)
+            }
+        }
         val next = (pager.settledPage + 1) % ordered.size
         if (motion == Motion.EXPRESSIVE) pager.animateScrollToPage(next) else pager.scrollToPage(next)
     }
@@ -218,6 +237,7 @@ internal fun Spotlight(
                     wide = wide,
                     editorial = editorial,
                     shortHero = height < 300.dp,
+                    underBar = ordered.size > 1,
                     onOpen = { onOpen(media) },
                     onWatch = { onWatch(media) },
                     onContinue = onContinue,
@@ -260,6 +280,8 @@ private fun SpotlightPage(
     editorial: Boolean,
     /** Editorial hero under 300 dp: the smaller display title. */
     shortHero: Boolean = false,
+    /** The carousel bar (segments and pause, 48 dp tall at 8 dp from the bottom) overlays this page: the actions stay above it. */
+    underBar: Boolean = false,
     onOpen: () -> Unit,
     onWatch: () -> Unit,
     onContinue: (HistoryEntry) -> Unit,
@@ -319,7 +341,7 @@ private fun SpotlightPage(
                 .align(Alignment.BottomStart)
                 .then(if (wide) Modifier.widthIn(max = 560.dp) else Modifier.fillMaxWidth())
                 .clip(MaterialTheme.shapes.large)
-                .padding(start = 16.dp, end = 16.dp, bottom = 28.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = if (underBar) 64.dp else 28.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (!editorial) FactChips(media)

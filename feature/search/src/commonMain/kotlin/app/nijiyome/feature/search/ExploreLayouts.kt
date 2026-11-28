@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.feature.search
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,8 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -36,6 +35,7 @@ import app.nijiyome.designsystem.direction.SectionHeader
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.designsystem.motion.LoadingPlaceholder
 import app.nijiyome.designsystem.motion.cardSway
+import app.nijiyome.designsystem.motion.motionSharedAxis
 import app.nijiyome.feature.search.resources.Res
 import app.nijiyome.feature.search.resources.*
 import app.nijiyome.model.FeedKind
@@ -50,6 +50,8 @@ import app.nijiyome.ui.state.screenInsets
 import app.nijiyome.ui.state.userMessage
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.NjLazyRow
 
 // Sparkles Explorar: the two structures of `structures.explore`. Same state, view model and actions; only the arrangement differs.
 
@@ -89,20 +91,22 @@ internal fun ExploreFacetsLayout(state: SearchUiState, actions: ExploreActions, 
             }
         },
     ) { padding ->
-        val body = Modifier.fillMaxSize().padding(padding)
-        if (frame.tab == ExploreTab.FOR_YOU && forYou != null) {
-            forYou({ genre -> browseGenreFromForYou(genre, actions, frame) }, body)
-        } else {
-            ExploreResultsGrid(
-                state = state,
-                actions = actions,
-                listView = listView && !compact,
-                onListView = if (compact) null else ({ v -> listView = v }),
-                compact = compact,
-                modifier = body,
-                header = { discoveryHeader(state, actions, frame, withFeeds = true) },
-                idle = { fullSpan("idle") { ExploreIdle(state, actions) } },
-            )
+        ExploreBody(frame.tab == ExploreTab.FOR_YOU && forYou != null, state.scope, Modifier.fillMaxSize().padding(padding)) { forYouPage ->
+            val body = Modifier.fillMaxSize()
+            if (forYouPage && forYou != null) {
+                forYou({ genre -> browseGenreFromForYou(genre, actions, frame) }, body)
+            } else {
+                ExploreResultsGrid(
+                    state = state,
+                    actions = actions,
+                    listView = listView && !compact,
+                    onListView = if (compact) null else ({ v -> listView = v }),
+                    compact = compact,
+                    modifier = body,
+                    header = { discoveryHeader(state, actions, frame, withFeeds = true) },
+                    idle = { fullSpan("idle") { ExploreIdle(state, actions) } },
+                )
+            }
         }
     }
 }
@@ -142,23 +146,41 @@ internal fun ExploreCanvasLayout(state: SearchUiState, actions: ExploreActions, 
             }
         },
     ) { padding ->
-        val body = Modifier.fillMaxSize().padding(padding)
-        when {
-            frame.tab == ExploreTab.FOR_YOU && forYou != null -> forYou({ genre -> browseGenreFromForYou(genre, actions, frame) }, body)
-            discovery -> CanvasSections(state, actions, slots, frame, compact, body)
-            else -> ExploreResultsGrid(
-                state = state,
-                actions = actions,
-                listView = listView && !compact,
-                onListView = if (compact) null else ({ v -> listView = v }),
-                compact = compact,
-                modifier = body,
-                header = { discoveryHeader(state, actions, frame, withFeeds = true) },
-                idle = { fullSpan("idle") { ExploreIdle(state, actions) } },
-            )
+        ExploreBody(frame.tab == ExploreTab.FOR_YOU && forYou != null, state.scope, Modifier.fillMaxSize().padding(padding)) { forYouPage ->
+            val body = Modifier.fillMaxSize()
+            when {
+                forYouPage && forYou != null -> forYou({ genre -> browseGenreFromForYou(genre, actions, frame) }, body)
+                discovery -> CanvasSections(state, actions, slots, frame, compact, body)
+                else -> ExploreResultsGrid(
+                    state = state,
+                    actions = actions,
+                    listView = listView && !compact,
+                    onListView = if (compact) null else ({ v -> listView = v }),
+                    compact = compact,
+                    modifier = body,
+                    header = { discoveryHeader(state, actions, frame, withFeeds = true) },
+                    idle = { fullSpan("idle") { ExploreIdle(state, actions) } },
+                )
+            }
         }
     }
 }
+
+/**
+ * v1.3.5 tab slide: the body of Explorar changes on the shared axis with the tab (Buscar / Para ti) and the scope ("Qué buscar"),
+ * Para ti to the right of every scope. Typing or filtering keeps the same page (no slide). The page body still reads the live
+ * state, so a leaving page may already show the new scope's first frame; it is gone in 90 ms.
+ */
+@Composable
+private fun ExploreBody(forYouOpen: Boolean, scope: ExploreScope, modifier: Modifier, content: @Composable (forYouPage: Boolean) -> Unit) {
+    val axis = motionSharedAxis()
+    val page = if (forYouOpen) FOR_YOU_PAGE else scope.ordinal
+    AnimatedContent(page, modifier, transitionSpec = { axis(targetState > initialState) }, label = "explorePage") { p ->
+        content(p == FOR_YOU_PAGE)
+    }
+}
+
+private const val FOR_YOU_PAGE = 100
 
 private fun browseGenreFromForYou(genre: String, actions: ExploreActions, frame: ExploreFrame) {
     actions.onBrowseGenre(genre)
@@ -236,7 +258,7 @@ private fun CanvasSections(
     val preview = slots.forYouPreview
     val atlas = slots.tasteAtlas
     val onSeeAll: () -> Unit = { if (slots.forYouPanel != null) frame.onTab(ExploreTab.FOR_YOU) }
-    LazyColumn(modifier, contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    NjLazyColumn(modifier, contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item(key = "feeds") { FeedChips(state, actions, Modifier.padding(horizontal = 16.dp)) }
         item(key = "trending") { TrendingSection(state, actions) }
         if (state.history.isNotEmpty()) {
@@ -273,7 +295,7 @@ private fun TrendingSection(state: SearchUiState, actions: ExploreActions) {
         )
         TrendWindowSwitch(state, actions, Modifier.padding(horizontal = 16.dp))
         when (val row = state.trendingRow) {
-            null, LoadState.Loading -> LazyRow(
+            null, LoadState.Loading -> NjLazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 userScrollEnabled = false,
@@ -294,10 +316,11 @@ private fun TrendingSection(state: SearchUiState, actions: ExploreActions) {
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             } else {
-                LazyRow(
+                NjLazyRow(
                     Modifier.decor(DecorRegion.ROW),
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    pagingArrows = true,
                 ) {
                     itemsIndexed(row.value, key = { _, m -> "t-" + mediaKey(m) }) { i, media ->
                         RankedCard(i + 1) { ResultCard(media, state, revealed, actions, CardContext.ROW, Modifier.cardSway(i), index = i) }

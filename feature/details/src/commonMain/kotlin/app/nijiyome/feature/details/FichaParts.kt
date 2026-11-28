@@ -4,8 +4,6 @@
 package app.nijiyome.feature.details
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -92,6 +90,8 @@ import app.nijiyome.designsystem.direction.ProgressTrack
 import app.nijiyome.designsystem.direction.StatusSlot
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.designsystem.motion.cardToDetailsTarget
+import app.nijiyome.designsystem.motion.motionFadeIn
+import app.nijiyome.designsystem.motion.motionFadeOut
 import app.nijiyome.feature.details.resources.Res
 import app.nijiyome.feature.details.resources.*
 import app.nijiyome.feature.home.rememberFollowControl
@@ -685,7 +685,7 @@ internal fun FichaScrollBar(
 ) {
     val compact = isCompactWindow()
     Box(modifier.fillMaxWidth()) {
-        AnimatedVisibility(scrolled, enter = fadeIn(), exit = fadeOut()) {
+        AnimatedVisibility(scrolled, enter = motionFadeIn(), exit = motionFadeOut()) {
             Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.statusBarsPadding()) {
                     Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 4.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -722,7 +722,7 @@ internal fun FichaScrollBar(
                 }
             }
         }
-        AnimatedVisibility(!scrolled && floatingBack, enter = fadeIn(), exit = fadeOut()) {
+        AnimatedVisibility(!scrolled && floatingBack, enter = motionFadeIn(), exit = motionFadeOut()) {
             FloatingBack(actions.onBack)
         }
     }

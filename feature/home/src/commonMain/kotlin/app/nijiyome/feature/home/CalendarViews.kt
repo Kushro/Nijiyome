@@ -28,11 +28,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -112,6 +110,7 @@ import app.nijiyome.ui.format.weekdayLong
 import app.nijiyome.ui.format.weekdayNarrow
 import app.nijiyome.ui.format.weekdayShort
 import app.nijiyome.ui.look.lookFadeSpec
+import app.nijiyome.ui.look.motionListPlacement
 import app.nijiyome.ui.look.structures
 import app.nijiyome.ui.media.LocalTitleLanguage
 import app.nijiyome.ui.media.MediaCover
@@ -132,6 +131,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 /**
  * `Route.Calendar` (Sparkles redesign, lane S2). The structure picked in Ajustes › Apariencia (`structures.calendar`, also switchable
@@ -184,7 +185,7 @@ fun CalendarScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifie
             val wide = maxWidth >= WIDE_MIN
             val aside = maxWidth >= ASIDE_MIN
             Row(Modifier.fillMaxSize()) {
-                LazyColumn(
+                NjLazyColumn(
                     Modifier.weight(1f).fillMaxHeight(),
                     contentPadding = PaddingValues(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -247,7 +248,7 @@ fun CalendarScreen(onBack: (() -> Unit)?, onMediaClick: (Media) -> Unit, modifie
                 }
                 if (aside) {
                     Column(
-                        Modifier.width(ASIDE_WIDTH).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, end = 16.dp, bottom = 16.dp),
+                        Modifier.width(ASIDE_WIDTH).fillMaxHeight().njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false).padding(top = 16.dp, end = 16.dp, bottom = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         MiniMonth(
@@ -433,7 +434,7 @@ private fun LazyListScope.weekStructure(
 /** The selected day of the week strip / month grid. */
 private fun LazyListScope.selectedDay(days: List<CalendarDay>, anchor: LocalDate, ctx: CalendarCtx) {
     val day = days.firstOrNull { it.date == anchor } ?: return
-    item(key = "sel:${day.date}", contentType = "day-header") { DayHeader(day.date, day.episodes.size, day.date == ctx.today) }
+    item(key = "sel:${day.date}", contentType = "day-header") { DayHeader(day.date, day.episodes.size, day.date == ctx.today, motionListPlacement()) }
     if (day.episodes.isEmpty()) {
         emptyItem("sel-empty", ctx.state.onlyFollowed, whole = false, onShowAll = null)
     } else {
@@ -847,7 +848,8 @@ private fun LazyListScope.agendaStructure(days: List<CalendarDay>, ctx: Calendar
     }
     days.filter { it.episodes.isNotEmpty() }.forEach { day ->
         val isToday = day.date == ctx.today
-        item(key = "d:${day.date}", contentType = "day-header") { DayHeader(day.date, day.episodes.size, isToday) }
+        // v1.3.5 list placement: "only followed" and new data move the days to their new places instead of jumping.
+        item(key = "d:${day.date}", contentType = "day-header") { DayHeader(day.date, day.episodes.size, isToday, motionListPlacement()) }
         eventItems(day.date.toString(), day.episodes, ctx, nowLine = isToday)
     }
 }
@@ -855,9 +857,9 @@ private fun LazyListScope.agendaStructure(days: List<CalendarDay>, ctx: Calendar
 // ---------------------------------------------------------------- shared rows
 
 @Composable
-private fun DayHeader(date: LocalDate, count: Int, today: Boolean) {
+private fun DayHeader(date: LocalDate, count: Int, today: Boolean, modifier: Modifier = Modifier) {
     Row(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp),
+        modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -883,7 +885,7 @@ private fun TodayPill() {
 private fun LazyListScope.eventItems(prefix: String, episodes: List<AiringEpisode>, ctx: CalendarCtx, nowLine: Boolean) {
     val now = if (nowLine) CalendarLayout.nowIndex(episodes, ctx.nowSec) else -1
     item(key = "evs:$prefix", contentType = "events") {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp).decor(DecorRegion.AIRING), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(motionListPlacement().fillMaxWidth().padding(horizontal = 12.dp).decor(DecorRegion.AIRING), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             AiringContent {
                 episodes.forEachIndexed { i, ep ->
                     if (i == now) NowTick(vertical = false, nowSec = ctx.nowSec)

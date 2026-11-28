@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.nijiyome.nav
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -71,10 +73,23 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -84,6 +99,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.decor
+import app.nijiyome.designsystem.motion.LocalMotion
+import app.nijiyome.designsystem.motion.MotionDurations
+import app.nijiyome.designsystem.motion.MotionEasing
+import app.nijiyome.designsystem.motion.MotionExtra
+import app.nijiyome.designsystem.motion.MotionLevel
+import app.nijiyome.designsystem.motion.motionExtraOn
 import app.nijiyome.feature.shell.resources.Res
 import app.nijiyome.feature.shell.resources.app_active_downloads
 import app.nijiyome.feature.shell.resources.rd_s1_nav_explore
@@ -127,6 +148,10 @@ internal fun ShellRail(
 ) {
     val scheme = MaterialTheme.colorScheme
     val navLabel = stringResource(Res.string.rd_s1_nav_main)
+    // v1.3.5 rail indicator: one pill drawn behind the items slides to the selected one (350 ms, emphasized) at every level but OFF,
+    // where it jumps. Switched off, each item paints its own pill as before.
+    val indicator = if (motionExtraOn(MotionExtra.RAIL_INDICATOR)) rememberRailIndicator(selected) else null
+    val pillColor = scheme.primaryContainer
     Row(modifier.fillMaxHeight()) {
         BoxWithConstraints(
             Modifier
@@ -142,21 +167,22 @@ internal fun ShellRail(
                     .heightIn(min = viewport)
                     .width(if (slim) RAIL_SLIM_WIDTH else RAIL_WIDTH)
                     .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .then(if (indicator != null) Modifier.onPlaced(indicator::placeColumn).drawBehind { indicator.draw(this, pillColor) } else Modifier)
                     .semantics { contentDescription = navLabel }
                     .selectableGroup(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 groups.primary.forEach { route ->
-                    RailItem(route, route == selected, if (route is Route.Downloads) activeDownloads else 0, slim, showLabel = !slim, onSelect)
+                    RailItem(route, route == selected, if (route is Route.Downloads) activeDownloads else 0, slim, showLabel = !slim, onSelect, indicator = indicator)
                 }
                 // `.nj-rail-sep`: the utilities sit at the foot when there is room.
                 Spacer(Modifier.weight(1f).heightIn(min = 16.dp))
                 groups.utility.forEach { route ->
-                    RailItem(route, route == selected, if (route is Route.Downloads) activeDownloads else 0, slim, showLabel = !slim, onSelect)
+                    RailItem(route, route == selected, if (route is Route.Downloads) activeDownloads else 0, slim, showLabel = !slim, onSelect, indicator = indicator)
                 }
                 groups.account?.let { route ->
-                    RailItem(route, route == selected, 0, slim, showLabel = false, onSelect, avatar = accountAvatar)
+                    RailItem(route, route == selected, 0, slim, showLabel = false, onSelect, avatar = accountAvatar, indicator = indicator)
                 }
             }
         }
@@ -174,6 +200,7 @@ private fun RailItem(
     showLabel: Boolean,
     onSelect: (Route) -> Unit,
     avatar: String? = null,
+    indicator: RailIndicator? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     val label = route.label()
@@ -195,7 +222,19 @@ private fun RailItem(
                     .size(width = if (slim) 44.dp else 56.dp, height = if (slim) 40.dp else 32.dp)
                     .clip(RoundedCornerShape(999.dp))
                     // The artifact's `--nj-accent-soft` pill: the accent family reads the same in every direction (Obi's secondary is ink).
-                    .background(if (selected) scheme.primaryContainer else Color.Transparent),
+                    // With the sliding indicator the rail draws it; the item only paints its own until the rail's is in place, decided
+                    // at draw time so a new selection never flashes a second pill for a frame.
+                    .then(
+                        if (indicator == null) {
+                            Modifier.background(if (selected) scheme.primaryContainer else Color.Transparent)
+                        } else if (selected) {
+                            Modifier
+                                .onPlaced { indicator.placePill(route, it) }
+                                .drawBehind { if (!indicator.ready || indicator.target?.first != route) drawRect(scheme.primaryContainer) }
+                        } else {
+                            Modifier
+                        },
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 val tint = if (selected) scheme.onPrimaryContainer else scheme.onSurfaceVariant
@@ -229,6 +268,87 @@ private fun RailItem(
             state = rememberTooltipState(),
         ) { item() }
     }
+}
+
+/**
+ * The sliding selection pill of the rail ([MotionExtra.RAIL_INDICATOR]). The selected item reports its pill's bounds, the column draws
+ * the pill there; only its top animates (every pill of a rail has the same width and height). Both coordinates live in the scrolled
+ * column, so scrolling the rail moves the pill with the items for free.
+ */
+@Stable
+internal class RailIndicator {
+    private var column: LayoutCoordinates? = null
+    private var pill: LayoutCoordinates? = null
+    private var pillRoute: Route? = null
+
+    /** Which item the pill is on and its bounds in the column; null until both are placed. */
+    var target by mutableStateOf<Pair<Route, Rect>?>(null)
+        private set
+
+    /** The column draws the pill ([top] is in place); until then the selected item paints its own. */
+    var ready by mutableStateOf(false)
+        internal set
+    internal val top = Animatable(0f)
+
+    fun placeColumn(coordinates: LayoutCoordinates) {
+        column = coordinates
+        update()
+    }
+
+    fun placePill(route: Route, coordinates: LayoutCoordinates) {
+        pill = coordinates
+        pillRoute = route
+        update()
+    }
+
+    fun clear() {
+        pill = null
+        pillRoute = null
+        target = null
+        ready = false
+    }
+
+    private fun update() {
+        val c = column ?: return
+        val p = pill ?: return
+        val route = pillRoute ?: return
+        if (c.isAttached && p.isAttached) target = route to c.localBoundingBoxOf(p, clipBounds = false)
+    }
+
+    fun draw(scope: DrawScope, color: Color) {
+        if (!ready) return
+        val r = target?.second ?: return
+        scope.drawRoundRect(color, topLeft = Offset(r.left, top.value), size = r.size, cornerRadius = CornerRadius(r.height / 2f))
+    }
+}
+
+/** A [RailIndicator] whose pill follows [selected]: animated to a newly selected item, snapped when only the layout moved it. */
+@Composable
+private fun rememberRailIndicator(selected: Route?): RailIndicator {
+    val indicator = remember { RailIndicator() }
+    val level = LocalMotion.current.level
+    var shownOn by remember { mutableStateOf<Route?>(null) }
+    // No selection (a page with no owner): nothing to point at; the next selection appears in place.
+    LaunchedEffect(selected == null) {
+        if (selected == null) {
+            indicator.clear()
+            shownOn = null
+        }
+    }
+    val target = indicator.target
+    LaunchedEffect(target, level) {
+        val (route, r) = target ?: return@LaunchedEffect
+        val slide = level != MotionLevel.OFF && indicator.ready && shownOn != null && shownOn != route
+        shownOn = route
+        if (slide) {
+            indicator.top.animateTo(r.top, tween(MotionDurations.LAYOUT, easing = MotionEasing.Emphasized))
+        } else {
+            // first placement, a resize or the slim toggle: the pill is simply there
+            indicator.top.snapTo(r.top)
+            indicator.ready = true
+        }
+    }
+    return indicator
 }
 
 private val RAIL_WIDTH = 88.dp

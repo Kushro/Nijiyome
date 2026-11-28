@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -37,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -77,11 +77,16 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.getKoin
 import kotlin.math.roundToInt
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyRow
 
 // Sparkles redesign, lane S2: every Home row by its HomeRowIds id. The three structures place these rows in the user's order
 // (DesignPrefs.homeRows); each row loads, fails and retries on its own (inline compact error), as before.
 
-/** What a row needs to draw itself, shared by the three structures. */
+/**
+ * What a row needs to draw itself, shared by the three structures. Home remembers it, so the rows skip when nothing of theirs
+ * changed; the clock is read through [nowSec] by the parts that show it.
+ */
+@Stable
 internal class HomeRowCtx(
     val state: HomeUiState,
     val actions: HomeActions,
@@ -95,7 +100,8 @@ internal class HomeRowCtx(
     /** Editar Inicio is open: each row header offers "Hide". */
     val editing: Boolean,
     val onHide: (String) -> Unit,
-    val nowSec: Long,
+    /** Seconds since the epoch, refreshed every minute; call it where it is shown, so only that part recomposes on the tick. */
+    val nowSec: () -> Long,
     val compact: Boolean,
 ) {
     val discover: HomeDiscoverState get() = state.discover
@@ -119,7 +125,7 @@ private fun HomeRow(id: String, index: Int, ctx: HomeRowCtx) {
     val hide: (() -> Unit)? = if (ctx.editing) ({ ctx.onHide(id) }) else null
     val m = Modifier.homeEntrance(index)
     when (id) {
-        ROW_CONTINUE -> HomeSection(stringResource(Res.string.rd_s2_tonight), m, onSeeAll = a.onOpenLibrary, onHide = hide) {
+        ROW_CONTINUE -> HomeSection(stringResource(Res.string.rd_s2_tonight), m, onSeeAll = a.onOpenLibrary.takeUnless { tonightOwnsSeeAll() }, onHide = hide) {
             TonightRow(ctx)
         }
         ROW_DOWNLOADS -> d.activity?.takeIf { it.total > 0 }?.let { activity ->
@@ -254,7 +260,7 @@ private fun MediaCards(prefix: String, list: List<Media>, ctx: HomeRowCtx) {
 private fun AiringCards(prefix: String, list: List<AiringEpisode>, ctx: HomeRowCtx) {
     HomeCardRow {
         items(list, key = { "$prefix:" + mediaKey(it.media) + ":" + it.episode }) { ep ->
-            val ago = (ctx.nowSec - ep.airingAtEpochSec).takeIf { ep.airingAtEpochSec > 0 }
+            val ago = (ctx.nowSec() - ep.airingAtEpochSec).takeIf { ep.airingAtEpochSec > 0 }
             GatedTitleCard(
                 ctx.discover.cardFor(ep.media, nextLabel = episodeAgoLine(ep.episode, ago), aired = ep.episode),
                 ep.media,
@@ -337,7 +343,7 @@ internal fun GenreChips(genres: List<String>, onGenre: (String) -> Unit) {
 /** "Descargando": active torrents and web downloads; every item opens Transferencias. */
 @Composable
 internal fun DownloadsStrip(activity: DownloadActivity, onOpen: () -> Unit) {
-    LazyRow(
+    NjLazyRow(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

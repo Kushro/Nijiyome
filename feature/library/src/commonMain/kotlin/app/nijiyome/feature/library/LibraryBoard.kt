@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
@@ -50,6 +49,7 @@ import app.nijiyome.ui.patterns.dropTarget
 import app.nijiyome.ui.patterns.isCompactWindow
 import app.nijiyome.ui.patterns.rememberDragDropState
 import org.jetbrains.compose.resources.stringResource
+import app.nijiyome.designsystem.scroll.NjLazyColumn
 
 /**
  * Structure "Tablero" (`LibraryStructure.BOARD`): a kanban with one column per status. Drag a card to another column to change its
@@ -138,10 +138,11 @@ internal fun LibraryBoard(
                             Text(column.size.toString(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         DropHereButton(dnd, status, Modifier.fillMaxWidth())
-                        LazyColumn(
+                        NjLazyColumn(
                             Modifier.fillMaxWidth().weight(1f),
                             contentPadding = PaddingValues(bottom = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
+                            scrollToTopOnReselect = false,
                         ) {
                             itemsIndexed(column, key = { _, e -> e.key }, contentType = { _, _ -> "entry" }) { i, e ->
                                 BoardCard(e, i, labels, actions, onPick = { dnd.pick(e.key) }, cardModifier = Modifier.dragSource(dnd, e.key, touchLongPress = !compact))

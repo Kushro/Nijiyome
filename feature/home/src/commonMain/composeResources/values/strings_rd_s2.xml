@@ -7,11 +7,12 @@
     <string name="rd_s2_tonight_sub">%1$s · %2$d to watch</string>
     <string name="rd_s2_shelves_sub">Your rows, in the order you chose</string>
     <string name="rd_s2_tonight_all">See everything you are watching</string>
-    <string name="rd_s2_tonight_resume">Pick up where you left off</string>
-    <string name="rd_s2_tonight_out_at">Ep. %1$d out at %2$s</string>
-    <string name="rd_s2_tonight_out">Ep. %1$d is out</string>
-    <string name="rd_s2_tonight_behind">%1$s · %2$d to catch up</string>
-    <string name="rd_s2_tonight_airs_at">Ep. %1$d airs at %2$s</string>
+    <string name="rd_s2_tonight_resume">Continue</string>
+    <string name="rd_s2_tonight_resume_detail">Where you left off</string>
+    <string name="rd_s2_tonight_out_at">Out at %1$s</string>
+    <string name="rd_s2_tonight_out">Out now</string>
+    <string name="rd_s2_tonight_behind">%1$d to catch up</string>
+    <string name="rd_s2_tonight_airs_at">Airs at %1$s</string>
     <string name="rd_s2_tonight_empty">Nothing new for tonight. Follow shows in the calendar and their episodes show up here.</string>
     <string name="rd_s2_ep_short">Ep. %1$d</string>
     <string name="rd_s2_ep_left">Ep. %1$d · %2$d min left</string>
@@ -123,4 +124,26 @@
     <string name="rd_s2_cal_followed_no_notify">This device cannot show notifications; following still highlights the shows here.</string>
     <string name="rd_s2_cal_followed_empty">You do not follow anything yet. Tap the bell of any episode to follow the show.</string>
     <string name="rd_s2_cal_no_date">No date this week</string>
+    <!-- v1.3.5: the five layouts of Esta noche -->
+    <string name="rd_s2_tonight_out_short">Out %1$s</string>
+    <string name="rd_s2_tonight_airs_short">Airs %1$s</string>
+    <string name="rd_s2_tonight_ep_behind">Ep. %1$d · %2$d to go</string>
+    <string name="rd_s2_tonight_ep_reminded">Ep. %1$d · reminder on</string>
+    <string name="rd_s2_tonight_tag_new">New</string>
+    <string name="rd_s2_tonight_for_now">Up now</string>
+    <string name="rd_s2_tonight_cta_watch">Watch Ep. %1$d</string>
+    <string name="rd_s2_tonight_cta_resume">Resume Ep. %1$d</string>
+    <string name="rd_s2_tonight_group_resume">To continue</string>
+    <string name="rd_s2_tonight_group_out">Out today</string>
+    <string name="rd_s2_tonight_group_later">Later tonight</string>
+    <string name="rd_s2_tonight_group_also_out">Also out today</string>
+    <string name="rd_s2_tonight_group_also_out_any">Also out</string>
+    <string name="rd_s2_tonight_more_count">%1$d more tonight</string>
+    <string name="rd_s2_tonight_more_tonight">more tonight</string>
+    <string name="rd_s2_tonight_open_list">Opens the list</string>
+    <string name="rd_s2_tonight_total">%1$d in all</string>
+    <string name="rd_s2_tonight_pile_tag">To continue · %1$d</string>
+    <string name="rd_s2_tonight_pile_open">Open the pile: %1$d to continue</string>
+    <string name="rd_s2_tonight_pile_hint">Tap to open</string>
+    <string name="rd_s2_tonight_pile_gather">Stack them</string>
 </resources>

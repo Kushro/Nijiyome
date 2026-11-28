@@ -6,6 +6,7 @@ package app.nijiyome.feature.settings
 import app.nijiyome.feature.settings.resources.Res
 import app.nijiyome.feature.settings.resources.*
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +49,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import app.nijiyome.designsystem.motion.motionExtraOn
+import app.nijiyome.designsystem.motion.MotionExtra
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -87,6 +92,7 @@ import app.nijiyome.designsystem.components.Segmented
 import app.nijiyome.designsystem.components.SegmentedOption
 import app.nijiyome.designsystem.components.TrackModal
 import app.nijiyome.designsystem.direction.Directions
+import app.nijiyome.designsystem.motion.motionSharedAxis
 import app.nijiyome.designsystem.theme.LocalNijiyomeAmoled
 import app.nijiyome.feature.torrents.TorrentSettingsPage
 import app.nijiyome.model.ListsRepository
@@ -342,7 +348,7 @@ private fun SettingsContent(
                 DesignGalleryScreen(onBack = { nav.gallery = false }, modifier = Modifier.fillMaxSize())
                 return@BoxWithConstraints
             }
-            val page: @Composable (Modifier) -> Unit = { m -> CategoryPage(nav.current, state, viewModel, actions, savedTick, showHeader = wide, modifier = m) }
+            val page: @Composable (SettingsCategory, Modifier) -> Unit = { c, m -> CategoryPage(c, state, viewModel, actions, savedTick, showHeader = wide, modifier = m) }
             val ctx = SettingsLayoutCtx(state, nav, results, catalog, pick, page, wide, onBack, deepLinked = initialCategory != null)
             when (structures.settings) {
                 SettingsStructure.LIST_DETAIL -> ListDetailSettings(ctx)
@@ -358,7 +364,8 @@ private class SettingsLayoutCtx(
     val results: List<SettingCatalogItem>,
     val catalog: List<SettingCatalogItem>,
     val pick: (SettingCatalogItem) -> Unit,
-    val page: @Composable (Modifier) -> Unit,
+    /** One category's page; the wide pane passes the category it is drawing (an outgoing page keeps its own). */
+    val page: @Composable (SettingsCategory, Modifier) -> Unit,
     val wide: Boolean,
     val onBack: (() -> Unit)?,
     /** Opened at a category from a deep link: Back from that category leaves Settings. */
@@ -411,9 +418,7 @@ private fun ListDetailSettings(ctx: SettingsLayoutCtx) {
                 }
             }
             VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-                ctx.page(Modifier.widthIn(max = 960.dp).fillMaxSize())
-            }
+            WideCategoryPane(ctx, Modifier.weight(1f).fillMaxHeight())
         }
     }
 }
@@ -457,15 +462,34 @@ private fun SearchFirstSettings(ctx: SettingsLayoutCtx) {
                     }
                 }
                 VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-                    ctx.page(Modifier.widthIn(max = 960.dp).fillMaxSize())
-                }
+                WideCategoryPane(ctx, Modifier.weight(1f).fillMaxHeight())
             }
         }
     }
 }
 
 // ==================================================================== shared pieces
+
+/**
+ * The open category beside the list on wide windows. v1.3.5 tab slide: picking another category moves its page in on the shared
+ * axis (down the list = from the right); each category is its own composition, so a new one also starts at its top.
+ */
+@Composable
+private fun WideCategoryPane(ctx: SettingsLayoutCtx, modifier: Modifier) {
+    val axis = motionSharedAxis()
+    val order = ctx.nav.categories
+    AnimatedContent(
+        ctx.nav.current,
+        modifier,
+        transitionSpec = { axis(order.indexOf(targetState) > order.indexOf(initialState)) },
+        contentAlignment = Alignment.TopCenter,
+        label = "settingsCategory",
+    ) { c ->
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            ctx.page(c, Modifier.widthIn(max = 960.dp).fillMaxSize())
+        }
+    }
+}
 
 /** Phones (both structures): the hub ([top] = the structure's search block, then results or the category cards), or the open category. */
 @Composable
@@ -476,10 +500,16 @@ private fun PhoneSettings(ctx: SettingsLayoutCtx, top: @Composable () -> Unit) {
     }
     if (nav.open) {
         PlatformBackHandler(onBack = closeCategory)
+        // v1.3.5 HIDE_HEADER: the category's bar slides away while scrolling down and returns on the way up (follows the finger, so it
+        // stays on at every motion level; only the user's switch turns it off).
+        val hide = motionExtraOn(MotionExtra.HIDE_HEADER)
+        val barScroll = if (hide) TopAppBarDefaults.enterAlwaysScrollBehavior() else null
         Scaffold(
+            modifier = if (barScroll != null) Modifier.nestedScroll(barScroll.nestedScrollConnection) else Modifier,
             contentWindowInsets = screenInsets,
             topBar = {
                 TopAppBar(
+                    scrollBehavior = barScroll,
                     title = { Text(nav.current.title(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     navigationIcon = {
                         IconButton(onClick = closeCategory) {
@@ -489,7 +519,7 @@ private fun PhoneSettings(ctx: SettingsLayoutCtx, top: @Composable () -> Unit) {
                 )
             },
         ) { padding ->
-            Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) { ctx.page(Modifier.fillMaxSize()) }
+            Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) { ctx.page(nav.current, Modifier.fillMaxSize()) }
         }
         return
     }

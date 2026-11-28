@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- v1.3.5 motion extras: paging arrows of card rows (rd_scroll_*). -->
+    <string name="rd_scroll_back">Scroll left</string>
+    <string name="rd_scroll_forward">Scroll right</string>
+</resources>

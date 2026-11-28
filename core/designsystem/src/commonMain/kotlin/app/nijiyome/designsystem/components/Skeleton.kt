@@ -15,30 +15,34 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import app.nijiyome.designsystem.theme.LocalReduceMotion
 import kotlinx.coroutines.delay
 
 /** Placeholder block with the final shape of the content (02 §5). Honours [LocalReduceMotion]. */
 @Composable
 fun SkeletonBox(modifier: Modifier = Modifier, shape: Shape = MaterialTheme.shapes.medium) {
-    val alpha = if (LocalReduceMotion.current) {
-        0.65f
+    // The pulse is read in the layer, not here: reading it in composition recomposed every skeleton each frame.
+    val pulse = if (LocalReduceMotion.current) {
+        null
     } else {
         val transition = rememberInfiniteTransition(label = "skeleton")
-        val anim by transition.animateFloat(
+        transition.animateFloat(
             initialValue = 0.45f,
             targetValue = 0.9f,
             animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
             label = "skeletonAlpha",
         )
-        anim
     }
     Box(
         modifier
-            .alpha(alpha)
+            // Same layer as Modifier.alpha (it clips too).
+            .graphicsLayer {
+                alpha = pulse?.value ?: 0.65f
+                clip = true
+            }
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     )

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
@@ -123,6 +122,7 @@ import java.time.format.FormatStyle
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.NjLazyColumn
 
 // Parity wave B contract (docs/redesign/16-parity-wave-b-contract-android.md §3.1, worker r). Signatures FINAL (the shell and Details
 // wire them).
@@ -369,7 +369,7 @@ private fun RecsList(
         is LoadState.Ok -> if (items.value.isEmpty()) {
             EmptyState(icon = Icons.Outlined.Explore, title = stringResource(Res.string.home_recs_empty), message = stringResource(Res.string.home_recs_empty_body))
         } else {
-            LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            NjLazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                 state.profile?.let { p ->
                     item(key = "profile") {
                         Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { TasteChips(p.sampleSize, p.genres, onGenre) }

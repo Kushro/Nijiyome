@@ -3,6 +3,7 @@
 
 package app.nijiyome.feature.settings
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.CompositionLocalProvider
@@ -14,10 +15,13 @@ import app.nijiyome.designsystem.direction.tanabata.TanabataMaterials
 import app.nijiyome.designsystem.direction.tanabata.TanzakuSkin
 import app.nijiyome.designsystem.direction.tanabata.drawSkinHanger
 import app.nijiyome.model.TanzakuSkinIds
+import app.nijiyome.model.TonightLayoutIds
 import app.nijiyome.model.TitleCardIds
 import app.nijiyome.ui.cards.LocalCardIndex
 import app.nijiyome.feature.settings.resources.rd_s10_design_skin
 import app.nijiyome.feature.settings.resources.rd_s10_design_skin_hint
+import app.nijiyome.feature.settings.resources.rd_s10_design_skin_stagger
+import app.nijiyome.feature.settings.resources.rd_s10_design_skin_stagger_hint
 import app.nijiyome.feature.settings.resources.rd_s10_skin_pastel
 import app.nijiyome.feature.settings.resources.rd_s10_skin_kozo
 import app.nijiyome.feature.settings.resources.rd_s10_skin_crepe
@@ -77,7 +81,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -113,6 +116,8 @@ import app.nijiyome.designsystem.direction.ThemeTone
 import app.nijiyome.designsystem.generated.ContrastLevel
 import app.nijiyome.designsystem.generated.NijiyomeTokens
 import app.nijiyome.designsystem.generated.PaletteInfo
+import app.nijiyome.designsystem.motion.MotionExtra
+import app.nijiyome.designsystem.motion.motionSharedAxis
 import app.nijiyome.designsystem.motion.rememberLowEndDevice
 import app.nijiyome.designsystem.motion.rememberLowRefreshRate
 import app.nijiyome.feature.settings.resources.Res
@@ -225,10 +230,10 @@ internal enum class AppearanceSubpage { THEME, DESIGN, MOTION, NAVIGATION, SCREE
 /** The sub-page that holds the Apariencia setting [id], or null for an id of another category. */
 internal fun appearanceSubpageOf(id: String?): AppearanceSubpage? = when (id) {
     "theme_mode", "amoled", "palette", "dynamic_color", "contrast", "language" -> AppearanceSubpage.THEME
-    "design_direction", "design_card", "design_skin", "design_gallery", "design_reset", "look_presets" -> AppearanceSubpage.DESIGN
-    "motion", "design_motion_profile", "design_perf_mode", "design_motion_moments" -> AppearanceSubpage.MOTION
+    "design_direction", "design_card", "design_skin", "design_skin_stagger", "design_gallery", "design_reset", "look_presets" -> AppearanceSubpage.DESIGN
+    "motion", "design_motion_profile", "design_perf_mode", "design_motion_moments", "design_motion_extras" -> AppearanceSubpage.MOTION
     "design_nav", "rail_style" -> AppearanceSubpage.NAVIGATION
-    "design_structures", "look_home", "design_home_rows", "look_details", "look_cards", "look_calendar" -> AppearanceSubpage.SCREENS
+    "design_structures", "look_home", "design_tonight", "design_home_rows", "look_details", "look_cards", "look_calendar" -> AppearanceSubpage.SCREENS
     else -> null
 }
 
@@ -265,15 +270,17 @@ internal fun AppearancePage(state: SettingsUiState, vm: SettingsViewModel, actio
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             val stacked = maxWidth < 760.dp
-            // A new sub-page starts at its top (the scaffold keeps its own scroll state).
-            key(page) {
+            // A new sub-page starts at its top (each page is its own composition, so the scaffold's scroll state is new), and
+            // v1.3.5 tab slide moves it in on the shared axis in the chips' order.
+            val axis = motionSharedAxis()
+            AnimatedContent(page, Modifier.fillMaxSize(), transitionSpec = { axis(targetState.ordinal > initialState.ordinal) }, label = "appearancePage") { p ->
                 LivePreviewScaffold(
                     preview = { AppearanceLivePreview(state.settings) },
                     caption = stringResource(Res.string.rd_s10_preview_caption),
                     stacked = stacked,
                     controlsWidth = (maxWidth - 300.dp).coerceAtLeast(360.dp),
                 ) {
-                    AppearanceGroups(page, state, vm, actions)
+                    AppearanceGroups(p, state, vm, actions)
                 }
             }
         }
@@ -394,6 +401,15 @@ private fun DesignGroups(state: SettingsUiState, vm: SettingsViewModel, actions:
         }
         SettingAnchor("design_card") { CardStylePicker(look) { id -> vm.setDesign { it.copy(card = id) } } }
         SettingAnchor("design_skin") { TanzakuSkinPicker(design) { id -> vm.setDesign { it.copy(tanzakuSkin = id) } } }
+        SettingAnchor("design_skin_stagger") {
+            SwitchRow(
+                stringResource(Res.string.rd_s10_design_skin_stagger),
+                design.tanzakuStagger,
+                { on -> vm.setDesign { it.copy(tanzakuStagger = on) } },
+                hint = stringResource(Res.string.rd_s10_design_skin_stagger_hint),
+                enabled = design.tanzakuSkinId() == TanzakuSkinIds.PASTEL,
+            )
+        }
         SettingAnchor("design_gallery") {
             SettingRow(stringResource(Res.string.rd_s10_design_gallery), stringResource(Res.string.rd_s10_design_gallery_hint)) {
                 FilledTonalButton(onClick = actions.onOpenGallery, shape = NijiyomeControls.shape) {
@@ -515,6 +531,22 @@ private fun MotionGroup(state: SettingsUiState, vm: SettingsViewModel) {
                 }
             }
         }
+        SettingAnchor("design_motion_extras") {
+            SettingRow(stringResource(Res.string.rd_s10_motion_extras), stringResource(Res.string.rd_s10_motion_extras_hint), stack = true) {
+                Column {
+                    MotionExtra.ALL.forEachIndexed { i, id ->
+                        val (name, desc) = motionExtraTexts(id)
+                        SwitchRow(
+                            name,
+                            id !in design.motionExtrasOff,
+                            { on -> vm.setDesign { it.copy(motionExtrasOff = if (on) it.motionExtrasOff - id else it.motionExtrasOff + id) } },
+                            hint = desc,
+                            divider = i > 0,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -551,6 +583,21 @@ private fun ScreenStructureRows(look: LookPrefs, vm: SettingsViewModel) {
         SubHeading(stringResource(Res.string.rd_s10_screen_home))
         StructureChoiceRow(stringResource(Res.string.rd_s10_structure), null, homeOptions(), st.home, { v -> set { it.copy(home = v) } }, divider = false)
         HomeLookRows(look, vm::setLook)
+    }
+    SettingAnchor("design_tonight") {
+        StructureChoiceRow(
+            stringResource(Res.string.rd_s10_tonight_layout),
+            stringResource(Res.string.rd_s10_tonight_layout_hint),
+            listOf(
+                ChoiceOption(TonightLayoutIds.FEATURED, stringResource(Res.string.rd_s10_tonight_featured), stringResource(Res.string.rd_s10_tonight_featured_desc)),
+                ChoiceOption(TonightLayoutIds.WIDE, stringResource(Res.string.rd_s10_tonight_wide), stringResource(Res.string.rd_s10_tonight_wide_desc)),
+                ChoiceOption(TonightLayoutIds.GRID, stringResource(Res.string.rd_s10_tonight_grid), stringResource(Res.string.rd_s10_tonight_grid_desc)),
+                ChoiceOption(TonightLayoutIds.BRANCHES, stringResource(Res.string.rd_s10_tonight_branches), stringResource(Res.string.rd_s10_tonight_branches_desc)),
+                ChoiceOption(TonightLayoutIds.NIGHT, stringResource(Res.string.rd_s10_tonight_night), stringResource(Res.string.rd_s10_tonight_night_desc)),
+            ),
+            look.design.tonightLayoutId(),
+            { id -> vm.setDesign { it.copy(tonightLayout = id) } },
+        )
     }
     SettingAnchor("design_home_rows") { HomeRowsEditor(look.design, vm) }
 
@@ -1116,3 +1163,21 @@ internal fun AppearanceLivePreview(s: AppSettings) {
         }
     }
 }
+
+/** Name and one-line description of an extra animation (v1.3.5), in the order of the proposal page. */
+@Composable
+private fun motionExtraTexts(id: String): Pair<String, String> = when (id) {
+    MotionExtra.SMOOTH_WHEEL -> Res.string.rd_s10_mx_wheel to Res.string.rd_s10_mx_wheel_desc
+    MotionExtra.SCROLLBARS -> Res.string.rd_s10_mx_bars to Res.string.rd_s10_mx_bars_desc
+    MotionExtra.ROW_ARROWS -> Res.string.rd_s10_mx_arrows to Res.string.rd_s10_mx_arrows_desc
+    MotionExtra.IMAGE_FADE -> Res.string.rd_s10_mx_images to Res.string.rd_s10_mx_images_desc
+    MotionExtra.CONTENT_REVEAL -> Res.string.rd_s10_mx_content to Res.string.rd_s10_mx_content_desc
+    MotionExtra.LIST_PLACEMENT -> Res.string.rd_s10_mx_lists to Res.string.rd_s10_mx_lists_desc
+    MotionExtra.TAB_SLIDE -> Res.string.rd_s10_mx_tabs to Res.string.rd_s10_mx_tabs_desc
+    MotionExtra.FADE_THROUGH -> Res.string.rd_s10_mx_sections to Res.string.rd_s10_mx_sections_desc
+    MotionExtra.EXPAND -> Res.string.rd_s10_mx_expand to Res.string.rd_s10_mx_expand_desc
+    MotionExtra.RAIL_INDICATOR -> Res.string.rd_s10_mx_rail to Res.string.rd_s10_mx_rail_desc
+    MotionExtra.HOVER_LIFT -> Res.string.rd_s10_mx_lift to Res.string.rd_s10_mx_lift_desc
+    MotionExtra.HIDE_HEADER -> Res.string.rd_s10_mx_header to Res.string.rd_s10_mx_header_desc
+    else -> Res.string.rd_s10_mx_top to Res.string.rd_s10_mx_top_desc
+}.let { (n, d) -> stringResource(n) to stringResource(d) }

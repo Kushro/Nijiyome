@@ -257,6 +257,8 @@ fun DrawScope.drawHole(center: Offset, ground: Color, radius: Float = 3.dp.toPx(
 /**
  * A sheet of tanzaku paper: soft paper shadow, the paper color, ink running down with [ink] (0..1), washi fibres on top. Under PERF the
  * shadow becomes a hairline ring and the texture goes (artifact `[data-motion="perf"]`). Clips to [shape]; content draws above.
+ * [textured] = false leaves the skin texture off: tiny chips repeated down long lists (episode marks, status tags) would each pay an
+ * offscreen layer for it.
  */
 @Composable
 fun Modifier.tanzakuPaper(
@@ -265,6 +267,7 @@ fun Modifier.tanzakuPaper(
     ink: Float = 0f,
     elevated: Boolean = true,
     fibreTile: Dp = 160.dp,
+    textured: Boolean = true,
 ): Modifier {
     val tone = LocalThemeTone.current
     val perf = LocalMotion.current.level == MotionLevel.PERF
@@ -278,9 +281,10 @@ fun Modifier.tanzakuPaper(
     // v1.3.3: the paper wears the user's skin texture (the flat washi grain of v1.3.2 is gone). [fibreTile] scales the tile on small
     // papers (the strip of "tanzaku sello").
     val skin = LocalTanzakuSkin.current
-    return edged
+    val flat = edged
         .clip(shape)
         .background(paper)
         .then(if (ink > 0f) Modifier.drawBehind { drawInkDown(paper, ink) } else Modifier)
-        .skinTexture(skin, paper, calmFrom = 0.5f, strength = skin.textureStrength * if (fibreTile < 160.dp) 0.7f else 1f)
+    if (!textured) return flat
+    return flat.skinTexture(skin, paper, calmFrom = 0.5f, strength = skin.textureStrength * if (fibreTile < 160.dp) 0.7f else 1f)
 }

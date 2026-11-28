@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -119,6 +118,7 @@ import app.nijiyome.model.ExtensionHomeItem
 import app.nijiyome.model.FeedKind
 import app.nijiyome.model.ListStatus
 import app.nijiyome.model.Media
+import app.nijiyome.ui.look.motionListPlacement
 import app.nijiyome.ui.cards.CardContext
 import app.nijiyome.ui.cards.CardShow
 import app.nijiyome.ui.cards.TitleCard
@@ -147,6 +147,7 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
 import app.nijiyome.upscale.UpscaleImageKind
+import app.nijiyome.designsystem.scroll.NjLazyVerticalGrid
 
 // Sparkles Explorar (lane S3): the pieces both structures (Facetas, Lienzo) compose. They read the shared SearchUiState and call the
 // shared ExploreActions; only the arrangement changes between structures.
@@ -620,7 +621,7 @@ internal fun ExploreResultsGrid(
 ) {
     val revealed = remember { mutableStateListOf<String>() }
     val columns = if (listView) GridCells.Fixed(1) else GridCells.Adaptive(if (compact) 104.dp else 136.dp)
-    LazyVerticalGrid(
+    NjLazyVerticalGrid(
         columns = columns,
         modifier = modifier.decor(DecorRegion.GRID),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
@@ -667,7 +668,8 @@ internal fun ExploreResultsGrid(
                 else -> {
                     fullSpan("count") { ResultsHeader(state.shown.size, state.adult, listView, onListView) }
                     items(state.shown, key = { "m-" + mediaKey(it) }, contentType = { "media" }) { media ->
-                        ResultCard(media, state, revealed, actions, if (listView) CardContext.COMPACT else CardContext.GRID)
+                        // v1.3.5 list placement: filtering / sorting the shown results glides the cards to their new cells.
+                        ResultCard(media, state, revealed, actions, if (listView) CardContext.COMPACT else CardContext.GRID, motionListPlacement())
                     }
                     if (results.hasNext) fullSpan("load-more") { LoadMoreFooter(results, actions.onLoadMore) }
                 }

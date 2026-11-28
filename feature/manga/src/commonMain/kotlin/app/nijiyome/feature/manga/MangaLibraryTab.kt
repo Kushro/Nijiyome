@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import app.nijiyome.designsystem.direction.DecorRegion
@@ -75,6 +73,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.NjLazyRow
 
 class MangaLibraryViewModel(
     repo: MangaRepository,
@@ -188,12 +188,12 @@ internal fun ReadlistContent(
             )
             else -> {
                 val shown = if (filter == null) list else list.filter { it.status == filter }
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+                NjLazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
                     if (continueItems.isNotEmpty()) {
                         item(key = "continue") {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 SectionHeader(stringResource(Res.string.manga_continue_reading), Modifier.padding(horizontal = 16.dp))
-                                LazyRow(Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                NjLazyRow(Modifier.fillMaxWidth().decor(DecorRegion.TONIGHT), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), pagingArrows = true) {
                                     itemsIndexed(continueItems, key = { _, c -> c.anilistId }) { i, c ->
                                         val data = TitleCardData(key = "manga:${c.anilistId}", title = c.title, coverUrl = c.poster, subtitle = c.line, nextLabel = c.line)
                                         TitleCard(data, onClick = { onOpenDetails(c.anilistId) }, context = CardContext.CONTINUE, modifier = Modifier.cardSway(i).cardToDetailsSource(data.key))

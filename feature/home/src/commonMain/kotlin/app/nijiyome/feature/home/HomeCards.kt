@@ -12,16 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
@@ -31,6 +29,9 @@ import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.SectionHeader
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.designsystem.motion.LoadingPlaceholder
+import app.nijiyome.designsystem.motion.contentReveal
+import app.nijiyome.designsystem.motion.rememberRevealGate
+import app.nijiyome.designsystem.scroll.NjLazyRow
 import app.nijiyome.feature.home.resources.Res
 import app.nijiyome.feature.home.resources.*
 import app.nijiyome.model.HistoryEntry
@@ -143,10 +144,12 @@ internal fun HomeSection(
 /** A horizontal row of cards: the direction decorates the row itself (its rod hangs at y = 0), padding only on the sides. */
 @Composable
 internal fun HomeCardRow(modifier: Modifier = Modifier, region: DecorRegion = DecorRegion.ROW, content: LazyListScope.() -> Unit) {
-    LazyRow(
+    // Paging arrows on hover; the decor stays on the outer box so the edge fade never eats the direction's rod.
+    NjLazyRow(
         modifier = modifier.fillMaxWidth().decor(region),
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(rowSpacing()),
+        pagingArrows = true,
         content = content,
     )
 }
@@ -159,8 +162,12 @@ internal fun <T> RowBody(
     emptyText: String? = null,
     content: @Composable (List<T>) -> Unit,
 ) {
+    val reveal = rememberRevealGate()
     when (state) {
-        LoadState.Loading -> RowPlaceholder()
+        LoadState.Loading -> {
+            reveal.placeholderShown = true
+            RowPlaceholder()
+        }
         is LoadState.Err -> app.nijiyome.ui.state.AppErrorState(
             cause = state.cause,
             onRetry = onRetry,
@@ -177,7 +184,8 @@ internal fun <T> RowBody(
                 )
             }
         } else {
-            content(state.value)
+            // Only a row that was showing placeholders reveals; a cached row just appears.
+            Box(Modifier.contentReveal(reveal.placeholderShown)) { content(state.value) }
         }
     }
 }
@@ -224,12 +232,19 @@ internal fun CardWithCaption(modifier: Modifier = Modifier, card: @Composable ()
 
 /** Seconds since the epoch, refreshed every minute (airing states, "now" markers, countdowns of the agenda). */
 @Composable
-internal fun rememberNowSec(): Long {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
+internal fun rememberNowSec(): Long = rememberNowSecState().value
+
+/**
+ * [rememberNowSec] as a State: whoever reads it recomposes on the minute, not the caller that remembered it (Home hands it to its
+ * rows, so the tick redraws the agenda and the airing captions instead of every row and card).
+ */
+@Composable
+internal fun rememberNowSecState(): State<Long> {
+    val now = remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(MINUTE_MS - System.currentTimeMillis() % MINUTE_MS)
-            now = System.currentTimeMillis() / 1000
+            now.longValue = System.currentTimeMillis() / 1000
         }
     }
     return now

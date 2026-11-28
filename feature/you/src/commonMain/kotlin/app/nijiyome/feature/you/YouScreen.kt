@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -91,6 +90,7 @@ import app.nijiyome.ui.resources.ui_nav_for_you
 import app.nijiyome.ui.resources.ui_retry
 import app.nijiyome.designsystem.theme.NijiyomeControls
 import app.nijiyome.upscale.UpscaleImageKind
+import app.nijiyome.designsystem.scroll.NjLazyColumn
 
 // android wave contract (docs/redesign/12 §3.13). Name and signature FIXED; new parameters only with defaults.
 
@@ -190,7 +190,7 @@ internal fun YouContent(
                 )
                 is LoadState.Ok -> {
                     val o = overview.value
-                    LazyColumn(
+                    NjLazyColumn(
                         modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth(),
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(20.dp),

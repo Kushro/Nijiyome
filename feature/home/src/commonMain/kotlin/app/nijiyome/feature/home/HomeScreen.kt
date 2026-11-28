@@ -1,8 +1,6 @@
 package app.nijiyome.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,12 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsTopHeight
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.DashboardCustomize
@@ -55,6 +51,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.nijiyome.designsystem.scroll.NjLazyColumn
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 import app.nijiyome.designsystem.direction.DecorRegion
 import app.nijiyome.designsystem.direction.EmptyArt
 import app.nijiyome.designsystem.direction.EmptyKind
@@ -63,6 +61,8 @@ import app.nijiyome.designsystem.direction.LocalSignalColors
 import app.nijiyome.designsystem.direction.decor
 import app.nijiyome.designsystem.motion.LoadingPlaceholder
 import app.nijiyome.designsystem.motion.homeEntrance
+import app.nijiyome.designsystem.motion.motionFadeIn
+import app.nijiyome.designsystem.motion.motionFadeOut
 import app.nijiyome.feature.home.resources.Res
 import app.nijiyome.feature.home.resources.*
 import app.nijiyome.model.Density
@@ -147,24 +147,29 @@ fun HomeScreen(
     onOpenExtensions: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val openEntry: (HistoryEntry) -> Unit = { entry ->
-        val provider = HomeLogic.parseProviderHistoryId(entry.animeId)
-        when {
-            provider != null -> onOpenProviderItem(provider.first, provider.second, provider.third)
-            else -> entry.anilistId?.takeIf { it > 0 }?.let(onOpenDetails) ?: onPlay(entry.toResumeArgs())
+    // Remembered so the content (and every row holding it) is not handed a new set of ~40 callbacks on each recomposition. The
+    // keys are everything the callbacks capture: a caller passing a new lambda gets a new set, never a stale one.
+    val actions = remember(
+        viewModel, onMediaClick, onSearchClick, onPlay, onOpenFeed, onOpenGenre, onSearchQuery, onOpenLibrary, onOpenCalendar,
+        onOpenForYou, onOpenManga, onOpenNovels, onOpenNotifications, onOpenProvider, onOpenProviderItem, onResumeProviderItem,
+        onOpenDetails, onOpenDownloads, onOpenLink, onOpenLinkMonitor, onOpenMetadataSettings, onOpenExtensions,
+    ) {
+        val openEntry: (HistoryEntry) -> Unit = { entry ->
+            val provider = HomeLogic.parseProviderHistoryId(entry.animeId)
+            when {
+                provider != null -> onOpenProviderItem(provider.first, provider.second, provider.third)
+                else -> entry.anilistId?.takeIf { it > 0 }?.let(onOpenDetails) ?: onPlay(entry.toResumeArgs())
+            }
         }
-    }
-    val resumeEntry: (HistoryEntry) -> Unit = { entry ->
-        val provider = HomeLogic.parseProviderHistoryId(entry.animeId)
-        when {
-            provider == null -> onPlay(entry.toResumeArgs())
-            onResumeProviderItem != null -> onResumeProviderItem(entry)
-            else -> onOpenProviderItem(provider.first, provider.second, provider.third)
+        val resumeEntry: (HistoryEntry) -> Unit = { entry ->
+            val provider = HomeLogic.parseProviderHistoryId(entry.animeId)
+            when {
+                provider == null -> onPlay(entry.toResumeArgs())
+                onResumeProviderItem != null -> onResumeProviderItem(entry)
+                else -> onOpenProviderItem(provider.first, provider.second, provider.third)
+            }
         }
-    }
-    HomeContent(
-        state = state,
-        actions = HomeActions(
+        HomeActions(
             onMediaClick = onMediaClick,
             onSearchClick = onSearchClick,
             onWatch = { media -> onPlay(PlayerArgs(media = media.ref, title = media.title, episode = 1)) },
@@ -207,7 +212,11 @@ fun HomeScreen(
             onOpenLinkMonitor = onOpenLinkMonitor ?: onOpenLink,
             onOpenMetadataSettings = onOpenMetadataSettings,
             onOpenExtensions = onOpenExtensions,
-        ),
+        )
+    }
+    HomeContent(
+        state = state,
+        actions = actions,
         modifier = modifier,
         unreadNotifications = rememberUnreadNotifications(),
     )
@@ -283,7 +292,10 @@ internal fun HomeContent(
     val gate = rememberMatureGate(state.discover.matureContent)
     val look = LocalLook.current
     val prefs = look.design
-    val nowSec = rememberNowSec()
+    // The tonight list below needs the minute here; the rows get it through ctx.nowSec and read it where they show it.
+    val nowState = rememberNowSecState()
+    val nowSec = nowState.value
+    val readNow = remember(nowState) { { nowState.value } }
     val online = rememberIsOnline()
     var editing by rememberSaveable { mutableStateOf(false) }
     var feedName by rememberSaveable { mutableStateOf(FeedKind.AIRING.name) }
@@ -308,41 +320,58 @@ internal fun HomeContent(
     val rows = prefs.homeRows(state.availableRows(tonight.size, genres.isNotEmpty()))
     val fullOrder = HomeLogic.fullRowOrder(prefs.homeRowOrder)
     val because = d.because?.sourceTitle
-    val hiddenMessages = HomeRowIds.DEFAULT_ORDER.associateWith { id -> stringResource(Res.string.rd_s2_row_hidden_msg, homeRowTitle(id, because)) }
+    // Only rows being edited can be hidden, so the messages (a dozen string lookups) are read only while Editar Inicio is open.
+    val hiddenMessages = if (editing) {
+        HomeRowIds.DEFAULT_ORDER.associateWith { id -> stringResource(Res.string.rd_s2_row_hidden_msg, homeRowTitle(id, because)) }
+    } else {
+        emptyMap()
+    }
     val resetMessage = stringResource(Res.string.rd_s2_edit_reset_msg)
     val showUndo = rememberShowUndo()
-    val hide: (String) -> Unit = { id ->
-        val before = prefs.homeRowsHidden
-        actions.onSetRowPrefs(fullOrder, before + id)
-        showUndo(hiddenMessages[id].orEmpty()) { actions.onSetRowPrefs(fullOrder, before) }
+    val hiddenNow = prefs.homeRowsHidden
+    val hide: (String) -> Unit = remember(fullOrder, hiddenNow, hiddenMessages, showUndo, actions) {
+        { id ->
+            actions.onSetRowPrefs(fullOrder, hiddenNow + id)
+            showUndo(hiddenMessages[id].orEmpty()) { actions.onSetRowPrefs(fullOrder, hiddenNow) }
+        }
     }
+    val onFeed: (FeedKind) -> Unit = remember { { feedName = it.name } }
+    val onEdit: () -> Unit = remember { { editing = !editing } }
     Scaffold(modifier = modifier, contentWindowInsets = screenInsets) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth >= WIDE_MIN
-            val ctx = HomeRowCtx(
-                state = state,
-                actions = actions,
-                gate = gate,
-                tonight = tonight,
-                genres = genres,
-                feedKinds = feedKinds,
-                feed = feed,
-                onFeed = { feedName = it.name },
-                editing = editing,
-                onHide = hide,
-                nowSec = nowSec,
-                compact = !wide,
-            )
+            // Remembered on what it holds (compared by value), so the minute tick or an unrelated recomposition of Home hands the
+            // rows the same ctx and they skip.
+            val ctx = remember(state, actions, gate, tonight, genres, feedKinds, feed, onFeed, editing, hide, readNow, wide) {
+                HomeRowCtx(
+                    state = state,
+                    actions = actions,
+                    gate = gate,
+                    tonight = tonight,
+                    genres = genres,
+                    feedKinds = feedKinds,
+                    feed = feed,
+                    onFeed = onFeed,
+                    editing = editing,
+                    onHide = hide,
+                    nowSec = readNow,
+                    compact = !wide,
+                )
+            }
             val panelOpen = editing && wide
-            val frame = HomeFrame(
-                topInset = padding.calculateTopPadding(),
-                wide = wide,
-                aside = maxWidth - (if (panelOpen) EDIT_PANEL_WIDTH else 0.dp) >= ASIDE_MIN,
-                online = online,
-                unread = unreadNotifications,
-                showGreeting = look.showGreeting,
-                onEdit = { editing = !editing },
-            )
+            val topInset = padding.calculateTopPadding()
+            val aside = maxWidth - (if (panelOpen) EDIT_PANEL_WIDTH else 0.dp) >= ASIDE_MIN
+            val frame = remember(topInset, wide, aside, online, unreadNotifications, look.showGreeting, onEdit) {
+                HomeFrame(
+                    topInset = topInset,
+                    wide = wide,
+                    aside = aside,
+                    online = online,
+                    unread = unreadNotifications,
+                    showGreeting = look.showGreeting,
+                    onEdit = onEdit,
+                )
+            }
             Row(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f).fillMaxHeight()) {
                     when (structure) {
@@ -410,11 +439,11 @@ private fun HomeTonightLayout(ctx: HomeRowCtx, rows: List<String>, frame: HomeFr
                         frame.wide -> Column(m.fillMaxWidth()) {
                             TonightRow(ctx)
                             // HOME-07 "Ver todo" -> Biblioteca › Continuar (the wide header has no row title to carry it).
-                            TextButton(onClick = a.onOpenLibrary, modifier = Modifier.align(Alignment.End).padding(end = 16.dp), shape = NijiyomeControls.shape) {
+                            if (!tonightOwnsSeeAll()) TextButton(onClick = a.onOpenLibrary, modifier = Modifier.align(Alignment.End).padding(end = 16.dp), shape = NijiyomeControls.shape) {
                                 Text(stringResource(Res.string.rd_s2_tonight_all))
                             }
                         }
-                        else -> HomeSection(stringResource(Res.string.rd_s2_tonight), m, onSeeAll = a.onOpenLibrary) { TonightRow(ctx) }
+                        else -> HomeSection(stringResource(Res.string.rd_s2_tonight), m, onSeeAll = a.onOpenLibrary.takeUnless { tonightOwnsSeeAll() }) { TonightRow(ctx) }
                     }
                 }
                 item(key = "agenda", contentType = "agenda") { TodayAgenda(ctx, Modifier.homeEntrance(1)) }
@@ -432,7 +461,7 @@ private fun HomeTonightLayout(ctx: HomeRowCtx, rows: List<String>, frame: HomeFr
                 Modifier
                     .width(ASIDE_WIDTH)
                     .fillMaxHeight()
-                    .verticalScroll(rememberScrollState())
+                    .njVerticalScroll(rememberScrollState(), scrollToTopOnReselect = false)
                     .padding(top = frame.topInset + 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
@@ -584,14 +613,14 @@ private fun HomeList(topPadding: Dp, content: LazyListScope.() -> Unit) {
     val scrolled by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 } }
     val dense = LocalLook.current.density == Density.COMPACT
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(
+        NjLazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = listState,
             contentPadding = PaddingValues(top = topPadding, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(if (dense) 12.dp else 24.dp),
             content = content,
         )
-        AnimatedVisibility(scrolled, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.TopCenter)) {
+        AnimatedVisibility(scrolled, enter = motionFadeIn(), exit = motionFadeOut(), modifier = Modifier.align(Alignment.TopCenter)) {
             Box(
                 Modifier
                     .fillMaxWidth()

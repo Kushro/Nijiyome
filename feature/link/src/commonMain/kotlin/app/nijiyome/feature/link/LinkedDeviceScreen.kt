@@ -30,7 +30,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
@@ -135,6 +134,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import app.nijiyome.ui.resources.Res as UiR
 import app.nijiyome.ui.resources.*
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 /**
  * Nijiyome Link (Sparkles S9; artifact `screens-c.js` screen `link`), its own screen in the two structures of `structures.link`:
@@ -279,7 +279,7 @@ private fun LinkClientScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(
-                Modifier.widthIn(max = 960.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+                Modifier.widthIn(max = 960.dp).fillMaxWidth().njVerticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // The one switch of this screen on its own structure (CONTRATO-COMPOSE: once, at the root).

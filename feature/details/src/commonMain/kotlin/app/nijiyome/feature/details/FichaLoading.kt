@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,6 +42,7 @@ import app.nijiyome.ui.resources.ui_retry
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import app.nijiyome.designsystem.theme.NijiyomeControls
+import app.nijiyome.designsystem.scroll.njVerticalScroll
 
 /**
  * The Ficha while its title loads: the header's shape in placeholders (artwork, poster, title, facts, status, the first episodes)
@@ -60,7 +60,7 @@ internal fun FichaLoading(state: DetailsUiState, actions: DetailsActions, modifi
         slow = true
     }
     val label = stringResource(Res.string.rd_s4_loading_cd)
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(modifier.fillMaxSize().njVerticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Box(Modifier.fillMaxWidth().height(if (compact) 176.dp else 220.dp).semantics { contentDescription = label }) {
             LoadingPlaceholder(Modifier.fillMaxSize(), shape = RectangleShape)
         }
